@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dwarfhold Valley</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="title-screen" class="screen">
+      <div class="title-background" aria-hidden="true"></div>
+      <div class="title-overlay">
+        <h1 class="game-title">Dwarfhold Valley</h1>
+        <p class="tagline">Procedural realms carved from stone and soil.</p>
+        <div class="title-buttons">
+          <button id="start-button" class="primary">Start Game</button>
+          <button id="title-options-button" class="secondary">Options</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="options-panel" class="modal hidden" aria-label="Game options">
+      <form id="options-form">
+        <h2>World Options</h2>
+        <label>
+          Map width (tiles)
+          <input type="number" id="map-width" name="mapWidth" min="30" max="200" value="96" />
+        </label>
+        <label>
+          Map height (tiles)
+          <input type="number" id="map-height" name="mapHeight" min="20" max="150" value="64" />
+        </label>
+        <label>
+          World seed
+          <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
+        </label>
+        <div class="modal-buttons">
+          <button type="submit" class="primary">Apply</button>
+          <button type="button" id="close-options" class="secondary">Close</button>
+        </div>
+      </form>
+    </section>
+
+    <div id="game-container" class="screen hidden">
+      <header class="game-ui">
+        <div class="controls">
+          <button id="regenerate-button" class="primary">Regenerate</button>
+          <button id="in-game-options" class="secondary">Options</button>
+        </div>
+        <div class="seed-display" aria-live="polite"></div>
+      </header>
+      <main class="canvas-wrapper">
+        <canvas id="world-canvas" width="3072" height="2048"></canvas>
+      </main>
+    </div>
+
+    <script src="main.js" type="module"></script>
+  </body>
+</html>
