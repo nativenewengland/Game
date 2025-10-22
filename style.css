@@ -1,0 +1,233 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  --accent: #f0c674;
+  --accent-dark: #c49b3f;
+  --bg: #08090f;
+  --panel-bg: rgba(12, 14, 22, 0.8);
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --button-bg: rgba(20, 23, 33, 0.85);
+  --button-border: rgba(255, 255, 255, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: #f5f7ff;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.screen {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.title-background {
+  position: absolute;
+  inset: 0;
+  background-image: url("titlescreen/Titlescreen image.png");
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px) saturate(110%);
+  transform: scale(1.08);
+  animation: panDown 28s linear infinite;
+}
+
+@keyframes panDown {
+  0% {
+    transform: scale(1.12) translateY(-2%);
+  }
+  50% {
+    transform: scale(1.08) translateY(4%);
+  }
+  100% {
+    transform: scale(1.12) translateY(-2%);
+  }
+}
+
+.title-overlay {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 3rem 4rem;
+  border-radius: 24px;
+  backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.4);
+  max-width: 560px;
+}
+
+.game-title {
+  font-size: clamp(2.8rem, 6vw, 4rem);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tagline {
+  margin: 0 0 2.5rem;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.title-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+button {
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.9rem 2.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: inherit;
+  letter-spacing: 0.03em;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+button.primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: #1a1205;
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+button.primary:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
+}
+
+.modal {
+  position: fixed;
+  inset: auto;
+  bottom: 6vh;
+  right: 6vw;
+  width: min(360px, 90vw);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  backdrop-filter: blur(22px);
+  padding: 1.75rem;
+  z-index: 30;
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.35);
+}
+
+.modal h2 {
+  margin: 0 0 1.25rem;
+  font-weight: 600;
+}
+
+.modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.modal input {
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(12, 15, 25, 0.85);
+  color: inherit;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+#game-container {
+  flex-direction: column;
+  padding: clamp(1rem, 3vw, 2.25rem);
+  gap: 1.5rem;
+}
+
+.game-ui {
+  width: min(100%, 1200px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(10, 12, 20, 0.6);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.35);
+}
+
+.game-ui .controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.seed-display {
+  font-family: 'Source Code Pro', 'Courier New', monospace;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.canvas-wrapper {
+  width: min(100%, 1200px);
+  max-height: 80vh;
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1.5rem 4rem rgba(0, 0, 0, 0.45);
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.65));
+  padding: clamp(1rem, 2vw, 1.75rem);
+}
+
+canvas {
+  display: block;
+  image-rendering: pixelated;
+  background: #0e0f16;
+  border-radius: 12px;
+}
+
+@media (max-width: 720px) {
+  .title-overlay {
+    padding: 2.5rem 1.75rem;
+    margin: 0 1.25rem;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .game-ui {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .seed-display {
+    text-align: center;
+  }
+}
