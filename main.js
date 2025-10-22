@@ -347,9 +347,13 @@ function createWorld(seedString) {
   };
   const structureCounts = { village: 0, monistary: 0, dwarfhold: 0 };
 
-  const tiles = new Array(height);
+  const baseTiles = new Array(height);
+  const tileData = new Array(height);
+
   for (let y = 0; y < height; y += 1) {
-    const row = new Array(width);
+    const baseRow = new Array(width);
+    const dataRow = new Array(width);
+
     for (let x = 0; x < width; x += 1) {
       const sampleX = (x + offsetX) / width;
       const sampleY = (y + offsetY) / height;
@@ -358,83 +362,108 @@ function createWorld(seedString) {
       const roughness = octaveNoise(sampleX * 3.5, sampleY * 3.5, seedNumber + 1401, 3, 0.5, 2.6);
       const randomFactor = hashCoords(x, y, seedNumber + 2909);
       const featureRoll = hashCoords(x, y, seedNumber + 8117);
+      const structureRoll = hashCoords(x, y, seedNumber + 15233);
 
-      let tileKey;
+      let baseTile;
 
       if (heightValue < 0.24) {
-        tileKey = 'water';
-      } else if (heightValue < 0.3) {
-        tileKey = randomFactor > 0.5 ? 'sand' : 'water';
-      } else if (heightValue < 0.36) {
-        tileKey = randomFactor > 0.3 ? 'sand' : 'grass';
-      } else if (heightValue > 0.82) {
-        if (featureRoll < 0.08) {
-          tileKey = 'cave';
-        } else if (heightValue > 0.9) {
-          tileKey = 'mountain-3';
-        } else if (heightValue > 0.86) {
-          tileKey = 'mountain-2';
-        } else {
-          tileKey = 'mountain-1';
-        }
-      } else if (heightValue > 0.7) {
-        if (moistureValue > 0.55) {
-          tileKey = 'cold climate trees';
-        } else {
-          tileKey = randomFactor > 0.4 ? 'mountain-1' : 'stone';
-        }
-      } else if (heightValue > 0.58) {
-        if (moistureValue > 0.68) {
-          tileKey = roughness > 0.55 ? 'thick-trees' : 'trees';
-        } else if (moistureValue < 0.32) {
-          tileKey = 'badlands';
-        } else if (moistureValue > 0.48 && randomFactor > 0.45) {
-          tileKey = 'trees';
-        } else {
-          tileKey = 'grass';
-        }
-      } else if (heightValue > 0.46) {
-        if (moistureValue > 0.72) {
-          tileKey = 'thick-trees';
-        } else if (moistureValue > 0.5) {
-          tileKey = randomFactor > 0.35 ? 'trees' : 'grass';
-        } else if (moistureValue < 0.25) {
-          tileKey = randomFactor > 0.5 ? 'badlands' : 'stone';
-        } else {
-          tileKey = 'grass';
-        }
+        baseTile = 'water';
+      } else if (heightValue < 0.32) {
+        baseTile = randomFactor > 0.5 ? 'sand' : 'water';
+      } else if (heightValue < 0.38) {
+        baseTile = randomFactor > 0.35 ? 'sand' : 'grass';
+      } else if (heightValue > 0.84) {
+        baseTile = 'stone';
+      } else if (heightValue > 0.74) {
+        baseTile = randomFactor > 0.45 ? 'stone' : 'grass';
+      } else if (moistureValue < 0.28) {
+        baseTile = randomFactor > 0.45 ? 'badlands' : 'stone';
+      } else if (moistureValue < 0.34 && heightValue > 0.6) {
+        baseTile = randomFactor > 0.35 ? 'stone' : 'badlands';
       } else {
-        if (moistureValue > 0.6) {
-          tileKey = randomFactor > 0.6 ? 'trees' : 'grass';
-        } else if (moistureValue < 0.28) {
-          tileKey = randomFactor > 0.4 ? 'badlands' : 'stone';
-        } else {
-          tileKey = 'grass';
-        }
+        baseTile = 'grass';
       }
 
-      if (tileKey === 'mountain-1' || tileKey === 'mountain-2') {
-        if (featureRoll < 0.05) {
-          tileKey = 'cave';
-        } else if (structureCounts.dwarfhold < structureTargets.dwarfhold && featureRoll > 0.92) {
-          tileKey = 'dwarfhold';
-          structureCounts.dwarfhold += 1;
-        }
-      }
-
-      if (tileKey === 'grass' || tileKey === 'trees' || tileKey === 'thick-trees') {
-        if (structureCounts.village < structureTargets.village && featureRoll > 0.975) {
-          tileKey = 'village';
-          structureCounts.village += 1;
-        } else if (structureCounts.monistary < structureTargets.monistary && featureRoll < 0.015 && heightValue > 0.48) {
-          tileKey = 'monistary';
-          structureCounts.monistary += 1;
-        }
-      }
-
-      row[x] = tileKey;
+      baseRow[x] = baseTile;
+      dataRow[x] = { heightValue, moistureValue, roughness, randomFactor, featureRoll, structureRoll };
     }
-    tiles[y] = row;
+
+    baseTiles[y] = baseRow;
+    tileData[y] = dataRow;
+  }
+
+  const tiles = baseTiles.map((row) => row.slice());
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const baseTile = baseTiles[y][x];
+      const { heightValue, moistureValue, roughness, randomFactor, featureRoll } = tileData[y][x];
+
+      if (baseTile === 'stone') {
+        if (featureRoll < 0.05) {
+          tiles[y][x] = 'cave';
+        } else if (heightValue > 0.9) {
+          tiles[y][x] = 'mountain-3';
+        } else if (heightValue > 0.86) {
+          tiles[y][x] = 'mountain-2';
+        } else if (heightValue > 0.82 || (roughness > 0.62 && randomFactor > 0.55)) {
+          tiles[y][x] = 'mountain-1';
+        } else {
+          tiles[y][x] = 'stone';
+        }
+      }
+    }
+  }
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const baseTile = baseTiles[y][x];
+      const { heightValue, moistureValue, roughness, randomFactor, featureRoll } = tileData[y][x];
+
+      if (baseTile !== 'grass') {
+        continue;
+      }
+
+      if (structureCounts.village < structureTargets.village && featureRoll > 0.975) {
+        tiles[y][x] = 'village';
+        structureCounts.village += 1;
+        continue;
+      }
+
+      if (structureCounts.monistary < structureTargets.monistary && featureRoll < 0.015 && heightValue > 0.48) {
+        tiles[y][x] = 'monistary';
+        structureCounts.monistary += 1;
+        continue;
+      }
+
+      if (heightValue > 0.72 && moistureValue > 0.55) {
+        tiles[y][x] = 'cold climate trees';
+      } else if (moistureValue > 0.72) {
+        tiles[y][x] = roughness > 0.55 ? 'thick-trees' : 'trees';
+      } else if (moistureValue > 0.5 && randomFactor > 0.4) {
+        tiles[y][x] = 'trees';
+      } else if (moistureValue > 0.46 && roughness > 0.6) {
+        tiles[y][x] = 'trees';
+      } else {
+        tiles[y][x] = 'grass';
+      }
+    }
+  }
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const tileKey = tiles[y][x];
+      const { structureRoll } = tileData[y][x];
+
+      if (
+        (tileKey === 'mountain-1' || tileKey === 'mountain-2' || tileKey === 'mountain-3') &&
+        structureCounts.dwarfhold < structureTargets.dwarfhold &&
+        structureRoll > 0.94
+      ) {
+        tiles[y][x] = 'dwarfhold';
+        structureCounts.dwarfhold += 1;
+      }
+    }
   }
 
   return { tiles, seedString: seedString || generateSeedString(seedNumber) };
