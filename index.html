@@ -47,6 +47,14 @@
           <button id="regenerate-button" class="primary">Regenerate</button>
           <button id="in-game-options" class="secondary">Options</button>
         </div>
+        <div class="audio-controls" role="region" aria-label="Music controls">
+          <button id="music-toggle" type="button" class="secondary">Play Music</button>
+          <label class="volume-control" for="music-volume">
+            Volume
+            <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5" />
+          </label>
+          <div id="music-now-playing" class="now-playing" aria-live="polite"></div>
+        </div>
         <div class="seed-display" aria-live="polite"></div>
       </header>
       <main class="canvas-wrapper">
@@ -54,6 +62,7 @@
       </main>
     </div>
 
+    <audio id="background-music" preload="auto" aria-hidden="true" tabindex="-1"></audio>
     <script src="main.js" type="module"></script>
   </body>
 </html>

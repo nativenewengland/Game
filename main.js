@@ -34,6 +34,31 @@ const state = {
   ready: false
 };
 
+const musicTracks = [
+  { title: 'Another Year', src: 'sound/tracks/another_year/AY_Full.ogg' },
+  { title: 'Craftsdwarfship', src: 'sound/tracks/craftsdwarfship/CS_Full.ogg' },
+  { title: 'Death Spiral', src: 'sound/tracks/death_spiral/DS_Full.ogg' },
+  { title: 'Drink & Industry', src: 'sound/tracks/drink_&_industry/DI_Full.ogg' },
+  { title: 'Dwarf Fortress', src: 'sound/tracks/dwarf_fortress/Dwarf_Fortress.ogg' },
+  { title: 'Expansive Cavern', src: 'sound/tracks/expansive_cavern/EC_Full.ogg' },
+  { title: 'First Year', src: 'sound/tracks/first_year/FY_Full.ogg' },
+  { title: 'Forgotten Beast', src: 'sound/tracks/forgotten_beast/FB_Full.ogg' },
+  { title: 'Hill Dwarf', src: 'sound/tracks/hill_dwarf/HD_Full.ogg' },
+  { title: 'Koganusan', src: 'sound/tracks/koganusan/KG_Full.ogg' },
+  { title: 'Mountainhome', src: 'sound/tracks/mountainhome/MH_Full.ogg' },
+  { title: 'Strike the Earth!', src: 'sound/tracks/strike_the_earth!/STE_Full.ogg' },
+  { title: 'Strange Moods', src: 'sound/tracks/strange_moods/SM_Full.ogg' },
+  { title: 'Vile Force of Darkness', src: 'sound/tracks/vile_force_of_darkness/VFOD_Full.ogg' },
+  { title: 'Winter Entombs You', src: 'sound/tracks/winter_entombs_you/WEY_Full.ogg' }
+];
+
+const audioState = {
+  tracks: musicTracks,
+  currentIndex: 0,
+  isPlaying: false,
+  initialised: false
+};
+
 const elements = {
   startButton: document.getElementById('start-button'),
   titleScreen: document.getElementById('title-screen'),
@@ -48,7 +73,11 @@ const elements = {
   seedDisplay: document.querySelector('.seed-display'),
   mapWidthInput: document.getElementById('map-width'),
   mapHeightInput: document.getElementById('map-height'),
-  seedInput: document.getElementById('world-seed')
+  seedInput: document.getElementById('world-seed'),
+  musicToggle: document.getElementById('music-toggle'),
+  musicVolume: document.getElementById('music-volume'),
+  musicNowPlaying: document.getElementById('music-now-playing'),
+  audioElement: document.getElementById('background-music')
 };
 
 const tileSheetPromise = loadImage('tilesheet/Overworld.png')
@@ -89,6 +118,137 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function updateMusicToggleLabel() {
+  if (!elements.musicToggle) {
+    return;
+  }
+  elements.musicToggle.textContent = audioState.isPlaying ? 'Pause Music' : 'Play Music';
+  elements.musicToggle.setAttribute('aria-pressed', audioState.isPlaying.toString());
+}
+
+function updateNowPlaying() {
+  if (!elements.musicNowPlaying || !audioState.tracks.length) {
+    return;
+  }
+  const track = audioState.tracks[audioState.currentIndex];
+  elements.musicNowPlaying.textContent = audioState.isPlaying
+    ? `Now playing: ${track.title}`
+    : `Ready: ${track.title}`;
+}
+
+function loadTrack(index) {
+  if (!elements.audioElement || !audioState.tracks.length) {
+    return;
+  }
+  const trackCount = audioState.tracks.length;
+  const normalizedIndex = ((index % trackCount) + trackCount) % trackCount;
+  audioState.currentIndex = normalizedIndex;
+  const track = audioState.tracks[normalizedIndex];
+  const encodedSrc = encodeURI(track.src);
+  elements.audioElement.src = encodedSrc;
+  elements.audioElement.load();
+  audioState.initialised = true;
+  updateNowPlaying();
+}
+
+function attemptPlay() {
+  if (!elements.audioElement) {
+    return Promise.resolve();
+  }
+  const playPromise = elements.audioElement.play();
+  if (playPromise && typeof playPromise.then === 'function') {
+    return playPromise
+      .then(() => {
+        audioState.isPlaying = true;
+        updateMusicToggleLabel();
+        updateNowPlaying();
+      })
+      .catch((error) => {
+        console.warn('Music playback prevented:', error);
+        audioState.isPlaying = false;
+        updateMusicToggleLabel();
+        updateNowPlaying();
+      });
+  }
+  audioState.isPlaying = true;
+  updateMusicToggleLabel();
+  updateNowPlaying();
+  return Promise.resolve();
+}
+
+function playNextTrack() {
+  if (!audioState.tracks.length) {
+    return;
+  }
+  const nextIndex = (audioState.currentIndex + 1) % audioState.tracks.length;
+  loadTrack(nextIndex);
+  attemptPlay();
+}
+
+function ensureMusicStarted() {
+  if (!elements.audioElement || !elements.musicToggle) {
+    return;
+  }
+  if (!audioState.initialised) {
+    loadTrack(audioState.currentIndex);
+  }
+  attemptPlay();
+}
+
+function setupAudioControls() {
+  if (!elements.audioElement || !elements.musicToggle || !elements.musicVolume) {
+    return;
+  }
+
+  const volumeValue = clamp(parseFloat(elements.musicVolume.value) || 0.5, 0, 1);
+  elements.audioElement.volume = volumeValue;
+  elements.musicVolume.value = volumeValue.toString();
+  loadTrack(audioState.currentIndex);
+  updateMusicToggleLabel();
+
+  elements.musicVolume.addEventListener('input', (event) => {
+    const newVolume = clamp(parseFloat(event.target.value), 0, 1);
+    elements.audioElement.volume = Number.isNaN(newVolume) ? elements.audioElement.volume : newVolume;
+  });
+
+  elements.musicToggle.addEventListener('click', () => {
+    if (!audioState.initialised) {
+      loadTrack(audioState.currentIndex);
+    }
+    if (audioState.isPlaying) {
+      elements.audioElement.pause();
+      audioState.isPlaying = false;
+      updateMusicToggleLabel();
+      updateNowPlaying();
+    } else {
+      attemptPlay();
+    }
+  });
+
+  elements.audioElement.addEventListener('ended', () => {
+    audioState.isPlaying = false;
+    playNextTrack();
+  });
+
+  elements.audioElement.addEventListener('play', () => {
+    audioState.isPlaying = true;
+    updateMusicToggleLabel();
+    updateNowPlaying();
+  });
+
+  elements.audioElement.addEventListener('pause', () => {
+    audioState.isPlaying = false;
+    updateMusicToggleLabel();
+    updateNowPlaying();
+  });
+
+  elements.audioElement.addEventListener('error', () => {
+    console.error('Failed to play track, skipping to next.');
+    audioState.isPlaying = false;
+    playNextTrack();
+  });
 }
 
 function loadImage(src) {
@@ -382,6 +542,7 @@ function attachEvents() {
     }
     toggleOptions(false);
     beginGame();
+    ensureMusicStarted();
   });
 
   elements.regenerate.addEventListener('click', handleRegenerate);
@@ -399,6 +560,7 @@ function initialise() {
   syncInputsWithSettings();
   elements.canvas.style.maxWidth = '100%';
   elements.canvas.style.height = 'auto';
+  setupAudioControls();
 }
 
 initialise();
