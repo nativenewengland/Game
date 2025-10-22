@@ -1,4 +1,4 @@
-const tileSize = 19;
+const tileSize = 32;
 const drawSize = 32;
 
 const tileDefinitions = [
