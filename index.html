@@ -41,64 +41,80 @@
       </form>
     </section>
 
-    <section id="world-info" class="modal hidden" aria-label="World information">
-      <form id="world-info-form">
-        <h2>Embark Preparation</h2>
-        <p class="modal-description">
-          Review the details of the realm you are about to shape. You can rename the world before embarking.
-        </p>
-        <dl class="world-stats" aria-live="polite">
-          <div>
-            <dt>Map size</dt>
-            <dd id="world-info-size">—</dd>
-          </div>
-          <div>
-            <dt>Seed</dt>
-            <dd id="world-info-seed">—</dd>
-          </div>
-          <div>
-            <dt>Chronology</dt>
-            <dd id="world-info-chronology">—</dd>
-          </div>
-        </dl>
-        <div class="world-chronology-inputs">
-          <label for="world-year-input">
-            Year
-            <input
-              type="number"
-              id="world-year-input"
-              name="worldYear"
-              min="1"
-              max="50000"
-              inputmode="numeric"
-              autocomplete="off"
-              required
-            />
-          </label>
-          <label for="world-age-input">
-            Age
-            <input
-              type="number"
-              id="world-age-input"
-              name="worldAge"
-              min="1"
-              max="30"
-              inputmode="numeric"
-              autocomplete="off"
-              required
-            />
-          </label>
-          <button type="button" id="world-chronology-random" class="secondary">Randomise</button>
+    <section id="world-info" class="screen hidden embark-screen" aria-label="World information">
+      <div class="embark-backdrop" aria-hidden="true"></div>
+      <form id="world-info-form" class="embark-panel">
+        <header class="embark-header">
+          <p class="embark-eyebrow">Embark Preparation</p>
+          <h2>Ready the Expedition</h2>
+          <p class="embark-description">
+            Review the realm before you and give your dwarves a worthy tale to tell.
+          </p>
+        </header>
+        <div class="embark-content">
+          <section class="embark-summary" aria-live="polite">
+            <dl class="world-stats">
+              <div>
+                <dt>Map size</dt>
+                <dd id="world-info-size">—</dd>
+              </div>
+              <div>
+                <dt>Seed</dt>
+                <dd id="world-info-seed">—</dd>
+              </div>
+              <div>
+                <dt>Chronology</dt>
+                <dd id="world-info-chronology">—</dd>
+              </div>
+            </dl>
+            <div class="embark-hero" aria-hidden="true">
+              <div class="embark-hero-overlay"></div>
+            </div>
+          </section>
+          <section class="embark-form">
+            <div class="world-chronology-inputs">
+              <label for="world-year-input">
+                Year
+                <input
+                  type="number"
+                  id="world-year-input"
+                  name="worldYear"
+                  min="1"
+                  max="50000"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  required
+                />
+              </label>
+              <label for="world-age-input">
+                Age
+                <input
+                  type="number"
+                  id="world-age-input"
+                  name="worldAge"
+                  min="1"
+                  max="30"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  required
+                />
+              </label>
+              <button type="button" id="world-chronology-random" class="secondary">Randomise</button>
+            </div>
+            <label class="world-name-label" for="world-name-input">World name</label>
+            <div class="world-name-input">
+              <input type="text" id="world-name-input" name="worldName" maxlength="60" autocomplete="off" required />
+              <button type="button" id="world-name-random" class="secondary">Randomise</button>
+            </div>
+            <p class="embark-flavour">
+              "Strike the earth!" whispers through the caverns. Only you can choose the legend they'll carve.
+            </p>
+          </section>
         </div>
-        <label for="world-name-input">World name</label>
-        <div class="world-name-input">
-          <input type="text" id="world-name-input" name="worldName" maxlength="60" autocomplete="off" required />
-          <button type="button" id="world-name-random" class="secondary">Randomise</button>
-        </div>
-        <div class="modal-buttons">
+        <footer class="embark-actions">
           <button type="button" id="world-info-cancel" class="secondary">Back</button>
           <button type="submit" class="primary">Embark</button>
-        </div>
+        </footer>
       </form>
     </section>
 

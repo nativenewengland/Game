@@ -702,6 +702,9 @@ function openWorldInfoModal() {
   state.worldName = nameToUse;
   elements.worldNameInput.value = nameToUse;
 
+  if (elements.titleScreen) {
+    elements.titleScreen.classList.add('hidden');
+  }
   elements.worldInfoModal.classList.remove('hidden');
   const focusInput = () => {
     if (!elements.worldNameInput) {
@@ -717,9 +720,18 @@ function openWorldInfoModal() {
   }
 }
 
-function closeWorldInfoModal(returnFocus = false) {
+function closeWorldInfoModal(options = {}) {
+  const { returnFocus = false, keepTitleHidden = false } = options;
   if (elements.worldInfoModal) {
     elements.worldInfoModal.classList.add('hidden');
+  }
+  if (
+    !keepTitleHidden &&
+    elements.titleScreen &&
+    elements.gameContainer &&
+    elements.gameContainer.classList.contains('hidden')
+  ) {
+    elements.titleScreen.classList.remove('hidden');
   }
   if (returnFocus && elements.startButton) {
     elements.startButton.focus();
@@ -1651,8 +1663,10 @@ function drawWorld(world) {
 }
 
 function beginGame() {
-  closeWorldInfoModal();
-  elements.titleScreen.classList.add('hidden');
+  closeWorldInfoModal({ keepTitleHidden: true });
+  if (elements.titleScreen) {
+    elements.titleScreen.classList.add('hidden');
+  }
   elements.gameContainer.classList.remove('hidden');
   elements.seedDisplay.textContent = '';
   generateAndRender();
@@ -1730,7 +1744,6 @@ function attachEvents() {
         }
       }
       updateChronologyDisplay();
-      closeWorldInfoModal();
       beginGame();
       ensureMusicStarted();
     });
@@ -1738,7 +1751,7 @@ function attachEvents() {
 
   if (elements.worldInfoCancel) {
     elements.worldInfoCancel.addEventListener('click', () => {
-      closeWorldInfoModal(true);
+      closeWorldInfoModal({ returnFocus: true });
     });
   }
 
@@ -1783,7 +1796,7 @@ function attachEvents() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       if (elements.worldInfoModal && !elements.worldInfoModal.classList.contains('hidden')) {
-        closeWorldInfoModal(true);
+        closeWorldInfoModal({ returnFocus: true });
         return;
       }
       toggleOptions(false);
