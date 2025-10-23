@@ -1,28 +1,164 @@
-const tileSize = 32;
 const drawSize = 32;
 
-const tileDefinitions = [
-  { name: 'sand', row: 0, col: 0 },
-  { name: 'grass', row: 0, col: 1 },
-  { name: 'stone', row: 0, col: 2 },
-  { name: 'mountain-1', row: 0, col: 3 },
-  { name: 'mountain-2', row: 0, col: 4 },
-  { name: 'mountain-3', row: 0, col: 5 },
-  { name: 'trees', row: 1, col: 0 },
-  { name: 'cold climate trees', row: 1, col: 1 },
-  { name: 'badlands', row: 1, col: 2 },
-  { name: 'cave', row: 1, col: 3 },
-  { name: 'water', row: 1, col: 4 },
-  { name: 'dwarfhold', row: 1, col: 5 },
-  { name: 'thick-trees', row: 2, col: 0 },
-  { name: 'village', row: 2, col: 1 },
-  { name: 'monistary', row: 2, col: 2 },
-  { name: 'snow', row: 2, col: 3 }
-];
+const tileSheets = {
+  base: {
+    key: 'base',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_tiles.png',
+    tileSize: 16,
+    image: null
+  },
+  details: {
+    key: 'details',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
+    tileSize: 16,
+    image: null
+  }
+};
 
-const tileLookup = new Map(
-  tileDefinitions.map((def, index) => [def.name, { index, sx: def.col * tileSize, sy: def.row * tileSize }])
-);
+const baseTileCoords = {
+  GRASSLAND_TEMP: { row: 0, col: 2 },
+  GRASSLAND_TEMP_EVIL: { row: 0, col: 7 },
+  GRASSLAND_TEMP_GOOD: { row: 0, col: 17 },
+  GRASSLAND_TEMP_EVILSAV: { row: 0, col: 12 },
+  GRASSLAND_TEMP_GOODSAV: { row: 0, col: 22 },
+  GRASSLAND_TROP: { row: 1, col: 2 },
+  GRASSLAND_TROP_EVIL: { row: 1, col: 7 },
+  GRASSLAND_TROP_GOOD: { row: 1, col: 17 },
+  GRASSLAND_TROP_EVILSAV: { row: 1, col: 12 },
+  GRASSLAND_TROP_GOODSAV: { row: 1, col: 22 },
+  HILLS: { row: 2, col: 2 },
+  HILLS_EVIL: { row: 2, col: 7 },
+  HILLS_GOOD: { row: 2, col: 17 },
+  HILLS_EVILSAV: { row: 2, col: 12 },
+  HILLS_GOODSAV: { row: 2, col: 22 },
+  SHRUBLAND: { row: 3, col: 2 },
+  SHRUBLAND_EVIL: { row: 3, col: 7 },
+  SHRUBLAND_GOOD: { row: 3, col: 17 },
+  SHRUBLAND_EVILSAV: { row: 3, col: 12 },
+  SHRUBLAND_GOODSAV: { row: 3, col: 22 },
+  MARSH: { row: 4, col: 2 },
+  MARSH_EVIL: { row: 4, col: 7 },
+  MARSH_GOOD: { row: 4, col: 17 },
+  MARSH_EVILSAV: { row: 4, col: 12 },
+  MARSH_GOODSAV: { row: 4, col: 22 },
+  SWAMP: { row: 5, col: 2 },
+  SWAMP_EVIL: { row: 5, col: 7 },
+  SWAMP_GOOD: { row: 5, col: 17 },
+  SWAMP_EVILSAV: { row: 5, col: 12 },
+  SWAMP_GOODSAV: { row: 5, col: 22 },
+  SAVANNA_TROP: { row: 6, col: 2 },
+  SAVANNA_TROP_EVIL: { row: 6, col: 7 },
+  SAVANNA_TROP_GOOD: { row: 6, col: 17 },
+  SAVANNA_TROP_EVILSAV: { row: 6, col: 12 },
+  SAVANNA_TROP_GOODSAV: { row: 6, col: 22 },
+  SAVANNA_TEMP: { row: 7, col: 2 },
+  SAVANNA_TEMP_EVIL: { row: 7, col: 7 },
+  SAVANNA_TEMP_GOOD: { row: 7, col: 17 },
+  SAVANNA_TEMP_EVILSAV: { row: 7, col: 12 },
+  SAVANNA_TEMP_GOODSAV: { row: 7, col: 22 },
+  BADLANDS: { row: 8, col: 2 },
+  BADLANDS_EVIL: { row: 8, col: 7 },
+  BADLANDS_GOOD: { row: 8, col: 17 },
+  BADLANDS_EVILSAV: { row: 8, col: 12 },
+  BADLANDS_GOODSAV: { row: 8, col: 22 },
+  ROCKY_HILLS: { row: 9, col: 2 },
+  ROCKY_HILLS_EVIL: { row: 9, col: 7 },
+  ROCKY_HILLS_GOOD: { row: 9, col: 17 },
+  ROCKY_HILLS_EVILSAV: { row: 9, col: 12 },
+  ROCKY_HILLS_GOODSAV: { row: 9, col: 22 },
+  ROCKY_PLAINS: { row: 10, col: 2 },
+  ROCKY_PLAINS_EVIL: { row: 10, col: 7 },
+  ROCKY_PLAINS_GOOD: { row: 10, col: 17 },
+  ROCKY_PLAINS_EVILSAV: { row: 10, col: 12 },
+  ROCKY_PLAINS_GOODSAV: { row: 10, col: 22 },
+  SAND_DESERT: { row: 11, col: 2 },
+  SAND_DESERT_EVIL: { row: 11, col: 7 },
+  SAND_DESERT_GOOD: { row: 11, col: 17 },
+  SAND_DESERT_EVILSAV: { row: 11, col: 12 },
+  SAND_DESERT_GOODSAV: { row: 11, col: 22 },
+  BEACH: { row: 12, col: 2 },
+  BEACH_EVIL: { row: 12, col: 7 },
+  BEACH_GOOD: { row: 12, col: 17 },
+  BEACH_EVILSAV: { row: 12, col: 12 },
+  BEACH_GOODSAV: { row: 12, col: 22 },
+  TUNDRA: { row: 13, col: 2 },
+  TUNDRA_EVIL: { row: 13, col: 7 },
+  TUNDRA_GOOD: { row: 13, col: 17 },
+  TUNDRA_EVILSAV: { row: 13, col: 12 },
+  TUNDRA_GOODSAV: { row: 13, col: 22 },
+  GLACIER: { row: 14, col: 2 },
+  GLACIER_EVIL: { row: 14, col: 7 },
+  GLACIER_GOOD: { row: 14, col: 17 },
+  GLACIER_EVILSAV: { row: 14, col: 12 },
+  GLACIER_GOODSAV: { row: 14, col: 22 },
+  FROZEN_OCEAN: { row: 15, col: 2 },
+  FROZEN_OCEAN_EVIL: { row: 15, col: 7 },
+  FROZEN_OCEAN_GOOD: { row: 15, col: 17 },
+  FROZEN_OCEAN_EVILSAV: { row: 15, col: 12 },
+  FROZEN_OCEAN_GOODSAV: { row: 15, col: 22 },
+  LAKE: { row: 16, col: 2 },
+  LAKE_EVIL: { row: 16, col: 7 },
+  LAKE_GOOD: { row: 16, col: 17 },
+  LAKE_EVILSAV: { row: 16, col: 12 },
+  LAKE_GOODSAV: { row: 16, col: 22 },
+  OCEAN: { row: 17, col: 2 },
+  OCEAN_EVIL: { row: 17, col: 7 },
+  OCEAN_GOOD: { row: 17, col: 17 },
+  OCEAN_EVILSAV: { row: 17, col: 12 },
+  OCEAN_GOODSAV: { row: 17, col: 22 },
+  OCEAN_DEEP: { row: 18, col: 2 },
+  OCEAN_DEEP_EVIL: { row: 18, col: 7 },
+  OCEAN_DEEP_GOOD: { row: 18, col: 17 },
+  OCEAN_DEEP_EVILSAV: { row: 18, col: 12 },
+  OCEAN_DEEP_GOODSAV: { row: 18, col: 22 }
+};
+
+const detailTileCoords = {
+  RIVER_0: { row: 11, col: 4 },
+  RIVER_N: { row: 12, col: 4 },
+  RIVER_S: { row: 13, col: 4 },
+  RIVER_W: { row: 14, col: 4 },
+  RIVER_E: { row: 15, col: 4 },
+  RIVER_NS: { row: 0, col: 4 },
+  RIVER_WE: { row: 1, col: 4 },
+  RIVER_NE: { row: 4, col: 4 },
+  RIVER_NW: { row: 5, col: 4 },
+  RIVER_SE: { row: 2, col: 4 },
+  RIVER_SW: { row: 3, col: 4 },
+  RIVER_NSE: { row: 6, col: 4 },
+  RIVER_SWE: { row: 7, col: 4 },
+  RIVER_NWE: { row: 8, col: 4 },
+  RIVER_NSW: { row: 9, col: 4 },
+  RIVER_NSWE: { row: 10, col: 4 }
+};
+
+const tileLookup = new Map();
+
+function registerTiles(sheetKey, coordMap) {
+  const sheet = tileSheets[sheetKey];
+  Object.entries(coordMap).forEach(([name, coords]) => {
+    tileLookup.set(name, {
+      sheet: sheetKey,
+      sx: coords.col * sheet.tileSize,
+      sy: coords.row * sheet.tileSize,
+      size: sheet.tileSize
+    });
+  });
+}
+
+registerTiles('base', baseTileCoords);
+registerTiles('details', detailTileCoords);
+
+function resolveTileName(baseKey, suffix) {
+  const preferred = suffix ? `${baseKey}${suffix}` : baseKey;
+  if (tileLookup.has(preferred)) {
+    return preferred;
+  }
+  if (suffix && tileLookup.has(baseKey)) {
+    return baseKey;
+  }
+  return tileLookup.has(baseKey) ? baseKey : 'OCEAN';
+}
 
 const state = {
   settings: {
@@ -31,7 +167,7 @@ const state = {
     seedString: '',
     lastSeedString: ''
   },
-  tileSheet: null,
+  tileSheets,
   landMask: null,
   ready: false
 };
@@ -168,16 +304,20 @@ function loadLandMask(src) {
     });
 }
 
-const assetPromises = Promise.all([
-  loadImage('tilesheet/Overworld.png')
+const tileSheetPromises = Object.values(tileSheets).map((sheet) =>
+  loadImage(sheet.path)
     .then((img) => {
-      state.tileSheet = img;
+      sheet.image = img;
       return img;
     })
     .catch((error) => {
-      console.error('Failed to load tile sheet', error);
+      console.error(`Failed to load tile sheet at ${sheet.path}`, error);
       throw error;
-    }),
+    })
+);
+
+const assetPromises = Promise.all([
+  ...tileSheetPromises,
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
 
@@ -620,196 +760,434 @@ function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.
   return sum / maxAmplitude;
 }
 
+function normalizeField(field) {
+  let minValue = Infinity;
+  let maxValue = -Infinity;
+  for (let i = 0; i < field.length; i += 1) {
+    const value = field[i];
+    if (value < minValue) {
+      minValue = value;
+    }
+    if (value > maxValue) {
+      maxValue = value;
+    }
+  }
+  const range = maxValue - minValue || 1;
+  for (let i = 0; i < field.length; i += 1) {
+    field[i] = (field[i] - minValue) / range;
+  }
+  return field;
+}
+
+function applyThermalErosion(field, width, height, iterations = 3, talus = 0.035) {
+  const temp = new Float32Array(field.length);
+  const directions = [
+    [-1, -1],
+    [0, -1],
+    [1, -1],
+    [-1, 0],
+    [1, 0],
+    [-1, 1],
+    [0, 1],
+    [1, 1]
+  ];
+
+  for (let iter = 0; iter < iterations; iter += 1) {
+    temp.set(field);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        let value = temp[idx];
+        let total = value;
+        let count = 1;
+        for (let d = 0; d < directions.length; d += 1) {
+          const nx = x + directions[d][0];
+          const ny = y + directions[d][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          const diff = Math.abs(value - temp[nIdx]);
+          if (diff > talus) {
+            total += temp[nIdx];
+            count += 1;
+          }
+        }
+        field[idx] = total / count;
+      }
+    }
+  }
+
+  return normalizeField(field);
+}
+
+function applyRainShadow(elevation, rainfall, width, height) {
+  const adjusted = new Float32Array(rainfall);
+
+  const sweep = (startX, endX, step) => {
+    for (let y = 0; y < height; y += 1) {
+      let carried = rainfall[y * width + startX];
+      for (let x = startX + step; step > 0 ? x < endX : x > endX; x += step) {
+        const idx = y * width + x;
+        const prevIdx = y * width + (x - step);
+        const slope = elevation[prevIdx] - elevation[idx];
+        if (slope > 0.05) {
+          carried -= slope * 0.5;
+        } else if (slope < -0.05) {
+          carried += (-slope) * 0.35;
+        }
+        carried = clamp(carried, 0, 1);
+        adjusted[idx] = clamp((adjusted[idx] * 2 + carried) / 3, 0, 1);
+      }
+    }
+  };
+
+  sweep(0, width, 1);
+  sweep(width - 1, -1, -1);
+
+  return normalizeField(adjusted);
+}
+
+function determineAlignmentSuffix(alignment, savagery) {
+  const goodThreshold = 0.33;
+  const savageThreshold = 0.65;
+  if (alignment > goodThreshold) {
+    return savagery > savageThreshold ? '_GOODSAV' : '_GOOD';
+  }
+  if (alignment < -goodThreshold) {
+    return savagery > savageThreshold ? '_EVILSAV' : '_EVIL';
+  }
+  return '';
+}
+
+function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
+  const riverMap = new Uint8Array(width * height);
+  const candidates = [];
+  for (let y = 1; y < height - 1; y += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const idx = y * width + x;
+      const elev = elevation[idx];
+      if (elev <= seaLevel + 0.02) {
+        continue;
+      }
+      const rain = rainfall[idx];
+      if (rain < 0.5) {
+        continue;
+      }
+      const sink = 1 - drainage[idx];
+      const weight = rain * rain * (elev - seaLevel) * (0.5 + sink * 0.5);
+      if (weight > 0.12) {
+        candidates.push({ x, y, weight });
+      }
+    }
+  }
+
+  candidates.sort((a, b) => b.weight - a.weight);
+  const maxSources = Math.max(8, Math.floor((width * height) / 3200));
+  const directions = [
+    [0, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 0]
+  ];
+
+  for (let i = 0; i < candidates.length && i < maxSources; i += 1) {
+    let { x, y } = candidates[i];
+    let steps = 0;
+    let strength = candidates[i].weight > 0.35 ? 2 : 1;
+    while (steps < width + height) {
+      const idx = y * width + x;
+      riverMap[idx] = Math.min(4, riverMap[idx] + strength);
+      steps += 1;
+
+      let lowestIdx = idx;
+      let lowestValue = elevation[idx];
+      for (let d = 0; d < directions.length; d += 1) {
+        const nx = x + directions[d][0];
+        const ny = y + directions[d][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        const value = elevation[nIdx] - drainage[nIdx] * 0.02;
+        if (value < lowestValue) {
+          lowestValue = value;
+          lowestIdx = nIdx;
+        }
+      }
+
+      if (lowestIdx === idx) {
+        break;
+      }
+
+      const nextElevation = elevation[lowestIdx];
+      if (nextElevation <= seaLevel) {
+        const seaIdx = lowestIdx;
+        riverMap[seaIdx] = Math.max(riverMap[seaIdx], strength);
+        break;
+      }
+
+      x = lowestIdx % width;
+      y = Math.floor(lowestIdx / width);
+
+      if (riverMap[lowestIdx] > 0 && steps > 3) {
+        break;
+      }
+    }
+  }
+
+  return riverMap;
+}
+
+function resolveRiverTile(riverMap, width, height, x, y) {
+  const idx = y * width + x;
+  if (riverMap[idx] === 0) {
+    return null;
+  }
+
+  const prefix = 'RIVER_';
+  const neighbors = [
+    { dx: 0, dy: -1, key: 'N', bit: 1 },
+    { dx: 1, dy: 0, key: 'E', bit: 2 },
+    { dx: 0, dy: 1, key: 'S', bit: 4 },
+    { dx: -1, dy: 0, key: 'W', bit: 8 }
+  ];
+
+  let mask = 0;
+  neighbors.forEach(({ dx, dy, bit }) => {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+      return;
+    }
+    if (riverMap[ny * width + nx] > 0) {
+      mask |= bit;
+    }
+  });
+
+  switch (mask) {
+    case 0:
+      return `${prefix}0`;
+    case 1:
+      return `${prefix}N`;
+    case 2:
+      return `${prefix}E`;
+    case 4:
+      return `${prefix}S`;
+    case 8:
+      return `${prefix}W`;
+    case 1 | 4:
+      return `${prefix}NS`;
+    case 2 | 8:
+      return `${prefix}WE`;
+    case 1 | 2:
+      return `${prefix}NE`;
+    case 1 | 8:
+      return `${prefix}NW`;
+    case 2 | 4:
+      return `${prefix}SE`;
+    case 4 | 8:
+      return `${prefix}SW`;
+    case 1 | 2 | 4:
+      return `${prefix}NSE`;
+    case 1 | 4 | 8:
+      return `${prefix}NSW`;
+    case 1 | 2 | 8:
+      return `${prefix}NWE`;
+    case 2 | 4 | 8:
+      return `${prefix}SWE`;
+    case 1 | 2 | 4 | 8:
+    default:
+      return `${prefix}NSWE`;
+  }
+}
+
 function createWorld(seedString) {
   const seedNumber = stringToSeed(seedString);
   const rng = mulberry32(seedNumber || 1);
-  const offsetX = rng() * 512;
-  const offsetY = rng() * 512;
-
   const width = state.settings.width;
   const height = state.settings.height;
+  const size = width * height;
 
-  const structureTargets = {
-    village: Math.max(1, Math.floor((width * height) / 5200)),
-    monistary: Math.max(1, Math.floor((width * height) / 6800)),
-    dwarfhold: Math.max(1, Math.floor((width * height) / 6000))
+  const offsetX = rng() * 2048;
+  const offsetY = rng() * 2048;
+
+  const fieldSeeds = {
+    elevation: Math.floor(rng() * 0xffffffff),
+    rainfall: Math.floor(rng() * 0xffffffff),
+    drainage: Math.floor(rng() * 0xffffffff),
+    temperature: Math.floor(rng() * 0xffffffff),
+    volcanism: Math.floor(rng() * 0xffffffff),
+    evilness: Math.floor(rng() * 0xffffffff),
+    savagery: Math.floor(rng() * 0xffffffff)
   };
-  const structureCounts = { village: 0, monistary: 0, dwarfhold: 0 };
 
-  const baseTiles = new Array(height);
-  const tileData = new Array(height);
+  const elevation = new Float32Array(size);
+  const rainfall = new Float32Array(size);
+  const drainage = new Float32Array(size);
+  const temperatureNoise = new Float32Array(size);
+  const volcanism = new Float32Array(size);
+  const evilness = new Float32Array(size);
+  const savagery = new Float32Array(size);
 
   for (let y = 0; y < height; y += 1) {
-    const baseRow = new Array(width);
-    const dataRow = new Array(width);
-
     for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
       const sampleX = (x + offsetX) / width;
       const sampleY = (y + offsetY) / height;
       const landMaskValue = sampleLandMask((x + 0.5) / width, (y + 0.5) / height);
-      const highFrequencyHeight = octaveNoise(sampleX * 2.4, sampleY * 2.4, seedNumber + 101, 5, 0.52, 2.35);
-      const continentalHeight = octaveNoise(sampleX * 0.9, sampleY * 0.9, seedNumber + 401, 4, 0.58, 1.9);
-      const moistureValue = octaveNoise(sampleX * 2.1, sampleY * 2.1, seedNumber + 701, 4, 0.55, 2.4);
-      const roughness = octaveNoise(sampleX * 3.5, sampleY * 3.5, seedNumber + 1401, 3, 0.5, 2.6);
-      const temperatureVariation = octaveNoise(sampleX * 1.6, sampleY * 1.6, seedNumber + 9001, 3, 0.55, 2.15);
-      const randomFactor = hashCoords(x, y, seedNumber + 2909);
-      const featureRoll = hashCoords(x, y, seedNumber + 8117);
-      const structureRoll = hashCoords(x, y, seedNumber + 15233);
 
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const distanceToCenter = Math.hypot((x - centerX) / (width * 0.5), (y - centerY) / (height * 0.5));
-      const radialInfluence = clamp(1 - Math.pow(distanceToCenter, 1.25), 0, 1);
-      let combinedHeight =
-        highFrequencyHeight * 0.42 +
-        continentalHeight * 0.28 +
-        radialInfluence * 0.28 -
-        (1 - radialInfluence) * 0.22;
+      const continental = octaveNoise(sampleX * 0.75, sampleY * 0.75, fieldSeeds.elevation, 5, 0.6, 1.95);
+      const ridge = octaveNoise(sampleX * 2.6, sampleY * 2.6, fieldSeeds.elevation + 97, 4, 0.5, 2.35);
+      const shelf = octaveNoise(sampleX * 0.22, sampleY * 0.22, fieldSeeds.elevation + 503, 3, 0.68, 1.7);
+      let heightValue = continental * 0.55 + ridge * 0.35 + shelf * 0.1;
+
+      const radialX = x / width - 0.5;
+      const radialY = y / height - 0.5;
+      const radialDistance = Math.sqrt(radialX * radialX + radialY * radialY);
+      const radialInfluence = clamp(1 - Math.pow(radialDistance, 1.15), 0, 1);
+      heightValue = lerp(heightValue, radialInfluence, 0.18) - (1 - radialInfluence) * 0.12;
 
       if (landMaskValue !== null) {
-        const maskBias = (landMaskValue - 0.5) * 0.85;
-        const maskBlend = lerp(combinedHeight, landMaskValue, 0.55);
-        combinedHeight = maskBlend + maskBias;
+        heightValue = lerp(heightValue, landMaskValue, 0.45) + (landMaskValue - 0.5) * 0.08;
       }
 
-      const heightValue = clamp(combinedHeight, 0, 1);
-
-      const latitudeInfluence = 1 - Math.abs(y / height - 0.5) * 2;
-      const warmBiome = clamp(latitudeInfluence * 0.7 + temperatureVariation * 0.3, 0, 1);
-      const dryness = 1 - moistureValue;
-
-      let baseTile;
-
-      const maskThreshold = landMaskValue !== null ? landMaskValue : null;
-
-      if (heightValue < 0.26 || (maskThreshold !== null && maskThreshold < 0.3)) {
-        baseTile = 'water';
-      } else if (heightValue < 0.33 || (maskThreshold !== null && maskThreshold < 0.36)) {
-        baseTile = warmBiome > 0.55 && dryness > 0.45 && randomFactor > 0.35 ? 'sand' : 'water';
-      } else if (heightValue < 0.41 || (maskThreshold !== null && maskThreshold < 0.44)) {
-        baseTile = warmBiome > 0.55 && dryness > 0.45 ? 'sand' : 'grass';
-      } else if (heightValue > 0.88) {
-        baseTile = 'stone';
-      } else if (heightValue > 0.8) {
-        baseTile = randomFactor > 0.45 ? 'stone' : 'grass';
-      } else if (dryness > 0.62 && warmBiome > 0.58 && heightValue > 0.46) {
-        baseTile = randomFactor > 0.4 ? 'badlands' : 'stone';
-      } else if (dryness > 0.54 && warmBiome > 0.55) {
-        baseTile = randomFactor > 0.6 ? 'stone' : 'badlands';
-      } else {
-        baseTile = 'grass';
-      }
-
-      baseRow[x] = baseTile;
-      dataRow[x] = {
-        heightValue,
-        moistureValue,
-        roughness,
-        randomFactor,
-        featureRoll,
-        structureRoll,
-        warmBiome,
-        landMaskValue
-      };
+      elevation[idx] = heightValue;
+      rainfall[idx] = octaveNoise(sampleX * 1.35, sampleY * 1.35, fieldSeeds.rainfall, 5, 0.58, 2.1);
+      drainage[idx] = octaveNoise(sampleX * 1.9, sampleY * 1.9, fieldSeeds.drainage, 4, 0.55, 2.35);
+      temperatureNoise[idx] = octaveNoise(sampleX * 0.95, sampleY * 0.95, fieldSeeds.temperature, 4, 0.6, 2.05);
+      volcanism[idx] = octaveNoise(sampleX * 2.4, sampleY * 2.4, fieldSeeds.volcanism, 3, 0.48, 2.45);
+      evilness[idx] = octaveNoise(sampleX * 1.1, sampleY * 1.1, fieldSeeds.evilness, 3, 0.6, 2.25);
+      savagery[idx] = octaveNoise(sampleX * 2.15, sampleY * 2.15, fieldSeeds.savagery, 4, 0.52, 2.4);
     }
-
-    baseTiles[y] = baseRow;
-    tileData[y] = dataRow;
   }
 
-  const tiles = baseTiles.map((row) => row.map((base) => ({ base, overlay: null })));
+  normalizeField(elevation);
+  applyThermalErosion(elevation, width, height, 4, 0.03);
+
+  normalizeField(rainfall);
+  normalizeField(drainage);
+  normalizeField(temperatureNoise);
+  normalizeField(volcanism);
+  normalizeField(evilness);
+  normalizeField(savagery);
+
+  const rainShadow = applyRainShadow(elevation, rainfall, width, height);
+  for (let i = 0; i < size; i += 1) {
+    rainfall[i] = clamp(rainfall[i] * 0.6 + rainShadow[i] * 0.4, 0, 1);
+  }
+
+  const temperature = new Float32Array(size);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const latitude = Math.abs((y + 0.5) / height - 0.5) * 2;
+      const baseTemp = 1 - latitude;
+      const altitudePenalty = Math.pow(elevation[idx], 1.4) * 0.55;
+      let tempValue = baseTemp * 0.6 + temperatureNoise[idx] * 0.4 - altitudePenalty;
+      tempValue += volcanism[idx] * 0.05;
+      temperature[idx] = clamp(tempValue, 0, 1);
+    }
+  }
+
+  const seaLevel = 0.42;
+  const deepSeaLevel = 0.24;
+  const beachBand = 0.035;
+  const mountainSlope = 0.7;
+  const mountainPeak = 0.82;
+
+  const riverMap = buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel);
+  const tiles = Array.from({ length: height }, () => new Array(width));
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const baseTile = baseTiles[y][x];
-      const { heightValue, moistureValue, roughness, randomFactor, featureRoll } = tileData[y][x];
-      const cell = tiles[y][x];
-      cell.base = baseTile;
-      cell.overlay = null;
+      const idx = y * width + x;
+      const elev = elevation[idx];
+      const rain = rainfall[idx];
+      const drain = drainage[idx];
+      const temp = temperature[idx];
+      const evil = evilness[idx] * 2 - 1;
+      const savage = savagery[idx];
+      const dry = clamp(1 - rain + volcanism[idx] * 0.05, 0, 1);
 
-      if (baseTile === 'stone') {
-        if (featureRoll < 0.05) {
-          cell.overlay = 'cave';
-        } else if (heightValue > 0.93) {
-          cell.overlay = 'snow';
-        } else if (heightValue > 0.9) {
-          cell.overlay = 'mountain-3';
-        } else if (heightValue > 0.86) {
-          cell.overlay = 'mountain-2';
-        } else if (heightValue > 0.82 || (roughness > 0.62 && randomFactor > 0.55)) {
-          cell.overlay = 'mountain-1';
+      let baseKey;
+      let suffix = determineAlignmentSuffix(evil, savage);
+
+      if (elev < seaLevel) {
+        const isFrozen = temp < 0.2;
+        let landNeighbors = 0;
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            if (dx === 0 && dy === 0) {
+              continue;
+            }
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            if (elevation[ny * width + nx] >= seaLevel) {
+              landNeighbors += 1;
+            }
+          }
         }
-      }
-    }
-  }
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const baseTile = baseTiles[y][x];
-      const { heightValue, moistureValue, roughness, randomFactor, featureRoll } = tileData[y][x];
-      const cell = tiles[y][x];
-
-      if (baseTile !== 'grass') {
+        const isLake = landNeighbors >= 4 && elev > seaLevel - 0.05;
+        if (isFrozen) {
+          baseKey = 'FROZEN_OCEAN';
+        } else if (isLake) {
+          baseKey = 'LAKE';
+        } else if (elev < deepSeaLevel) {
+          baseKey = 'OCEAN_DEEP';
+        } else {
+          baseKey = 'OCEAN';
+        }
+        const resolved = resolveTileName(baseKey, suffix);
+        tiles[y][x] = { base: resolved, overlay: null };
         continue;
       }
 
-      if (structureCounts.village < structureTargets.village && featureRoll > 0.975) {
-        cell.overlay = 'village';
-        structureCounts.village += 1;
-        continue;
-      }
-
-      if (structureCounts.monistary < structureTargets.monistary && featureRoll < 0.015 && heightValue > 0.48) {
-        cell.overlay = 'monistary';
-        structureCounts.monistary += 1;
-        continue;
-      }
-
-      if (heightValue > 0.72 && moistureValue > 0.55) {
-        cell.overlay = 'cold climate trees';
-      } else if (moistureValue > 0.72) {
-        cell.overlay = roughness > 0.55 ? 'thick-trees' : 'trees';
-      } else if (moistureValue > 0.5 && randomFactor > 0.4) {
-        cell.overlay = 'trees';
-      } else if (moistureValue > 0.46 && roughness > 0.6) {
-        cell.overlay = 'trees';
+      if (elev < seaLevel + beachBand) {
+        baseKey = 'BEACH';
+      } else if (temp < 0.16 && elev > seaLevel + 0.1) {
+        baseKey = 'GLACIER';
+      } else if (temp < 0.28) {
+        baseKey = 'TUNDRA';
+      } else if (elev > mountainPeak) {
+        baseKey = 'ROCKY_HILLS';
+      } else if (elev > mountainSlope) {
+        baseKey = dry > 0.55 ? 'ROCKY_HILLS' : 'HILLS';
+      } else if (dry > 0.78) {
+        baseKey = 'SAND_DESERT';
+      } else if (dry > 0.64) {
+        baseKey = temp > 0.6 ? 'SAVANNA_TROP' : 'SAVANNA_TEMP';
+      } else if (rain > 0.78 && drain < 0.45) {
+        baseKey = temp > 0.6 ? 'SWAMP' : 'MARSH';
+      } else if (rain > 0.72) {
+        baseKey = 'SHRUBLAND';
+      } else if (dry > 0.58 && drain > 0.62) {
+        baseKey = 'ROCKY_PLAINS';
+      } else if (dry > 0.52) {
+        baseKey = 'BADLANDS';
       } else {
-        cell.overlay = null;
+        baseKey = temp > 0.6 ? 'GRASSLAND_TROP' : 'GRASSLAND_TEMP';
       }
+
+      const resolved = resolveTileName(baseKey, suffix);
+      tiles[y][x] = { base: resolved, overlay: null };
     }
   }
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const cell = tiles[y][x];
-      const { structureRoll } = tileData[y][x];
-
-      if (
-        (cell.overlay === 'mountain-1' || cell.overlay === 'mountain-2' || cell.overlay === 'mountain-3') &&
-        structureCounts.dwarfhold < structureTargets.dwarfhold &&
-        structureRoll > 0.94
-      ) {
-        cell.overlay = 'dwarfhold';
-        structureCounts.dwarfhold += 1;
+      const riverTile = resolveRiverTile(riverMap, width, height, x, y);
+      if (riverTile && tileLookup.has(riverTile)) {
+        tiles[y][x].overlay = riverTile;
       }
     }
   }
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const cell = tiles[y][x];
-
-      if (!tileLookup.has(cell.base)) {
-        cell.base = baseTiles[y][x] === 'stone' ? 'stone' : 'water';
-      }
-
-      if (cell.overlay && !tileLookup.has(cell.overlay)) {
-        cell.overlay = null;
-      }
-    }
-  }
-
-  return { tiles, seedString: seedString || generateSeedString(seedNumber) };
+  const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
+  return { tiles, seedString: finalSeed };
 }
 
 function generateSeedString(seedNumber) {
@@ -835,13 +1213,20 @@ function drawWorld(world) {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const cell = tiles[y][x];
-      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('water');
+      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('OCEAN');
+      if (!baseDefinition) {
+        continue;
+      }
+      const baseSheet = state.tileSheets[baseDefinition.sheet];
+      if (!baseSheet || !baseSheet.image) {
+        continue;
+      }
       ctx.drawImage(
-        state.tileSheet,
+        baseSheet.image,
         baseDefinition.sx,
         baseDefinition.sy,
-        tileSize,
-        tileSize,
+        baseDefinition.size,
+        baseDefinition.size,
         x * drawSize,
         y * drawSize,
         drawSize,
@@ -850,19 +1235,24 @@ function drawWorld(world) {
 
       if (cell.overlay) {
         const overlayDefinition = tileLookup.get(cell.overlay);
-        if (overlayDefinition) {
-          ctx.drawImage(
-            state.tileSheet,
-            overlayDefinition.sx,
-            overlayDefinition.sy,
-            tileSize,
-            tileSize,
-            x * drawSize,
-            y * drawSize,
-            drawSize,
-            drawSize
-          );
+        if (!overlayDefinition) {
+          continue;
         }
+        const overlaySheet = state.tileSheets[overlayDefinition.sheet];
+        if (!overlaySheet || !overlaySheet.image) {
+          continue;
+        }
+        ctx.drawImage(
+          overlaySheet.image,
+          overlayDefinition.sx,
+          overlayDefinition.sy,
+          overlayDefinition.size,
+          overlayDefinition.size,
+          x * drawSize,
+          y * drawSize,
+          drawSize,
+          drawSize
+        );
       }
     }
   }
