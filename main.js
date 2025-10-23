@@ -38,7 +38,8 @@ const dwarfSpriteSheets = {
 
 const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
-  WATER: { row: 1, col: 4 }
+  WATER: { row: 1, col: 4 },
+  MOUNTAIN: { row: 0, col: 3 }
 };
 
 const tileLookup = new Map();
@@ -2450,15 +2451,51 @@ function createWorld(seedString) {
   const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
   const tiles = Array.from({ length: height }, () => Array.from({ length: width }, () => ({ base: 'GRASS', overlay: null })));
   const waterMask = new Uint8Array(width * height);
+  const hasMountainTile = tileLookup.has('MOUNTAIN');
+  const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
+  let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.2, 0.62), 0.85) : 1;
+  let mountainFullThreshold = hasMountainTile ? Math.min(0.97, mountainBaseThreshold + 0.25) : 1;
+  let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
+  const cardinalOffsets = [
+    [0, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 0]
+  ];
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
-      const isWater = elevationField[idx] <= seaLevel;
+      const heightValue = elevationField[idx];
+      const isWater = heightValue <= seaLevel;
       waterMask[idx] = isWater ? 1 : 0;
+      let overlay = null;
+      if (!isWater && mountainOverlayKey) {
+        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
+        if (normalizedHeight > 0) {
+          const probability = normalizedHeight * 0.55 + normalizedHeight * normalizedHeight * 0.45;
+          if (normalizedHeight > 0.85 || rng() < probability) {
+            let coastalNeighbors = 0;
+            for (let i = 0; i < cardinalOffsets.length; i += 1) {
+              const nx = x + cardinalOffsets[i][0];
+              const ny = y + cardinalOffsets[i][1];
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              const neighborIdx = ny * width + nx;
+              if (elevationField[neighborIdx] <= seaLevel) {
+                coastalNeighbors += 1;
+              }
+            }
+            if (coastalNeighbors < 2) {
+              overlay = mountainOverlayKey;
+            }
+          }
+        }
+      }
       tiles[y][x] = {
         base: resolveTileName(isWater ? 'WATER' : 'GRASS'),
-        overlay: null
+        overlay
       };
     }
   }
