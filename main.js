@@ -494,6 +494,16 @@ function createWorld(seedString) {
     }
   }
 
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const tileKey = tiles[y][x];
+
+      if (!tileLookup.has(tileKey)) {
+        tiles[y][x] = baseTiles[y][x] === 'stone' ? 'stone' : 'water';
+      }
+    }
+  }
+
   return { tiles, seedString: seedString || generateSeedString(seedNumber) };
 }
 
@@ -520,7 +530,7 @@ function drawWorld(world) {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const tileKey = tiles[y][x];
-      const definition = tileLookup.get(tileKey) || tileLookup.get('grass');
+      const definition = tileLookup.get(tileKey) || tileLookup.get('water');
       ctx.drawImage(
         state.tileSheet,
         definition.sx,
