@@ -1,0 +1,53 @@
+*** STARTING NEW GAME ***
+*** STARTING NEW GAME ***
+*** STARTING NEW GAME ***
+Generating world using parameter set CREATE WORLD NOW = 4333335
+ Seed: V5mwzrVUMKBUCvL1SRnH
+ History Seed: i18Qu8LWdqEWMtBgRZpb
+ Name Seed: y8nhXGaufRkvePYx4xPl
+ Creature Seed: C5xkAZctc0kIrv1Z9bKN
+** Starting New Outpost **
+Generating world using parameter set CREATE WORLD NOW = 4333335
+ Seed: HRYRA7XYexWJBwA54apG
+ History Seed: 9mFLeCJoS9Mp2Z3dVNGd
+ Name Seed: KpHwvCnnxBIDvrlXMIS5
+ Creature Seed: lyNfAOGchieobgXqbDBI
+** Starting New Outpost **
+*** STARTING NEW GAME ***
+Generating world using parameter set CREATE WORLD NOW = 4333335
+ Seed: Hy9WhBAN0ACIqv5jLAiL
+ History Seed: idWNNAj94uTf8xuBEl1B
+ Name Seed: oY6NnlTAwb0W9gO3SpIi
+ Creature Seed: I2N07It1JadnKzYzEYHr
+** Starting New Outpost **
+*** STARTING NEW GAME ***
+** Loading Fortress **
+*** STARTING NEW GAME ***
+** Loading Fortress **
+*** STARTING NEW GAME ***
+** Loading Fortress **
+*** STARTING NEW GAME ***
+** Starting New Outpost **
+*** STARTING NEW GAME ***
+** Starting New Outpost **
+*** STARTING NEW GAME ***
+** Starting New Outpost **
+*** STARTING NEW GAME ***
+Generating world using parameter set CREATE WORLD NOW = 4333335
+ Seed: JnmPhImP9BPf9IyuLyOa
+ History Seed: GGs5VT1nyxqypl2Q00wK
+ Name Seed: RfdiL2r1PauqCPXfNWty
+ Creature Seed: Bw1IVHH53LzSf4arINft
+** Starting New Outpost **
+*** STARTING NEW GAME ***
+** Loading Fortress **
+** Loading Fortress **
+** Loading Fortress **
+*** STARTING NEW GAME ***
+** Loading Fortress **
+*** STARTING NEW GAME ***
+Generating world using parameter set CREATE WORLD NOW = 4333335
+ Seed: K9ShIT9MWl2UOmRuv96J
+ History Seed: aE8BlhbL7MCg1wrzoiqg
+ Name Seed: qXdmynLSVYlMTahWBOLt
+ Creature Seed: KozQSwMzxSFwxQoR3i3g
