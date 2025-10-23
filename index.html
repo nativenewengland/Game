@@ -56,7 +56,40 @@
             <dt>Seed</dt>
             <dd id="world-info-seed">—</dd>
           </div>
+          <div>
+            <dt>Chronology</dt>
+            <dd id="world-info-chronology">—</dd>
+          </div>
         </dl>
+        <div class="world-chronology-inputs">
+          <label for="world-year-input">
+            Year
+            <input
+              type="number"
+              id="world-year-input"
+              name="worldYear"
+              min="1"
+              max="50000"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+            />
+          </label>
+          <label for="world-age-input">
+            Age
+            <input
+              type="number"
+              id="world-age-input"
+              name="worldAge"
+              min="1"
+              max="30"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+            />
+          </label>
+          <button type="button" id="world-chronology-random" class="secondary">Randomise</button>
+        </div>
         <label for="world-name-input">World name</label>
         <div class="world-name-input">
           <input type="text" id="world-name-input" name="worldName" maxlength="60" autocomplete="off" required />
