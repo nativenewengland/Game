@@ -41,6 +41,34 @@
       </form>
     </section>
 
+    <section id="world-info" class="modal hidden" aria-label="World information">
+      <form id="world-info-form">
+        <h2>Embark Preparation</h2>
+        <p class="modal-description">
+          Review the details of the realm you are about to shape. You can rename the world before embarking.
+        </p>
+        <dl class="world-stats" aria-live="polite">
+          <div>
+            <dt>Map size</dt>
+            <dd id="world-info-size">—</dd>
+          </div>
+          <div>
+            <dt>Seed</dt>
+            <dd id="world-info-seed">—</dd>
+          </div>
+        </dl>
+        <label for="world-name-input">World name</label>
+        <div class="world-name-input">
+          <input type="text" id="world-name-input" name="worldName" maxlength="60" autocomplete="off" required />
+          <button type="button" id="world-name-random" class="secondary">Randomise</button>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" id="world-info-cancel" class="secondary">Back</button>
+          <button type="submit" class="primary">Embark</button>
+        </div>
+      </form>
+    </section>
+
     <div id="game-container" class="screen hidden">
       <header class="game-ui">
         <div class="controls">
