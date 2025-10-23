@@ -33,6 +33,12 @@ const dwarfSpriteSheets = {
     path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_hair_straight.png',
     tileSize: 32,
     image: null
+  },
+  hairCurly: {
+    key: 'hairCurly',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_hair_curly.png',
+    tileSize: 32,
+    image: null
   }
 };
 
@@ -316,6 +322,46 @@ const state = {
 };
 
 const defaultDwarfCount = 1;
+const defaultHairStyleValue = 'straight_shoulder';
+
+const dwarfHairStyles = {
+  straight_shoulder: {
+    label: 'Straight — Shoulder Length',
+    description: 'shoulder-length straight',
+    sheet: 'hair',
+    rows: { default: 5 }
+  },
+  straight_short: {
+    label: 'Straight — Short Crop',
+    description: 'short straight',
+    sheet: 'hair',
+    rows: { default: 4 }
+  },
+  straight_braided: {
+    label: 'Straight — Braided Tail',
+    description: 'braided straight',
+    sheet: 'hair',
+    rows: { default: 8 }
+  },
+  curly_short: {
+    label: 'Curly — Close Curls',
+    description: 'close-cropped curly',
+    sheet: 'hairCurly',
+    rows: { default: 4 }
+  },
+  curly_full: {
+    label: 'Curly — Full Curls',
+    description: 'full curly',
+    sheet: 'hairCurly',
+    rows: { default: 5 }
+  },
+  curly_wild: {
+    label: 'Curly — Wild Mane',
+    description: 'wild curly',
+    sheet: 'hairCurly',
+    rows: { default: 6 }
+  }
+};
 
 const dwarfOptions = {
   gender: [
@@ -340,6 +386,10 @@ const dwarfOptions = {
     { value: 'steel', label: 'Steel Grey', color: '#8d9aa7' },
     { value: 'violet', label: 'Violet', color: '#8d6bb0' }
   ],
+  hairStyle: Object.entries(dwarfHairStyles).map(([value, config]) => ({
+    value,
+    label: config.label
+  })),
   hair: [
     { value: 'obsidian', label: 'Obsidian Black', color: '#141015' },
     { value: 'umber', label: 'Rich Umber', color: '#3f2416' },
@@ -358,6 +408,8 @@ const dwarfOptions = {
     { value: 'mutton', label: 'Mutton Chops' }
   ]
 };
+
+const editableDwarfTraits = new Set(['gender', 'skin', 'eyes', 'hairStyle', 'hair', 'beard']);
 
 const dwarfNamePools = {
   female: [
@@ -422,12 +474,19 @@ const dwarfHairColorToFrame = {
   white: { column: 1 }
 };
 
-const dwarfHairStyleRows = {
-  male: 4,
-  female: 5,
-  nonbinary: 5,
-  default: 4
-};
+function resolveHairStyleValue(value) {
+  return value && dwarfHairStyles[value] ? value : defaultHairStyleValue;
+}
+
+function getHairStyleConfig(value) {
+  const key = resolveHairStyleValue(value);
+  return dwarfHairStyles[key];
+}
+
+function getHairStyleDescription(value) {
+  const config = getHairStyleConfig(value);
+  return config?.description || getOptionLabel('hairStyle', value);
+}
 
 const dwarfBeardRows = {
   clean: null,
@@ -525,6 +584,7 @@ const elements = {
   dwarfGenderSelect: document.getElementById('dwarf-gender-select'),
   dwarfSkinSelect: document.getElementById('dwarf-skin-select'),
   dwarfEyeSelect: document.getElementById('dwarf-eye-select'),
+  dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
   dwarfHairSelect: document.getElementById('dwarf-hair-select'),
   dwarfBeardSelect: document.getElementById('dwarf-beard-select'),
   dwarfRandomise: document.getElementById('dwarf-randomise'),
@@ -732,6 +792,7 @@ function createRandomDwarf(preferredGender) {
   const genderValue = genderOption ? genderOption.value : dwarfOptions.gender[0].value;
   const skinOption = randomChoice(dwarfOptions.skin) || dwarfOptions.skin[0];
   const eyeOption = randomChoice(dwarfOptions.eyes) || dwarfOptions.eyes[0];
+  const hairStyleOption = randomChoice(dwarfOptions.hairStyle) || dwarfOptions.hairStyle[0];
   const hairOption = randomChoice(dwarfOptions.hair) || dwarfOptions.hair[0];
   const beardOption = randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
 
@@ -740,6 +801,7 @@ function createRandomDwarf(preferredGender) {
     gender: genderValue,
     skin: skinOption.value,
     eyes: eyeOption.value,
+    hairStyle: resolveHairStyleValue(hairStyleOption.value),
     hair: hairOption.value,
     beard: beardOption.value
   };
@@ -828,19 +890,21 @@ function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
   ctx.drawImage(offscreen, 0, 0, sw, sh, destX, destY, destW, destH);
 }
 
-function getHairFrame(dwarf, hairOption) {
-  const genderKey = dwarfHairStyleRows[dwarf.gender] !== undefined ? dwarf.gender : 'default';
-  const row = dwarfHairStyleRows[genderKey] ?? dwarfHairStyleRows.default;
+function getHairFrame(dwarf, hairOption, hairStyleValue) {
+  const styleConfig = getHairStyleConfig(hairStyleValue ?? dwarf?.hairStyle);
+  const rows = styleConfig?.rows || {};
+  const genderRow = rows[dwarf?.gender];
+  const row = typeof genderRow === 'number' ? genderRow : rows.default;
   const mapping = dwarfHairColorToFrame[hairOption?.value] || dwarfHairColorToFrame.obsidian;
   if (typeof row !== 'number' || !mapping || typeof mapping.column !== 'number') {
     return null;
   }
   return {
-    sheet: 'hair',
+    sheet: styleConfig?.sheet || 'hair',
     col: mapping.column,
     row,
     tint: mapping.tint || null,
-    offsetY: dwarfPortraitConfig.hairOffsetY
+    offsetY: styleConfig?.offsetY ?? dwarfPortraitConfig.hairOffsetY
   };
 }
 
@@ -862,7 +926,7 @@ function getBeardFrame(beardValue, hairOption) {
   };
 }
 
-function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption) {
+function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption) {
   const ctx = ensurePortraitContext();
   if (!ctx) {
     return;
@@ -887,7 +951,8 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption) {
     drawTintedSprite(ctx, headFrame.sheet, headFrame, baseX, baseY, scale, skinColor);
   }
 
-  const hairFrame = getHairFrame(dwarf, hairOption);
+  const hairStyleValue = resolveHairStyleValue(hairStyleOption?.value ?? dwarf?.hairStyle);
+  const hairFrame = getHairFrame(dwarf, hairOption, hairStyleValue);
   if (hairFrame) {
     drawTintedSprite(ctx, hairFrame.sheet, hairFrame, baseX, baseY, scale, hairFrame.tint);
   }
@@ -922,16 +987,21 @@ function updateDwarfPortrait(dwarf) {
   const skinOption = getOptionByValue('skin', dwarf.skin);
   const hairOption = getOptionByValue('hair', dwarf.hair);
   const eyeOption = getOptionByValue('eyes', dwarf.eyes);
+  const hairStyleOption = getOptionByValue('hairStyle', dwarf.hairStyle);
 
-  renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption);
+  renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption);
 
   const beardValue = dwarf.beard || 'clean';
   const genderLabel = getOptionLabel('gender', dwarf.gender);
   const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
   const hairLabel = getOptionLabel('hair', dwarf.hair).toLowerCase();
+  const hairStyleDescription = getHairStyleDescription(dwarf.hairStyle).toLowerCase();
+  const hairPhrase = hairStyleDescription
+    ? `${hairStyleDescription} ${hairLabel} hair`
+    : `${hairLabel} hair`;
   const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
   const beardLabel = getOptionLabel('beard', beardValue).toLowerCase();
-  const ariaDescription = `${genderLabel} dwarf with ${skinLabel} skin, ${hairLabel} hair, ${eyeLabel} eyes, and ${beardLabel}.`;
+  const ariaDescription = `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
   const displayName = getDwarfDisplayName(dwarf);
   elements.dwarfPortrait.setAttribute('aria-label', `${displayName}: ${ariaDescription}`);
 }
@@ -944,8 +1014,12 @@ function buildDwarfSummary(dwarf) {
   const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
   const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
   const hairLabel = getOptionLabel('hair', dwarf.hair).toLowerCase();
+  const hairStyleDescription = getHairStyleDescription(dwarf.hairStyle).toLowerCase();
+  const hairPhrase = hairStyleDescription
+    ? `${hairStyleDescription} ${hairLabel} hair`
+    : `${hairLabel} hair`;
   const beardLabel = getOptionLabel('beard', dwarf.beard).toLowerCase();
-  return `${genderLabel} dwarf with ${skinLabel} skin, ${hairLabel} hair, ${eyeLabel} eyes, and ${beardLabel}.`;
+  return `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
 }
 
 function getDwarfDisplayName(dwarf) {
@@ -986,9 +1060,10 @@ function updateRosterList() {
     const traits = document.createElement('p');
     traits.className = 'dwarf-roster-traits';
     const genderLabel = getOptionLabel('gender', dwarf.gender);
+    const hairStyleLabel = getOptionLabel('hairStyle', dwarf.hairStyle);
     const hairLabel = getOptionLabel('hair', dwarf.hair);
     const beardLabel = getOptionLabel('beard', dwarf.beard);
-    traits.textContent = `${genderLabel} • ${hairLabel} • ${beardLabel}`;
+    traits.textContent = `${genderLabel} • ${hairStyleLabel} • ${hairLabel} • ${beardLabel}`;
 
     item.appendChild(name);
     item.appendChild(traits);
@@ -1050,6 +1125,11 @@ function updateCustomizerUI() {
     dwarfOptions.eyes[0].value
   );
   ensureSelectValue(
+    elements.dwarfHairStyleSelect,
+    resolveHairStyleValue(dwarf.hairStyle),
+    defaultHairStyleValue
+  );
+  ensureSelectValue(
     elements.dwarfHairSelect,
     dwarf.hair,
     dwarfOptions.hair[0].value
@@ -1094,8 +1174,8 @@ function updateDwarfTrait(trait, value) {
     updateRosterList();
     return;
   }
-  if (trait in dwarf) {
-    dwarf[trait] = value;
+  if (editableDwarfTraits.has(trait)) {
+    dwarf[trait] = trait === 'hairStyle' ? resolveHairStyleValue(value) : value;
   }
   updateCustomizerUI();
 }
@@ -2680,6 +2760,12 @@ function attachEvents() {
   if (elements.dwarfEyeSelect) {
     elements.dwarfEyeSelect.addEventListener('change', (event) => {
       updateDwarfTrait('eyes', event.target.value);
+    });
+  }
+
+  if (elements.dwarfHairStyleSelect) {
+    elements.dwarfHairStyleSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('hairStyle', event.target.value);
     });
   }
 
