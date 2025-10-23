@@ -38,7 +38,7 @@ const dwarfSpriteSheets = {
 
 const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
-  TREE: { row: 0, col: 2 },
+  TREE: { row: 2, col: 1 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 }
 };
