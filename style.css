@@ -349,19 +349,259 @@ button:hover:not(:disabled) {
   display: block;
 }
 
-.portrait-column button {
-  align-self: stretch;
+.customizer-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: stretch;
 }
 
-.customizer-fields {
+.roster-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(12, 15, 26, 0.78);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.roster-column h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(240, 198, 116, 0.85);
+}
+
+.dwarf-roster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dwarf-roster-list li {
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(18, 22, 36, 0.65);
+  border: 1px solid transparent;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem 1.25rem;
+  gap: 0.35rem;
+  transition: border-color 120ms ease, transform 120ms ease;
+  cursor: pointer;
+}
+
+.dwarf-roster-list li.active {
+  border-color: rgba(240, 198, 116, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 0.75rem 1.8rem rgba(0, 0, 0, 0.35);
+}
+
+.dwarf-roster-list li:focus-visible {
+  outline: 2px solid rgba(240, 198, 116, 0.75);
+  outline-offset: 3px;
+}
+
+.dwarf-roster-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.dwarf-roster-traits {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.roster-actions {
+  margin-top: auto;
+}
+
+.customizer-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
   background: rgba(12, 15, 26, 0.78);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: clamp(1.5rem, 3vw, 2.25rem);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.customizer-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.customizer-top-bar button {
+  padding: 0.75rem 1.2rem;
+}
+
+.dwarf-slot-info {
+  flex: 1;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.slot-label {
+  margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.field-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dwarf-name-input,
+.field-control {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 8, 12, 0.6);
+  color: inherit;
+  font-size: 1rem;
+}
+
+.field-control:focus,
+.dwarf-name-input:focus {
+  outline: 2px solid rgba(240, 198, 116, 0.55);
+  outline-offset: 2px;
+}
+
+.customizer-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dwarf-portrait {
+  --skin-color: #c59b7d;
+  --hair-color: #4a2b1b;
+  --eye-color: #604a2b;
+  position: relative;
+  width: clamp(200px, 30vw, 260px);
+  aspect-ratio: 3 / 4;
+  border-radius: 24px;
+  background: linear-gradient(155deg, rgba(12, 16, 24, 0.95), rgba(16, 22, 34, 0.78));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1.4rem 3.2rem rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.dwarf-hair {
+  position: absolute;
+  top: 18%;
+  width: 72%;
+  height: 32%;
+  background: var(--hair-color);
+  border-radius: 60% 60% 40% 40%;
+  filter: drop-shadow(0 0.4rem 0.6rem rgba(0, 0, 0, 0.3));
+}
+
+.dwarf-face {
+  position: relative;
+  width: 62%;
+  height: 52%;
+  border-radius: 48% 48% 52% 52%;
+  background: var(--skin-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: inset 0 -0.25rem 0.5rem rgba(0, 0, 0, 0.35), 0 0.5rem 1rem rgba(0, 0, 0, 0.35);
+  z-index: 1;
+}
+
+.dwarf-eyes {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.dwarf-eye {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--eye-color);
+  box-shadow: inset 0 0 0.35rem rgba(255, 255, 255, 0.4);
+}
+
+.dwarf-nose {
+  width: 1.1rem;
+  height: 1.2rem;
+  border-radius: 50% 50% 55% 55%;
+  background: rgba(0, 0, 0, 0.15);
+  opacity: 0.45;
+}
+
+.dwarf-mouth {
+  width: 2.6rem;
+  height: 0.55rem;
+  border-radius: 0 0 60% 60%;
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 0.55;
+}
+
+.dwarf-beard {
+  position: absolute;
+  bottom: 16%;
+  width: 78%;
+  height: 34%;
+  background: var(--hair-color);
+  border-radius: 50% 50% 46% 46%;
+  box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.45);
+  z-index: 0;
+  transition: clip-path 150ms ease, height 150ms ease, opacity 150ms ease;
+}
+
+.dwarf-portrait[data-beard='clean'] .dwarf-beard {
+  opacity: 0;
+  height: 12%;
+}
+
+.dwarf-portrait[data-beard='short'] .dwarf-beard {
+  height: 26%;
+}
+
+.dwarf-portrait[data-beard='full'] .dwarf-beard {
+  height: 40%;
+}
+
+.dwarf-portrait[data-beard='braided'] .dwarf-beard {
+  height: 46%;
+  background: repeating-linear-gradient(
+      135deg,
+      var(--hair-color),
+      var(--hair-color) 10px,
+      rgba(0, 0, 0, 0.25) 10px,
+      rgba(0, 0, 0, 0.25) 14px
+    );
+}
+
+.dwarf-portrait[data-beard='forked'] .dwarf-beard {
+  clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 50% 80%, 10% 100%);
+  height: 44%;
+}
+
+.dwarf-portrait[data-beard='mutton'] .dwarf-beard {
+  clip-path: polygon(0% 10%, 30% 0%, 40% 45%, 60% 45%, 70% 0%, 100% 10%, 100% 100%, 0% 100%);
+  height: 34%;
 }
 
 .trait-summary {
@@ -371,20 +611,46 @@ button:hover:not(:disabled) {
   color: rgba(255, 255, 255, 0.75);
 }
 
+.customizer-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.customizer-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.customizer-inline-actions button {
+  padding-inline: 1.5rem;
+}
+
 .customizer-actions {
   justify-content: space-between;
 }
 
 @media (max-width: 1024px) {
-  .solo-customizer {
+  .customizer-layout {
     grid-template-columns: 1fr;
   }
 
-  .portrait-column {
-    order: -1;
+  .roster-column {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .roster-column h3 {
+    flex-basis: 100%;
+  }
+
+  .dwarf-roster-list {
+    flex: 1 1 100%;
+    max-height: 200px;
+    overflow-y: auto;
   }
 }
-
 
 .world-name-input input {
   flex: 1;
