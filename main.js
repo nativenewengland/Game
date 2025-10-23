@@ -1822,6 +1822,133 @@ function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.
   return sum / maxAmplitude;
 }
 
+function generateContinentSeeds(rng) {
+  const seeds = [];
+  const desired = 2 + Math.floor(rng() * 3);
+  const maxAttempts = desired * 30;
+  const minDistance = 0.23;
+
+  for (let attempt = 0; attempt < maxAttempts && seeds.length < desired; attempt += 1) {
+    const candidate = {
+      x: rng() * 0.7 + 0.15,
+      y: rng() * 0.7 + 0.15,
+      radius: 0.22 + rng() * 0.2,
+      falloff: 1.2 + rng() * 1.1,
+      strength: 0.65 + rng() * 0.35,
+      warpStrength: 0.06 + rng() * 0.06,
+      detailStrength: 0.15 + rng() * 0.1,
+      warpOffsetX: rng() * 8,
+      warpOffsetY: rng() * 8,
+      detailOffset: rng() * 8
+    };
+
+    const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
+    if (edgeDistance < 0.08) {
+      continue;
+    }
+
+    let tooClose = false;
+    for (let i = 0; i < seeds.length; i += 1) {
+      const existing = seeds[i];
+      const separation = Math.hypot(candidate.x - existing.x, candidate.y - existing.y);
+      const spacing = Math.max(minDistance, (candidate.radius + existing.radius) * 0.35);
+      if (separation < spacing) {
+        tooClose = true;
+        break;
+      }
+    }
+
+    if (tooClose) {
+      continue;
+    }
+
+    seeds.push(candidate);
+  }
+
+  if (seeds.length === 0) {
+    seeds.push({
+      x: 0.5,
+      y: 0.5,
+      radius: 0.35,
+      falloff: 1.6,
+      strength: 0.9,
+      warpStrength: 0.08,
+      detailStrength: 0.18,
+      warpOffsetX: rng() * 8,
+      warpOffsetY: rng() * 8,
+      detailOffset: rng() * 8
+    });
+  }
+
+  const islandCount = rng() < 0.7 ? 1 + Math.floor(rng() * 3) : 0;
+  for (let i = 0; i < islandCount; i += 1) {
+    seeds.push({
+      x: clamp(rng() * 0.9, 0.05, 0.95),
+      y: clamp(rng() * 0.9, 0.05, 0.95),
+      radius: 0.08 + rng() * 0.12,
+      falloff: 1.5 + rng() * 1.2,
+      strength: 0.35 + rng() * 0.25,
+      warpStrength: 0.05 + rng() * 0.05,
+      detailStrength: 0.25 + rng() * 0.1,
+      warpOffsetX: rng() * 8,
+      warpOffsetY: rng() * 8,
+      detailOffset: rng() * 8
+    });
+  }
+
+  return seeds;
+}
+
+function computeContinentInfluence(normalizedX, normalizedY, seeds, warpSeed, detailSeed) {
+  if (!seeds || seeds.length === 0) {
+    return 0;
+  }
+
+  let maxValue = 0;
+  for (let i = 0; i < seeds.length; i += 1) {
+    const seed = seeds[i];
+    const warpNoiseX = octaveNoise(
+      (normalizedX + seed.warpOffsetX) * 1.3,
+      (normalizedY + seed.warpOffsetX) * 1.3,
+      warpSeed + i * 97,
+      3,
+      0.58,
+      2.2
+    );
+    const warpNoiseY = octaveNoise(
+      (normalizedX - seed.warpOffsetY) * 1.3,
+      (normalizedY + seed.warpOffsetY) * 1.3,
+      warpSeed + i * 131,
+      3,
+      0.58,
+      2.2
+    );
+
+    const warpedX = normalizedX + (warpNoiseX - 0.5) * seed.warpStrength;
+    const warpedY = normalizedY + (warpNoiseY - 0.5) * seed.warpStrength;
+
+    const dx = warpedX - seed.x;
+    const dy = warpedY - seed.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    const radiusNoise = octaveNoise(
+      (normalizedX + seed.detailOffset) * 2.4,
+      (normalizedY - seed.detailOffset) * 2.4,
+      detailSeed + i * 151,
+      3,
+      0.5,
+      2.4
+    );
+    const radius = seed.radius * (1 + (radiusNoise - 0.5) * seed.detailStrength);
+    const falloff = Math.pow(clamp(1 - distance / Math.max(radius, 0.01), 0, 1), seed.falloff);
+    maxValue = Math.max(maxValue, falloff * seed.strength);
+  }
+
+  const edgeDistance = Math.min(normalizedX, 1 - normalizedX, normalizedY, 1 - normalizedY);
+  const edgeFade = clamp(edgeDistance / 0.22, 0, 1);
+  return clamp(maxValue * Math.pow(edgeFade, 0.6), 0, 1);
+}
+
 function normalizeField(field) {
   let minValue = Infinity;
   let maxValue = -Infinity;
@@ -2081,7 +2208,9 @@ function createWorld(seedString) {
     temperature: Math.floor(rng() * 0xffffffff),
     volcanism: Math.floor(rng() * 0xffffffff),
     evilness: Math.floor(rng() * 0xffffffff),
-    savagery: Math.floor(rng() * 0xffffffff)
+    savagery: Math.floor(rng() * 0xffffffff),
+    continentWarp: Math.floor(rng() * 0xffffffff),
+    continentDetail: Math.floor(rng() * 0xffffffff)
   };
 
   const elevation = new Float32Array(size);
@@ -2092,17 +2221,39 @@ function createWorld(seedString) {
   const evilness = new Float32Array(size);
   const savagery = new Float32Array(size);
 
+  const continents = generateContinentSeeds(rng);
+
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
       const sampleX = (x + offsetX) / width;
       const sampleY = (y + offsetY) / height;
       const landMaskValue = sampleLandMask((x + 0.5) / width, (y + 0.5) / height);
+      const normalizedX = (x + 0.5) / width;
+      const normalizedY = (y + 0.5) / height;
 
       const continental = octaveNoise(sampleX * 0.75, sampleY * 0.75, fieldSeeds.elevation, 5, 0.6, 1.95);
       const ridge = octaveNoise(sampleX * 2.6, sampleY * 2.6, fieldSeeds.elevation + 97, 4, 0.5, 2.35);
       const shelf = octaveNoise(sampleX * 0.22, sampleY * 0.22, fieldSeeds.elevation + 503, 3, 0.68, 1.7);
-      let heightValue = continental * 0.55 + ridge * 0.35 + shelf * 0.1;
+      const continentInfluence = computeContinentInfluence(
+        normalizedX,
+        normalizedY,
+        continents,
+        fieldSeeds.continentWarp,
+        fieldSeeds.continentDetail
+      );
+      const continentalDetail = octaveNoise(
+        sampleX * 1.4 + continentInfluence * 0.75,
+        sampleY * 1.4 - continentInfluence * 0.65,
+        fieldSeeds.continentDetail,
+        3,
+        0.55,
+        2.35
+      );
+      let heightValue = continental * 0.45 + ridge * 0.32 + shelf * 0.08 + continentInfluence * 0.15;
+      heightValue = lerp(heightValue, Math.pow(clamp(continentInfluence, 0, 1), 0.85), 0.62);
+      heightValue += (continentInfluence - 0.5) * 0.22;
+      heightValue += (continentalDetail - 0.5) * continentInfluence * 0.12;
 
       const radialX = x / width - 0.5;
       const radialY = y / height - 0.5;
@@ -2114,9 +2265,13 @@ function createWorld(seedString) {
         heightValue = lerp(heightValue, landMaskValue, 0.45) + (landMaskValue - 0.5) * 0.08;
       }
 
+      heightValue = clamp(heightValue, 0, 1);
+
       elevation[idx] = heightValue;
-      rainfall[idx] = octaveNoise(sampleX * 1.35, sampleY * 1.35, fieldSeeds.rainfall, 5, 0.58, 2.1);
-      drainage[idx] = octaveNoise(sampleX * 1.9, sampleY * 1.9, fieldSeeds.drainage, 4, 0.55, 2.35);
+      const baseRain = octaveNoise(sampleX * 1.35, sampleY * 1.35, fieldSeeds.rainfall, 5, 0.58, 2.1);
+      const baseDrainage = octaveNoise(sampleX * 1.9, sampleY * 1.9, fieldSeeds.drainage, 4, 0.55, 2.35);
+      rainfall[idx] = clamp(baseRain * 0.75 + continentInfluence * 0.25, 0, 1);
+      drainage[idx] = clamp(baseDrainage * 0.75 + (1 - continentInfluence) * 0.25, 0, 1);
       temperatureNoise[idx] = octaveNoise(sampleX * 0.95, sampleY * 0.95, fieldSeeds.temperature, 4, 0.6, 2.05);
       volcanism[idx] = octaveNoise(sampleX * 2.4, sampleY * 2.4, fieldSeeds.volcanism, 3, 0.48, 2.45);
       evilness[idx] = octaveNoise(sampleX * 1.1, sampleY * 1.1, fieldSeeds.evilness, 3, 0.6, 2.25);
