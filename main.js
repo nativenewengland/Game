@@ -149,6 +149,122 @@ function registerTiles(sheetKey, coordMap) {
 registerTiles('base', baseTileCoords);
 registerTiles('details', detailTileCoords);
 
+const worldNames = [
+  'Nûrn',
+  'Ardganor',
+  'Drakmor',
+  'Thaldur',
+  'Eldrakis',
+  'Karrûn',
+  'Tholmar',
+  'Torra',
+  'Albia',
+  'Tor',
+  'Lassel',
+  "Marrov'gar",
+  'Planetos',
+  'Ulthos',
+  'Grrth',
+  'Erin',
+  'Nûrnheim',
+  'Midkemia',
+  'Skarnheim',
+  'Shannara World',
+  'Alagaësia',
+  'Syf',
+  'Elysium',
+  'Lankhmar',
+  'Arcadia',
+  'Eberron',
+  'Crobuzon',
+  'Valdemar',
+  'Uresia',
+  'Tiassa',
+  'Tairnadal',
+  'Solara',
+  'Golarion',
+  'Aerth',
+  'Khand',
+  'Sanctuary',
+  'Thra',
+  'Acheron',
+  'Cosmere',
+  'Tékumel',
+  'Norrathal',
+  'Prydain',
+  'Kulthea',
+  'Bas-Lag',
+  'Eternia',
+  'Xanth',
+  'Abeir-Toril',
+  'Earthsea',
+  'Pern',
+  'Discworld',
+  'Hyboria',
+  'Avalon',
+  'Tyria',
+  'Rokugan',
+  'Glorantha',
+  'Ivalice',
+  'The World of the Five Gods',
+  'Narnia',
+  'Azeroth',
+  'Spira',
+  'Noxus',
+  'Volkran',
+  "Tal'Dorei",
+  'Exandria',
+  'Runeterra',
+  'Eorzea',
+  'Thraenor',
+  'Xadia',
+  'Roshar',
+  'Teldrassil',
+  'Draenor',
+  'Valisthea',
+  'Gensokyo',
+  'Temeria',
+  'Nilfgaard',
+  'Aedirn',
+  'Redania',
+  'Kaedwen',
+  'Toussaint',
+  'Rivellon',
+  'Lucis',
+  'Gransys',
+  'Drangleic',
+  'Lothric',
+  'Boletaria',
+  'Lordran',
+  'Caelid',
+  'Limgrave',
+  'Altus',
+  'Plateauonia',
+  'Iria',
+  'Theros',
+  'Dominaria',
+  'Zendikar',
+  'Innistrad',
+  'Ravnica',
+  'Kamigawa',
+  'Lorwyn',
+  'Tarkir',
+  'Ikoria',
+  'Strixhaven',
+  'Brazenforge',
+  'Solarae',
+  'Ethyra',
+  'Lunathor',
+  'Aethernis',
+  'Veydris',
+  'Nytherra',
+  'Astralis',
+  'Zephyra',
+  'Umbryss',
+  'Eclipthar',
+  'Skibiti Toliterium'
+];
+
 function resolveTileName(baseKey, suffix) {
   const preferred = suffix ? `${baseKey}${suffix}` : baseKey;
   if (tileLookup.has(preferred)) {
@@ -169,7 +285,8 @@ const state = {
   },
   tileSheets,
   landMask: null,
-  ready: false
+  ready: false,
+  worldName: ''
 };
 
 const musicTracks = [
@@ -216,7 +333,14 @@ const elements = {
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
   musicNowPlaying: document.getElementById('music-now-playing'),
-  audioElement: document.getElementById('background-music')
+  audioElement: document.getElementById('background-music'),
+  worldInfoModal: document.getElementById('world-info'),
+  worldInfoForm: document.getElementById('world-info-form'),
+  worldInfoSize: document.getElementById('world-info-size'),
+  worldInfoSeed: document.getElementById('world-info-seed'),
+  worldNameInput: document.getElementById('world-name-input'),
+  worldNameRandom: document.getElementById('world-name-random'),
+  worldInfoCancel: document.getElementById('world-info-cancel')
 };
 
 function createLandMask(image) {
@@ -353,6 +477,84 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function getRandomWorldName(excludeName) {
+  if (worldNames.length === 0) {
+    return 'Unnamed World';
+  }
+  if (!excludeName || worldNames.length === 1) {
+    return worldNames[Math.floor(Math.random() * worldNames.length)];
+  }
+  let name = worldNames[Math.floor(Math.random() * worldNames.length)];
+  while (name === excludeName) {
+    name = worldNames[Math.floor(Math.random() * worldNames.length)];
+  }
+  return name;
+}
+
+function ensureSeedString() {
+  const trimmed = (state.settings.seedString || '').trim();
+  if (trimmed) {
+    state.settings.seedString = trimmed;
+    return trimmed;
+  }
+  const generated = randomSeedString();
+  state.settings.seedString = generated;
+  return generated;
+}
+
+function openWorldInfoModal() {
+  if (
+    !elements.worldInfoModal ||
+    !elements.worldInfoSize ||
+    !elements.worldInfoSeed ||
+    !elements.worldNameInput
+  ) {
+    if (!state.worldName) {
+      state.worldName = getRandomWorldName();
+    }
+    beginGame();
+    ensureMusicStarted();
+    return;
+  }
+  const width = state.settings.width;
+  const height = state.settings.height;
+  elements.worldInfoSize.textContent = `${width} × ${height} tiles`;
+
+  const seed = ensureSeedString();
+  elements.worldInfoSeed.textContent = seed;
+  if (elements.seedInput) {
+    elements.seedInput.value = seed;
+  }
+
+  const currentName = (state.worldName || '').trim();
+  const nameToUse = currentName || getRandomWorldName();
+  state.worldName = nameToUse;
+  elements.worldNameInput.value = nameToUse;
+
+  elements.worldInfoModal.classList.remove('hidden');
+  const focusInput = () => {
+    if (!elements.worldNameInput) {
+      return;
+    }
+    elements.worldNameInput.focus();
+    elements.worldNameInput.select();
+  };
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(focusInput);
+  } else {
+    focusInput();
+  }
+}
+
+function closeWorldInfoModal(returnFocus = false) {
+  if (elements.worldInfoModal) {
+    elements.worldInfoModal.classList.add('hidden');
+  }
+  if (returnFocus && elements.startButton) {
+    elements.startButton.focus();
+  }
 }
 
 function estimateSeaLevels(elevationField, targetWaterRatio = 0.45) {
@@ -1272,10 +1474,12 @@ function drawWorld(world) {
 
   state.settings.lastSeedString = seedString;
   state.settings.seedString = seedString;
-  elements.seedDisplay.textContent = `Seed: ${seedString} | ${width}×${height}`;
+  const worldLabel = state.worldName ? `World: ${state.worldName} | ` : '';
+  elements.seedDisplay.textContent = `${worldLabel}Seed: ${seedString} | ${width}×${height}`;
 }
 
 function beginGame() {
+  closeWorldInfoModal();
   elements.titleScreen.classList.add('hidden');
   elements.gameContainer.classList.remove('hidden');
   elements.seedDisplay.textContent = '';
@@ -1328,19 +1532,51 @@ function attachEvents() {
     }
   });
 
-  elements.startButton.addEventListener('click', async () => {
+  elements.startButton.addEventListener('click', () => {
     if (!state.ready) {
       return;
     }
     toggleOptions(false);
-    beginGame();
-    ensureMusicStarted();
+    openWorldInfoModal();
   });
+
+  if (elements.worldInfoForm) {
+    elements.worldInfoForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const submittedName = elements.worldNameInput ? elements.worldNameInput.value.trim() : '';
+      state.worldName = submittedName || getRandomWorldName(state.worldName);
+      closeWorldInfoModal();
+      beginGame();
+      ensureMusicStarted();
+    });
+  }
+
+  if (elements.worldInfoCancel) {
+    elements.worldInfoCancel.addEventListener('click', () => {
+      closeWorldInfoModal(true);
+    });
+  }
+
+  if (elements.worldNameRandom) {
+    elements.worldNameRandom.addEventListener('click', () => {
+      const newName = getRandomWorldName(state.worldName);
+      state.worldName = newName;
+      if (elements.worldNameInput) {
+        elements.worldNameInput.value = newName;
+        elements.worldNameInput.focus();
+        elements.worldNameInput.select();
+      }
+    });
+  }
 
   elements.regenerate.addEventListener('click', handleRegenerate);
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
+      if (elements.worldInfoModal && !elements.worldInfoModal.classList.contains('hidden')) {
+        closeWorldInfoModal(true);
+        return;
+      }
       toggleOptions(false);
     }
   });
