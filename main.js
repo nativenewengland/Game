@@ -418,26 +418,27 @@ function createWorld(seedString) {
     tileData[y] = dataRow;
   }
 
-  const tiles = baseTiles.map((row) => row.slice());
+  const tiles = baseTiles.map((row) => row.map((base) => ({ base, overlay: null })));
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const baseTile = baseTiles[y][x];
       const { heightValue, moistureValue, roughness, randomFactor, featureRoll } = tileData[y][x];
+      const cell = tiles[y][x];
+      cell.base = baseTile;
+      cell.overlay = null;
 
       if (baseTile === 'stone') {
         if (featureRoll < 0.05) {
-          tiles[y][x] = 'cave';
+          cell.overlay = 'cave';
         } else if (heightValue > 0.93) {
-          tiles[y][x] = 'snow';
+          cell.overlay = 'snow';
         } else if (heightValue > 0.9) {
-          tiles[y][x] = 'mountain-3';
+          cell.overlay = 'mountain-3';
         } else if (heightValue > 0.86) {
-          tiles[y][x] = 'mountain-2';
+          cell.overlay = 'mountain-2';
         } else if (heightValue > 0.82 || (roughness > 0.62 && randomFactor > 0.55)) {
-          tiles[y][x] = 'mountain-1';
-        } else {
-          tiles[y][x] = 'stone';
+          cell.overlay = 'mountain-1';
         }
       }
     }
@@ -447,48 +448,49 @@ function createWorld(seedString) {
     for (let x = 0; x < width; x += 1) {
       const baseTile = baseTiles[y][x];
       const { heightValue, moistureValue, roughness, randomFactor, featureRoll } = tileData[y][x];
+      const cell = tiles[y][x];
 
       if (baseTile !== 'grass') {
         continue;
       }
 
       if (structureCounts.village < structureTargets.village && featureRoll > 0.975) {
-        tiles[y][x] = 'village';
+        cell.overlay = 'village';
         structureCounts.village += 1;
         continue;
       }
 
       if (structureCounts.monistary < structureTargets.monistary && featureRoll < 0.015 && heightValue > 0.48) {
-        tiles[y][x] = 'monistary';
+        cell.overlay = 'monistary';
         structureCounts.monistary += 1;
         continue;
       }
 
       if (heightValue > 0.72 && moistureValue > 0.55) {
-        tiles[y][x] = 'cold climate trees';
+        cell.overlay = 'cold climate trees';
       } else if (moistureValue > 0.72) {
-        tiles[y][x] = roughness > 0.55 ? 'thick-trees' : 'trees';
+        cell.overlay = roughness > 0.55 ? 'thick-trees' : 'trees';
       } else if (moistureValue > 0.5 && randomFactor > 0.4) {
-        tiles[y][x] = 'trees';
+        cell.overlay = 'trees';
       } else if (moistureValue > 0.46 && roughness > 0.6) {
-        tiles[y][x] = 'trees';
+        cell.overlay = 'trees';
       } else {
-        tiles[y][x] = 'grass';
+        cell.overlay = null;
       }
     }
   }
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const tileKey = tiles[y][x];
+      const cell = tiles[y][x];
       const { structureRoll } = tileData[y][x];
 
       if (
-        (tileKey === 'mountain-1' || tileKey === 'mountain-2' || tileKey === 'mountain-3') &&
+        (cell.overlay === 'mountain-1' || cell.overlay === 'mountain-2' || cell.overlay === 'mountain-3') &&
         structureCounts.dwarfhold < structureTargets.dwarfhold &&
         structureRoll > 0.94
       ) {
-        tiles[y][x] = 'dwarfhold';
+        cell.overlay = 'dwarfhold';
         structureCounts.dwarfhold += 1;
       }
     }
@@ -496,10 +498,14 @@ function createWorld(seedString) {
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const tileKey = tiles[y][x];
+      const cell = tiles[y][x];
 
-      if (!tileLookup.has(tileKey)) {
-        tiles[y][x] = baseTiles[y][x] === 'stone' ? 'stone' : 'water';
+      if (!tileLookup.has(cell.base)) {
+        cell.base = baseTiles[y][x] === 'stone' ? 'stone' : 'water';
+      }
+
+      if (cell.overlay && !tileLookup.has(cell.overlay)) {
+        cell.overlay = null;
       }
     }
   }
@@ -529,12 +535,12 @@ function drawWorld(world) {
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const tileKey = tiles[y][x];
-      const definition = tileLookup.get(tileKey) || tileLookup.get('water');
+      const cell = tiles[y][x];
+      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('water');
       ctx.drawImage(
         state.tileSheet,
-        definition.sx,
-        definition.sy,
+        baseDefinition.sx,
+        baseDefinition.sy,
         tileSize,
         tileSize,
         x * drawSize,
@@ -542,6 +548,23 @@ function drawWorld(world) {
         drawSize,
         drawSize
       );
+
+      if (cell.overlay) {
+        const overlayDefinition = tileLookup.get(cell.overlay);
+        if (overlayDefinition) {
+          ctx.drawImage(
+            state.tileSheet,
+            overlayDefinition.sx,
+            overlayDefinition.sy,
+            tileSize,
+            tileSize,
+            x * drawSize,
+            y * drawSize,
+            drawSize,
+            drawSize
+          );
+        }
+      }
     }
   }
 
