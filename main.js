@@ -305,17 +305,18 @@ function setupMapInteractions() {
       return;
     }
     event.preventDefault();
-    const { offsetX, offsetY } = event;
+    const rect = elements.canvasWrapper.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
     const zoomIntensity = 0.1;
     const direction = event.deltaY > 0 ? -1 : 1;
     const scaleFactor = 1 + zoomIntensity * direction;
     const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
-    const actualFactor = targetScale / viewState.scale;
-    const originX = offsetX - viewState.translateX;
-    const originY = offsetY - viewState.translateY;
-    viewState.translateX -= originX * (actualFactor - 1);
-    viewState.translateY -= originY * (actualFactor - 1);
+    const originX = (pointerX - viewState.translateX) / viewState.scale;
+    const originY = (pointerY - viewState.translateY) / viewState.scale;
     viewState.scale = targetScale;
+    viewState.translateX = pointerX - originX * viewState.scale;
+    viewState.translateY = pointerY - originY * viewState.scale;
     viewState.hasInteracted = true;
     applyViewTransform();
   };
