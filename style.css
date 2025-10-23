@@ -337,18 +337,6 @@ button:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
-.dwarf-portrait-canvas {
-  width: clamp(160px, 30vw, 220px);
-  aspect-ratio: 1 / 1;
-  border-radius: 16px;
-  background: radial-gradient(circle at 30% 25%, rgba(255, 246, 220, 0.08), transparent 55%),
-    rgba(6, 8, 12, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1.4rem 3.2rem rgba(0, 0, 0, 0.35);
-  image-rendering: pixelated;
-  display: block;
-}
-
 .customizer-layout {
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
@@ -488,9 +476,6 @@ button:hover:not(:disabled) {
 }
 
 .dwarf-portrait {
-  --skin-color: #c59b7d;
-  --hair-color: #4a2b1b;
-  --eye-color: #604a2b;
   position: relative;
   width: clamp(200px, 30vw, 260px);
   aspect-ratio: 3 / 4;
@@ -501,107 +486,24 @@ button:hover:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
-.dwarf-hair {
+.dwarf-portrait::after {
+  content: '';
   position: absolute;
-  top: 18%;
-  width: 72%;
-  height: 32%;
-  background: var(--hair-color);
-  border-radius: 60% 60% 40% 40%;
-  filter: drop-shadow(0 0.4rem 0.6rem rgba(0, 0, 0, 0.3));
+  inset: 12%;
+  border-radius: 18px;
+  background: radial-gradient(circle at 30% 25%, rgba(255, 246, 220, 0.08), transparent 60%);
+  pointer-events: none;
 }
 
-.dwarf-face {
-  position: relative;
-  width: 62%;
-  height: 52%;
-  border-radius: 48% 48% 52% 52%;
-  background: var(--skin-color);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  box-shadow: inset 0 -0.25rem 0.5rem rgba(0, 0, 0, 0.35), 0 0.5rem 1rem rgba(0, 0, 0, 0.35);
+.dwarf-portrait-canvas {
+  width: 88%;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0.6rem 1.4rem rgba(0, 0, 0, 0.45));
   z-index: 1;
-}
-
-.dwarf-eyes {
-  display: flex;
-  gap: 0.9rem;
-}
-
-.dwarf-eye {
-  width: 0.9rem;
-  height: 0.9rem;
-  border-radius: 50%;
-  background: var(--eye-color);
-  box-shadow: inset 0 0 0.35rem rgba(255, 255, 255, 0.4);
-}
-
-.dwarf-nose {
-  width: 1.1rem;
-  height: 1.2rem;
-  border-radius: 50% 50% 55% 55%;
-  background: rgba(0, 0, 0, 0.15);
-  opacity: 0.45;
-}
-
-.dwarf-mouth {
-  width: 2.6rem;
-  height: 0.55rem;
-  border-radius: 0 0 60% 60%;
-  background: rgba(0, 0, 0, 0.2);
-  opacity: 0.55;
-}
-
-.dwarf-beard {
-  position: absolute;
-  bottom: 16%;
-  width: 78%;
-  height: 34%;
-  background: var(--hair-color);
-  border-radius: 50% 50% 46% 46%;
-  box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.45);
-  z-index: 0;
-  transition: clip-path 150ms ease, height 150ms ease, opacity 150ms ease;
-}
-
-.dwarf-portrait[data-beard='clean'] .dwarf-beard {
-  opacity: 0;
-  height: 12%;
-}
-
-.dwarf-portrait[data-beard='short'] .dwarf-beard {
-  height: 26%;
-}
-
-.dwarf-portrait[data-beard='full'] .dwarf-beard {
-  height: 40%;
-}
-
-.dwarf-portrait[data-beard='braided'] .dwarf-beard {
-  height: 46%;
-  background: repeating-linear-gradient(
-      135deg,
-      var(--hair-color),
-      var(--hair-color) 10px,
-      rgba(0, 0, 0, 0.25) 10px,
-      rgba(0, 0, 0, 0.25) 14px
-    );
-}
-
-.dwarf-portrait[data-beard='forked'] .dwarf-beard {
-  clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 50% 80%, 10% 100%);
-  height: 44%;
-}
-
-.dwarf-portrait[data-beard='mutton'] .dwarf-beard {
-  clip-path: polygon(0% 10%, 30% 0%, 40% 45%, 60% 45%, 70% 0%, 100% 10%, 100% 100%, 0% 100%);
-  height: 34%;
 }
 
 .trait-summary {
