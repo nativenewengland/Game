@@ -118,6 +118,128 @@
       </form>
     </section>
 
+    <section
+      id="dwarf-customizer"
+      class="screen hidden embark-screen"
+      aria-label="Expedition party customiser"
+    >
+      <div class="embark-backdrop" aria-hidden="true"></div>
+      <form id="dwarf-customizer-form" class="embark-panel">
+        <header class="embark-header">
+          <p class="embark-eyebrow">Expedition Roster</p>
+          <h2>Design Your Founders</h2>
+          <p class="embark-description">
+            Tune the look of each dwarf before striking the earth.
+          </p>
+        </header>
+        <div class="customizer-layout">
+          <aside class="roster-column" aria-label="Party overview">
+            <h3>Expedition Party</h3>
+            <ul id="dwarf-roster-list" class="dwarf-roster-list" role="list"></ul>
+            <div class="roster-actions">
+              <button type="button" id="dwarf-randomise-all" class="secondary">
+                Randomise Entire Party
+              </button>
+            </div>
+          </aside>
+          <section class="customizer-main" aria-live="polite">
+            <div class="customizer-top-bar">
+              <button type="button" id="dwarf-prev" class="secondary" aria-label="Previous dwarf">
+                ◀
+              </button>
+              <div class="dwarf-slot-info">
+                <p id="dwarf-slot-label" class="slot-label">Dwarf 1 of 7</p>
+                <label class="field-label" for="dwarf-name-input">Name</label>
+                <input
+                  type="text"
+                  id="dwarf-name-input"
+                  class="dwarf-name-input"
+                  maxlength="40"
+                  autocomplete="off"
+                  required
+                />
+              </div>
+              <button type="button" id="dwarf-next" class="secondary" aria-label="Next dwarf">
+                ▶
+              </button>
+            </div>
+            <div class="customizer-preview" role="group" aria-label="Appearance preview">
+              <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
+                <div class="dwarf-hair"></div>
+                <div class="dwarf-face">
+                  <div class="dwarf-eyes">
+                    <span class="dwarf-eye left-eye"></span>
+                    <span class="dwarf-eye right-eye"></span>
+                  </div>
+                  <div class="dwarf-nose"></div>
+                  <div class="dwarf-mouth"></div>
+                </div>
+                <div class="dwarf-beard"></div>
+              </div>
+              <p id="dwarf-trait-summary" class="trait-summary"></p>
+            </div>
+            <div class="customizer-fields">
+              <label for="dwarf-gender-select" class="field-label">Gender</label>
+              <select id="dwarf-gender-select" class="field-control">
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="nonbinary">Non-binary</option>
+              </select>
+
+              <label for="dwarf-skin-select" class="field-label">Skin tone</label>
+              <select id="dwarf-skin-select" class="field-control">
+                <option value="umber">Deep Umber</option>
+                <option value="russet">Russet Bronze</option>
+                <option value="sienna">Burnt Sienna</option>
+                <option value="dawn">Dawn Rose</option>
+                <option value="pearl">Pale Pearl</option>
+                <option value="ashen">Ashen Slate</option>
+              </select>
+
+              <label for="dwarf-eye-select" class="field-label">Eye colour</label>
+              <select id="dwarf-eye-select" class="field-control">
+                <option value="amber">Amber</option>
+                <option value="hazel">Hazel</option>
+                <option value="emerald">Emerald</option>
+                <option value="ice">Ice Blue</option>
+                <option value="onyx">Onyx</option>
+                <option value="steel">Steel Grey</option>
+                <option value="violet">Violet</option>
+              </select>
+
+              <label for="dwarf-hair-select" class="field-label">Hair colour</label>
+              <select id="dwarf-hair-select" class="field-control">
+                <option value="obsidian">Obsidian Black</option>
+                <option value="umber">Rich Umber</option>
+                <option value="auburn">Deep Auburn</option>
+                <option value="copper">Copper Red</option>
+                <option value="golden">Golden Wheat</option>
+                <option value="ashen">Ashen Silver</option>
+                <option value="white">Snow White</option>
+              </select>
+
+              <label for="dwarf-beard-select" class="field-label">Beard style</label>
+              <select id="dwarf-beard-select" class="field-control">
+                <option value="clean">Clean-shaven</option>
+                <option value="short">Short Beard</option>
+                <option value="full">Full Beard</option>
+                <option value="braided">Braided Beard</option>
+                <option value="forked">Forked Beard</option>
+                <option value="mutton">Mutton Chops</option>
+              </select>
+            </div>
+            <div class="customizer-inline-actions">
+              <button type="button" id="dwarf-randomise" class="secondary">Randomise Dwarf</button>
+            </div>
+          </section>
+        </div>
+        <footer class="embark-actions customizer-actions">
+          <button type="button" id="dwarf-back" class="secondary">Back</button>
+          <button type="submit" class="primary">Begin Expedition</button>
+        </footer>
+      </form>
+    </section>
+
     <div id="game-container" class="screen hidden">
       <header class="game-ui">
         <div class="controls">

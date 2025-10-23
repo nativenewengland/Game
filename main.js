@@ -287,7 +287,108 @@ const state = {
   landMask: null,
   ready: false,
   worldName: '',
-  worldChronology: null
+  worldChronology: null,
+  dwarfParty: {
+    dwarves: [],
+    activeIndex: 0
+  }
+};
+
+const defaultDwarfCount = 7;
+
+const dwarfOptions = {
+  gender: [
+    { value: 'female', label: 'Female' },
+    { value: 'male', label: 'Male' },
+    { value: 'nonbinary', label: 'Non-binary' }
+  ],
+  skin: [
+    { value: 'umber', label: 'Deep Umber', color: '#4d3123' },
+    { value: 'russet', label: 'Russet Bronze', color: '#6b3a22' },
+    { value: 'sienna', label: 'Burnt Sienna', color: '#8a4b2a' },
+    { value: 'dawn', label: 'Dawn Rose', color: '#c68d7d' },
+    { value: 'pearl', label: 'Pale Pearl', color: '#dfc4b3' },
+    { value: 'ashen', label: 'Ashen Slate', color: '#9c8f8b' }
+  ],
+  eyes: [
+    { value: 'amber', label: 'Amber', color: '#c18f32' },
+    { value: 'hazel', label: 'Hazel', color: '#7f5b30' },
+    { value: 'emerald', label: 'Emerald', color: '#3b8b4f' },
+    { value: 'ice', label: 'Ice Blue', color: '#7fb8d6' },
+    { value: 'onyx', label: 'Onyx', color: '#1f1b1c' },
+    { value: 'steel', label: 'Steel Grey', color: '#8d9aa7' },
+    { value: 'violet', label: 'Violet', color: '#8d6bb0' }
+  ],
+  hair: [
+    { value: 'obsidian', label: 'Obsidian Black', color: '#141015' },
+    { value: 'umber', label: 'Rich Umber', color: '#3f2416' },
+    { value: 'auburn', label: 'Deep Auburn', color: '#5b2813' },
+    { value: 'copper', label: 'Copper Red', color: '#8c3d17' },
+    { value: 'golden', label: 'Golden Wheat', color: '#b58a2f' },
+    { value: 'ashen', label: 'Ashen Silver', color: '#c0c6d1' },
+    { value: 'white', label: 'Snow White', color: '#f1f2f4' }
+  ],
+  beard: [
+    { value: 'clean', label: 'Clean-shaven' },
+    { value: 'short', label: 'Short Beard' },
+    { value: 'full', label: 'Full Beard' },
+    { value: 'braided', label: 'Braided Beard' },
+    { value: 'forked', label: 'Forked Beard' },
+    { value: 'mutton', label: 'Mutton Chops' }
+  ]
+};
+
+const dwarfNamePools = {
+  female: [
+    'Domas',
+    'Rigòth',
+    'Kadôl',
+    'Meng',
+    'Onol',
+    'Rith',
+    'Sigrid',
+    'Thilda',
+    'Asgrid',
+    'Helga',
+    'Goden',
+    'Emera'
+  ],
+  male: [
+    'Urist',
+    'Thob',
+    'Kadol',
+    'Stukos',
+    'Likot',
+    'Datan',
+    'Mörul',
+    'Logem',
+    'Rakust',
+    'Thorin',
+    'Gorim',
+    'Norgrim'
+  ],
+  nonbinary: [
+    'Armak',
+    'Lor',
+    'Egil',
+    'Falk',
+    'Nerin',
+    'Isarn',
+    'Edda',
+    'Kol'
+  ],
+  clan: [
+    'Stonebeard',
+    'Ironfist',
+    'Coppervein',
+    'Graniteheart',
+    'Deepdelver',
+    'Amberpick',
+    'Oakenshield',
+    'Frosthammer',
+    'Berylbraid',
+    'Silverhollow'
+  ]
 };
 
 const musicTracks = [
@@ -345,7 +446,24 @@ const elements = {
   worldChronologyRandom: document.getElementById('world-chronology-random'),
   worldNameInput: document.getElementById('world-name-input'),
   worldNameRandom: document.getElementById('world-name-random'),
-  worldInfoCancel: document.getElementById('world-info-cancel')
+  worldInfoCancel: document.getElementById('world-info-cancel'),
+  dwarfCustomizer: document.getElementById('dwarf-customizer'),
+  dwarfCustomizerForm: document.getElementById('dwarf-customizer-form'),
+  dwarfRosterList: document.getElementById('dwarf-roster-list'),
+  dwarfRandomiseAll: document.getElementById('dwarf-randomise-all'),
+  dwarfPrev: document.getElementById('dwarf-prev'),
+  dwarfNext: document.getElementById('dwarf-next'),
+  dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
+  dwarfNameInput: document.getElementById('dwarf-name-input'),
+  dwarfGenderSelect: document.getElementById('dwarf-gender-select'),
+  dwarfSkinSelect: document.getElementById('dwarf-skin-select'),
+  dwarfEyeSelect: document.getElementById('dwarf-eye-select'),
+  dwarfHairSelect: document.getElementById('dwarf-hair-select'),
+  dwarfBeardSelect: document.getElementById('dwarf-beard-select'),
+  dwarfRandomise: document.getElementById('dwarf-randomise'),
+  dwarfBack: document.getElementById('dwarf-back'),
+  dwarfPortrait: document.getElementById('dwarf-portrait'),
+  dwarfTraitSummary: document.getElementById('dwarf-trait-summary')
 };
 
 function createLandMask(image) {
@@ -488,6 +606,336 @@ function randomInt(min, max) {
   const lower = Math.ceil(min);
   const upper = Math.floor(max);
   return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+}
+
+function randomChoice(options) {
+  if (!Array.isArray(options) || options.length === 0) {
+    return null;
+  }
+  const index = randomInt(0, options.length - 1);
+  return options[index];
+}
+
+function getOptionByValue(category, value) {
+  const bucket = dwarfOptions[category];
+  if (!bucket || bucket.length === 0) {
+    return null;
+  }
+  return bucket.find((option) => option.value === value) || bucket[0];
+}
+
+function getOptionLabel(category, value) {
+  const option = getOptionByValue(category, value);
+  return option ? option.label : value;
+}
+
+function generateDwarfFirstName(gender) {
+  const pool = dwarfNamePools[gender] || dwarfNamePools.male;
+  return randomChoice(pool) || 'Urist';
+}
+
+function generateDwarfClanName() {
+  return randomChoice(dwarfNamePools.clan) || 'Stonebeard';
+}
+
+function generateDwarfName(gender) {
+  const firstName = generateDwarfFirstName(gender);
+  const clanName = generateDwarfClanName();
+  return `${firstName} ${clanName}`;
+}
+
+function createRandomDwarf(preferredGender) {
+  const genderOption = preferredGender
+    ? getOptionByValue('gender', preferredGender)
+    : randomChoice(dwarfOptions.gender);
+  const genderValue = genderOption ? genderOption.value : dwarfOptions.gender[0].value;
+  const skinOption = randomChoice(dwarfOptions.skin) || dwarfOptions.skin[0];
+  const eyeOption = randomChoice(dwarfOptions.eyes) || dwarfOptions.eyes[0];
+  const hairOption = randomChoice(dwarfOptions.hair) || dwarfOptions.hair[0];
+  const beardOption = randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
+
+  return {
+    name: generateDwarfName(genderValue),
+    gender: genderValue,
+    skin: skinOption.value,
+    eyes: eyeOption.value,
+    hair: hairOption.value,
+    beard: beardOption.value
+  };
+}
+
+function initialiseDwarfParty() {
+  const dwarves = Array.from({ length: defaultDwarfCount }, () => createRandomDwarf());
+  state.dwarfParty = {
+    dwarves,
+    activeIndex: 0
+  };
+}
+
+function ensureDwarfParty({ forceReset = false } = {}) {
+  if (forceReset || !Array.isArray(state.dwarfParty?.dwarves) || state.dwarfParty.dwarves.length === 0) {
+    initialiseDwarfParty();
+    return;
+  }
+  state.dwarfParty.activeIndex = clamp(
+    state.dwarfParty.activeIndex,
+    0,
+    Math.max(0, state.dwarfParty.dwarves.length - 1)
+  );
+}
+
+function getActiveDwarf() {
+  if (!state.dwarfParty || !Array.isArray(state.dwarfParty.dwarves)) {
+    return null;
+  }
+  return state.dwarfParty.dwarves[state.dwarfParty.activeIndex] || null;
+}
+
+function updateDwarfPortrait(dwarf) {
+  if (!elements.dwarfPortrait || !dwarf) {
+    return;
+  }
+  const skinOption = getOptionByValue('skin', dwarf.skin);
+  const hairOption = getOptionByValue('hair', dwarf.hair);
+  const eyeOption = getOptionByValue('eyes', dwarf.eyes);
+
+  if (skinOption?.color) {
+    elements.dwarfPortrait.style.setProperty('--skin-color', skinOption.color);
+  }
+  if (hairOption?.color) {
+    elements.dwarfPortrait.style.setProperty('--hair-color', hairOption.color);
+  }
+  if (eyeOption?.color) {
+    elements.dwarfPortrait.style.setProperty('--eye-color', eyeOption.color);
+  }
+
+  const beardValue = dwarf.beard || 'clean';
+  elements.dwarfPortrait.dataset.beard = beardValue;
+
+  const genderLabel = getOptionLabel('gender', dwarf.gender);
+  const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
+  const hairLabel = getOptionLabel('hair', dwarf.hair).toLowerCase();
+  const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
+  const beardLabel = getOptionLabel('beard', beardValue).toLowerCase();
+  const ariaDescription = `${genderLabel} dwarf with ${skinLabel} skin, ${hairLabel} hair, ${eyeLabel} eyes, and ${beardLabel}.`;
+  const displayName = getDwarfDisplayName(dwarf);
+  elements.dwarfPortrait.setAttribute('aria-label', `${displayName}: ${ariaDescription}`);
+}
+
+function buildDwarfSummary(dwarf) {
+  if (!dwarf) {
+    return '';
+  }
+  const genderLabel = getOptionLabel('gender', dwarf.gender);
+  const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
+  const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
+  const hairLabel = getOptionLabel('hair', dwarf.hair).toLowerCase();
+  const beardLabel = getOptionLabel('beard', dwarf.beard).toLowerCase();
+  return `${genderLabel} dwarf with ${skinLabel} skin, ${hairLabel} hair, ${eyeLabel} eyes, and ${beardLabel}.`;
+}
+
+function getDwarfDisplayName(dwarf) {
+  if (!dwarf) {
+    return 'Unnamed Founder';
+  }
+  const trimmed = (dwarf.name || '').trim();
+  return trimmed || 'Unnamed Founder';
+}
+
+function updateDwarfTraitSummary() {
+  if (!elements.dwarfTraitSummary) {
+    return;
+  }
+  const dwarf = getActiveDwarf();
+  elements.dwarfTraitSummary.textContent = buildDwarfSummary(dwarf);
+}
+
+function updateRosterList() {
+  if (!elements.dwarfRosterList || !state.dwarfParty || !Array.isArray(state.dwarfParty.dwarves)) {
+    return;
+  }
+  const { dwarves, activeIndex } = state.dwarfParty;
+  const fragment = document.createDocumentFragment();
+
+  dwarves.forEach((dwarf, index) => {
+    const item = document.createElement('li');
+    item.classList.toggle('active', index === activeIndex);
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-pressed', index === activeIndex ? 'true' : 'false');
+    item.dataset.index = index.toString();
+
+    const name = document.createElement('p');
+    name.className = 'dwarf-roster-name';
+    name.textContent = getDwarfDisplayName(dwarf);
+
+    const traits = document.createElement('p');
+    traits.className = 'dwarf-roster-traits';
+    const genderLabel = getOptionLabel('gender', dwarf.gender);
+    const hairLabel = getOptionLabel('hair', dwarf.hair);
+    const beardLabel = getOptionLabel('beard', dwarf.beard);
+    traits.textContent = `${genderLabel} • ${hairLabel} • ${beardLabel}`;
+
+    item.appendChild(name);
+    item.appendChild(traits);
+
+    item.addEventListener('click', () => {
+      setActiveDwarf(index);
+    });
+
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        setActiveDwarf(index);
+      }
+    });
+
+    fragment.appendChild(item);
+  });
+
+  elements.dwarfRosterList.replaceChildren(fragment);
+}
+
+function ensureSelectValue(selectElement, value, fallback) {
+  if (!selectElement) {
+    return;
+  }
+  selectElement.value = value;
+  if (selectElement.value !== value) {
+    selectElement.value = fallback;
+  }
+}
+
+function updateCustomizerUI() {
+  ensureDwarfParty();
+  const dwarf = getActiveDwarf();
+  if (!dwarf) {
+    return;
+  }
+  const total = state.dwarfParty.dwarves.length;
+  if (elements.dwarfSlotLabel) {
+    elements.dwarfSlotLabel.textContent = `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}`;
+  }
+  if (elements.dwarfNameInput) {
+    elements.dwarfNameInput.value = dwarf.name;
+  }
+
+  ensureSelectValue(
+    elements.dwarfGenderSelect,
+    dwarf.gender,
+    dwarfOptions.gender[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfSkinSelect,
+    dwarf.skin,
+    dwarfOptions.skin[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfEyeSelect,
+    dwarf.eyes,
+    dwarfOptions.eyes[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfHairSelect,
+    dwarf.hair,
+    dwarfOptions.hair[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfBeardSelect,
+    dwarf.beard,
+    dwarfOptions.beard[0].value
+  );
+
+  updateDwarfPortrait(dwarf);
+  updateDwarfTraitSummary();
+  updateRosterList();
+}
+
+function setActiveDwarf(index) {
+  ensureDwarfParty();
+  const total = state.dwarfParty.dwarves.length;
+  const clampedIndex = clamp(index, 0, Math.max(0, total - 1));
+  state.dwarfParty.activeIndex = clampedIndex;
+  updateCustomizerUI();
+}
+
+function changeActiveDwarf(step) {
+  ensureDwarfParty();
+  const total = state.dwarfParty.dwarves.length;
+  if (total === 0) {
+    return;
+  }
+  const nextIndex = (state.dwarfParty.activeIndex + step + total) % total;
+  setActiveDwarf(nextIndex);
+}
+
+function updateDwarfTrait(trait, value) {
+  const dwarf = getActiveDwarf();
+  if (!dwarf) {
+    return;
+  }
+  if (trait === 'name') {
+    dwarf.name = value;
+    updateDwarfPortrait(dwarf);
+    updateRosterList();
+    return;
+  }
+  if (trait in dwarf) {
+    dwarf[trait] = value;
+  }
+  updateCustomizerUI();
+}
+
+function randomiseActiveDwarf() {
+  ensureDwarfParty();
+  const { activeIndex, dwarves } = state.dwarfParty;
+  if (!dwarves || !dwarves[activeIndex]) {
+    return;
+  }
+  dwarves[activeIndex] = createRandomDwarf();
+  setActiveDwarf(activeIndex);
+}
+
+function randomiseEntireParty() {
+  initialiseDwarfParty();
+  updateCustomizerUI();
+}
+
+function isDwarfCustomizerVisible() {
+  return Boolean(elements.dwarfCustomizer && !elements.dwarfCustomizer.classList.contains('hidden'));
+}
+
+function openDwarfCustomizer(options = {}) {
+  const { resetParty = false } = options;
+  ensureDwarfParty({ forceReset: resetParty });
+  if (elements.worldInfoModal) {
+    elements.worldInfoModal.classList.add('hidden');
+  }
+  if (elements.dwarfCustomizer) {
+    elements.dwarfCustomizer.classList.remove('hidden');
+  }
+  updateCustomizerUI();
+  const focusTarget = elements.dwarfNameInput || elements.dwarfGenderSelect;
+  if (focusTarget) {
+    focusTarget.focus();
+    if (typeof focusTarget.select === 'function') {
+      focusTarget.select();
+    }
+  }
+}
+
+function closeDwarfCustomizer(options = {}) {
+  const { keepWorldInfoHidden = false, returnFocus = false } = options;
+  if (elements.dwarfCustomizer) {
+    elements.dwarfCustomizer.classList.add('hidden');
+  }
+  if (!keepWorldInfoHidden && elements.worldInfoModal) {
+    elements.worldInfoModal.classList.remove('hidden');
+    if (returnFocus && elements.worldNameInput) {
+      elements.worldNameInput.focus();
+      elements.worldNameInput.select();
+    }
+  }
 }
 
 const ageWeights = Array.from({ length: 30 }, (_, index) => {
@@ -664,6 +1112,10 @@ function ensureSeedString() {
 }
 
 function openWorldInfoModal() {
+  state.dwarfParty = {
+    dwarves: [],
+    activeIndex: 0
+  };
   if (
     !elements.worldInfoModal ||
     !elements.worldInfoSize ||
@@ -1663,6 +2115,7 @@ function drawWorld(world) {
 }
 
 function beginGame() {
+  closeDwarfCustomizer({ keepWorldInfoHidden: true });
   closeWorldInfoModal({ keepTitleHidden: true });
   if (elements.titleScreen) {
     elements.titleScreen.classList.add('hidden');
@@ -1744,8 +2197,7 @@ function attachEvents() {
         }
       }
       updateChronologyDisplay();
-      beginGame();
-      ensureMusicStarted();
+      openDwarfCustomizer();
     });
   }
 
@@ -1793,8 +2245,110 @@ function attachEvents() {
 
   elements.regenerate.addEventListener('click', handleRegenerate);
 
+  if (elements.dwarfPrev) {
+    elements.dwarfPrev.addEventListener('click', () => {
+      changeActiveDwarf(-1);
+    });
+  }
+
+  if (elements.dwarfNext) {
+    elements.dwarfNext.addEventListener('click', () => {
+      changeActiveDwarf(1);
+    });
+  }
+
+  if (elements.dwarfRandomise) {
+    elements.dwarfRandomise.addEventListener('click', () => {
+      randomiseActiveDwarf();
+    });
+  }
+
+  if (elements.dwarfRandomiseAll) {
+    elements.dwarfRandomiseAll.addEventListener('click', () => {
+      randomiseEntireParty();
+    });
+  }
+
+  if (elements.dwarfBack) {
+    elements.dwarfBack.addEventListener('click', () => {
+      closeDwarfCustomizer({ returnFocus: true });
+    });
+  }
+
+  if (elements.dwarfCustomizerForm) {
+    elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      beginGame();
+      ensureMusicStarted();
+    });
+  }
+
+  if (elements.dwarfNameInput) {
+    elements.dwarfNameInput.addEventListener('input', (event) => {
+      updateDwarfTrait('name', event.target.value);
+    });
+    elements.dwarfNameInput.addEventListener('blur', (event) => {
+      const trimmed = event.target.value.trim();
+      if (trimmed !== event.target.value) {
+        event.target.value = trimmed;
+      }
+      updateDwarfTrait('name', trimmed);
+    });
+  }
+
+  if (elements.dwarfGenderSelect) {
+    elements.dwarfGenderSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('gender', event.target.value);
+    });
+  }
+
+  if (elements.dwarfSkinSelect) {
+    elements.dwarfSkinSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('skin', event.target.value);
+    });
+  }
+
+  if (elements.dwarfEyeSelect) {
+    elements.dwarfEyeSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('eyes', event.target.value);
+    });
+  }
+
+  if (elements.dwarfHairSelect) {
+    elements.dwarfHairSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('hair', event.target.value);
+    });
+  }
+
+  if (elements.dwarfBeardSelect) {
+    elements.dwarfBeardSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('beard', event.target.value);
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
+    const activeElement = document.activeElement;
+    const isFormControl =
+      activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
+
+    if (isDwarfCustomizerVisible() && !isFormControl) {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        changeActiveDwarf(-1);
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        changeActiveDwarf(1);
+        return;
+      }
+    }
+
     if (event.key === 'Escape') {
+      if (isDwarfCustomizerVisible()) {
+        closeDwarfCustomizer({ returnFocus: true });
+        return;
+      }
       if (elements.worldInfoModal && !elements.worldInfoModal.classList.contains('hidden')) {
         closeWorldInfoModal({ returnFocus: true });
         return;
