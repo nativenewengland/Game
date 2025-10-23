@@ -32,6 +32,7 @@ const state = {
     lastSeedString: ''
   },
   tileSheet: null,
+  landMask: null,
   ready: false
 };
 
@@ -81,24 +82,116 @@ const elements = {
   audioElement: document.getElementById('background-music')
 };
 
-const tileSheetPromise = loadImage('tilesheet/Overworld.png')
-  .then((img) => {
-    state.tileSheet = img;
-    state.ready = true;
-    return img;
-  })
-  .catch((error) => {
-    console.error('Failed to load tile sheet', error);
-    throw error;
-  });
+function createLandMask(image) {
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) {
+    return null;
+  }
+
+  context.drawImage(image, 0, 0);
+  const { data } = context.getImageData(0, 0, image.width, image.height);
+  const maskData = new Float32Array(image.width * image.height);
+
+  const horizontalMargin = Math.max(1, Math.floor(image.width * 0.06));
+  const verticalMargin = Math.max(1, Math.floor(image.height * 0.06));
+  let borderSum = 0;
+  let borderCount = 0;
+
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) {
+      const idx = (y * image.width + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+      maskData[y * image.width + x] = brightness;
+
+      if (
+        x < horizontalMargin ||
+        x >= image.width - horizontalMargin ||
+        y < verticalMargin ||
+        y >= image.height - verticalMargin
+      ) {
+        borderSum += brightness;
+        borderCount += 1;
+      }
+    }
+  }
+
+  const borderAverage = borderCount > 0 ? borderSum / borderCount : 0;
+  let minValue = Infinity;
+  let maxValue = -Infinity;
+
+  for (let i = 0; i < maskData.length; i += 1) {
+    const centered = maskData[i] - borderAverage;
+    maskData[i] = centered;
+    if (centered < minValue) {
+      minValue = centered;
+    }
+    if (centered > maxValue) {
+      maxValue = centered;
+    }
+  }
+
+  const range = maxValue - minValue || 1;
+
+  for (let i = 0; i < maskData.length; i += 1) {
+    const normalized = (maskData[i] - minValue) / range;
+    maskData[i] = clamp(normalized, 0, 1);
+  }
+
+  return {
+    width: image.width,
+    height: image.height,
+    data: maskData
+  };
+}
+
+function loadLandMask(src) {
+  return loadImage(src)
+    .then((image) => {
+      const mask = createLandMask(image);
+      if (!mask) {
+        throw new Error('Failed to create land mask context.');
+      }
+      state.landMask = mask;
+      return mask;
+    })
+    .catch((error) => {
+      console.warn('Failed to load land mask, falling back to noise-based shape.', error);
+      state.landMask = null;
+      return null;
+    });
+}
+
+const assetPromises = Promise.all([
+  loadImage('tilesheet/Overworld.png')
+    .then((img) => {
+      state.tileSheet = img;
+      return img;
+    })
+    .catch((error) => {
+      console.error('Failed to load tile sheet', error);
+      throw error;
+    }),
+  loadLandMask('titlescreen/Titlescreen image.png')
+]);
 
 elements.startButton.disabled = true;
 elements.startButton.textContent = 'Loading tiles…';
 
-tileSheetPromise.then(() => {
-  elements.startButton.disabled = false;
-  elements.startButton.textContent = 'Start Game';
-});
+assetPromises
+  .catch((error) => {
+    console.error('One or more assets failed to load.', error);
+  })
+  .finally(() => {
+    state.ready = true;
+    elements.startButton.disabled = false;
+    elements.startButton.textContent = 'Start Game';
+  });
 
 let optionsVisible = false;
 
@@ -300,6 +393,39 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
+function sampleLandMask(normalizedX, normalizedY) {
+  const landMask = state.landMask;
+  if (!landMask) {
+    return null;
+  }
+
+  const clampedX = clamp(normalizedX, 0, 1);
+  const clampedY = clamp(normalizedY, 0, 1);
+  const scaledX = clampedX * (landMask.width - 1);
+  const scaledY = clampedY * (landMask.height - 1);
+
+  const x0 = Math.floor(scaledX);
+  const y0 = Math.floor(scaledY);
+  const x1 = Math.min(x0 + 1, landMask.width - 1);
+  const y1 = Math.min(y0 + 1, landMask.height - 1);
+  const tx = scaledX - x0;
+  const ty = scaledY - y0;
+
+  const idx00 = y0 * landMask.width + x0;
+  const idx10 = y0 * landMask.width + x1;
+  const idx01 = y1 * landMask.width + x0;
+  const idx11 = y1 * landMask.width + x1;
+
+  const v00 = landMask.data[idx00];
+  const v10 = landMask.data[idx10];
+  const v01 = landMask.data[idx01];
+  const v11 = landMask.data[idx11];
+
+  const top = lerp(v00, v10, tx);
+  const bottom = lerp(v01, v11, tx);
+  return lerp(top, bottom, ty);
+}
+
 function valueNoise(x, y, seed) {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -358,6 +484,7 @@ function createWorld(seedString) {
     for (let x = 0; x < width; x += 1) {
       const sampleX = (x + offsetX) / width;
       const sampleY = (y + offsetY) / height;
+      const landMaskValue = sampleLandMask((x + 0.5) / width, (y + 0.5) / height);
       const highFrequencyHeight = octaveNoise(sampleX * 2.4, sampleY * 2.4, seedNumber + 101, 5, 0.52, 2.35);
       const continentalHeight = octaveNoise(sampleX * 0.9, sampleY * 0.9, seedNumber + 401, 4, 0.58, 1.9);
       const moistureValue = octaveNoise(sampleX * 2.1, sampleY * 2.1, seedNumber + 701, 4, 0.55, 2.4);
@@ -371,11 +498,18 @@ function createWorld(seedString) {
       const centerY = height / 2;
       const distanceToCenter = Math.hypot((x - centerX) / (width * 0.5), (y - centerY) / (height * 0.5));
       const radialInfluence = clamp(1 - Math.pow(distanceToCenter, 1.25), 0, 1);
-      const combinedHeight =
-        highFrequencyHeight * 0.5 +
-        continentalHeight * 0.3 +
-        radialInfluence * 0.65 -
-        (1 - radialInfluence) * 0.2;
+      let combinedHeight =
+        highFrequencyHeight * 0.42 +
+        continentalHeight * 0.28 +
+        radialInfluence * 0.28 -
+        (1 - radialInfluence) * 0.22;
+
+      if (landMaskValue !== null) {
+        const maskBias = (landMaskValue - 0.5) * 0.85;
+        const maskBlend = lerp(combinedHeight, landMaskValue, 0.55);
+        combinedHeight = maskBlend + maskBias;
+      }
+
       const heightValue = clamp(combinedHeight, 0, 1);
 
       const latitudeInfluence = 1 - Math.abs(y / height - 0.5) * 2;
@@ -384,11 +518,13 @@ function createWorld(seedString) {
 
       let baseTile;
 
-      if (heightValue < 0.26) {
+      const maskThreshold = landMaskValue !== null ? landMaskValue : null;
+
+      if (heightValue < 0.26 || (maskThreshold !== null && maskThreshold < 0.3)) {
         baseTile = 'water';
-      } else if (heightValue < 0.33) {
+      } else if (heightValue < 0.33 || (maskThreshold !== null && maskThreshold < 0.36)) {
         baseTile = warmBiome > 0.55 && dryness > 0.45 && randomFactor > 0.35 ? 'sand' : 'water';
-      } else if (heightValue < 0.41) {
+      } else if (heightValue < 0.41 || (maskThreshold !== null && maskThreshold < 0.44)) {
         baseTile = warmBiome > 0.55 && dryness > 0.45 ? 'sand' : 'grass';
       } else if (heightValue > 0.88) {
         baseTile = 'stone';
@@ -410,7 +546,8 @@ function createWorld(seedString) {
         randomFactor,
         featureRoll,
         structureRoll,
-        warmBiome
+        warmBiome,
+        landMaskValue
       };
     }
 
