@@ -3,14 +3,8 @@ const drawSize = 32;
 const tileSheets = {
   base: {
     key: 'base',
-    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_tiles.png',
-    tileSize: 16,
-    image: null
-  },
-  details: {
-    key: 'details',
-    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
-    tileSize: 16,
+    path: 'tilesheet/Overworld.png',
+    tileSize: 32,
     image: null
   }
 };
@@ -43,120 +37,8 @@ const dwarfSpriteSheets = {
 };
 
 const baseTileCoords = {
-  GRASSLAND_TEMP: { row: 0, col: 2 },
-  GRASSLAND_TEMP_EVIL: { row: 0, col: 7 },
-  GRASSLAND_TEMP_GOOD: { row: 0, col: 17 },
-  GRASSLAND_TEMP_EVILSAV: { row: 0, col: 12 },
-  GRASSLAND_TEMP_GOODSAV: { row: 0, col: 22 },
-  GRASSLAND_TROP: { row: 1, col: 2 },
-  GRASSLAND_TROP_EVIL: { row: 1, col: 7 },
-  GRASSLAND_TROP_GOOD: { row: 1, col: 17 },
-  GRASSLAND_TROP_EVILSAV: { row: 1, col: 12 },
-  GRASSLAND_TROP_GOODSAV: { row: 1, col: 22 },
-  HILLS: { row: 2, col: 2 },
-  HILLS_EVIL: { row: 2, col: 7 },
-  HILLS_GOOD: { row: 2, col: 17 },
-  HILLS_EVILSAV: { row: 2, col: 12 },
-  HILLS_GOODSAV: { row: 2, col: 22 },
-  SHRUBLAND: { row: 3, col: 2 },
-  SHRUBLAND_EVIL: { row: 3, col: 7 },
-  SHRUBLAND_GOOD: { row: 3, col: 17 },
-  SHRUBLAND_EVILSAV: { row: 3, col: 12 },
-  SHRUBLAND_GOODSAV: { row: 3, col: 22 },
-  MARSH: { row: 4, col: 2 },
-  MARSH_EVIL: { row: 4, col: 7 },
-  MARSH_GOOD: { row: 4, col: 17 },
-  MARSH_EVILSAV: { row: 4, col: 12 },
-  MARSH_GOODSAV: { row: 4, col: 22 },
-  SWAMP: { row: 5, col: 2 },
-  SWAMP_EVIL: { row: 5, col: 7 },
-  SWAMP_GOOD: { row: 5, col: 17 },
-  SWAMP_EVILSAV: { row: 5, col: 12 },
-  SWAMP_GOODSAV: { row: 5, col: 22 },
-  SAVANNA_TROP: { row: 6, col: 2 },
-  SAVANNA_TROP_EVIL: { row: 6, col: 7 },
-  SAVANNA_TROP_GOOD: { row: 6, col: 17 },
-  SAVANNA_TROP_EVILSAV: { row: 6, col: 12 },
-  SAVANNA_TROP_GOODSAV: { row: 6, col: 22 },
-  SAVANNA_TEMP: { row: 7, col: 2 },
-  SAVANNA_TEMP_EVIL: { row: 7, col: 7 },
-  SAVANNA_TEMP_GOOD: { row: 7, col: 17 },
-  SAVANNA_TEMP_EVILSAV: { row: 7, col: 12 },
-  SAVANNA_TEMP_GOODSAV: { row: 7, col: 22 },
-  BADLANDS: { row: 8, col: 2 },
-  BADLANDS_EVIL: { row: 8, col: 7 },
-  BADLANDS_GOOD: { row: 8, col: 17 },
-  BADLANDS_EVILSAV: { row: 8, col: 12 },
-  BADLANDS_GOODSAV: { row: 8, col: 22 },
-  ROCKY_HILLS: { row: 9, col: 2 },
-  ROCKY_HILLS_EVIL: { row: 9, col: 7 },
-  ROCKY_HILLS_GOOD: { row: 9, col: 17 },
-  ROCKY_HILLS_EVILSAV: { row: 9, col: 12 },
-  ROCKY_HILLS_GOODSAV: { row: 9, col: 22 },
-  ROCKY_PLAINS: { row: 10, col: 2 },
-  ROCKY_PLAINS_EVIL: { row: 10, col: 7 },
-  ROCKY_PLAINS_GOOD: { row: 10, col: 17 },
-  ROCKY_PLAINS_EVILSAV: { row: 10, col: 12 },
-  ROCKY_PLAINS_GOODSAV: { row: 10, col: 22 },
-  SAND_DESERT: { row: 11, col: 2 },
-  SAND_DESERT_EVIL: { row: 11, col: 7 },
-  SAND_DESERT_GOOD: { row: 11, col: 17 },
-  SAND_DESERT_EVILSAV: { row: 11, col: 12 },
-  SAND_DESERT_GOODSAV: { row: 11, col: 22 },
-  BEACH: { row: 12, col: 2 },
-  BEACH_EVIL: { row: 12, col: 7 },
-  BEACH_GOOD: { row: 12, col: 17 },
-  BEACH_EVILSAV: { row: 12, col: 12 },
-  BEACH_GOODSAV: { row: 12, col: 22 },
-  TUNDRA: { row: 13, col: 2 },
-  TUNDRA_EVIL: { row: 13, col: 7 },
-  TUNDRA_GOOD: { row: 13, col: 17 },
-  TUNDRA_EVILSAV: { row: 13, col: 12 },
-  TUNDRA_GOODSAV: { row: 13, col: 22 },
-  GLACIER: { row: 14, col: 2 },
-  GLACIER_EVIL: { row: 14, col: 7 },
-  GLACIER_GOOD: { row: 14, col: 17 },
-  GLACIER_EVILSAV: { row: 14, col: 12 },
-  GLACIER_GOODSAV: { row: 14, col: 22 },
-  FROZEN_OCEAN: { row: 15, col: 2 },
-  FROZEN_OCEAN_EVIL: { row: 15, col: 7 },
-  FROZEN_OCEAN_GOOD: { row: 15, col: 17 },
-  FROZEN_OCEAN_EVILSAV: { row: 15, col: 12 },
-  FROZEN_OCEAN_GOODSAV: { row: 15, col: 22 },
-  LAKE: { row: 16, col: 2 },
-  LAKE_EVIL: { row: 16, col: 7 },
-  LAKE_GOOD: { row: 16, col: 17 },
-  LAKE_EVILSAV: { row: 16, col: 12 },
-  LAKE_GOODSAV: { row: 16, col: 22 },
-  OCEAN: { row: 17, col: 2 },
-  OCEAN_EVIL: { row: 17, col: 7 },
-  OCEAN_GOOD: { row: 17, col: 17 },
-  OCEAN_EVILSAV: { row: 17, col: 12 },
-  OCEAN_GOODSAV: { row: 17, col: 22 },
-  OCEAN_DEEP: { row: 18, col: 2 },
-  OCEAN_DEEP_EVIL: { row: 18, col: 7 },
-  OCEAN_DEEP_GOOD: { row: 18, col: 17 },
-  OCEAN_DEEP_EVILSAV: { row: 18, col: 12 },
-  OCEAN_DEEP_GOODSAV: { row: 18, col: 22 }
-};
-
-const detailTileCoords = {
-  RIVER_0: { row: 11, col: 4 },
-  RIVER_N: { row: 12, col: 4 },
-  RIVER_S: { row: 13, col: 4 },
-  RIVER_W: { row: 14, col: 4 },
-  RIVER_E: { row: 15, col: 4 },
-  RIVER_NS: { row: 0, col: 4 },
-  RIVER_WE: { row: 1, col: 4 },
-  RIVER_NE: { row: 4, col: 4 },
-  RIVER_NW: { row: 5, col: 4 },
-  RIVER_SE: { row: 2, col: 4 },
-  RIVER_SW: { row: 3, col: 4 },
-  RIVER_NSE: { row: 6, col: 4 },
-  RIVER_SWE: { row: 7, col: 4 },
-  RIVER_NWE: { row: 8, col: 4 },
-  RIVER_NSW: { row: 9, col: 4 },
-  RIVER_NSWE: { row: 10, col: 4 }
+  GRASS: { row: 0, col: 1 },
+  WATER: { row: 1, col: 4 }
 };
 
 const tileLookup = new Map();
@@ -174,7 +56,6 @@ function registerTiles(sheetKey, coordMap) {
 }
 
 registerTiles('base', baseTileCoords);
-registerTiles('details', detailTileCoords);
 
 const worldNames = [
   'Nûrn',
@@ -292,15 +173,8 @@ const worldNames = [
   'Skibiti Toliterium'
 ];
 
-function resolveTileName(baseKey, suffix) {
-  const preferred = suffix ? `${baseKey}${suffix}` : baseKey;
-  if (tileLookup.has(preferred)) {
-    return preferred;
-  }
-  if (suffix && tileLookup.has(baseKey)) {
-    return baseKey;
-  }
-  return tileLookup.has(baseKey) ? baseKey : 'OCEAN';
+function resolveTileName(baseKey) {
+  return tileLookup.has(baseKey) ? baseKey : 'GRASS';
 }
 
 const state = {
@@ -2436,272 +2310,42 @@ function createWorld(seedString) {
   const rng = mulberry32(seedNumber || 1);
   const width = state.settings.width;
   const height = state.settings.height;
-  const size = width * height;
 
-  const offsetX = rng() * 2048;
-  const offsetY = rng() * 2048;
+  const noiseOffsetX = rng() * 4096;
+  const noiseOffsetY = rng() * 4096;
+  const noiseScale = 2.2 + rng() * 1.8;
 
-  const fieldSeeds = {
-    macroElevation: Math.floor(rng() * 0xffffffff),
-    detailElevation: Math.floor(rng() * 0xffffffff),
-    ridgeElevation: Math.floor(rng() * 0xffffffff),
-    warpPrimary: Math.floor(rng() * 0xffffffff),
-    warpSecondary: Math.floor(rng() * 0xffffffff),
-    rainfall: Math.floor(rng() * 0xffffffff),
-    drainage: Math.floor(rng() * 0xffffffff),
-    temperature: Math.floor(rng() * 0xffffffff),
-    volcanism: Math.floor(rng() * 0xffffffff),
-    evilness: Math.floor(rng() * 0xffffffff),
-    savagery: Math.floor(rng() * 0xffffffff)
-  };
-
-  const elevation = new Float32Array(size);
-  const continentMask = new Float32Array(size);
-  const rainfall = new Float32Array(size);
-  const drainage = new Float32Array(size);
-  const temperatureNoise = new Float32Array(size);
-  const volcanism = new Float32Array(size);
-  const evilness = new Float32Array(size);
-  const savagery = new Float32Array(size);
-
-  const plates = generateContinentalPlates(rng);
-
-  const warpStrength = 0.18 + rng() * 0.08;
-  const detailWarpStrength = 0.08 + rng() * 0.05;
-
-  const warpOffsets = {
-    primaryX: rng() * 64,
-    primaryY: rng() * 64,
-    detailX: rng() * 64,
-    detailY: rng() * 64
-  };
-  const macroOffsets = { x: rng() * 32, y: rng() * 32 };
-  const detailOffsets = { x: rng() * 128, y: rng() * 128 };
-  const ridgeOffsets = { x: rng() * 48, y: rng() * 48 };
+  const tiles = Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => ({ base: resolveTileName('GRASS'), overlay: null }))
+  );
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
       const normalizedX = (x + 0.5) / width;
       const normalizedY = (y + 0.5) / height;
 
-      const warpPrimaryX = octaveNoise(
-        (normalizedX + warpOffsets.primaryX) * 1.45,
-        (normalizedY + warpOffsets.primaryY) * 1.45,
-        fieldSeeds.warpPrimary,
+      let noiseValue = octaveNoise(
+        (normalizedX + noiseOffsetX) * noiseScale,
+        (normalizedY + noiseOffsetY) * noiseScale,
+        seedNumber || 1,
         4,
-        0.6,
-        1.95
-      );
-      const warpPrimaryY = octaveNoise(
-        (normalizedX + warpOffsets.primaryY) * 1.45,
-        (normalizedY - warpOffsets.primaryX) * 1.45,
-        fieldSeeds.warpPrimary + 97,
-        4,
-        0.6,
-        1.95
+        0.55,
+        2.0
       );
 
-      const warpDetailX = octaveNoise(
-        (normalizedX + warpOffsets.detailX) * 3.1,
-        (normalizedY + warpOffsets.detailY) * 3.1,
-        fieldSeeds.warpSecondary,
-        3,
-        0.58,
-        2.35
-      );
-      const warpDetailY = octaveNoise(
-        (normalizedX - warpOffsets.detailY) * 3.1,
-        (normalizedY + warpOffsets.detailX) * 3.1,
-        fieldSeeds.warpSecondary + 173,
-        3,
-        0.58,
-        2.35
-      );
-
-      const warpedX =
-        normalizedX + (warpPrimaryX - 0.5) * warpStrength + (warpDetailX - 0.5) * detailWarpStrength;
-      const warpedY =
-        normalizedY + (warpPrimaryY - 0.5) * warpStrength + (warpDetailY - 0.5) * detailWarpStrength;
-
-      const plateSample = sampleContinentalPlates(warpedX, warpedY, plates);
-
-      const macro = octaveNoise(
-        (warpedX + macroOffsets.x) * 0.85,
-        (warpedY + macroOffsets.y) * 0.85,
-        fieldSeeds.macroElevation,
-        5,
-        0.57,
-        1.9
-      );
-      const detail = octaveNoise(
-        (warpedX + detailOffsets.x) * 5.6,
-        (warpedY + detailOffsets.y) * 5.6,
-        fieldSeeds.detailElevation,
-        4,
-        0.5,
-        2.35
-      );
-      const ridgeBase = octaveNoise(
-        (warpedX + ridgeOffsets.x) * 2.35,
-        (warpedY + ridgeOffsets.y) * 2.35,
-        fieldSeeds.ridgeElevation,
-        4,
-        0.5,
-        2.2
-      );
-      const ridge = 1 - Math.abs(ridgeBase * 2 - 1);
-
-      let heightValue = plateSample.height;
-      heightValue = lerp(heightValue, macro, 0.35);
-      heightValue += (detail - 0.5) * plateSample.mask * 0.24;
-      heightValue += (ridge - 0.5) * 0.18 * Math.pow(plateSample.mask, 0.85);
-
-      const edgeX = Math.min(normalizedX, 1 - normalizedX);
-      const edgeY = Math.min(normalizedY, 1 - normalizedY);
-      const edgeFalloff = Math.pow(clamp(Math.min(edgeX, edgeY) * 2.4, 0, 1), 0.92);
-      const radialX = normalizedX - 0.5;
-      const radialY = normalizedY - 0.5;
-      const radialDistance = Math.sqrt(radialX * radialX + radialY * radialY);
-      const radialFalloff = clamp(1 - Math.pow(radialDistance / 0.72, 2), 0, 1);
-      heightValue = heightValue * edgeFalloff - (1 - edgeFalloff) * 0.38;
-      heightValue = lerp(heightValue, radialFalloff, 0.16);
-
-      let maskValue = plateSample.mask;
-      const landMaskValue = sampleLandMask(normalizedX, normalizedY);
-      if (landMaskValue !== null) {
-        heightValue = lerp(heightValue, landMaskValue, 0.55);
-        maskValue = lerp(maskValue, landMaskValue, 0.5);
+      if (Number.isNaN(noiseValue)) {
+        noiseValue = 0;
       }
 
-      heightValue = clamp(heightValue, 0, 1);
-      maskValue = clamp(maskValue, 0, 1);
-
-      elevation[idx] = heightValue;
-      continentMask[idx] = maskValue;
-    }
-  }
-
-  normalizeField(elevation);
-  applyThermalErosion(elevation, width, height, 3, 0.028);
-  normalizeField(elevation);
-  normalizeField(continentMask);
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
-      const sampleX = (x + offsetX) / width;
-      const sampleY = (y + offsetY) / height;
-      const landFactor = continentMask[idx];
-
-      const baseRain = octaveNoise(sampleX * 1.55, sampleY * 1.55, fieldSeeds.rainfall, 5, 0.58, 2.1);
-      const moistureBias = Math.pow(landFactor, 0.85);
-      rainfall[idx] = clamp(baseRain * 0.6 + moistureBias * 0.4, 0, 1);
-
-      const baseDrainage = octaveNoise(sampleX * 2.05, sampleY * 2.05, fieldSeeds.drainage, 4, 0.55, 2.35);
-      const coastInfluence = clamp(1 - Math.abs(landFactor - 0.35) * 2.1, 0, 1);
-      drainage[idx] = clamp(baseDrainage * 0.58 + (1 - moistureBias) * 0.25 + coastInfluence * 0.17, 0, 1);
-
-      temperatureNoise[idx] = octaveNoise(sampleX * 0.95, sampleY * 0.95, fieldSeeds.temperature, 4, 0.6, 2.05);
-      volcanism[idx] = octaveNoise(sampleX * 2.4, sampleY * 2.4, fieldSeeds.volcanism, 3, 0.48, 2.45);
-      evilness[idx] = octaveNoise(sampleX * 1.1, sampleY * 1.1, fieldSeeds.evilness, 3, 0.6, 2.25);
-      savagery[idx] = octaveNoise(sampleX * 2.15, sampleY * 2.15, fieldSeeds.savagery, 4, 0.52, 2.4);
-    }
-  }
-
-  normalizeField(rainfall);
-  normalizeField(drainage);
-  normalizeField(temperatureNoise);
-  normalizeField(volcanism);
-  normalizeField(evilness);
-  normalizeField(savagery);
-
-  const rainShadow = applyRainShadow(elevation, rainfall, width, height);
-  for (let i = 0; i < size; i += 1) {
-    rainfall[i] = clamp(rainfall[i] * 0.55 + rainShadow[i] * 0.45, 0, 1);
-  }
-
-  const temperature = new Float32Array(size);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
-      const latitude = Math.abs((y + 0.5) / height - 0.5) * 2;
-      const baseTemp = 1 - Math.pow(latitude, 0.85);
-      const altitudePenalty = Math.pow(elevation[idx], 1.35) * 0.52;
-      let tempValue = baseTemp * 0.6 + temperatureNoise[idx] * 0.4 - altitudePenalty;
-      tempValue += volcanism[idx] * 0.05;
-      temperature[idx] = clamp(tempValue, 0, 1);
-    }
-  }
-
-  const { seaLevel, deepSeaLevel } = estimateSeaLevels(elevation, 0.53);
-  const beachBand = Math.max(0.028, (seaLevel - deepSeaLevel) * 0.45);
-  const mountainSlope = clamp(seaLevel + (1 - seaLevel) * 0.42, seaLevel + 0.08, 0.9);
-  const mountainPeak = clamp(seaLevel + (1 - seaLevel) * 0.68, mountainSlope + 0.05, 0.97);
-
-  const riverMap = buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel);
-  const tiles = Array.from({ length: height }, () => new Array(width));
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
-      const elev = elevation[idx];
-      const rain = rainfall[idx];
-      const drain = drainage[idx];
-      const temp = temperature[idx];
-      const evil = evilness[idx] * 2 - 1;
-      const savage = savagery[idx];
-      const continentality = Math.pow(continentMask[idx], 1.15);
-      const dry = clamp(1 - rain + volcanism[idx] * 0.05 + continentality * 0.08, 0, 1);
-
-      let baseKey;
-      const suffix = determineAlignmentSuffix(evil, savage);
-
-      if (elev < seaLevel) {
-        const resolved = resolveTileName('OCEAN', suffix);
-        tiles[y][x] = { base: resolved, overlay: null };
-        continue;
+      const maskSample = sampleLandMask(normalizedX, normalizedY);
+      if (maskSample !== null && maskSample !== undefined) {
+        noiseValue = (noiseValue + maskSample) / 2;
       }
 
-      if (elev < seaLevel + beachBand) {
-        baseKey = 'BEACH';
-      } else if (temp < 0.16 && elev > seaLevel + 0.1) {
-        baseKey = 'GLACIER';
-      } else if (temp < 0.28) {
-        baseKey = 'TUNDRA';
-      } else if (elev > mountainPeak) {
-        baseKey = 'ROCKY_HILLS';
-      } else if (elev > mountainSlope) {
-        baseKey = dry > 0.55 ? 'ROCKY_HILLS' : 'HILLS';
-      } else if (dry > 0.8) {
-        baseKey = 'SAND_DESERT';
-      } else if (dry > 0.64) {
-        baseKey = temp > 0.6 ? 'SAVANNA_TROP' : 'SAVANNA_TEMP';
-      } else if (rain > 0.78 && drain < 0.48) {
-        baseKey = temp > 0.6 ? 'SWAMP' : 'MARSH';
-      } else if (rain > 0.74) {
-        baseKey = 'SHRUBLAND';
-      } else if (dry > 0.58 && drain > 0.6) {
-        baseKey = 'ROCKY_PLAINS';
-      } else if (dry > 0.5) {
-        baseKey = 'BADLANDS';
-      } else if (rain < 0.3 && continentality > 0.55) {
-        baseKey = 'SAVANNA_TEMP';
-      } else {
-        baseKey = temp > 0.6 ? 'GRASSLAND_TROP' : 'GRASSLAND_TEMP';
-      }
+      noiseValue = clamp(noiseValue, 0, 1);
 
-      const resolved = resolveTileName(baseKey, suffix);
-      tiles[y][x] = { base: resolved, overlay: null };
-    }
-  }
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const riverTile = resolveRiverTile(riverMap, width, height, x, y);
-      if (riverTile && tileLookup.has(riverTile)) {
-        tiles[y][x].overlay = riverTile;
-      }
+      const baseKey = noiseValue < 0.5 ? 'WATER' : 'GRASS';
+      tiles[y][x] = { base: resolveTileName(baseKey), overlay: null };
     }
   }
 
@@ -2732,7 +2376,7 @@ function drawWorld(world) {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const cell = tiles[y][x];
-      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('OCEAN');
+      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('GRASS');
       if (!baseDefinition) {
         continue;
       }
