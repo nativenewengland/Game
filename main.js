@@ -1629,10 +1629,26 @@ const viewState = {
   translateY: 0,
   minScale: 0.25,
   maxScale: 6,
+  containScale: 1,
+  coverScale: 1,
   wrapperSize: { width: 0, height: 0 },
   worldSize: { width: 0, height: 0 },
   hasInteracted: false
 };
+
+function computeViewScales(wrapperWidth, wrapperHeight, worldWidth, worldHeight) {
+  if (!worldWidth || !worldHeight || !wrapperWidth || !wrapperHeight) {
+    return { contain: 1, cover: 1 };
+  }
+
+  const scaleX = wrapperWidth / worldWidth;
+  const scaleY = wrapperHeight / worldHeight;
+  const safeScaleX = Number.isFinite(scaleX) && scaleX > 0 ? scaleX : 1;
+  const safeScaleY = Number.isFinite(scaleY) && scaleY > 0 ? scaleY : 1;
+  const contain = Math.min(safeScaleX, safeScaleY);
+  const cover = Math.max(safeScaleX, safeScaleY);
+  return { contain, cover };
+}
 
 function applyViewTransform() {
   if (!elements.canvas) {
@@ -1648,13 +1664,12 @@ function resetView(worldWidth, worldHeight) {
   const rect = elements.canvasWrapper.getBoundingClientRect();
   viewState.wrapperSize = { width: rect.width, height: rect.height };
   viewState.worldSize = { width: worldWidth, height: worldHeight };
-  const scaleX = rect.width / worldWidth;
-  const scaleY = rect.height / worldHeight;
-  const fitScale = Math.min(scaleX, scaleY);
-  const safeScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : 1;
-  viewState.minScale = Math.min(0.25, safeScale);
-  viewState.maxScale = Math.max(6, safeScale * 8);
-  viewState.scale = safeScale;
+  const { contain, cover } = computeViewScales(rect.width, rect.height, worldWidth, worldHeight);
+  viewState.containScale = contain;
+  viewState.coverScale = cover;
+  viewState.minScale = Math.min(0.25, contain);
+  viewState.maxScale = Math.max(6, cover * 4);
+  viewState.scale = cover;
   viewState.translateX = (rect.width - worldWidth * viewState.scale) / 2;
   viewState.translateY = (rect.height - worldHeight * viewState.scale) / 2;
   viewState.hasInteracted = false;
@@ -1675,14 +1690,19 @@ function handleResize() {
     return;
   }
 
+  const { contain, cover } = computeViewScales(
+    rect.width,
+    rect.height,
+    viewState.worldSize.width,
+    viewState.worldSize.height
+  );
+  viewState.containScale = contain;
+  viewState.coverScale = cover;
+  viewState.minScale = Math.min(0.25, contain);
+  viewState.maxScale = Math.max(6, cover * 4);
+
   if (!viewState.hasInteracted) {
-    const scaleX = rect.width / viewState.worldSize.width;
-    const scaleY = rect.height / viewState.worldSize.height;
-    const fitScale = Math.min(scaleX, scaleY);
-    const safeScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : viewState.scale;
-    viewState.minScale = Math.min(0.25, safeScale);
-    viewState.maxScale = Math.max(6, safeScale * 8);
-    viewState.scale = safeScale;
+    viewState.scale = cover;
     viewState.translateX = (rect.width - viewState.worldSize.width * viewState.scale) / 2;
     viewState.translateY = (rect.height - viewState.worldSize.height * viewState.scale) / 2;
   } else {
@@ -2616,34 +2636,7 @@ function createWorld(seedString) {
       const suffix = determineAlignmentSuffix(evil, savage);
 
       if (elev < seaLevel) {
-        const isFrozen = temp < 0.2;
-        let landNeighbors = 0;
-        for (let dy = -1; dy <= 1; dy += 1) {
-          for (let dx = -1; dx <= 1; dx += 1) {
-            if (dx === 0 && dy === 0) {
-              continue;
-            }
-            const nx = x + dx;
-            const ny = y + dy;
-            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-              continue;
-            }
-            if (elevation[ny * width + nx] >= seaLevel) {
-              landNeighbors += 1;
-            }
-          }
-        }
-        const isLake = landNeighbors >= 4 && elev > seaLevel - 0.05;
-        if (isFrozen) {
-          baseKey = 'FROZEN_OCEAN';
-        } else if (isLake) {
-          baseKey = 'LAKE';
-        } else if (elev < deepSeaLevel) {
-          baseKey = 'OCEAN_DEEP';
-        } else {
-          baseKey = 'OCEAN';
-        }
-        const resolved = resolveTileName(baseKey, suffix);
+        const resolved = resolveTileName('OCEAN', suffix);
         tiles[y][x] = { base: resolved, overlay: null };
         continue;
       }
