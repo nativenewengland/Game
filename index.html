@@ -176,12 +176,44 @@
               <p id="dwarf-trait-summary" class="trait-summary"></p>
             </div>
             <div class="customizer-fields">
-              <label for="dwarf-gender-select" class="field-label">Gender</label>
-              <select id="dwarf-gender-select" class="field-control">
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-                <option value="nonbinary">Non-binary</option>
-              </select>
+              <p id="dwarf-gender-label" class="field-label">Gender</p>
+              <div
+                id="dwarf-gender-buttons"
+                class="gender-toggle"
+                role="radiogroup"
+                aria-labelledby="dwarf-gender-label"
+              >
+                <button
+                  type="button"
+                  class="gender-toggle-button"
+                  data-gender-value="female"
+                  role="radio"
+                  aria-checked="true"
+                  tabindex="0"
+                >
+                  Female
+                </button>
+                <button
+                  type="button"
+                  class="gender-toggle-button"
+                  data-gender-value="male"
+                  role="radio"
+                  aria-checked="false"
+                  tabindex="-1"
+                >
+                  Male
+                </button>
+                <button
+                  type="button"
+                  class="gender-toggle-button"
+                  data-gender-value="nonbinary"
+                  role="radio"
+                  aria-checked="false"
+                  tabindex="-1"
+                >
+                  Non-binary
+                </button>
+              </div>
 
               <label for="dwarf-clan-select" class="field-label">Clan</label>
               <select id="dwarf-clan-select" class="field-control">
