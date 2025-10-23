@@ -357,35 +357,60 @@ function createWorld(seedString) {
     for (let x = 0; x < width; x += 1) {
       const sampleX = (x + offsetX) / width;
       const sampleY = (y + offsetY) / height;
-      const heightValue = octaveNoise(sampleX * 2.4, sampleY * 2.4, seedNumber + 101, 5, 0.52, 2.35);
+      const highFrequencyHeight = octaveNoise(sampleX * 2.4, sampleY * 2.4, seedNumber + 101, 5, 0.52, 2.35);
+      const continentalHeight = octaveNoise(sampleX * 0.9, sampleY * 0.9, seedNumber + 401, 4, 0.58, 1.9);
       const moistureValue = octaveNoise(sampleX * 2.1, sampleY * 2.1, seedNumber + 701, 4, 0.55, 2.4);
       const roughness = octaveNoise(sampleX * 3.5, sampleY * 3.5, seedNumber + 1401, 3, 0.5, 2.6);
+      const temperatureVariation = octaveNoise(sampleX * 1.6, sampleY * 1.6, seedNumber + 9001, 3, 0.55, 2.15);
       const randomFactor = hashCoords(x, y, seedNumber + 2909);
       const featureRoll = hashCoords(x, y, seedNumber + 8117);
       const structureRoll = hashCoords(x, y, seedNumber + 15233);
 
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const distanceToCenter = Math.hypot((x - centerX) / (width * 0.5), (y - centerY) / (height * 0.5));
+      const radialInfluence = clamp(1 - Math.pow(distanceToCenter, 1.25), 0, 1);
+      const combinedHeight =
+        highFrequencyHeight * 0.5 +
+        continentalHeight * 0.3 +
+        radialInfluence * 0.65 -
+        (1 - radialInfluence) * 0.2;
+      const heightValue = clamp(combinedHeight, 0, 1);
+
+      const latitudeInfluence = 1 - Math.abs(y / height - 0.5) * 2;
+      const warmBiome = clamp(latitudeInfluence * 0.7 + temperatureVariation * 0.3, 0, 1);
+      const dryness = 1 - moistureValue;
+
       let baseTile;
 
-      if (heightValue < 0.24) {
+      if (heightValue < 0.26) {
         baseTile = 'water';
-      } else if (heightValue < 0.32) {
-        baseTile = randomFactor > 0.5 ? 'sand' : 'water';
-      } else if (heightValue < 0.38) {
-        baseTile = randomFactor > 0.35 ? 'sand' : 'grass';
-      } else if (heightValue > 0.84) {
+      } else if (heightValue < 0.33) {
+        baseTile = warmBiome > 0.55 && dryness > 0.45 && randomFactor > 0.35 ? 'sand' : 'water';
+      } else if (heightValue < 0.41) {
+        baseTile = warmBiome > 0.55 && dryness > 0.45 ? 'sand' : 'grass';
+      } else if (heightValue > 0.88) {
         baseTile = 'stone';
-      } else if (heightValue > 0.74) {
+      } else if (heightValue > 0.8) {
         baseTile = randomFactor > 0.45 ? 'stone' : 'grass';
-      } else if (moistureValue < 0.28) {
-        baseTile = randomFactor > 0.45 ? 'badlands' : 'stone';
-      } else if (moistureValue < 0.34 && heightValue > 0.6) {
-        baseTile = randomFactor > 0.35 ? 'stone' : 'badlands';
+      } else if (dryness > 0.62 && warmBiome > 0.58 && heightValue > 0.46) {
+        baseTile = randomFactor > 0.4 ? 'badlands' : 'stone';
+      } else if (dryness > 0.54 && warmBiome > 0.55) {
+        baseTile = randomFactor > 0.6 ? 'stone' : 'badlands';
       } else {
         baseTile = 'grass';
       }
 
       baseRow[x] = baseTile;
-      dataRow[x] = { heightValue, moistureValue, roughness, randomFactor, featureRoll, structureRoll };
+      dataRow[x] = {
+        heightValue,
+        moistureValue,
+        roughness,
+        randomFactor,
+        featureRoll,
+        structureRoll,
+        warmBiome
+      };
     }
 
     baseTiles[y] = baseRow;
