@@ -2498,51 +2498,14 @@ function createWorld(seedString) {
   let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.1, 0.58), 0.82) : 1;
   let mountainFullThreshold = hasMountainTile ? Math.min(0.98, mountainBaseThreshold + 0.35) : 1;
   let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
+  const mountainScores = hasMountainTile ? new Float32Array(width * height) : null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
     [0, 1],
     [-1, 0]
   ];
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
-      const heightValue = elevationField[idx];
-      const isWater = heightValue <= seaLevel;
-      waterMask[idx] = isWater ? 1 : 0;
-      let overlay = null;
-      if (!isWater && mountainOverlayKey) {
-        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
-        if (normalizedHeight > 0) {
-          const probability = Math.min(1, 0.35 + normalizedHeight * 0.65);
-          if (normalizedHeight > 0.85 || rng() < probability) {
-            let coastalNeighbors = 0;
-            for (let i = 0; i < cardinalOffsets.length; i += 1) {
-              const nx = x + cardinalOffsets[i][0];
-              const ny = y + cardinalOffsets[i][1];
-              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-                continue;
-              }
-              const neighborIdx = ny * width + nx;
-              if (elevationField[neighborIdx] <= seaLevel) {
-                coastalNeighbors += 1;
-              }
-            }
-            if (coastalNeighbors < 2) {
-              overlay = mountainOverlayKey;
-            }
-          }
-        }
-      }
-      tiles[y][x] = {
-        base: isWater ? waterTileKey : grassTileKey,
-        overlay
-      };
-    }
-  }
-
-  const neighborOffsets = [
+  const neighborOffsets8 = [
     [-1, -1],
     [0, -1],
     [1, -1],
@@ -2553,6 +2516,147 @@ function createWorld(seedString) {
     [1, 1]
   ];
 
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const heightValue = elevationField[idx];
+      const isWater = heightValue <= seaLevel;
+      waterMask[idx] = isWater ? 1 : 0;
+      if (!isWater && mountainOverlayKey) {
+        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
+        mountainScores[idx] = normalizedHeight;
+      }
+      tiles[y][x] = {
+        base: isWater ? waterTileKey : grassTileKey,
+        overlay: null
+      };
+    }
+  }
+
+  if (hasMountainTile) {
+    const mountainMask = new Uint8Array(width * height);
+
+    const isTooCoastal = (x, y) => {
+      let coastalNeighbors = 0;
+      for (let i = 0; i < cardinalOffsets.length; i += 1) {
+        const nx = x + cardinalOffsets[i][0];
+        const ny = y + cardinalOffsets[i][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          coastalNeighbors += 1;
+          continue;
+        }
+        if (waterMask[ny * width + nx]) {
+          coastalNeighbors += 1;
+        }
+      }
+      return coastalNeighbors >= 2;
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const score = mountainScores[idx];
+        if (score >= 0.88 && !isTooCoastal(x, y)) {
+          mountainMask[idx] = 1;
+        }
+      }
+    }
+
+    for (let pass = 0; pass < 3; pass += 1) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx] || mountainMask[idx]) {
+            continue;
+          }
+          const score = mountainScores[idx];
+          if (score <= 0 || isTooCoastal(x, y)) {
+            continue;
+          }
+          let mountainNeighbors = 0;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            if (mountainMask[ny * width + nx]) {
+              mountainNeighbors += 1;
+            }
+          }
+          const minNeighbors = score > 0.8 ? 1 : score > 0.65 ? 2 : 3;
+          const probability = 0.2 + score * 0.8;
+          if (mountainNeighbors >= minNeighbors && (score > 0.75 || rng() < probability)) {
+            mountainMask[idx] = 1;
+          }
+        }
+      }
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx] || mountainMask[idx]) {
+          continue;
+        }
+        const score = mountainScores[idx];
+        if (score < 0.55 || isTooCoastal(x, y)) {
+          continue;
+        }
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          if (mountainMask[ny * width + nx]) {
+            mountainNeighbors += 1;
+          }
+        }
+        if (mountainNeighbors >= 4) {
+          mountainMask[idx] = 1;
+        }
+      }
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!mountainMask[idx]) {
+          continue;
+        }
+        const score = mountainScores[idx];
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          if (mountainMask[ny * width + nx]) {
+            mountainNeighbors += 1;
+          }
+        }
+        if (mountainNeighbors <= 1 && score < 0.92) {
+          mountainMask[idx] = 0;
+        }
+      }
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (mountainMask[idx]) {
+          tiles[y][x].overlay = mountainOverlayKey;
+        }
+      }
+    }
+  }
+
   for (let y = 1; y < height - 1; y += 1) {
     for (let x = 1; x < width - 1; x += 1) {
       const idx = y * width + x;
@@ -2560,9 +2664,9 @@ function createWorld(seedString) {
         continue;
       }
       let landNeighbors = 0;
-      for (let i = 0; i < neighborOffsets.length; i += 1) {
-        const nx = x + neighborOffsets[i][0];
-        const ny = y + neighborOffsets[i][1];
+      for (let i = 0; i < neighborOffsets8.length; i += 1) {
+        const nx = x + neighborOffsets8[i][0];
+        const ny = y + neighborOffsets8[i][1];
         if (waterMask[ny * width + nx] === 0) {
           landNeighbors += 1;
         }
