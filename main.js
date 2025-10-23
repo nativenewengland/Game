@@ -1273,8 +1273,8 @@ function closeDwarfCustomizer(options = {}) {
 const chronologyBias = {
   age: {
     min: 2,
-    max: 12,
-    exponent: 1.3
+    max: 20,
+    exponent: 1.6
   },
   year: {
     min: 50,
@@ -1322,14 +1322,15 @@ function isChronologyValid(chronology) {
     Number.isFinite(age) &&
     year >= 50 &&
     year <= 50000 &&
-    age >= 2 &&
-    age <= 12
+    age >= chronologyBias.age.min &&
+    age <= chronologyBias.age.max
   );
 }
 
 function sanitizeChronologyValues(yearValue, ageValue) {
   const safeYear = clamp(Math.round(yearValue), 50, 50000);
-  const safeAge = clamp(Math.round(ageValue), 2, 12);
+  const { min: ageMin, max: ageMax } = chronologyBias.age;
+  const safeAge = clamp(Math.round(ageValue), ageMin, ageMax);
   return { year: safeYear, age: safeAge };
 }
 
