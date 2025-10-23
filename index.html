@@ -165,16 +165,13 @@
             </div>
             <div class="customizer-preview" role="group" aria-label="Appearance preview">
               <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
-                <div class="dwarf-hair"></div>
-                <div class="dwarf-face">
-                  <div class="dwarf-eyes">
-                    <span class="dwarf-eye left-eye"></span>
-                    <span class="dwarf-eye right-eye"></span>
-                  </div>
-                  <div class="dwarf-nose"></div>
-                  <div class="dwarf-mouth"></div>
-                </div>
-                <div class="dwarf-beard"></div>
+                <canvas
+                  id="dwarf-portrait-canvas"
+                  class="dwarf-portrait-canvas"
+                  width="128"
+                  height="128"
+                  aria-hidden="true"
+                ></canvas>
               </div>
               <p id="dwarf-trait-summary" class="trait-summary"></p>
             </div>

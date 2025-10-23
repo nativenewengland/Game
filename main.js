@@ -412,6 +412,52 @@ const dwarfNamePools = {
   ]
 };
 
+const dwarfHairColorToFrame = {
+  obsidian: { column: 2 },
+  umber: { column: 6 },
+  auburn: { column: 3 },
+  copper: { column: 5, tint: '#b56a33' },
+  golden: { column: 4 },
+  ashen: { column: 1, tint: '#c0c6d1' },
+  white: { column: 1 }
+};
+
+const dwarfHairStyleRows = {
+  male: 4,
+  female: 5,
+  nonbinary: 5,
+  default: 4
+};
+
+const dwarfBeardRows = {
+  clean: null,
+  short: 24,
+  full: 26,
+  braided: 29,
+  forked: 23,
+  mutton: 21,
+  default: 26
+};
+
+const dwarfPortraitConfig = {
+  tileSize: 32,
+  scale: 4,
+  baseFrame: { sheet: 'body', col: 4, row: 8, tint: '#5b473c', offsetY: 4 },
+  headFrame: { sheet: 'eyes', col: 4, row: 0, offsetY: 0 },
+  hairOffsetY: -2,
+  beardOffsetY: 2,
+  eyePositions: [
+    { x: 13, y: 15 },
+    { x: 18, y: 15 }
+  ],
+  eyeSize: 2
+};
+
+const dwarfPortraitState = {
+  canvas: null,
+  ctx: null
+};
+
 const musicTracks = [
   { title: 'Another Year', src: 'sound/tracks/another_year/AY_Full.ogg' },
   { title: 'Craftsdwarfship', src: 'sound/tracks/craftsdwarfship/CS_Full.ogg' },
@@ -484,6 +530,7 @@ const elements = {
   dwarfRandomise: document.getElementById('dwarf-randomise'),
   dwarfBack: document.getElementById('dwarf-back'),
   dwarfPortrait: document.getElementById('dwarf-portrait'),
+  dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary')
 };
 
@@ -725,6 +772,149 @@ function getActiveDwarf() {
   return state.dwarfParty.dwarves[state.dwarfParty.activeIndex] || null;
 }
 
+function ensurePortraitContext() {
+  const canvas = elements.dwarfPortraitCanvas || null;
+  if (!canvas) {
+    dwarfPortraitState.canvas = null;
+    dwarfPortraitState.ctx = null;
+    return null;
+  }
+  if (canvas !== dwarfPortraitState.canvas) {
+    const context = canvas.getContext('2d');
+    if (!context) {
+      dwarfPortraitState.canvas = null;
+      dwarfPortraitState.ctx = null;
+      return null;
+    }
+    context.imageSmoothingEnabled = false;
+    dwarfPortraitState.canvas = canvas;
+    dwarfPortraitState.ctx = context;
+  }
+  return dwarfPortraitState.ctx;
+}
+
+function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
+  const sheet = dwarfSpriteSheets[sheetKey];
+  if (!sheet?.image) {
+    return;
+  }
+  const { tileSize } = sheet;
+  const sx = frame.col * tileSize;
+  const sy = frame.row * tileSize;
+  const sw = tileSize;
+  const sh = tileSize;
+  const destX = baseX;
+  const destY = baseY + Math.round((frame.offsetY || 0) * scale);
+  const destW = sw * scale;
+  const destH = sh * scale;
+
+  const offscreen = document.createElement('canvas');
+  offscreen.width = sw;
+  offscreen.height = sh;
+  const offscreenCtx = offscreen.getContext('2d');
+  if (!offscreenCtx) {
+    return;
+  }
+  offscreenCtx.imageSmoothingEnabled = false;
+  offscreenCtx.drawImage(sheet.image, sx, sy, sw, sh, 0, 0, sw, sh);
+  if (tint) {
+    offscreenCtx.globalCompositeOperation = 'source-atop';
+    offscreenCtx.fillStyle = tint;
+    offscreenCtx.globalAlpha = 0.9;
+    offscreenCtx.fillRect(0, 0, sw, sh);
+    offscreenCtx.globalAlpha = 1;
+    offscreenCtx.globalCompositeOperation = 'source-over';
+  }
+  ctx.drawImage(offscreen, 0, 0, sw, sh, destX, destY, destW, destH);
+}
+
+function getHairFrame(dwarf, hairOption) {
+  const genderKey = dwarfHairStyleRows[dwarf.gender] !== undefined ? dwarf.gender : 'default';
+  const row = dwarfHairStyleRows[genderKey] ?? dwarfHairStyleRows.default;
+  const mapping = dwarfHairColorToFrame[hairOption?.value] || dwarfHairColorToFrame.obsidian;
+  if (typeof row !== 'number' || !mapping || typeof mapping.column !== 'number') {
+    return null;
+  }
+  return {
+    sheet: 'hair',
+    col: mapping.column,
+    row,
+    tint: mapping.tint || null,
+    offsetY: dwarfPortraitConfig.hairOffsetY
+  };
+}
+
+function getBeardFrame(beardValue, hairOption) {
+  const row = dwarfBeardRows[beardValue] ?? dwarfBeardRows.default;
+  if (row === null || row === undefined) {
+    return null;
+  }
+  const mapping = dwarfHairColorToFrame[hairOption?.value] || dwarfHairColorToFrame.obsidian;
+  if (!mapping || typeof mapping.column !== 'number') {
+    return null;
+  }
+  return {
+    sheet: 'hair',
+    col: mapping.column,
+    row,
+    tint: mapping.tint || null,
+    offsetY: dwarfPortraitConfig.beardOffsetY
+  };
+}
+
+function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption) {
+  const ctx = ensurePortraitContext();
+  if (!ctx) {
+    return;
+  }
+  const canvas = dwarfPortraitState.canvas;
+  if (!canvas) {
+    return;
+  }
+  const { tileSize, scale, baseFrame, headFrame, eyePositions, eyeSize } = dwarfPortraitConfig;
+  const destSize = tileSize * scale;
+  const baseX = Math.floor((canvas.width - destSize) / 2);
+  const baseY = Math.floor((canvas.height - destSize) / 2);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (baseFrame) {
+    drawTintedSprite(ctx, baseFrame.sheet, baseFrame, baseX, baseY, scale, baseFrame.tint);
+  }
+
+  if (headFrame) {
+    const skinColor = skinOption?.color || '#c59b7d';
+    drawTintedSprite(ctx, headFrame.sheet, headFrame, baseX, baseY, scale, skinColor);
+  }
+
+  const hairFrame = getHairFrame(dwarf, hairOption);
+  if (hairFrame) {
+    drawTintedSprite(ctx, hairFrame.sheet, hairFrame, baseX, baseY, scale, hairFrame.tint);
+  }
+
+  const beardFrame = getBeardFrame(dwarf.beard || 'clean', hairOption);
+  if (beardFrame) {
+    drawTintedSprite(ctx, beardFrame.sheet, beardFrame, baseX, baseY, scale, beardFrame.tint);
+  }
+
+  const eyeColor = eyeOption?.color || '#604a2b';
+  ctx.fillStyle = eyeColor;
+  eyePositions.forEach(({ x, y }) => {
+    ctx.fillRect(baseX + Math.round(x * scale), baseY + Math.round(y * scale), eyeSize * scale, eyeSize * scale);
+  });
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
+  eyePositions.forEach(({ x, y }) => {
+    const highlightSize = Math.max(1, Math.floor(scale / 2));
+    ctx.fillRect(
+      baseX + Math.round((x + 0.5) * scale),
+      baseY + Math.round((y + 0.5) * scale),
+      highlightSize,
+      highlightSize
+    );
+  });
+}
+
 function updateDwarfPortrait(dwarf) {
   if (!elements.dwarfPortrait || !dwarf) {
     return;
@@ -733,19 +923,9 @@ function updateDwarfPortrait(dwarf) {
   const hairOption = getOptionByValue('hair', dwarf.hair);
   const eyeOption = getOptionByValue('eyes', dwarf.eyes);
 
-  if (skinOption?.color) {
-    elements.dwarfPortrait.style.setProperty('--skin-color', skinOption.color);
-  }
-  if (hairOption?.color) {
-    elements.dwarfPortrait.style.setProperty('--hair-color', hairOption.color);
-  }
-  if (eyeOption?.color) {
-    elements.dwarfPortrait.style.setProperty('--eye-color', eyeOption.color);
-  }
+  renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption);
 
   const beardValue = dwarf.beard || 'clean';
-  elements.dwarfPortrait.dataset.beard = beardValue;
-
   const genderLabel = getOptionLabel('gender', dwarf.gender);
   const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
   const hairLabel = getOptionLabel('hair', dwarf.hair).toLowerCase();
