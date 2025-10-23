@@ -72,6 +72,7 @@ const elements = {
   optionsForm: document.getElementById('options-form'),
   regenerate: document.getElementById('regenerate-button'),
   canvas: document.getElementById('world-canvas'),
+  canvasWrapper: document.querySelector('.canvas-wrapper'),
   seedDisplay: document.querySelector('.seed-display'),
   mapWidthInput: document.getElementById('map-width'),
   mapHeightInput: document.getElementById('map-height'),
@@ -212,6 +213,166 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+const viewState = {
+  scale: 1,
+  translateX: 0,
+  translateY: 0,
+  minScale: 0.25,
+  maxScale: 6,
+  wrapperSize: { width: 0, height: 0 },
+  worldSize: { width: 0, height: 0 },
+  hasInteracted: false
+};
+
+function applyViewTransform() {
+  if (!elements.canvas) {
+    return;
+  }
+  elements.canvas.style.transform = `translate(${viewState.translateX}px, ${viewState.translateY}px) scale(${viewState.scale})`;
+}
+
+function resetView(worldWidth, worldHeight) {
+  if (!elements.canvasWrapper) {
+    return;
+  }
+  const rect = elements.canvasWrapper.getBoundingClientRect();
+  viewState.wrapperSize = { width: rect.width, height: rect.height };
+  viewState.worldSize = { width: worldWidth, height: worldHeight };
+  const scaleX = rect.width / worldWidth;
+  const scaleY = rect.height / worldHeight;
+  const fitScale = Math.min(scaleX, scaleY);
+  const safeScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : 1;
+  viewState.minScale = Math.min(0.25, safeScale);
+  viewState.maxScale = Math.max(6, safeScale * 8);
+  viewState.scale = safeScale;
+  viewState.translateX = (rect.width - worldWidth * viewState.scale) / 2;
+  viewState.translateY = (rect.height - worldHeight * viewState.scale) / 2;
+  viewState.hasInteracted = false;
+  applyViewTransform();
+}
+
+function handleResize() {
+  if (!elements.canvasWrapper) {
+    return;
+  }
+  const previousWidth = viewState.wrapperSize.width;
+  const previousHeight = viewState.wrapperSize.height;
+  const rect = elements.canvasWrapper.getBoundingClientRect();
+  viewState.wrapperSize = { width: rect.width, height: rect.height };
+
+  if (!viewState.worldSize.width || !viewState.worldSize.height) {
+    applyViewTransform();
+    return;
+  }
+
+  if (!viewState.hasInteracted) {
+    const scaleX = rect.width / viewState.worldSize.width;
+    const scaleY = rect.height / viewState.worldSize.height;
+    const fitScale = Math.min(scaleX, scaleY);
+    const safeScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : viewState.scale;
+    viewState.minScale = Math.min(0.25, safeScale);
+    viewState.maxScale = Math.max(6, safeScale * 8);
+    viewState.scale = safeScale;
+    viewState.translateX = (rect.width - viewState.worldSize.width * viewState.scale) / 2;
+    viewState.translateY = (rect.height - viewState.worldSize.height * viewState.scale) / 2;
+  } else {
+    const deltaX = (rect.width - previousWidth) / 2;
+    const deltaY = (rect.height - previousHeight) / 2;
+    if (Number.isFinite(deltaX)) {
+      viewState.translateX += deltaX;
+    }
+    if (Number.isFinite(deltaY)) {
+      viewState.translateY += deltaY;
+    }
+  }
+
+  applyViewTransform();
+}
+
+function setupMapInteractions() {
+  if (!elements.canvasWrapper) {
+    return;
+  }
+
+  let isPanning = false;
+  let activePointerId = null;
+  const lastPosition = { x: 0, y: 0 };
+
+  const handleWheel = (event) => {
+    if (!elements.canvas) {
+      return;
+    }
+    event.preventDefault();
+    const { offsetX, offsetY } = event;
+    const zoomIntensity = 0.1;
+    const direction = event.deltaY > 0 ? -1 : 1;
+    const scaleFactor = 1 + zoomIntensity * direction;
+    const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
+    const actualFactor = targetScale / viewState.scale;
+    const originX = offsetX - viewState.translateX;
+    const originY = offsetY - viewState.translateY;
+    viewState.translateX -= originX * (actualFactor - 1);
+    viewState.translateY -= originY * (actualFactor - 1);
+    viewState.scale = targetScale;
+    viewState.hasInteracted = true;
+    applyViewTransform();
+  };
+
+  const handlePointerDown = (event) => {
+    if (activePointerId !== null) {
+      return;
+    }
+    if (event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch') {
+      return;
+    }
+    event.preventDefault();
+    isPanning = true;
+    activePointerId = event.pointerId;
+    lastPosition.x = event.clientX;
+    lastPosition.y = event.clientY;
+    elements.canvasWrapper.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!isPanning || event.pointerId !== activePointerId) {
+      return;
+    }
+    event.preventDefault();
+    const dx = event.clientX - lastPosition.x;
+    const dy = event.clientY - lastPosition.y;
+    lastPosition.x = event.clientX;
+    lastPosition.y = event.clientY;
+    viewState.translateX += dx;
+    viewState.translateY += dy;
+    viewState.hasInteracted = true;
+    applyViewTransform();
+  };
+
+  const handlePointerUp = (event) => {
+    if (event.pointerId !== activePointerId) {
+      return;
+    }
+    elements.canvasWrapper.releasePointerCapture(event.pointerId);
+    isPanning = false;
+    activePointerId = null;
+  };
+
+  const handleDoubleClick = () => {
+    if (!viewState.worldSize.width || !viewState.worldSize.height) {
+      return;
+    }
+    resetView(viewState.worldSize.width, viewState.worldSize.height);
+  };
+
+  elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
+  elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
+  elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
+  elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
+  elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
+  elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
+  window.addEventListener('resize', handleResize);
 }
 
 function updateMusicToggleLabel() {
@@ -663,12 +824,12 @@ function drawWorld(world) {
 
   elements.canvas.width = width * drawSize;
   elements.canvas.height = height * drawSize;
-  const wrapper = elements.canvas.parentElement;
   const pixelWidth = width * drawSize;
   const pixelHeight = height * drawSize;
-  const wrapperWidth = wrapper ? wrapper.clientWidth : pixelWidth;
-  elements.canvas.style.width = pixelWidth <= wrapperWidth ? `${pixelWidth}px` : '100%';
-  elements.canvas.style.height = pixelWidth <= wrapperWidth ? `${pixelHeight}px` : 'auto';
+  elements.canvas.style.width = `${pixelWidth}px`;
+  elements.canvas.style.height = `${pixelHeight}px`;
+
+  resetView(pixelWidth, pixelHeight);
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -785,9 +946,9 @@ attachEvents();
 
 function initialise() {
   syncInputsWithSettings();
-  elements.canvas.style.maxWidth = '100%';
-  elements.canvas.style.height = 'auto';
   setupAudioControls();
+  setupMapInteractions();
+  handleResize();
 }
 
 initialise();
