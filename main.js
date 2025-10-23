@@ -2493,7 +2493,7 @@ function createWorld(seedString) {
       if (!isWater && mountainOverlayKey) {
         const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
         if (normalizedHeight > 0) {
-          const probability = normalizedHeight * 0.55 + normalizedHeight * normalizedHeight * 0.45;
+          const probability = Math.min(1, 0.35 + normalizedHeight * 0.65);
           if (normalizedHeight > 0.85 || rng() < probability) {
             let coastalNeighbors = 0;
             for (let i = 0; i < cardinalOffsets.length; i += 1) {
