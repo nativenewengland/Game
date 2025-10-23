@@ -118,6 +118,99 @@
       </form>
     </section>
 
+    <section
+      id="dwarf-customizer"
+      class="screen hidden embark-screen"
+      aria-label="Character customiser"
+    >
+      <div class="embark-backdrop" aria-hidden="true"></div>
+      <form id="dwarf-customizer-form" class="embark-panel">
+        <header class="embark-header">
+          <p class="embark-eyebrow">Adventurer Setup</p>
+          <h2>Forge Your Dwarf</h2>
+          <p class="embark-description">
+            Shape the lone pioneer you'll guide into the depths.
+          </p>
+        </header>
+        <div class="solo-customizer" aria-live="polite">
+          <aside class="portrait-column" aria-label="Portrait preview">
+            <canvas
+              id="dwarf-portrait-canvas"
+              class="dwarf-portrait-canvas"
+              width="128"
+              height="128"
+              role="img"
+              aria-label="Dwarf portrait"
+            ></canvas>
+            <p id="dwarf-trait-summary" class="trait-summary"></p>
+            <button type="button" id="dwarf-randomise" class="secondary">
+              Randomise Appearance
+            </button>
+          </aside>
+          <section class="customizer-fields" aria-label="Appearance options">
+            <label class="field-label" for="dwarf-name-input">Name</label>
+            <input
+              type="text"
+              id="dwarf-name-input"
+              class="dwarf-name-input"
+              maxlength="40"
+              autocomplete="off"
+              required
+            />
+
+            <label for="dwarf-gender-select" class="field-label">Gender</label>
+            <select id="dwarf-gender-select" class="field-control">
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+            </select>
+
+            <label for="dwarf-skin-select" class="field-label">Skin tone</label>
+            <select id="dwarf-skin-select" class="field-control">
+              <option value="light">Warm Ivory</option>
+              <option value="tawny">Tawny Ochre</option>
+              <option value="russet">Russet Clay</option>
+              <option value="ebony">Deep Umber</option>
+            </select>
+
+            <label for="dwarf-eye-select" class="field-label">Eye colour</label>
+            <select id="dwarf-eye-select" class="field-control">
+              <option value="amethyst">Amethyst</option>
+              <option value="slate">Slate Violet</option>
+              <option value="moss">Moss Green</option>
+              <option value="seafoam">Seafoam Teal</option>
+              <option value="jade">Jade</option>
+              <option value="amber">Burnished Amber</option>
+              <option value="crimson">Crimson</option>
+            </select>
+
+            <label for="dwarf-hair-select" class="field-label">Hair colour</label>
+            <select id="dwarf-hair-select" class="field-control">
+              <option value="white">Ice White</option>
+              <option value="black">Coal Black</option>
+              <option value="red">Ember Red</option>
+              <option value="blond">Golden Blond</option>
+              <option value="light-brown">Chestnut Brown</option>
+              <option value="dark-brown">Umbral Brown</option>
+            </select>
+
+            <label for="dwarf-beard-select" class="field-label">Beard style</label>
+            <select id="dwarf-beard-select" class="field-control">
+              <option value="clean">Clean-shaven</option>
+              <option value="stubble">Stubble</option>
+              <option value="short">Short Comb</option>
+              <option value="medium">Trimmed Beard</option>
+              <option value="long">Long Comb</option>
+              <option value="braided">Braided Falls</option>
+            </select>
+          </section>
+        </div>
+        <footer class="embark-actions customizer-actions">
+          <button type="button" id="dwarf-back" class="secondary">Back</button>
+          <button type="submit" class="primary">Begin Adventure</button>
+        </footer>
+      </form>
+    </section>
+
     <div id="game-container" class="screen hidden">
       <header class="game-ui">
         <div class="controls">
