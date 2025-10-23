@@ -38,6 +38,7 @@ const dwarfSpriteSheets = {
 
 const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
+  TREE: { row: 0, col: 2 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 }
 };
@@ -2449,7 +2450,12 @@ function createWorld(seedString) {
   normalizeField(elevationField);
 
   const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
-  const tiles = Array.from({ length: height }, () => Array.from({ length: width }, () => ({ base: 'GRASS', overlay: null })));
+  const grassTileKey = resolveTileName('GRASS');
+  const waterTileKey = resolveTileName('WATER');
+  const tiles = Array.from(
+    { length: height },
+    () => Array.from({ length: width }, () => ({ base: grassTileKey, overlay: null }))
+  );
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
@@ -2494,7 +2500,7 @@ function createWorld(seedString) {
         }
       }
       tiles[y][x] = {
-        base: resolveTileName(isWater ? 'WATER' : 'GRASS'),
+        base: isWater ? waterTileKey : grassTileKey,
         overlay
       };
     }
@@ -2528,9 +2534,143 @@ function createWorld(seedString) {
       if (landNeighbors >= 6) {
         waterMask[idx] = 0;
         tiles[y][x] = {
-          base: resolveTileName('GRASS'),
+          base: grassTileKey,
           overlay: null
         };
+      }
+    }
+  }
+
+  const hasTreeTile = tileLookup.has('TREE');
+  if (hasTreeTile) {
+    const treeOverlayKey = 'TREE';
+    const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
+    const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
+    const treeBaseScale = 2.4 + rng() * 1.6;
+    const treeDetailScale = 6.6 + rng() * 4.6;
+    const treeBaseOffsetX = rng() * 4096;
+    const treeBaseOffsetY = rng() * 4096;
+    const treeDetailOffsetX = rng() * 8192;
+    const treeDetailOffsetY = rng() * 8192;
+    const treeDensityField = new Float32Array(width * height);
+    const treeMask = new Uint8Array(width * height);
+    const clusterNeighborOffsets = [
+      [-1, -1],
+      [0, -1],
+      [1, -1],
+      [-1, 0],
+      [1, 0],
+      [-1, 1],
+      [0, 1],
+      [1, 1]
+    ];
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const baseNoise = octaveNoise(
+          (normalizedX + treeBaseOffsetX) * treeBaseScale,
+          (normalizedY + treeBaseOffsetY) * treeBaseScale,
+          treeBaseSeed,
+          3,
+          0.55,
+          2.05
+        );
+        const detailNoise = octaveNoise(
+          (normalizedX + treeDetailOffsetX) * treeDetailScale,
+          (normalizedY + treeDetailOffsetY) * treeDetailScale,
+          treeDetailSeed,
+          4,
+          0.5,
+          2.3
+        );
+        const elevationValue = elevationField[idx];
+        const elevationPreference = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.12)) * 2.6, 0, 1);
+        let density = baseNoise * 0.68 + detailNoise * 0.32;
+        density = clamp(density * 0.6 + elevationPreference * 0.4, 0, 1);
+        treeDensityField[idx] = density;
+      }
+    }
+
+    const seedThreshold = 0.66;
+    const softSeedThreshold = 0.56;
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (tile.overlay || tile.base !== grassTileKey) {
+          continue;
+        }
+        const density = treeDensityField[idx];
+        if (density >= seedThreshold || (density > softSeedThreshold && rng() < (density - softSeedThreshold) * 1.8)) {
+          treeMask[idx] = 1;
+          tile.overlay = treeOverlayKey;
+        }
+      }
+    }
+
+    const maxGrowthIterations = 2;
+    for (let iteration = 0; iteration < maxGrowthIterations; iteration += 1) {
+      const additions = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (tile.overlay || tile.base !== grassTileKey) {
+            continue;
+          }
+          let neighborTrees = 0;
+          for (let i = 0; i < clusterNeighborOffsets.length; i += 1) {
+            const nx = x + clusterNeighborOffsets[i][0];
+            const ny = y + clusterNeighborOffsets[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (treeMask[nIdx]) {
+              neighborTrees += 1;
+            }
+          }
+          if (neighborTrees < 2) {
+            continue;
+          }
+          const density = treeDensityField[idx];
+          const probability = clamp((density - 0.48) / 0.52 + neighborTrees * 0.08, 0, 1);
+          if (density > 0.6 || rng() < probability) {
+            additions.push(idx);
+          }
+        }
+      }
+
+      if (additions.length === 0) {
+        break;
+      }
+
+      for (let i = 0; i < additions.length; i += 1) {
+        const idx = additions[i];
+        if (treeMask[idx]) {
+          continue;
+        }
+        if (waterMask[idx]) {
+          continue;
+        }
+        const y = Math.floor(idx / width);
+        const x = idx % width;
+        const tile = tiles[y][x];
+        if (tile.overlay || tile.base !== grassTileKey) {
+          continue;
+        }
+        treeMask[idx] = 1;
+        tile.overlay = treeOverlayKey;
       }
     }
   }
