@@ -618,7 +618,7 @@ const elements = {
   dwarfNext: document.getElementById('dwarf-next'),
   dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
   dwarfNameInput: document.getElementById('dwarf-name-input'),
-  dwarfGenderSelect: document.getElementById('dwarf-gender-select'),
+  dwarfGenderButtons: document.getElementById('dwarf-gender-buttons'),
   dwarfClanSelect: document.getElementById('dwarf-clan-select'),
   dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
@@ -1197,6 +1197,28 @@ function ensureSelectValue(selectElement, value, fallback) {
   }
 }
 
+function updateGenderButtonsUI(selectedValue) {
+  const container = elements.dwarfGenderButtons;
+  if (!container) {
+    return;
+  }
+  const buttons = Array.from(container.querySelectorAll('[data-gender-value]'));
+  if (buttons.length === 0) {
+    return;
+  }
+  const fallback = dwarfOptions.gender[0]?.value;
+  const targetValue = buttons.some((button) => button.dataset.genderValue === selectedValue)
+    ? selectedValue
+    : fallback;
+
+  buttons.forEach((button) => {
+    const isActive = button.dataset.genderValue === targetValue;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    button.tabIndex = isActive ? 0 : -1;
+  });
+}
+
 function updateCustomizerUI() {
   ensureDwarfParty();
   const dwarf = getActiveDwarf();
@@ -1215,11 +1237,7 @@ function updateCustomizerUI() {
     elements.dwarfNameInput.value = dwarf.name;
   }
 
-  ensureSelectValue(
-    elements.dwarfGenderSelect,
-    dwarf.gender,
-    dwarfOptions.gender[0].value
-  );
+  updateGenderButtonsUI(dwarf.gender);
   ensureSelectValue(
     elements.dwarfClanSelect,
     dwarf.clan,
@@ -1349,7 +1367,11 @@ function openDwarfCustomizer(options = {}) {
     elements.dwarfCustomizer.classList.remove('hidden');
   }
   updateCustomizerUI();
-  const focusTarget = elements.dwarfNameInput || elements.dwarfGenderSelect;
+  const activeGenderButton = elements.dwarfGenderButtons
+    ? elements.dwarfGenderButtons.querySelector('.gender-toggle-button.active') ||
+      elements.dwarfGenderButtons.querySelector('.gender-toggle-button')
+    : null;
+  const focusTarget = elements.dwarfNameInput || activeGenderButton;
   if (focusTarget) {
     focusTarget.focus();
     if (typeof focusTarget.select === 'function') {
@@ -2945,9 +2967,42 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfGenderSelect) {
-    elements.dwarfGenderSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('gender', event.target.value);
+  if (elements.dwarfGenderButtons) {
+    elements.dwarfGenderButtons.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-gender-value]');
+      if (!button || !elements.dwarfGenderButtons.contains(button)) {
+        return;
+      }
+      const { genderValue } = button.dataset;
+      if (!genderValue) {
+        return;
+      }
+      updateDwarfTrait('gender', genderValue);
+    });
+
+    elements.dwarfGenderButtons.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      const buttons = Array.from(
+        elements.dwarfGenderButtons.querySelectorAll('[data-gender-value]')
+      );
+      if (buttons.length === 0) {
+        return;
+      }
+      const currentIndex = buttons.findIndex((button) => button.classList.contains('active'));
+      const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      const nextIndex = currentIndex === -1 ? 0 : (currentIndex + direction + buttons.length) % buttons.length;
+      const nextButton = buttons[nextIndex];
+      if (!nextButton) {
+        return;
+      }
+      nextButton.focus();
+      const { genderValue } = nextButton.dataset;
+      if (genderValue) {
+        updateDwarfTrait('gender', genderValue);
+      }
     });
   }
 

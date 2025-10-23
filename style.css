@@ -519,6 +519,46 @@ button:hover:not(:disabled) {
   gap: 1rem 1.25rem;
 }
 
+.gender-toggle {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.gender-toggle-button {
+  flex: 1 1 0;
+  min-width: 120px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(18, 24, 36, 0.82), rgba(10, 12, 18, 0.82));
+  color: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+.gender-toggle-button:hover,
+.gender-toggle-button:focus-visible {
+  border-color: rgba(240, 198, 116, 0.55);
+  box-shadow: 0 0.55rem 1.5rem rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, rgba(24, 32, 48, 0.9), rgba(14, 18, 26, 0.9));
+}
+
+.gender-toggle-button.active,
+.gender-toggle-button[aria-checked='true'] {
+  border-color: rgba(240, 198, 116, 0.85);
+  background: linear-gradient(180deg, rgba(240, 198, 116, 0.32), rgba(150, 110, 48, 0.4));
+  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.3), 0 0.6rem 1.6rem rgba(0, 0, 0, 0.35);
+}
+
 .customizer-inline-actions {
   display: flex;
   justify-content: flex-end;
