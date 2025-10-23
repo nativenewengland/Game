@@ -2473,8 +2473,8 @@ function createWorld(seedString) {
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
-  let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.2, 0.62), 0.85) : 1;
-  let mountainFullThreshold = hasMountainTile ? Math.min(0.97, mountainBaseThreshold + 0.25) : 1;
+  let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.1, 0.58), 0.82) : 1;
+  let mountainFullThreshold = hasMountainTile ? Math.min(0.98, mountainBaseThreshold + 0.35) : 1;
   let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
   const cardinalOffsets = [
     [0, -1],
