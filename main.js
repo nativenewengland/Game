@@ -79,7 +79,7 @@ const worldNames = [
   'Nûrnheim',
   'Midkemia',
   'Skarnheim',
-  'Shannara World',
+  'Shannara',
   'Alagaësia',
   'Syf',
   'Elysium',
