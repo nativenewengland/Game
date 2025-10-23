@@ -2042,24 +2042,26 @@ function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.
   return sum / maxAmplitude;
 }
 
-function generateContinentSeeds(rng) {
-  const seeds = [];
-  const desired = 2 + Math.floor(rng() * 3);
-  const maxAttempts = desired * 30;
-  const minDistance = 0.23;
+function generateContinentalPlates(rng) {
+  const plates = [];
+  const desired = 3 + Math.floor(rng() * 3);
+  const maxAttempts = desired * 25;
+  const minDistance = 0.22;
 
-  for (let attempt = 0; attempt < maxAttempts && seeds.length < desired; attempt += 1) {
+  for (let attempt = 0; attempt < maxAttempts && plates.length < desired; attempt += 1) {
+    const radiusBase = 0.2 + rng() * 0.24;
+    const rotation = rng() * Math.PI * 2;
     const candidate = {
       x: rng() * 0.7 + 0.15,
       y: rng() * 0.7 + 0.15,
-      radius: 0.22 + rng() * 0.2,
-      falloff: 1.2 + rng() * 1.1,
-      strength: 0.65 + rng() * 0.35,
-      warpStrength: 0.06 + rng() * 0.06,
-      detailStrength: 0.15 + rng() * 0.1,
-      warpOffsetX: rng() * 8,
-      warpOffsetY: rng() * 8,
-      detailOffset: rng() * 8
+      radiusX: radiusBase * (0.85 + rng() * 1.45),
+      radiusY: radiusBase * (0.55 + rng() * 0.8),
+      falloff: 1.15 + rng() * 1.7,
+      sharpness: 1.1 + rng() * 1.6,
+      strength: 0.68 + rng() * 0.4,
+      rotation,
+      cos: Math.cos(rotation),
+      sin: Math.sin(rotation)
     };
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
@@ -2068,11 +2070,10 @@ function generateContinentSeeds(rng) {
     }
 
     let tooClose = false;
-    for (let i = 0; i < seeds.length; i += 1) {
-      const existing = seeds[i];
+    for (let i = 0; i < plates.length; i += 1) {
+      const existing = plates[i];
       const separation = Math.hypot(candidate.x - existing.x, candidate.y - existing.y);
-      const spacing = Math.max(minDistance, (candidate.radius + existing.radius) * 0.35);
-      if (separation < spacing) {
+      if (separation < minDistance) {
         tooClose = true;
         break;
       }
@@ -2082,91 +2083,82 @@ function generateContinentSeeds(rng) {
       continue;
     }
 
-    seeds.push(candidate);
+    plates.push(candidate);
   }
 
-  if (seeds.length === 0) {
-    seeds.push({
+  if (plates.length === 0) {
+    const rotation = rng() * Math.PI * 2;
+    plates.push({
       x: 0.5,
       y: 0.5,
-      radius: 0.35,
+      radiusX: 0.32,
+      radiusY: 0.24,
       falloff: 1.6,
+      sharpness: 1.4,
       strength: 0.9,
-      warpStrength: 0.08,
-      detailStrength: 0.18,
-      warpOffsetX: rng() * 8,
-      warpOffsetY: rng() * 8,
-      detailOffset: rng() * 8
+      rotation,
+      cos: Math.cos(rotation),
+      sin: Math.sin(rotation)
     });
   }
 
-  const islandCount = rng() < 0.7 ? 1 + Math.floor(rng() * 3) : 0;
+  const islandCount = 2 + Math.floor(rng() * 4);
   for (let i = 0; i < islandCount; i += 1) {
-    seeds.push({
-      x: clamp(rng() * 0.9, 0.05, 0.95),
-      y: clamp(rng() * 0.9, 0.05, 0.95),
-      radius: 0.08 + rng() * 0.12,
-      falloff: 1.5 + rng() * 1.2,
-      strength: 0.35 + rng() * 0.25,
-      warpStrength: 0.05 + rng() * 0.05,
-      detailStrength: 0.25 + rng() * 0.1,
-      warpOffsetX: rng() * 8,
-      warpOffsetY: rng() * 8,
-      detailOffset: rng() * 8
+    const rotation = rng() * Math.PI * 2;
+    plates.push({
+      x: clamp(rng() * 0.92, 0.04, 0.96),
+      y: clamp(rng() * 0.92, 0.04, 0.96),
+      radiusX: 0.07 + rng() * 0.08,
+      radiusY: 0.05 + rng() * 0.07,
+      falloff: 1.4 + rng() * 1.4,
+      sharpness: 1.2 + rng() * 1.1,
+      strength: 0.4 + rng() * 0.35,
+      rotation,
+      cos: Math.cos(rotation),
+      sin: Math.sin(rotation)
     });
   }
 
-  return seeds;
+  return plates;
 }
 
-function computeContinentInfluence(normalizedX, normalizedY, seeds, warpSeed, detailSeed) {
-  if (!seeds || seeds.length === 0) {
-    return 0;
+function sampleContinentalPlates(x, y, plates) {
+  if (!plates || plates.length === 0) {
+    return { height: 0, mask: 0 };
   }
 
-  let maxValue = 0;
-  for (let i = 0; i < seeds.length; i += 1) {
-    const seed = seeds[i];
-    const warpNoiseX = octaveNoise(
-      (normalizedX + seed.warpOffsetX) * 1.3,
-      (normalizedY + seed.warpOffsetX) * 1.3,
-      warpSeed + i * 97,
-      3,
-      0.58,
-      2.2
-    );
-    const warpNoiseY = octaveNoise(
-      (normalizedX - seed.warpOffsetY) * 1.3,
-      (normalizedY + seed.warpOffsetY) * 1.3,
-      warpSeed + i * 131,
-      3,
-      0.58,
-      2.2
-    );
+  let maxContribution = 0;
+  let secondContribution = 0;
+  let sum = 0;
+  let weight = 0;
 
-    const warpedX = normalizedX + (warpNoiseX - 0.5) * seed.warpStrength;
-    const warpedY = normalizedY + (warpNoiseY - 0.5) * seed.warpStrength;
-
-    const dx = warpedX - seed.x;
-    const dy = warpedY - seed.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    const radiusNoise = octaveNoise(
-      (normalizedX + seed.detailOffset) * 2.4,
-      (normalizedY - seed.detailOffset) * 2.4,
-      detailSeed + i * 151,
-      3,
-      0.5,
-      2.4
-    );
-    const radius = seed.radius * (1 + (radiusNoise - 0.5) * seed.detailStrength);
-    const falloff = Math.pow(clamp(1 - distance / Math.max(radius, 0.01), 0, 1), seed.falloff);
-    maxValue = Math.max(maxValue, falloff * seed.strength);
+  for (let i = 0; i < plates.length; i += 1) {
+    const plate = plates[i];
+    const dx = x - plate.x;
+    const dy = y - plate.y;
+    const rotatedX = dx * plate.cos + dy * plate.sin;
+    const rotatedY = dy * plate.cos - dx * plate.sin;
+    const distX = rotatedX / plate.radiusX;
+    const distY = rotatedY / plate.radiusY;
+    const distance = Math.sqrt(distX * distX + distY * distY);
+    let influence = clamp(1 - Math.pow(distance, plate.falloff), 0, 1);
+    influence = Math.pow(influence, plate.sharpness);
+    const contribution = influence * plate.strength;
+    if (contribution > maxContribution) {
+      secondContribution = maxContribution;
+      maxContribution = contribution;
+    } else if (contribution > secondContribution) {
+      secondContribution = contribution;
+    }
+    sum += contribution;
+    weight += plate.strength;
   }
 
-  const edgeDistance = Math.min(normalizedX, 1 - normalizedX, normalizedY, 1 - normalizedY);
-  const edgeFade = clamp(edgeDistance / 0.22, 0, 1);
-  return clamp(maxValue * Math.pow(edgeFade, 0.6), 0, 1);
+  const average = weight > 0 ? sum / weight : 0;
+  const separation = Math.max(0, maxContribution - secondContribution * 0.65);
+  const height = clamp(lerp(maxContribution, average, 0.4) + separation * 0.18, 0, 1);
+  const mask = clamp(maxContribution, 0, 1);
+  return { height, mask };
 }
 
 function normalizeField(field) {
@@ -2422,18 +2414,21 @@ function createWorld(seedString) {
   const offsetY = rng() * 2048;
 
   const fieldSeeds = {
-    elevation: Math.floor(rng() * 0xffffffff),
+    macroElevation: Math.floor(rng() * 0xffffffff),
+    detailElevation: Math.floor(rng() * 0xffffffff),
+    ridgeElevation: Math.floor(rng() * 0xffffffff),
+    warpPrimary: Math.floor(rng() * 0xffffffff),
+    warpSecondary: Math.floor(rng() * 0xffffffff),
     rainfall: Math.floor(rng() * 0xffffffff),
     drainage: Math.floor(rng() * 0xffffffff),
     temperature: Math.floor(rng() * 0xffffffff),
     volcanism: Math.floor(rng() * 0xffffffff),
     evilness: Math.floor(rng() * 0xffffffff),
-    savagery: Math.floor(rng() * 0xffffffff),
-    continentWarp: Math.floor(rng() * 0xffffffff),
-    continentDetail: Math.floor(rng() * 0xffffffff)
+    savagery: Math.floor(rng() * 0xffffffff)
   };
 
   const elevation = new Float32Array(size);
+  const continentMask = new Float32Array(size);
   const rainfall = new Float32Array(size);
   const drainage = new Float32Array(size);
   const temperatureNoise = new Float32Array(size);
@@ -2441,66 +2436,150 @@ function createWorld(seedString) {
   const evilness = new Float32Array(size);
   const savagery = new Float32Array(size);
 
-  const continents = generateContinentSeeds(rng);
+  const plates = generateContinentalPlates(rng);
+
+  const warpStrength = 0.18 + rng() * 0.08;
+  const detailWarpStrength = 0.08 + rng() * 0.05;
+
+  const warpOffsets = {
+    primaryX: rng() * 64,
+    primaryY: rng() * 64,
+    detailX: rng() * 64,
+    detailY: rng() * 64
+  };
+  const macroOffsets = { x: rng() * 32, y: rng() * 32 };
+  const detailOffsets = { x: rng() * 128, y: rng() * 128 };
+  const ridgeOffsets = { x: rng() * 48, y: rng() * 48 };
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const normalizedX = (x + 0.5) / width;
+      const normalizedY = (y + 0.5) / height;
+
+      const warpPrimaryX = octaveNoise(
+        (normalizedX + warpOffsets.primaryX) * 1.45,
+        (normalizedY + warpOffsets.primaryY) * 1.45,
+        fieldSeeds.warpPrimary,
+        4,
+        0.6,
+        1.95
+      );
+      const warpPrimaryY = octaveNoise(
+        (normalizedX + warpOffsets.primaryY) * 1.45,
+        (normalizedY - warpOffsets.primaryX) * 1.45,
+        fieldSeeds.warpPrimary + 97,
+        4,
+        0.6,
+        1.95
+      );
+
+      const warpDetailX = octaveNoise(
+        (normalizedX + warpOffsets.detailX) * 3.1,
+        (normalizedY + warpOffsets.detailY) * 3.1,
+        fieldSeeds.warpSecondary,
+        3,
+        0.58,
+        2.35
+      );
+      const warpDetailY = octaveNoise(
+        (normalizedX - warpOffsets.detailY) * 3.1,
+        (normalizedY + warpOffsets.detailX) * 3.1,
+        fieldSeeds.warpSecondary + 173,
+        3,
+        0.58,
+        2.35
+      );
+
+      const warpedX =
+        normalizedX + (warpPrimaryX - 0.5) * warpStrength + (warpDetailX - 0.5) * detailWarpStrength;
+      const warpedY =
+        normalizedY + (warpPrimaryY - 0.5) * warpStrength + (warpDetailY - 0.5) * detailWarpStrength;
+
+      const plateSample = sampleContinentalPlates(warpedX, warpedY, plates);
+
+      const macro = octaveNoise(
+        (warpedX + macroOffsets.x) * 0.85,
+        (warpedY + macroOffsets.y) * 0.85,
+        fieldSeeds.macroElevation,
+        5,
+        0.57,
+        1.9
+      );
+      const detail = octaveNoise(
+        (warpedX + detailOffsets.x) * 5.6,
+        (warpedY + detailOffsets.y) * 5.6,
+        fieldSeeds.detailElevation,
+        4,
+        0.5,
+        2.35
+      );
+      const ridgeBase = octaveNoise(
+        (warpedX + ridgeOffsets.x) * 2.35,
+        (warpedY + ridgeOffsets.y) * 2.35,
+        fieldSeeds.ridgeElevation,
+        4,
+        0.5,
+        2.2
+      );
+      const ridge = 1 - Math.abs(ridgeBase * 2 - 1);
+
+      let heightValue = plateSample.height;
+      heightValue = lerp(heightValue, macro, 0.35);
+      heightValue += (detail - 0.5) * plateSample.mask * 0.24;
+      heightValue += (ridge - 0.5) * 0.18 * Math.pow(plateSample.mask, 0.85);
+
+      const edgeX = Math.min(normalizedX, 1 - normalizedX);
+      const edgeY = Math.min(normalizedY, 1 - normalizedY);
+      const edgeFalloff = Math.pow(clamp(Math.min(edgeX, edgeY) * 2.4, 0, 1), 0.92);
+      const radialX = normalizedX - 0.5;
+      const radialY = normalizedY - 0.5;
+      const radialDistance = Math.sqrt(radialX * radialX + radialY * radialY);
+      const radialFalloff = clamp(1 - Math.pow(radialDistance / 0.72, 2), 0, 1);
+      heightValue = heightValue * edgeFalloff - (1 - edgeFalloff) * 0.38;
+      heightValue = lerp(heightValue, radialFalloff, 0.16);
+
+      let maskValue = plateSample.mask;
+      const landMaskValue = sampleLandMask(normalizedX, normalizedY);
+      if (landMaskValue !== null) {
+        heightValue = lerp(heightValue, landMaskValue, 0.55);
+        maskValue = lerp(maskValue, landMaskValue, 0.5);
+      }
+
+      heightValue = clamp(heightValue, 0, 1);
+      maskValue = clamp(maskValue, 0, 1);
+
+      elevation[idx] = heightValue;
+      continentMask[idx] = maskValue;
+    }
+  }
+
+  normalizeField(elevation);
+  applyThermalErosion(elevation, width, height, 3, 0.028);
+  normalizeField(elevation);
+  normalizeField(continentMask);
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
       const sampleX = (x + offsetX) / width;
       const sampleY = (y + offsetY) / height;
-      const landMaskValue = sampleLandMask((x + 0.5) / width, (y + 0.5) / height);
-      const normalizedX = (x + 0.5) / width;
-      const normalizedY = (y + 0.5) / height;
+      const landFactor = continentMask[idx];
 
-      const continental = octaveNoise(sampleX * 0.75, sampleY * 0.75, fieldSeeds.elevation, 5, 0.6, 1.95);
-      const ridge = octaveNoise(sampleX * 2.6, sampleY * 2.6, fieldSeeds.elevation + 97, 4, 0.5, 2.35);
-      const shelf = octaveNoise(sampleX * 0.22, sampleY * 0.22, fieldSeeds.elevation + 503, 3, 0.68, 1.7);
-      const continentInfluence = computeContinentInfluence(
-        normalizedX,
-        normalizedY,
-        continents,
-        fieldSeeds.continentWarp,
-        fieldSeeds.continentDetail
-      );
-      const continentalDetail = octaveNoise(
-        sampleX * 1.4 + continentInfluence * 0.75,
-        sampleY * 1.4 - continentInfluence * 0.65,
-        fieldSeeds.continentDetail,
-        3,
-        0.55,
-        2.35
-      );
-      let heightValue = continental * 0.45 + ridge * 0.32 + shelf * 0.08 + continentInfluence * 0.15;
-      heightValue = lerp(heightValue, Math.pow(clamp(continentInfluence, 0, 1), 0.85), 0.62);
-      heightValue += (continentInfluence - 0.5) * 0.22;
-      heightValue += (continentalDetail - 0.5) * continentInfluence * 0.12;
+      const baseRain = octaveNoise(sampleX * 1.55, sampleY * 1.55, fieldSeeds.rainfall, 5, 0.58, 2.1);
+      const moistureBias = Math.pow(landFactor, 0.85);
+      rainfall[idx] = clamp(baseRain * 0.6 + moistureBias * 0.4, 0, 1);
 
-      const radialX = x / width - 0.5;
-      const radialY = y / height - 0.5;
-      const radialDistance = Math.sqrt(radialX * radialX + radialY * radialY);
-      const radialInfluence = clamp(1 - Math.pow(radialDistance, 1.15), 0, 1);
-      heightValue = lerp(heightValue, radialInfluence, 0.18) - (1 - radialInfluence) * 0.12;
+      const baseDrainage = octaveNoise(sampleX * 2.05, sampleY * 2.05, fieldSeeds.drainage, 4, 0.55, 2.35);
+      const coastInfluence = clamp(1 - Math.abs(landFactor - 0.35) * 2.1, 0, 1);
+      drainage[idx] = clamp(baseDrainage * 0.58 + (1 - moistureBias) * 0.25 + coastInfluence * 0.17, 0, 1);
 
-      if (landMaskValue !== null) {
-        heightValue = lerp(heightValue, landMaskValue, 0.45) + (landMaskValue - 0.5) * 0.08;
-      }
-
-      heightValue = clamp(heightValue, 0, 1);
-
-      elevation[idx] = heightValue;
-      const baseRain = octaveNoise(sampleX * 1.35, sampleY * 1.35, fieldSeeds.rainfall, 5, 0.58, 2.1);
-      const baseDrainage = octaveNoise(sampleX * 1.9, sampleY * 1.9, fieldSeeds.drainage, 4, 0.55, 2.35);
-      rainfall[idx] = clamp(baseRain * 0.75 + continentInfluence * 0.25, 0, 1);
-      drainage[idx] = clamp(baseDrainage * 0.75 + (1 - continentInfluence) * 0.25, 0, 1);
       temperatureNoise[idx] = octaveNoise(sampleX * 0.95, sampleY * 0.95, fieldSeeds.temperature, 4, 0.6, 2.05);
       volcanism[idx] = octaveNoise(sampleX * 2.4, sampleY * 2.4, fieldSeeds.volcanism, 3, 0.48, 2.45);
       evilness[idx] = octaveNoise(sampleX * 1.1, sampleY * 1.1, fieldSeeds.evilness, 3, 0.6, 2.25);
       savagery[idx] = octaveNoise(sampleX * 2.15, sampleY * 2.15, fieldSeeds.savagery, 4, 0.52, 2.4);
     }
   }
-
-  normalizeField(elevation);
-  applyThermalErosion(elevation, width, height, 4, 0.03);
 
   normalizeField(rainfall);
   normalizeField(drainage);
@@ -2511,7 +2590,7 @@ function createWorld(seedString) {
 
   const rainShadow = applyRainShadow(elevation, rainfall, width, height);
   for (let i = 0; i < size; i += 1) {
-    rainfall[i] = clamp(rainfall[i] * 0.6 + rainShadow[i] * 0.4, 0, 1);
+    rainfall[i] = clamp(rainfall[i] * 0.55 + rainShadow[i] * 0.45, 0, 1);
   }
 
   const temperature = new Float32Array(size);
@@ -2519,19 +2598,18 @@ function createWorld(seedString) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
       const latitude = Math.abs((y + 0.5) / height - 0.5) * 2;
-      const baseTemp = 1 - latitude;
-      const altitudePenalty = Math.pow(elevation[idx], 1.4) * 0.55;
+      const baseTemp = 1 - Math.pow(latitude, 0.85);
+      const altitudePenalty = Math.pow(elevation[idx], 1.35) * 0.52;
       let tempValue = baseTemp * 0.6 + temperatureNoise[idx] * 0.4 - altitudePenalty;
       tempValue += volcanism[idx] * 0.05;
       temperature[idx] = clamp(tempValue, 0, 1);
     }
   }
 
-  const seaLevel = 0.42;
-  const deepSeaLevel = 0.24;
-  const beachBand = 0.035;
-  const mountainSlope = 0.7;
-  const mountainPeak = 0.82;
+  const { seaLevel, deepSeaLevel } = estimateSeaLevels(elevation, 0.53);
+  const beachBand = Math.max(0.028, (seaLevel - deepSeaLevel) * 0.45);
+  const mountainSlope = clamp(seaLevel + (1 - seaLevel) * 0.42, seaLevel + 0.08, 0.9);
+  const mountainPeak = clamp(seaLevel + (1 - seaLevel) * 0.68, mountainSlope + 0.05, 0.97);
 
   const riverMap = buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel);
   const tiles = Array.from({ length: height }, () => new Array(width));
@@ -2545,10 +2623,11 @@ function createWorld(seedString) {
       const temp = temperature[idx];
       const evil = evilness[idx] * 2 - 1;
       const savage = savagery[idx];
-      const dry = clamp(1 - rain + volcanism[idx] * 0.05, 0, 1);
+      const continentality = Math.pow(continentMask[idx], 1.15);
+      const dry = clamp(1 - rain + volcanism[idx] * 0.05 + continentality * 0.08, 0, 1);
 
       let baseKey;
-      let suffix = determineAlignmentSuffix(evil, savage);
+      const suffix = determineAlignmentSuffix(evil, savage);
 
       if (elev < seaLevel) {
         const isFrozen = temp < 0.2;
@@ -2593,18 +2672,20 @@ function createWorld(seedString) {
         baseKey = 'ROCKY_HILLS';
       } else if (elev > mountainSlope) {
         baseKey = dry > 0.55 ? 'ROCKY_HILLS' : 'HILLS';
-      } else if (dry > 0.78) {
+      } else if (dry > 0.8) {
         baseKey = 'SAND_DESERT';
       } else if (dry > 0.64) {
         baseKey = temp > 0.6 ? 'SAVANNA_TROP' : 'SAVANNA_TEMP';
-      } else if (rain > 0.78 && drain < 0.45) {
+      } else if (rain > 0.78 && drain < 0.48) {
         baseKey = temp > 0.6 ? 'SWAMP' : 'MARSH';
-      } else if (rain > 0.72) {
+      } else if (rain > 0.74) {
         baseKey = 'SHRUBLAND';
-      } else if (dry > 0.58 && drain > 0.62) {
+      } else if (dry > 0.58 && drain > 0.6) {
         baseKey = 'ROCKY_PLAINS';
-      } else if (dry > 0.52) {
+      } else if (dry > 0.5) {
         baseKey = 'BADLANDS';
+      } else if (rain < 0.3 && continentality > 0.55) {
+        baseKey = 'SAVANNA_TEMP';
       } else {
         baseKey = temp > 0.6 ? 'GRASSLAND_TROP' : 'GRASSLAND_TEMP';
       }
