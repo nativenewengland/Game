@@ -3,14 +3,8 @@ const drawSize = 32;
 const tileSheets = {
   base: {
     key: 'base',
-    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_tiles.png',
-    tileSize: 16,
-    image: null
-  },
-  details: {
-    key: 'details',
-    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
-    tileSize: 16,
+    path: 'tilesheet/Overworld.png',
+    tileSize: 32,
     image: null
   }
 };
@@ -43,120 +37,10 @@ const dwarfSpriteSheets = {
 };
 
 const baseTileCoords = {
-  GRASSLAND_TEMP: { row: 0, col: 2 },
-  GRASSLAND_TEMP_EVIL: { row: 0, col: 7 },
-  GRASSLAND_TEMP_GOOD: { row: 0, col: 17 },
-  GRASSLAND_TEMP_EVILSAV: { row: 0, col: 12 },
-  GRASSLAND_TEMP_GOODSAV: { row: 0, col: 22 },
-  GRASSLAND_TROP: { row: 1, col: 2 },
-  GRASSLAND_TROP_EVIL: { row: 1, col: 7 },
-  GRASSLAND_TROP_GOOD: { row: 1, col: 17 },
-  GRASSLAND_TROP_EVILSAV: { row: 1, col: 12 },
-  GRASSLAND_TROP_GOODSAV: { row: 1, col: 22 },
-  HILLS: { row: 2, col: 2 },
-  HILLS_EVIL: { row: 2, col: 7 },
-  HILLS_GOOD: { row: 2, col: 17 },
-  HILLS_EVILSAV: { row: 2, col: 12 },
-  HILLS_GOODSAV: { row: 2, col: 22 },
-  SHRUBLAND: { row: 3, col: 2 },
-  SHRUBLAND_EVIL: { row: 3, col: 7 },
-  SHRUBLAND_GOOD: { row: 3, col: 17 },
-  SHRUBLAND_EVILSAV: { row: 3, col: 12 },
-  SHRUBLAND_GOODSAV: { row: 3, col: 22 },
-  MARSH: { row: 4, col: 2 },
-  MARSH_EVIL: { row: 4, col: 7 },
-  MARSH_GOOD: { row: 4, col: 17 },
-  MARSH_EVILSAV: { row: 4, col: 12 },
-  MARSH_GOODSAV: { row: 4, col: 22 },
-  SWAMP: { row: 5, col: 2 },
-  SWAMP_EVIL: { row: 5, col: 7 },
-  SWAMP_GOOD: { row: 5, col: 17 },
-  SWAMP_EVILSAV: { row: 5, col: 12 },
-  SWAMP_GOODSAV: { row: 5, col: 22 },
-  SAVANNA_TROP: { row: 6, col: 2 },
-  SAVANNA_TROP_EVIL: { row: 6, col: 7 },
-  SAVANNA_TROP_GOOD: { row: 6, col: 17 },
-  SAVANNA_TROP_EVILSAV: { row: 6, col: 12 },
-  SAVANNA_TROP_GOODSAV: { row: 6, col: 22 },
-  SAVANNA_TEMP: { row: 7, col: 2 },
-  SAVANNA_TEMP_EVIL: { row: 7, col: 7 },
-  SAVANNA_TEMP_GOOD: { row: 7, col: 17 },
-  SAVANNA_TEMP_EVILSAV: { row: 7, col: 12 },
-  SAVANNA_TEMP_GOODSAV: { row: 7, col: 22 },
-  BADLANDS: { row: 8, col: 2 },
-  BADLANDS_EVIL: { row: 8, col: 7 },
-  BADLANDS_GOOD: { row: 8, col: 17 },
-  BADLANDS_EVILSAV: { row: 8, col: 12 },
-  BADLANDS_GOODSAV: { row: 8, col: 22 },
-  ROCKY_HILLS: { row: 9, col: 2 },
-  ROCKY_HILLS_EVIL: { row: 9, col: 7 },
-  ROCKY_HILLS_GOOD: { row: 9, col: 17 },
-  ROCKY_HILLS_EVILSAV: { row: 9, col: 12 },
-  ROCKY_HILLS_GOODSAV: { row: 9, col: 22 },
-  ROCKY_PLAINS: { row: 10, col: 2 },
-  ROCKY_PLAINS_EVIL: { row: 10, col: 7 },
-  ROCKY_PLAINS_GOOD: { row: 10, col: 17 },
-  ROCKY_PLAINS_EVILSAV: { row: 10, col: 12 },
-  ROCKY_PLAINS_GOODSAV: { row: 10, col: 22 },
-  SAND_DESERT: { row: 11, col: 2 },
-  SAND_DESERT_EVIL: { row: 11, col: 7 },
-  SAND_DESERT_GOOD: { row: 11, col: 17 },
-  SAND_DESERT_EVILSAV: { row: 11, col: 12 },
-  SAND_DESERT_GOODSAV: { row: 11, col: 22 },
-  BEACH: { row: 12, col: 2 },
-  BEACH_EVIL: { row: 12, col: 7 },
-  BEACH_GOOD: { row: 12, col: 17 },
-  BEACH_EVILSAV: { row: 12, col: 12 },
-  BEACH_GOODSAV: { row: 12, col: 22 },
-  TUNDRA: { row: 13, col: 2 },
-  TUNDRA_EVIL: { row: 13, col: 7 },
-  TUNDRA_GOOD: { row: 13, col: 17 },
-  TUNDRA_EVILSAV: { row: 13, col: 12 },
-  TUNDRA_GOODSAV: { row: 13, col: 22 },
-  GLACIER: { row: 14, col: 2 },
-  GLACIER_EVIL: { row: 14, col: 7 },
-  GLACIER_GOOD: { row: 14, col: 17 },
-  GLACIER_EVILSAV: { row: 14, col: 12 },
-  GLACIER_GOODSAV: { row: 14, col: 22 },
-  FROZEN_OCEAN: { row: 15, col: 2 },
-  FROZEN_OCEAN_EVIL: { row: 15, col: 7 },
-  FROZEN_OCEAN_GOOD: { row: 15, col: 17 },
-  FROZEN_OCEAN_EVILSAV: { row: 15, col: 12 },
-  FROZEN_OCEAN_GOODSAV: { row: 15, col: 22 },
-  LAKE: { row: 16, col: 2 },
-  LAKE_EVIL: { row: 16, col: 7 },
-  LAKE_GOOD: { row: 16, col: 17 },
-  LAKE_EVILSAV: { row: 16, col: 12 },
-  LAKE_GOODSAV: { row: 16, col: 22 },
-  OCEAN: { row: 17, col: 2 },
-  OCEAN_EVIL: { row: 17, col: 7 },
-  OCEAN_GOOD: { row: 17, col: 17 },
-  OCEAN_EVILSAV: { row: 17, col: 12 },
-  OCEAN_GOODSAV: { row: 17, col: 22 },
-  OCEAN_DEEP: { row: 18, col: 2 },
-  OCEAN_DEEP_EVIL: { row: 18, col: 7 },
-  OCEAN_DEEP_GOOD: { row: 18, col: 17 },
-  OCEAN_DEEP_EVILSAV: { row: 18, col: 12 },
-  OCEAN_DEEP_GOODSAV: { row: 18, col: 22 }
-};
-
-const detailTileCoords = {
-  RIVER_0: { row: 11, col: 4 },
-  RIVER_N: { row: 12, col: 4 },
-  RIVER_S: { row: 13, col: 4 },
-  RIVER_W: { row: 14, col: 4 },
-  RIVER_E: { row: 15, col: 4 },
-  RIVER_NS: { row: 0, col: 4 },
-  RIVER_WE: { row: 1, col: 4 },
-  RIVER_NE: { row: 4, col: 4 },
-  RIVER_NW: { row: 5, col: 4 },
-  RIVER_SE: { row: 2, col: 4 },
-  RIVER_SW: { row: 3, col: 4 },
-  RIVER_NSE: { row: 6, col: 4 },
-  RIVER_SWE: { row: 7, col: 4 },
-  RIVER_NWE: { row: 8, col: 4 },
-  RIVER_NSW: { row: 9, col: 4 },
-  RIVER_NSWE: { row: 10, col: 4 }
+  GRASS: { row: 0, col: 1 },
+  TREE: { row: 0, col: 2 },
+  WATER: { row: 1, col: 4 },
+  MOUNTAIN: { row: 0, col: 3 }
 };
 
 const tileLookup = new Map();
@@ -174,7 +58,6 @@ function registerTiles(sheetKey, coordMap) {
 }
 
 registerTiles('base', baseTileCoords);
-registerTiles('details', detailTileCoords);
 
 const worldNames = [
   'Nûrn',
@@ -196,7 +79,7 @@ const worldNames = [
   'Nûrnheim',
   'Midkemia',
   'Skarnheim',
-  'Shannara World',
+  'Shannara',
   'Alagaësia',
   'Syf',
   'Elysium',
@@ -292,15 +175,8 @@ const worldNames = [
   'Skibiti Toliterium'
 ];
 
-function resolveTileName(baseKey, suffix) {
-  const preferred = suffix ? `${baseKey}${suffix}` : baseKey;
-  if (tileLookup.has(preferred)) {
-    return preferred;
-  }
-  if (suffix && tileLookup.has(baseKey)) {
-    return baseKey;
-  }
-  return tileLookup.has(baseKey) ? baseKey : 'OCEAN';
+function resolveTileName(baseKey) {
+  return tileLookup.has(baseKey) ? baseKey : 'GRASS';
 }
 
 const state = {
@@ -613,12 +489,12 @@ const elements = {
   dwarfCustomizer: document.getElementById('dwarf-customizer'),
   dwarfCustomizerForm: document.getElementById('dwarf-customizer-form'),
   dwarfRosterList: document.getElementById('dwarf-roster-list'),
-  dwarfRandomiseAll: document.getElementById('dwarf-randomise-all'),
+  dwarfRollNew: document.getElementById('dwarf-roll-new'),
   dwarfPrev: document.getElementById('dwarf-prev'),
   dwarfNext: document.getElementById('dwarf-next'),
   dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
   dwarfNameInput: document.getElementById('dwarf-name-input'),
-  dwarfGenderSelect: document.getElementById('dwarf-gender-select'),
+  dwarfGenderButtons: document.getElementById('dwarf-gender-buttons'),
   dwarfClanSelect: document.getElementById('dwarf-clan-select'),
   dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
@@ -1197,6 +1073,28 @@ function ensureSelectValue(selectElement, value, fallback) {
   }
 }
 
+function updateGenderButtonsUI(selectedValue) {
+  const container = elements.dwarfGenderButtons;
+  if (!container) {
+    return;
+  }
+  const buttons = Array.from(container.querySelectorAll('[data-gender-value]'));
+  if (buttons.length === 0) {
+    return;
+  }
+  const fallback = dwarfOptions.gender[0]?.value;
+  const targetValue = buttons.some((button) => button.dataset.genderValue === selectedValue)
+    ? selectedValue
+    : fallback;
+
+  buttons.forEach((button) => {
+    const isActive = button.dataset.genderValue === targetValue;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    button.tabIndex = isActive ? 0 : -1;
+  });
+}
+
 function updateCustomizerUI() {
   ensureDwarfParty();
   const dwarf = getActiveDwarf();
@@ -1205,17 +1103,17 @@ function updateCustomizerUI() {
   }
   const total = state.dwarfParty.dwarves.length;
   if (elements.dwarfSlotLabel) {
-    elements.dwarfSlotLabel.textContent = `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}`;
+    if (total === 1) {
+      elements.dwarfSlotLabel.textContent = 'Founding Dwarf';
+    } else {
+      elements.dwarfSlotLabel.textContent = `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}`;
+    }
   }
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.value = dwarf.name;
   }
 
-  ensureSelectValue(
-    elements.dwarfGenderSelect,
-    dwarf.gender,
-    dwarfOptions.gender[0].value
-  );
+  updateGenderButtonsUI(dwarf.gender);
   ensureSelectValue(
     elements.dwarfClanSelect,
     dwarf.clan,
@@ -1326,7 +1224,7 @@ function randomiseActiveDwarf() {
   setActiveDwarf(activeIndex);
 }
 
-function randomiseEntireParty() {
+function rollNewDwarfProfile() {
   initialiseDwarfParty();
   updateCustomizerUI();
 }
@@ -1345,7 +1243,11 @@ function openDwarfCustomizer(options = {}) {
     elements.dwarfCustomizer.classList.remove('hidden');
   }
   updateCustomizerUI();
-  const focusTarget = elements.dwarfNameInput || elements.dwarfGenderSelect;
+  const activeGenderButton = elements.dwarfGenderButtons
+    ? elements.dwarfGenderButtons.querySelector('.gender-toggle-button.active') ||
+      elements.dwarfGenderButtons.querySelector('.gender-toggle-button')
+    : null;
+  const focusTarget = elements.dwarfNameInput || activeGenderButton;
   if (focusTarget) {
     focusTarget.focus();
     if (typeof focusTarget.select === 'function') {
@@ -1368,56 +1270,42 @@ function closeDwarfCustomizer(options = {}) {
   }
 }
 
-const ageWeights = Array.from({ length: 30 }, (_, index) => {
-  const age = index + 1;
-  if (age >= 3 && age <= 6) {
-    return 12;
+const chronologyBias = {
+  age: {
+    min: 1,
+    max: 30,
+    exponent: 1.4
+  },
+  year: {
+    min: 1,
+    max: 50000,
+    exponent: 2.8
   }
-  if (age <= 2) {
-    return 4;
-  }
-  if (age <= 10) {
-    return 6;
-  }
-  if (age <= 20) {
-    return 3;
-  }
-  return 1;
-});
+};
 
-const yearBands = [
-  { min: 100, max: 5000, weight: 0.65 },
-  { min: 1, max: 99, weight: 0.1 },
-  { min: 5001, max: 20000, weight: 0.15 },
-  { min: 20001, max: 50000, weight: 0.1 }
-];
-
-const yearBandWeights = yearBands.map((band) => band.weight);
-
-function weightedRandomIndex(weights) {
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-  if (totalWeight <= 0) {
-    return 0;
+function biasedRandomInt(min, max, exponent = 1) {
+  const lower = Math.ceil(min);
+  const upper = Math.floor(max);
+  if (upper <= lower) {
+    return lower;
   }
-  let roll = Math.random() * totalWeight;
-  for (let i = 0; i < weights.length; i += 1) {
-    roll -= weights[i];
-    if (roll <= 0) {
-      return i;
-    }
+  if (!Number.isFinite(exponent) || exponent <= 0) {
+    return randomInt(lower, upper);
   }
-  return weights.length - 1;
+  const range = upper - lower + 1;
+  const skewed = Math.pow(Math.random(), exponent);
+  const offset = Math.floor(skewed * range);
+  return clamp(lower + offset, lower, upper);
 }
 
 function randomAge() {
-  const index = weightedRandomIndex(ageWeights);
-  return index + 1;
+  const { min, max, exponent } = chronologyBias.age;
+  return biasedRandomInt(min, max, exponent);
 }
 
 function randomYear() {
-  const index = weightedRandomIndex(yearBandWeights);
-  const selectedBand = yearBands[index] || yearBands[0];
-  return randomInt(selectedBand.min, selectedBand.max);
+  const { min, max, exponent } = chronologyBias.year;
+  return biasedRandomInt(min, max, exponent);
 }
 
 function generateRandomChronology() {
@@ -1639,10 +1527,26 @@ const viewState = {
   translateY: 0,
   minScale: 0.25,
   maxScale: 6,
+  containScale: 1,
+  coverScale: 1,
   wrapperSize: { width: 0, height: 0 },
   worldSize: { width: 0, height: 0 },
   hasInteracted: false
 };
+
+function computeViewScales(wrapperWidth, wrapperHeight, worldWidth, worldHeight) {
+  if (!worldWidth || !worldHeight || !wrapperWidth || !wrapperHeight) {
+    return { contain: 1, cover: 1 };
+  }
+
+  const scaleX = wrapperWidth / worldWidth;
+  const scaleY = wrapperHeight / worldHeight;
+  const safeScaleX = Number.isFinite(scaleX) && scaleX > 0 ? scaleX : 1;
+  const safeScaleY = Number.isFinite(scaleY) && scaleY > 0 ? scaleY : 1;
+  const contain = Math.min(safeScaleX, safeScaleY);
+  const cover = Math.max(safeScaleX, safeScaleY);
+  return { contain, cover };
+}
 
 function applyViewTransform() {
   if (!elements.canvas) {
@@ -1658,13 +1562,12 @@ function resetView(worldWidth, worldHeight) {
   const rect = elements.canvasWrapper.getBoundingClientRect();
   viewState.wrapperSize = { width: rect.width, height: rect.height };
   viewState.worldSize = { width: worldWidth, height: worldHeight };
-  const scaleX = rect.width / worldWidth;
-  const scaleY = rect.height / worldHeight;
-  const fitScale = Math.min(scaleX, scaleY);
-  const safeScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : 1;
-  viewState.minScale = Math.min(0.25, safeScale);
-  viewState.maxScale = Math.max(6, safeScale * 8);
-  viewState.scale = safeScale;
+  const { contain, cover } = computeViewScales(rect.width, rect.height, worldWidth, worldHeight);
+  viewState.containScale = contain;
+  viewState.coverScale = cover;
+  viewState.minScale = Math.min(0.25, contain);
+  viewState.maxScale = Math.max(6, cover * 4);
+  viewState.scale = cover;
   viewState.translateX = (rect.width - worldWidth * viewState.scale) / 2;
   viewState.translateY = (rect.height - worldHeight * viewState.scale) / 2;
   viewState.hasInteracted = false;
@@ -1685,14 +1588,19 @@ function handleResize() {
     return;
   }
 
+  const { contain, cover } = computeViewScales(
+    rect.width,
+    rect.height,
+    viewState.worldSize.width,
+    viewState.worldSize.height
+  );
+  viewState.containScale = contain;
+  viewState.coverScale = cover;
+  viewState.minScale = Math.min(0.25, contain);
+  viewState.maxScale = Math.max(6, cover * 4);
+
   if (!viewState.hasInteracted) {
-    const scaleX = rect.width / viewState.worldSize.width;
-    const scaleY = rect.height / viewState.worldSize.height;
-    const fitScale = Math.min(scaleX, scaleY);
-    const safeScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : viewState.scale;
-    viewState.minScale = Math.min(0.25, safeScale);
-    viewState.maxScale = Math.max(6, safeScale * 8);
-    viewState.scale = safeScale;
+    viewState.scale = cover;
     viewState.translateX = (rect.width - viewState.worldSize.width * viewState.scale) / 2;
     viewState.translateY = (rect.height - viewState.worldSize.height * viewState.scale) / 2;
   } else {
@@ -2038,37 +1946,61 @@ function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.
   return sum / maxAmplitude;
 }
 
-function generateContinentSeeds(rng) {
-  const seeds = [];
-  const desired = 2 + Math.floor(rng() * 3);
-  const maxAttempts = desired * 30;
-  const minDistance = 0.23;
+function generateContinentalPlates(rng) {
+  const plates = [];
+  const majorTarget = 4 + Math.floor(rng() * 4);
+  const fragmentTarget = 3 + Math.floor(rng() * 5);
+  const totalTarget = majorTarget + fragmentTarget;
+  const maxAttempts = totalTarget * 40;
+  const minDistance = 0.14;
+  const fragmentDistance = 0.08;
 
-  for (let attempt = 0; attempt < maxAttempts && seeds.length < desired; attempt += 1) {
+  const randomUint32 = () => Math.floor(rng() * 0xffffffff);
+
+  for (let attempt = 0; attempt < maxAttempts && plates.length < totalTarget; attempt += 1) {
+    const isFragment = plates.length >= majorTarget;
+    const radiusBase = isFragment ? 0.08 + rng() * 0.14 : 0.18 + rng() * 0.24;
+    const rotation = rng() * Math.PI * 2;
+    const oceanChance = isFragment ? 0.25 : 0.4;
+    const isOcean = rng() < oceanChance;
+    const strengthBase = isOcean
+      ? -(0.4 + rng() * 0.35) * (isFragment ? 0.7 : 1)
+      : (0.6 + rng() * 0.55) * (isFragment ? 0.75 : 1);
+    const jaggedness = isFragment ? 0.8 + rng() * 1.1 : 0.45 + rng() * 0.8;
+    const turbulence = 0.4 + rng() * 0.6;
+
     const candidate = {
-      x: rng() * 0.7 + 0.15,
-      y: rng() * 0.7 + 0.15,
-      radius: 0.22 + rng() * 0.2,
-      falloff: 1.2 + rng() * 1.1,
-      strength: 0.65 + rng() * 0.35,
-      warpStrength: 0.06 + rng() * 0.06,
-      detailStrength: 0.15 + rng() * 0.1,
-      warpOffsetX: rng() * 8,
-      warpOffsetY: rng() * 8,
-      detailOffset: rng() * 8
+      x: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
+      y: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
+      radiusX: radiusBase * (0.7 + rng() * 1.6),
+      radiusY: radiusBase * (0.6 + rng() * 1.4),
+      falloff: 1.15 + rng() * 1.8,
+      sharpness: 1.1 + rng() * 1.3,
+      strength: strengthBase,
+      rotation,
+      cos: Math.cos(rotation),
+      sin: Math.sin(rotation),
+      type: isOcean ? 'ocean' : 'land',
+      jaggedness,
+      turbulence,
+      noiseScale: isFragment ? 6 + rng() * 10 : 3 + rng() * 6,
+      noiseSeed: randomUint32(),
+      noiseOffsetX: rng() * 256,
+      noiseOffsetY: rng() * 256
     };
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
-    if (edgeDistance < 0.08) {
+    const minEdge = isFragment ? 0.02 : 0.06;
+    if (edgeDistance < minEdge) {
       continue;
     }
 
     let tooClose = false;
-    for (let i = 0; i < seeds.length; i += 1) {
-      const existing = seeds[i];
+    for (let i = 0; i < plates.length; i += 1) {
+      const existing = plates[i];
       const separation = Math.hypot(candidate.x - existing.x, candidate.y - existing.y);
-      const spacing = Math.max(minDistance, (candidate.radius + existing.radius) * 0.35);
-      if (separation < spacing) {
+      const limit = existing.type === candidate.type ? (isFragment ? fragmentDistance : minDistance) : minDistance * 0.75;
+      if (separation < limit) {
         tooClose = true;
         break;
       }
@@ -2078,91 +2010,120 @@ function generateContinentSeeds(rng) {
       continue;
     }
 
-    seeds.push(candidate);
+    plates.push(candidate);
   }
 
-  if (seeds.length === 0) {
-    seeds.push({
+  if (!plates.some((plate) => plate.strength > 0)) {
+    const rotation = rng() * Math.PI * 2;
+    plates.push({
       x: 0.5,
       y: 0.5,
-      radius: 0.35,
-      falloff: 1.6,
-      strength: 0.9,
-      warpStrength: 0.08,
-      detailStrength: 0.18,
-      warpOffsetX: rng() * 8,
-      warpOffsetY: rng() * 8,
-      detailOffset: rng() * 8
+      radiusX: 0.26,
+      radiusY: 0.2,
+      falloff: 1.5,
+      sharpness: 1.3,
+      strength: 0.85,
+      rotation,
+      cos: Math.cos(rotation),
+      sin: Math.sin(rotation),
+      type: 'land',
+      jaggedness: 0.7,
+      turbulence: 0.6,
+      noiseScale: 4.5,
+      noiseSeed: randomUint32(),
+      noiseOffsetX: rng() * 128,
+      noiseOffsetY: rng() * 128
     });
   }
 
-  const islandCount = rng() < 0.7 ? 1 + Math.floor(rng() * 3) : 0;
-  for (let i = 0; i < islandCount; i += 1) {
-    seeds.push({
-      x: clamp(rng() * 0.9, 0.05, 0.95),
-      y: clamp(rng() * 0.9, 0.05, 0.95),
-      radius: 0.08 + rng() * 0.12,
-      falloff: 1.5 + rng() * 1.2,
-      strength: 0.35 + rng() * 0.25,
-      warpStrength: 0.05 + rng() * 0.05,
-      detailStrength: 0.25 + rng() * 0.1,
-      warpOffsetX: rng() * 8,
-      warpOffsetY: rng() * 8,
-      detailOffset: rng() * 8
-    });
-  }
-
-  return seeds;
+  return plates;
 }
 
-function computeContinentInfluence(normalizedX, normalizedY, seeds, warpSeed, detailSeed) {
-  if (!seeds || seeds.length === 0) {
-    return 0;
+function sampleContinentalPlates(x, y, plates) {
+  if (!plates || plates.length === 0) {
+    return { height: 0, mask: 0 };
   }
 
-  let maxValue = 0;
-  for (let i = 0; i < seeds.length; i += 1) {
-    const seed = seeds[i];
-    const warpNoiseX = octaveNoise(
-      (normalizedX + seed.warpOffsetX) * 1.3,
-      (normalizedY + seed.warpOffsetX) * 1.3,
-      warpSeed + i * 97,
+  let landSum = 0;
+  let landWeight = 0;
+  let oceanSum = 0;
+  let oceanWeight = 0;
+  let maxLand = 0;
+  let secondLand = 0;
+  let maxOcean = 0;
+  let secondOcean = 0;
+  let variation = 0;
+
+  for (let i = 0; i < plates.length; i += 1) {
+    const plate = plates[i];
+    const dx = x - plate.x;
+    const dy = y - plate.y;
+    const rotatedX = dx * plate.cos + dy * plate.sin;
+    const rotatedY = dy * plate.cos - dx * plate.sin;
+
+    const boundaryNoise = octaveNoise(
+      (rotatedX + plate.noiseOffsetX) * plate.noiseScale,
+      (rotatedY + plate.noiseOffsetY) * plate.noiseScale,
+      plate.noiseSeed,
       3,
-      0.58,
-      2.2
-    );
-    const warpNoiseY = octaveNoise(
-      (normalizedX - seed.warpOffsetY) * 1.3,
-      (normalizedY + seed.warpOffsetY) * 1.3,
-      warpSeed + i * 131,
-      3,
-      0.58,
-      2.2
+      0.55 + plate.turbulence * 0.25,
+      2 + plate.turbulence * 0.9
     );
 
-    const warpedX = normalizedX + (warpNoiseX - 0.5) * seed.warpStrength;
-    const warpedY = normalizedY + (warpNoiseY - 0.5) * seed.warpStrength;
+    const radiusScale = clamp(1 + (boundaryNoise - 0.5) * plate.jaggedness, 0.35, 2.8);
+    const distX = rotatedX / (plate.radiusX * radiusScale);
+    const distY = rotatedY / (plate.radiusY * radiusScale);
+    const distance = Math.sqrt(distX * distX + distY * distY);
 
-    const dx = warpedX - seed.x;
-    const dy = warpedY - seed.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    let influence = clamp(1 - Math.pow(distance, plate.falloff), 0, 1);
+    influence = Math.pow(influence, plate.sharpness);
 
-    const radiusNoise = octaveNoise(
-      (normalizedX + seed.detailOffset) * 2.4,
-      (normalizedY - seed.detailOffset) * 2.4,
-      detailSeed + i * 151,
-      3,
-      0.5,
-      2.4
-    );
-    const radius = seed.radius * (1 + (radiusNoise - 0.5) * seed.detailStrength);
-    const falloff = Math.pow(clamp(1 - distance / Math.max(radius, 0.01), 0, 1), seed.falloff);
-    maxValue = Math.max(maxValue, falloff * seed.strength);
+    if (influence <= 0) {
+      continue;
+    }
+
+    const contribution = influence * Math.abs(plate.strength);
+    const turbulence = Math.pow(Math.abs(boundaryNoise - 0.5) * 2, 1.35) * plate.turbulence * influence;
+
+    if (plate.strength >= 0) {
+      if (contribution > maxLand) {
+        secondLand = maxLand;
+        maxLand = contribution;
+      } else if (contribution > secondLand) {
+        secondLand = contribution;
+      }
+      landSum += contribution;
+      landWeight += Math.abs(plate.strength);
+      variation += turbulence;
+    } else {
+      if (contribution > maxOcean) {
+        secondOcean = maxOcean;
+        maxOcean = contribution;
+      } else if (contribution > secondOcean) {
+        secondOcean = contribution;
+      }
+      oceanSum += contribution;
+      oceanWeight += Math.abs(plate.strength);
+      variation -= turbulence;
+    }
   }
 
-  const edgeDistance = Math.min(normalizedX, 1 - normalizedX, normalizedY, 1 - normalizedY);
-  const edgeFade = clamp(edgeDistance / 0.22, 0, 1);
-  return clamp(maxValue * Math.pow(edgeFade, 0.6), 0, 1);
+  if (landWeight === 0 && oceanWeight === 0) {
+    return { height: 0, mask: 0 };
+  }
+
+  const landAvg = landWeight > 0 ? landSum / landWeight : 0;
+  const oceanAvg = oceanWeight > 0 ? oceanSum / oceanWeight : 0;
+
+  const separation = Math.max(0, maxLand - secondLand * 0.65);
+  const oceanSeparation = Math.max(0, maxOcean - secondOcean * 0.7);
+
+  let height = landAvg - oceanAvg * 0.9 + separation * 0.25 - oceanSeparation * 0.22 + variation * 0.18;
+  const mask = clamp(landAvg + separation * 0.6 - oceanAvg * 0.8, 0, 1);
+
+  height = clamp(height, -1, 1);
+
+  return { height, mask };
 }
 
 function normalizeField(field) {
@@ -2412,209 +2373,304 @@ function createWorld(seedString) {
   const rng = mulberry32(seedNumber || 1);
   const width = state.settings.width;
   const height = state.settings.height;
-  const size = width * height;
 
-  const offsetX = rng() * 2048;
-  const offsetY = rng() * 2048;
+  const continentalPlates = generateContinentalPlates(rng);
+  const elevationField = new Float32Array(width * height);
 
-  const fieldSeeds = {
-    elevation: Math.floor(rng() * 0xffffffff),
-    rainfall: Math.floor(rng() * 0xffffffff),
-    drainage: Math.floor(rng() * 0xffffffff),
-    temperature: Math.floor(rng() * 0xffffffff),
-    volcanism: Math.floor(rng() * 0xffffffff),
-    evilness: Math.floor(rng() * 0xffffffff),
-    savagery: Math.floor(rng() * 0xffffffff),
-    continentWarp: Math.floor(rng() * 0xffffffff),
-    continentDetail: Math.floor(rng() * 0xffffffff)
-  };
+  const baseNoiseOffsetX = rng() * 2048;
+  const baseNoiseOffsetY = rng() * 2048;
+  const detailNoiseOffsetX = rng() * 4096;
+  const detailNoiseOffsetY = rng() * 4096;
 
-  const elevation = new Float32Array(size);
-  const rainfall = new Float32Array(size);
-  const drainage = new Float32Array(size);
-  const temperatureNoise = new Float32Array(size);
-  const volcanism = new Float32Array(size);
-  const evilness = new Float32Array(size);
-  const savagery = new Float32Array(size);
+  const baseNoiseScale = 1.2 + rng() * 0.8;
+  const detailNoiseScale = 3.6 + rng() * 3.2;
+  const ridgeNoiseScale = 6.4 + rng() * 4.2;
+  const edgeTaper = 2.4 + rng() * 0.8;
+  const edgeDrop = 0.28 + rng() * 0.14;
 
-  const continents = generateContinentSeeds(rng);
+  const baseNoiseSeed = (seedNumber + 0x9e3779b9) >>> 0;
+  const detailNoiseSeed = (seedNumber + 0x85ebca6b) >>> 0;
+  const ridgeNoiseSeed = (seedNumber + 0xc2b2ae35) >>> 0;
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
-      const sampleX = (x + offsetX) / width;
-      const sampleY = (y + offsetY) / height;
-      const landMaskValue = sampleLandMask((x + 0.5) / width, (y + 0.5) / height);
       const normalizedX = (x + 0.5) / width;
       const normalizedY = (y + 0.5) / height;
 
-      const continental = octaveNoise(sampleX * 0.75, sampleY * 0.75, fieldSeeds.elevation, 5, 0.6, 1.95);
-      const ridge = octaveNoise(sampleX * 2.6, sampleY * 2.6, fieldSeeds.elevation + 97, 4, 0.5, 2.35);
-      const shelf = octaveNoise(sampleX * 0.22, sampleY * 0.22, fieldSeeds.elevation + 503, 3, 0.68, 1.7);
-      const continentInfluence = computeContinentInfluence(
-        normalizedX,
-        normalizedY,
-        continents,
-        fieldSeeds.continentWarp,
-        fieldSeeds.continentDetail
-      );
-      const continentalDetail = octaveNoise(
-        sampleX * 1.4 + continentInfluence * 0.75,
-        sampleY * 1.4 - continentInfluence * 0.65,
-        fieldSeeds.continentDetail,
+      const idx = y * width + x;
+      const plateSample = sampleContinentalPlates(normalizedX, normalizedY, continentalPlates);
+
+      const baseNoise = octaveNoise(
+        (normalizedX + baseNoiseOffsetX) * baseNoiseScale,
+        (normalizedY + baseNoiseOffsetY) * baseNoiseScale,
+        baseNoiseSeed,
         3,
-        0.55,
-        2.35
+        0.6,
+        1.9
       );
-      let heightValue = continental * 0.45 + ridge * 0.32 + shelf * 0.08 + continentInfluence * 0.15;
-      heightValue = lerp(heightValue, Math.pow(clamp(continentInfluence, 0, 1), 0.85), 0.62);
-      heightValue += (continentInfluence - 0.5) * 0.22;
-      heightValue += (continentalDetail - 0.5) * continentInfluence * 0.12;
 
-      const radialX = x / width - 0.5;
-      const radialY = y / height - 0.5;
-      const radialDistance = Math.sqrt(radialX * radialX + radialY * radialY);
-      const radialInfluence = clamp(1 - Math.pow(radialDistance, 1.15), 0, 1);
-      heightValue = lerp(heightValue, radialInfluence, 0.18) - (1 - radialInfluence) * 0.12;
+      const detailNoise = octaveNoise(
+        (normalizedX + detailNoiseOffsetX) * detailNoiseScale,
+        (normalizedY + detailNoiseOffsetY) * detailNoiseScale,
+        detailNoiseSeed,
+        4,
+        0.55,
+        2.2
+      );
 
-      if (landMaskValue !== null) {
-        heightValue = lerp(heightValue, landMaskValue, 0.45) + (landMaskValue - 0.5) * 0.08;
+      const ridgeNoise = octaveNoise(
+        (normalizedX + detailNoiseOffsetX * 0.5) * ridgeNoiseScale,
+        (normalizedY + detailNoiseOffsetY * 0.5) * ridgeNoiseScale,
+        ridgeNoiseSeed,
+        2,
+        0.45,
+        2.4
+      );
+
+      const maskSample = sampleLandMask(normalizedX, normalizedY);
+      const edgeDistance = Math.min(normalizedX, 1 - normalizedX, normalizedY, 1 - normalizedY);
+      const edgeFalloff = clamp(1 - edgeDistance * edgeTaper, 0, 1);
+
+      let heightValue = plateSample.height;
+      heightValue = lerp(heightValue, plateSample.mask, 0.35);
+      heightValue += (baseNoise - 0.5) * (0.35 + plateSample.mask * 0.25);
+      heightValue += (detailNoise - 0.5) * 0.18;
+      heightValue += (ridgeNoise - 0.5) * 0.1 * plateSample.mask;
+      heightValue -= edgeFalloff * edgeFalloff * edgeDrop;
+
+      if (maskSample !== null && maskSample !== undefined) {
+        heightValue = lerp(heightValue, maskSample, 0.5);
       }
 
-      heightValue = clamp(heightValue, 0, 1);
-
-      elevation[idx] = heightValue;
-      const baseRain = octaveNoise(sampleX * 1.35, sampleY * 1.35, fieldSeeds.rainfall, 5, 0.58, 2.1);
-      const baseDrainage = octaveNoise(sampleX * 1.9, sampleY * 1.9, fieldSeeds.drainage, 4, 0.55, 2.35);
-      rainfall[idx] = clamp(baseRain * 0.75 + continentInfluence * 0.25, 0, 1);
-      drainage[idx] = clamp(baseDrainage * 0.75 + (1 - continentInfluence) * 0.25, 0, 1);
-      temperatureNoise[idx] = octaveNoise(sampleX * 0.95, sampleY * 0.95, fieldSeeds.temperature, 4, 0.6, 2.05);
-      volcanism[idx] = octaveNoise(sampleX * 2.4, sampleY * 2.4, fieldSeeds.volcanism, 3, 0.48, 2.45);
-      evilness[idx] = octaveNoise(sampleX * 1.1, sampleY * 1.1, fieldSeeds.evilness, 3, 0.6, 2.25);
-      savagery[idx] = octaveNoise(sampleX * 2.15, sampleY * 2.15, fieldSeeds.savagery, 4, 0.52, 2.4);
+      heightValue = clamp(heightValue, -1, 1);
+      elevationField[idx] = heightValue;
     }
   }
 
-  normalizeField(elevation);
-  applyThermalErosion(elevation, width, height, 4, 0.03);
+  normalizeField(elevationField);
 
-  normalizeField(rainfall);
-  normalizeField(drainage);
-  normalizeField(temperatureNoise);
-  normalizeField(volcanism);
-  normalizeField(evilness);
-  normalizeField(savagery);
-
-  const rainShadow = applyRainShadow(elevation, rainfall, width, height);
-  for (let i = 0; i < size; i += 1) {
-    rainfall[i] = clamp(rainfall[i] * 0.6 + rainShadow[i] * 0.4, 0, 1);
-  }
-
-  const temperature = new Float32Array(size);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
-      const latitude = Math.abs((y + 0.5) / height - 0.5) * 2;
-      const baseTemp = 1 - latitude;
-      const altitudePenalty = Math.pow(elevation[idx], 1.4) * 0.55;
-      let tempValue = baseTemp * 0.6 + temperatureNoise[idx] * 0.4 - altitudePenalty;
-      tempValue += volcanism[idx] * 0.05;
-      temperature[idx] = clamp(tempValue, 0, 1);
-    }
-  }
-
-  const seaLevel = 0.42;
-  const deepSeaLevel = 0.24;
-  const beachBand = 0.035;
-  const mountainSlope = 0.7;
-  const mountainPeak = 0.82;
-
-  const riverMap = buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel);
-  const tiles = Array.from({ length: height }, () => new Array(width));
+  const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
+  const grassTileKey = resolveTileName('GRASS');
+  const waterTileKey = resolveTileName('WATER');
+  const tiles = Array.from(
+    { length: height },
+    () => Array.from({ length: width }, () => ({ base: grassTileKey, overlay: null }))
+  );
+  const waterMask = new Uint8Array(width * height);
+  const hasMountainTile = tileLookup.has('MOUNTAIN');
+  const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
+  let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.2, 0.62), 0.85) : 1;
+  let mountainFullThreshold = hasMountainTile ? Math.min(0.97, mountainBaseThreshold + 0.25) : 1;
+  let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
+  const cardinalOffsets = [
+    [0, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 0]
+  ];
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
-      const elev = elevation[idx];
-      const rain = rainfall[idx];
-      const drain = drainage[idx];
-      const temp = temperature[idx];
-      const evil = evilness[idx] * 2 - 1;
-      const savage = savagery[idx];
-      const dry = clamp(1 - rain + volcanism[idx] * 0.05, 0, 1);
-
-      let baseKey;
-      let suffix = determineAlignmentSuffix(evil, savage);
-
-      if (elev < seaLevel) {
-        const isFrozen = temp < 0.2;
-        let landNeighbors = 0;
-        for (let dy = -1; dy <= 1; dy += 1) {
-          for (let dx = -1; dx <= 1; dx += 1) {
-            if (dx === 0 && dy === 0) {
-              continue;
+      const heightValue = elevationField[idx];
+      const isWater = heightValue <= seaLevel;
+      waterMask[idx] = isWater ? 1 : 0;
+      let overlay = null;
+      if (!isWater && mountainOverlayKey) {
+        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
+        if (normalizedHeight > 0) {
+          const probability = normalizedHeight * 0.55 + normalizedHeight * normalizedHeight * 0.45;
+          if (normalizedHeight > 0.85 || rng() < probability) {
+            let coastalNeighbors = 0;
+            for (let i = 0; i < cardinalOffsets.length; i += 1) {
+              const nx = x + cardinalOffsets[i][0];
+              const ny = y + cardinalOffsets[i][1];
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              const neighborIdx = ny * width + nx;
+              if (elevationField[neighborIdx] <= seaLevel) {
+                coastalNeighbors += 1;
+              }
             }
-            const nx = x + dx;
-            const ny = y + dy;
-            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-              continue;
-            }
-            if (elevation[ny * width + nx] >= seaLevel) {
-              landNeighbors += 1;
+            if (coastalNeighbors < 2) {
+              overlay = mountainOverlayKey;
             }
           }
         }
-        const isLake = landNeighbors >= 4 && elev > seaLevel - 0.05;
-        if (isFrozen) {
-          baseKey = 'FROZEN_OCEAN';
-        } else if (isLake) {
-          baseKey = 'LAKE';
-        } else if (elev < deepSeaLevel) {
-          baseKey = 'OCEAN_DEEP';
-        } else {
-          baseKey = 'OCEAN';
-        }
-        const resolved = resolveTileName(baseKey, suffix);
-        tiles[y][x] = { base: resolved, overlay: null };
-        continue;
       }
-
-      if (elev < seaLevel + beachBand) {
-        baseKey = 'BEACH';
-      } else if (temp < 0.16 && elev > seaLevel + 0.1) {
-        baseKey = 'GLACIER';
-      } else if (temp < 0.28) {
-        baseKey = 'TUNDRA';
-      } else if (elev > mountainPeak) {
-        baseKey = 'ROCKY_HILLS';
-      } else if (elev > mountainSlope) {
-        baseKey = dry > 0.55 ? 'ROCKY_HILLS' : 'HILLS';
-      } else if (dry > 0.78) {
-        baseKey = 'SAND_DESERT';
-      } else if (dry > 0.64) {
-        baseKey = temp > 0.6 ? 'SAVANNA_TROP' : 'SAVANNA_TEMP';
-      } else if (rain > 0.78 && drain < 0.45) {
-        baseKey = temp > 0.6 ? 'SWAMP' : 'MARSH';
-      } else if (rain > 0.72) {
-        baseKey = 'SHRUBLAND';
-      } else if (dry > 0.58 && drain > 0.62) {
-        baseKey = 'ROCKY_PLAINS';
-      } else if (dry > 0.52) {
-        baseKey = 'BADLANDS';
-      } else {
-        baseKey = temp > 0.6 ? 'GRASSLAND_TROP' : 'GRASSLAND_TEMP';
-      }
-
-      const resolved = resolveTileName(baseKey, suffix);
-      tiles[y][x] = { base: resolved, overlay: null };
+      tiles[y][x] = {
+        base: isWater ? waterTileKey : grassTileKey,
+        overlay
+      };
     }
   }
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const riverTile = resolveRiverTile(riverMap, width, height, x, y);
-      if (riverTile && tileLookup.has(riverTile)) {
-        tiles[y][x].overlay = riverTile;
+  const neighborOffsets = [
+    [-1, -1],
+    [0, -1],
+    [1, -1],
+    [-1, 0],
+    [1, 0],
+    [-1, 1],
+    [0, 1],
+    [1, 1]
+  ];
+
+  for (let y = 1; y < height - 1; y += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const idx = y * width + x;
+      if (!waterMask[idx]) {
+        continue;
+      }
+      let landNeighbors = 0;
+      for (let i = 0; i < neighborOffsets.length; i += 1) {
+        const nx = x + neighborOffsets[i][0];
+        const ny = y + neighborOffsets[i][1];
+        if (waterMask[ny * width + nx] === 0) {
+          landNeighbors += 1;
+        }
+      }
+      if (landNeighbors >= 6) {
+        waterMask[idx] = 0;
+        tiles[y][x] = {
+          base: grassTileKey,
+          overlay: null
+        };
+      }
+    }
+  }
+
+  const hasTreeTile = tileLookup.has('TREE');
+  if (hasTreeTile) {
+    const treeOverlayKey = 'TREE';
+    const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
+    const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
+    const treeBaseScale = 2.4 + rng() * 1.6;
+    const treeDetailScale = 6.6 + rng() * 4.6;
+    const treeBaseOffsetX = rng() * 4096;
+    const treeBaseOffsetY = rng() * 4096;
+    const treeDetailOffsetX = rng() * 8192;
+    const treeDetailOffsetY = rng() * 8192;
+    const treeDensityField = new Float32Array(width * height);
+    const treeMask = new Uint8Array(width * height);
+    const clusterNeighborOffsets = [
+      [-1, -1],
+      [0, -1],
+      [1, -1],
+      [-1, 0],
+      [1, 0],
+      [-1, 1],
+      [0, 1],
+      [1, 1]
+    ];
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const baseNoise = octaveNoise(
+          (normalizedX + treeBaseOffsetX) * treeBaseScale,
+          (normalizedY + treeBaseOffsetY) * treeBaseScale,
+          treeBaseSeed,
+          3,
+          0.55,
+          2.05
+        );
+        const detailNoise = octaveNoise(
+          (normalizedX + treeDetailOffsetX) * treeDetailScale,
+          (normalizedY + treeDetailOffsetY) * treeDetailScale,
+          treeDetailSeed,
+          4,
+          0.5,
+          2.3
+        );
+        const elevationValue = elevationField[idx];
+        const elevationPreference = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.12)) * 2.6, 0, 1);
+        let density = baseNoise * 0.68 + detailNoise * 0.32;
+        density = clamp(density * 0.6 + elevationPreference * 0.4, 0, 1);
+        treeDensityField[idx] = density;
+      }
+    }
+
+    const seedThreshold = 0.66;
+    const softSeedThreshold = 0.56;
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (tile.overlay || tile.base !== grassTileKey) {
+          continue;
+        }
+        const density = treeDensityField[idx];
+        if (density >= seedThreshold || (density > softSeedThreshold && rng() < (density - softSeedThreshold) * 1.8)) {
+          treeMask[idx] = 1;
+          tile.overlay = treeOverlayKey;
+        }
+      }
+    }
+
+    const maxGrowthIterations = 2;
+    for (let iteration = 0; iteration < maxGrowthIterations; iteration += 1) {
+      const additions = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (tile.overlay || tile.base !== grassTileKey) {
+            continue;
+          }
+          let neighborTrees = 0;
+          for (let i = 0; i < clusterNeighborOffsets.length; i += 1) {
+            const nx = x + clusterNeighborOffsets[i][0];
+            const ny = y + clusterNeighborOffsets[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (treeMask[nIdx]) {
+              neighborTrees += 1;
+            }
+          }
+          if (neighborTrees < 2) {
+            continue;
+          }
+          const density = treeDensityField[idx];
+          const probability = clamp((density - 0.48) / 0.52 + neighborTrees * 0.08, 0, 1);
+          if (density > 0.6 || rng() < probability) {
+            additions.push(idx);
+          }
+        }
+      }
+
+      if (additions.length === 0) {
+        break;
+      }
+
+      for (let i = 0; i < additions.length; i += 1) {
+        const idx = additions[i];
+        if (treeMask[idx]) {
+          continue;
+        }
+        if (waterMask[idx]) {
+          continue;
+        }
+        const y = Math.floor(idx / width);
+        const x = idx % width;
+        const tile = tiles[y][x];
+        if (tile.overlay || tile.base !== grassTileKey) {
+          continue;
+        }
+        treeMask[idx] = 1;
+        tile.overlay = treeOverlayKey;
       }
     }
   }
@@ -2646,7 +2702,7 @@ function drawWorld(world) {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const cell = tiles[y][x];
-      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('OCEAN');
+      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('GRASS');
       if (!baseDefinition) {
         continue;
       }
@@ -2848,9 +2904,9 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfRandomiseAll) {
-    elements.dwarfRandomiseAll.addEventListener('click', () => {
-      randomiseEntireParty();
+  if (elements.dwarfRollNew) {
+    elements.dwarfRollNew.addEventListener('click', () => {
+      rollNewDwarfProfile();
     });
   }
 
@@ -2881,9 +2937,42 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfGenderSelect) {
-    elements.dwarfGenderSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('gender', event.target.value);
+  if (elements.dwarfGenderButtons) {
+    elements.dwarfGenderButtons.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-gender-value]');
+      if (!button || !elements.dwarfGenderButtons.contains(button)) {
+        return;
+      }
+      const { genderValue } = button.dataset;
+      if (!genderValue) {
+        return;
+      }
+      updateDwarfTrait('gender', genderValue);
+    });
+
+    elements.dwarfGenderButtons.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      const buttons = Array.from(
+        elements.dwarfGenderButtons.querySelectorAll('[data-gender-value]')
+      );
+      if (buttons.length === 0) {
+        return;
+      }
+      const currentIndex = buttons.findIndex((button) => button.classList.contains('active'));
+      const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      const nextIndex = currentIndex === -1 ? 0 : (currentIndex + direction + buttons.length) % buttons.length;
+      const nextButton = buttons[nextIndex];
+      if (!nextButton) {
+        return;
+      }
+      nextButton.focus();
+      const { genderValue } = nextButton.dataset;
+      if (genderValue) {
+        updateDwarfTrait('gender', genderValue);
+      }
     });
   }
 
