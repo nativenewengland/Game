@@ -3,20 +3,21 @@ const drawSize = 32;
 
 const tileDefinitions = [
   { name: 'sand', row: 0, col: 0 },
-  { name: 'grass', row: 1, col: 2 },
-  { name: 'stone', row: 0, col: 1 },
+  { name: 'grass', row: 0, col: 1 },
+  { name: 'stone', row: 0, col: 2 },
   { name: 'mountain-1', row: 0, col: 3 },
   { name: 'mountain-2', row: 0, col: 4 },
   { name: 'mountain-3', row: 0, col: 5 },
-  { name: 'trees', row: 3, col: 0 },
-  { name: 'cold climate trees', row: 3, col: 2 },
-  { name: 'badlands', row: 2, col: 3 },
+  { name: 'trees', row: 1, col: 0 },
+  { name: 'cold climate trees', row: 1, col: 1 },
+  { name: 'badlands', row: 1, col: 2 },
+  { name: 'cave', row: 1, col: 3 },
+  { name: 'water', row: 1, col: 4 },
   { name: 'dwarfhold', row: 1, col: 5 },
-  { name: 'water', row: 2, col: 6 },
-  { name: 'cave', row: 0, col: 6 },
-  { name: 'thick-trees', row: 1, col: 7 },
-  { name: 'village', row: 1, col: 8 },
-  { name: 'monistary', row: 1, col: 4 }
+  { name: 'thick-trees', row: 2, col: 0 },
+  { name: 'village', row: 2, col: 1 },
+  { name: 'monistary', row: 2, col: 2 },
+  { name: 'snow', row: 2, col: 3 }
 ];
 
 const tileLookup = new Map(
@@ -427,6 +428,8 @@ function createWorld(seedString) {
       if (baseTile === 'stone') {
         if (featureRoll < 0.05) {
           tiles[y][x] = 'cave';
+        } else if (heightValue > 0.93) {
+          tiles[y][x] = 'snow';
         } else if (heightValue > 0.9) {
           tiles[y][x] = 'mountain-3';
         } else if (heightValue > 0.86) {
