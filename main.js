@@ -355,6 +355,19 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function estimateSeaLevels(elevationField, targetWaterRatio = 0.45) {
+  const sorted = Array.from(elevationField).sort((a, b) => a - b);
+  const total = sorted.length;
+  if (total === 0) {
+    return { seaLevel: 0.42, deepSeaLevel: 0.24 };
+  }
+  const clampedRatio = clamp(targetWaterRatio, 0.2, 0.8);
+  const waterIndex = Math.min(total - 1, Math.max(0, Math.floor(total * clampedRatio)));
+  const seaLevel = clamp(sorted[waterIndex], 0.25, 0.65);
+  const deepSeaLevel = clamp(seaLevel - 0.18, 0.05, seaLevel - 0.05);
+  return { seaLevel, deepSeaLevel };
+}
+
 const viewState = {
   scale: 1,
   translateX: 0,
