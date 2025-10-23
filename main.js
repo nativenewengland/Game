@@ -1372,56 +1372,42 @@ function closeDwarfCustomizer(options = {}) {
   }
 }
 
-const ageWeights = Array.from({ length: 30 }, (_, index) => {
-  const age = index + 1;
-  if (age >= 3 && age <= 6) {
-    return 12;
+const chronologyBias = {
+  age: {
+    min: 1,
+    max: 30,
+    exponent: 1.4
+  },
+  year: {
+    min: 1,
+    max: 50000,
+    exponent: 2.8
   }
-  if (age <= 2) {
-    return 4;
-  }
-  if (age <= 10) {
-    return 6;
-  }
-  if (age <= 20) {
-    return 3;
-  }
-  return 1;
-});
+};
 
-const yearBands = [
-  { min: 100, max: 5000, weight: 0.65 },
-  { min: 1, max: 99, weight: 0.1 },
-  { min: 5001, max: 20000, weight: 0.15 },
-  { min: 20001, max: 50000, weight: 0.1 }
-];
-
-const yearBandWeights = yearBands.map((band) => band.weight);
-
-function weightedRandomIndex(weights) {
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-  if (totalWeight <= 0) {
-    return 0;
+function biasedRandomInt(min, max, exponent = 1) {
+  const lower = Math.ceil(min);
+  const upper = Math.floor(max);
+  if (upper <= lower) {
+    return lower;
   }
-  let roll = Math.random() * totalWeight;
-  for (let i = 0; i < weights.length; i += 1) {
-    roll -= weights[i];
-    if (roll <= 0) {
-      return i;
-    }
+  if (!Number.isFinite(exponent) || exponent <= 0) {
+    return randomInt(lower, upper);
   }
-  return weights.length - 1;
+  const range = upper - lower + 1;
+  const skewed = Math.pow(Math.random(), exponent);
+  const offset = Math.floor(skewed * range);
+  return clamp(lower + offset, lower, upper);
 }
 
 function randomAge() {
-  const index = weightedRandomIndex(ageWeights);
-  return index + 1;
+  const { min, max, exponent } = chronologyBias.age;
+  return biasedRandomInt(min, max, exponent);
 }
 
 function randomYear() {
-  const index = weightedRandomIndex(yearBandWeights);
-  const selectedBand = yearBands[index] || yearBands[0];
-  return randomInt(selectedBand.min, selectedBand.max);
+  const { min, max, exponent } = chronologyBias.year;
+  return biasedRandomInt(min, max, exponent);
 }
 
 function generateRandomChronology() {
