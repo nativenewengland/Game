@@ -35,6 +35,131 @@ body {
   overflow: hidden;
 }
 
+.embark-screen {
+  padding: clamp(2rem, 6vw, 4rem);
+  align-items: stretch;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.embark-backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(8, 9, 15, 0.85), rgba(8, 9, 15, 0.6)),
+    url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+  filter: saturate(110%);
+  transform: scale(1.05);
+}
+
+.embark-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 2.5vw, 2rem);
+  padding: clamp(2rem, 3vw, 2.75rem);
+  max-width: min(1100px, 92vw);
+  width: 100%;
+  margin: auto;
+  border-radius: 28px;
+  background: rgba(10, 12, 22, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px);
+}
+
+.embark-header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.embark-eyebrow {
+  margin: 0;
+  font-size: 0.9rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(240, 198, 116, 0.9);
+}
+
+.embark-header h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  letter-spacing: 0.08em;
+}
+
+.embark-description {
+  margin: 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.embark-content {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  align-items: stretch;
+}
+
+.embark-summary {
+  grid-column: span 5;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.embark-form {
+  grid-column: span 7;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: rgba(12, 15, 26, 0.8);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: clamp(1.5rem, 2.5vw, 2rem);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.embark-form .world-name-input {
+  margin-bottom: 0;
+}
+
+.embark-hero {
+  position: relative;
+  flex: 1;
+  min-height: 220px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1rem 2.5rem rgba(0, 0, 0, 0.45);
+}
+
+.embark-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(10, 12, 22, 0.2), rgba(10, 12, 22, 0.75));
+}
+
+.embark-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.embark-flavour {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+  font-style: italic;
+}
+
+.world-name-label {
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
 .hidden {
   display: none !important;
 }
@@ -221,7 +346,8 @@ button:hover:not(:disabled) {
   white-space: nowrap;
 }
 
-.modal input {
+.modal input,
+.embark-form input {
   font-size: 1rem;
   padding: 0.6rem 0.75rem;
   border-radius: 10px;
@@ -343,6 +469,28 @@ canvas {
     width: 100%;
   }
 
+  .embark-panel {
+    padding: 1.75rem;
+  }
+
+  .embark-content {
+    grid-template-columns: 1fr;
+  }
+
+  .embark-summary,
+  .embark-form {
+    grid-column: auto;
+  }
+
+  .embark-form,
+  .embark-summary {
+    padding: 1.25rem;
+  }
+
+  .embark-hero {
+    min-height: 160px;
+  }
+
   .game-ui {
     flex-direction: column;
     align-items: stretch;
@@ -350,5 +498,16 @@ canvas {
 
   .seed-display {
     text-align: center;
+  }
+}
+
+@media (max-width: 1080px) {
+  .embark-content {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .embark-summary,
+  .embark-form {
+    grid-column: span 6;
   }
 }
