@@ -26,8 +26,8 @@ const tileLookup = new Map(
 
 const state = {
   settings: {
-    width: 96,
-    height: 64,
+    width: 200,
+    height: 150,
     seedString: '',
     lastSeedString: ''
   },
@@ -108,8 +108,8 @@ function toggleOptions(forceState) {
 }
 
 function applyFormSettings() {
-  const width = clamp(parseInt(elements.mapWidthInput.value, 10) || state.settings.width, 30, 200);
-  const height = clamp(parseInt(elements.mapHeightInput.value, 10) || state.settings.height, 20, 150);
+  const width = clamp(parseInt(elements.mapWidthInput.value, 10) || state.settings.width, 30, 1024);
+  const height = clamp(parseInt(elements.mapHeightInput.value, 10) || state.settings.height, 20, 1024);
   const seedString = (elements.seedInput.value || '').trim();
 
   state.settings.width = width;
