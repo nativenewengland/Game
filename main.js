@@ -324,6 +324,42 @@ const state = {
 const defaultDwarfCount = 1;
 const defaultHairStyleValue = 'straight_shoulder';
 
+const dwarfClanOptions = [
+  { value: 'stonebeard', label: 'Stonebeard' },
+  { value: 'ironfist', label: 'Ironfist' },
+  { value: 'coppervein', label: 'Coppervein' },
+  { value: 'graniteheart', label: 'Graniteheart' },
+  { value: 'deepdelver', label: 'Deepdelver' },
+  { value: 'amberpick', label: 'Amberpick' },
+  { value: 'oakenshield', label: 'Oakenshield' },
+  { value: 'frosthammer', label: 'Frosthammer' },
+  { value: 'berylbraid', label: 'Berylbraid' },
+  { value: 'silverhollow', label: 'Silverhollow' }
+];
+
+const dwarfGuildOptions = [
+  { value: 'stone-wardens', label: 'Stone Wardens Guild' },
+  { value: 'anvilguard', label: 'Anvilguard Guild' },
+  { value: 'brewmasters', label: 'Brewmasters Circle' },
+  { value: 'gearwrights', label: 'Gearwrights Assembly' },
+  { value: 'lorekeepers', label: 'Lorekeepers Consortium' },
+  { value: 'hearthguard', label: 'Hearthguard Lodge' },
+  { value: 'artificers', label: 'Artificers Union' },
+  { value: 'merchants', label: "Merchant's League" }
+];
+
+const dwarfProfessionOptions = [
+  { value: 'miner', label: 'Miner' },
+  { value: 'mason', label: 'Master Mason' },
+  { value: 'smith', label: 'Master Smith' },
+  { value: 'brewer', label: 'Brewmaster' },
+  { value: 'engineer', label: 'Chief Engineer' },
+  { value: 'scholar', label: 'Lore Scholar' },
+  { value: 'ranger', label: 'Ranger Captain' },
+  { value: 'carpenter', label: 'Master Carpenter' },
+  { value: 'jewelcrafter', label: 'Gemcutter' }
+];
+
 const dwarfHairStyles = {
   straight_shoulder: {
     label: 'Straight — Shoulder Length',
@@ -406,10 +442,23 @@ const dwarfOptions = {
     { value: 'braided', label: 'Braided Beard' },
     { value: 'forked', label: 'Forked Beard' },
     { value: 'mutton', label: 'Mutton Chops' }
-  ]
+  ],
+  clan: dwarfClanOptions,
+  guild: dwarfGuildOptions,
+  profession: dwarfProfessionOptions
 };
 
-const editableDwarfTraits = new Set(['gender', 'skin', 'eyes', 'hairStyle', 'hair', 'beard']);
+const editableDwarfTraits = new Set([
+  'gender',
+  'skin',
+  'eyes',
+  'hairStyle',
+  'hair',
+  'beard',
+  'clan',
+  'guild',
+  'profession'
+]);
 
 const dwarfNamePools = {
   female: [
@@ -449,18 +498,6 @@ const dwarfNamePools = {
     'Isarn',
     'Edda',
     'Kol'
-  ],
-  clan: [
-    'Stonebeard',
-    'Ironfist',
-    'Coppervein',
-    'Graniteheart',
-    'Deepdelver',
-    'Amberpick',
-    'Oakenshield',
-    'Frosthammer',
-    'Berylbraid',
-    'Silverhollow'
   ]
 };
 
@@ -582,6 +619,9 @@ const elements = {
   dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
   dwarfNameInput: document.getElementById('dwarf-name-input'),
   dwarfGenderSelect: document.getElementById('dwarf-gender-select'),
+  dwarfClanSelect: document.getElementById('dwarf-clan-select'),
+  dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
+  dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
   dwarfSkinSelect: document.getElementById('dwarf-skin-select'),
   dwarfEyeSelect: document.getElementById('dwarf-eye-select'),
   dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
@@ -776,12 +816,13 @@ function generateDwarfFirstName(gender) {
 }
 
 function generateDwarfClanName() {
-  return randomChoice(dwarfNamePools.clan) || 'Stonebeard';
+  const option = randomChoice(dwarfOptions.clan) || dwarfOptions.clan[0];
+  return option?.label || 'Stonebeard';
 }
 
-function generateDwarfName(gender) {
+function generateDwarfName(gender, clanValue) {
   const firstName = generateDwarfFirstName(gender);
-  const clanName = generateDwarfClanName();
+  const clanName = clanValue ? getOptionLabel('clan', clanValue) : generateDwarfClanName();
   return `${firstName} ${clanName}`;
 }
 
@@ -795,15 +836,21 @@ function createRandomDwarf(preferredGender) {
   const hairStyleOption = randomChoice(dwarfOptions.hairStyle) || dwarfOptions.hairStyle[0];
   const hairOption = randomChoice(dwarfOptions.hair) || dwarfOptions.hair[0];
   const beardOption = randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
+  const clanOption = randomChoice(dwarfOptions.clan) || dwarfOptions.clan[0];
+  const guildOption = randomChoice(dwarfOptions.guild) || dwarfOptions.guild[0];
+  const professionOption = randomChoice(dwarfOptions.profession) || dwarfOptions.profession[0];
 
   return {
-    name: generateDwarfName(genderValue),
+    name: generateDwarfName(genderValue, clanOption?.value),
     gender: genderValue,
     skin: skinOption.value,
     eyes: eyeOption.value,
     hairStyle: resolveHairStyleValue(hairStyleOption.value),
     hair: hairOption.value,
-    beard: beardOption.value
+    beard: beardOption.value,
+    clan: clanOption?.value,
+    guild: guildOption?.value,
+    profession: professionOption?.value
   };
 }
 
@@ -1001,7 +1048,24 @@ function updateDwarfPortrait(dwarf) {
     : `${hairLabel} hair`;
   const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
   const beardLabel = getOptionLabel('beard', beardValue).toLowerCase();
-  const ariaDescription = `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
+  const clanLabel = getOptionLabel('clan', dwarf.clan);
+  const guildLabel = getOptionLabel('guild', dwarf.guild);
+  const professionLabel = getOptionLabel('profession', dwarf.profession);
+  const affiliationParts = [];
+  if (clanLabel) {
+    affiliationParts.push(`member of the ${clanLabel} clan`);
+  }
+  if (professionLabel && guildLabel) {
+    affiliationParts.push(`${professionLabel.toLowerCase()} of the ${guildLabel}`);
+  } else if (professionLabel) {
+    affiliationParts.push(professionLabel.toLowerCase());
+  } else if (guildLabel) {
+    affiliationParts.push(`of the ${guildLabel}`);
+  }
+  let ariaDescription = `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
+  if (affiliationParts.length > 0) {
+    ariaDescription += ` ${affiliationParts.join(', ')}.`;
+  }
   const displayName = getDwarfDisplayName(dwarf);
   elements.dwarfPortrait.setAttribute('aria-label', `${displayName}: ${ariaDescription}`);
 }
@@ -1019,7 +1083,25 @@ function buildDwarfSummary(dwarf) {
     ? `${hairStyleDescription} ${hairLabel} hair`
     : `${hairLabel} hair`;
   const beardLabel = getOptionLabel('beard', dwarf.beard).toLowerCase();
-  return `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
+  const clanLabel = getOptionLabel('clan', dwarf.clan);
+  const guildLabel = getOptionLabel('guild', dwarf.guild);
+  const professionLabel = getOptionLabel('profession', dwarf.profession);
+  let summary = `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
+  const affiliationSentences = [];
+  if (clanLabel) {
+    affiliationSentences.push(`Member of the ${clanLabel} clan`);
+  }
+  if (professionLabel && guildLabel) {
+    affiliationSentences.push(`${professionLabel} of the ${guildLabel}`);
+  } else if (professionLabel) {
+    affiliationSentences.push(professionLabel);
+  } else if (guildLabel) {
+    affiliationSentences.push(`Of the ${guildLabel}`);
+  }
+  if (affiliationSentences.length > 0) {
+    summary += ` ${affiliationSentences.join('. ')}.`;
+  }
+  return summary;
 }
 
 function getDwarfDisplayName(dwarf) {
@@ -1065,8 +1147,28 @@ function updateRosterList() {
     const beardLabel = getOptionLabel('beard', dwarf.beard);
     traits.textContent = `${genderLabel} • ${hairStyleLabel} • ${hairLabel} • ${beardLabel}`;
 
+    const affiliations = document.createElement('p');
+    affiliations.className = 'dwarf-roster-traits dwarf-roster-affiliations';
+    const affiliationParts = [];
+    const clanLabel = getOptionLabel('clan', dwarf.clan);
+    const guildLabel = getOptionLabel('guild', dwarf.guild);
+    const professionLabel = getOptionLabel('profession', dwarf.profession);
+    if (clanLabel) {
+      affiliationParts.push(`${clanLabel} Clan`);
+    }
+    if (guildLabel) {
+      affiliationParts.push(guildLabel);
+    }
+    if (professionLabel) {
+      affiliationParts.push(professionLabel);
+    }
+    affiliations.textContent = affiliationParts.join(' • ');
+
     item.appendChild(name);
     item.appendChild(traits);
+    if (affiliationParts.length > 0) {
+      item.appendChild(affiliations);
+    }
 
     item.addEventListener('click', () => {
       setActiveDwarf(index);
@@ -1113,6 +1215,21 @@ function updateCustomizerUI() {
     elements.dwarfGenderSelect,
     dwarf.gender,
     dwarfOptions.gender[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfClanSelect,
+    dwarf.clan,
+    dwarfOptions.clan[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfGuildSelect,
+    dwarf.guild,
+    dwarfOptions.guild[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfProfessionSelect,
+    dwarf.profession,
+    dwarfOptions.profession[0].value
   );
   ensureSelectValue(
     elements.dwarfSkinSelect,
@@ -1174,7 +1291,26 @@ function updateDwarfTrait(trait, value) {
     updateRosterList();
     return;
   }
-  if (editableDwarfTraits.has(trait)) {
+  if (trait === 'clan') {
+    const previousClanValue = dwarf.clan;
+    dwarf.clan = value;
+    const previousClanLabel = previousClanValue ? getOptionLabel('clan', previousClanValue) : null;
+    const nextClanLabel = value ? getOptionLabel('clan', value) : null;
+    const trimmedName = (dwarf.name || '').trim();
+    if (nextClanLabel && trimmedName) {
+      const matchesPreviousClan =
+        previousClanLabel && trimmedName.endsWith(` ${previousClanLabel}`);
+      const baseName = matchesPreviousClan
+        ? trimmedName.slice(0, trimmedName.length - previousClanLabel.length).trim()
+        : trimmedName;
+      if (matchesPreviousClan || !previousClanLabel) {
+        const rebuiltName = `${baseName} ${nextClanLabel}`.trim();
+        dwarf.name = rebuiltName;
+      }
+    } else if (nextClanLabel) {
+      dwarf.name = generateDwarfName(dwarf.gender, value);
+    }
+  } else if (editableDwarfTraits.has(trait)) {
     dwarf[trait] = trait === 'hairStyle' ? resolveHairStyleValue(value) : value;
   }
   updateCustomizerUI();
@@ -2748,6 +2884,24 @@ function attachEvents() {
   if (elements.dwarfGenderSelect) {
     elements.dwarfGenderSelect.addEventListener('change', (event) => {
       updateDwarfTrait('gender', event.target.value);
+    });
+  }
+
+  if (elements.dwarfClanSelect) {
+    elements.dwarfClanSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('clan', event.target.value);
+    });
+  }
+
+  if (elements.dwarfGuildSelect) {
+    elements.dwarfGuildSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('guild', event.target.value);
+    });
+  }
+
+  if (elements.dwarfProfessionSelect) {
+    elements.dwarfProfessionSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('profession', event.target.value);
     });
   }
 
