@@ -15,6 +15,27 @@ const tileSheets = {
   }
 };
 
+const dwarfSpriteSheets = {
+  body: {
+    key: 'body',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_body.png',
+    tileSize: 32,
+    image: null
+  },
+  eyes: {
+    key: 'eyes',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_body_special.png',
+    tileSize: 32,
+    image: null
+  },
+  hair: {
+    key: 'hair',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_hair_straight.png',
+    tileSize: 32,
+    image: null
+  }
+};
+
 const baseTileCoords = {
   GRASSLAND_TEMP: { row: 0, col: 2 },
   GRASSLAND_TEMP_EVIL: { row: 0, col: 7 },
@@ -563,8 +584,21 @@ const tileSheetPromises = Object.values(tileSheets).map((sheet) =>
     })
 );
 
+const dwarfSpriteSheetPromises = Object.values(dwarfSpriteSheets).map((sheet) =>
+  loadImage(sheet.path)
+    .then((img) => {
+      sheet.image = img;
+      return img;
+    })
+    .catch((error) => {
+      console.error(`Failed to load dwarf sprite sheet at ${sheet.path}`, error);
+      throw error;
+    })
+);
+
 const assetPromises = Promise.all([
   ...tileSheetPromises,
+  ...dwarfSpriteSheetPromises,
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
 
