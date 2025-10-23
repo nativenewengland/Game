@@ -613,7 +613,7 @@ const elements = {
   dwarfCustomizer: document.getElementById('dwarf-customizer'),
   dwarfCustomizerForm: document.getElementById('dwarf-customizer-form'),
   dwarfRosterList: document.getElementById('dwarf-roster-list'),
-  dwarfRandomiseAll: document.getElementById('dwarf-randomise-all'),
+  dwarfRollNew: document.getElementById('dwarf-roll-new'),
   dwarfPrev: document.getElementById('dwarf-prev'),
   dwarfNext: document.getElementById('dwarf-next'),
   dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
@@ -1205,7 +1205,11 @@ function updateCustomizerUI() {
   }
   const total = state.dwarfParty.dwarves.length;
   if (elements.dwarfSlotLabel) {
-    elements.dwarfSlotLabel.textContent = `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}`;
+    if (total === 1) {
+      elements.dwarfSlotLabel.textContent = 'Founding Dwarf';
+    } else {
+      elements.dwarfSlotLabel.textContent = `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}`;
+    }
   }
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.value = dwarf.name;
@@ -1326,7 +1330,7 @@ function randomiseActiveDwarf() {
   setActiveDwarf(activeIndex);
 }
 
-function randomiseEntireParty() {
+function rollNewDwarfProfile() {
   initialiseDwarfParty();
   updateCustomizerUI();
 }
@@ -2848,9 +2852,9 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfRandomiseAll) {
-    elements.dwarfRandomiseAll.addEventListener('click', () => {
-      randomiseEntireParty();
+  if (elements.dwarfRollNew) {
+    elements.dwarfRollNew.addEventListener('click', () => {
+      rollNewDwarfProfile();
     });
   }
 
