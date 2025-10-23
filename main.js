@@ -2311,41 +2311,127 @@ function createWorld(seedString) {
   const width = state.settings.width;
   const height = state.settings.height;
 
-  const noiseOffsetX = rng() * 4096;
-  const noiseOffsetY = rng() * 4096;
-  const noiseScale = 2.2 + rng() * 1.8;
+  const continentalPlates = generateContinentalPlates(rng);
+  const elevationField = new Float32Array(width * height);
 
-  const tiles = Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => ({ base: resolveTileName('GRASS'), overlay: null }))
-  );
+  const baseNoiseOffsetX = rng() * 2048;
+  const baseNoiseOffsetY = rng() * 2048;
+  const detailNoiseOffsetX = rng() * 4096;
+  const detailNoiseOffsetY = rng() * 4096;
+
+  const baseNoiseScale = 1.2 + rng() * 0.8;
+  const detailNoiseScale = 3.6 + rng() * 3.2;
+  const ridgeNoiseScale = 6.4 + rng() * 4.2;
+
+  const baseNoiseSeed = (seedNumber + 0x9e3779b9) >>> 0;
+  const detailNoiseSeed = (seedNumber + 0x85ebca6b) >>> 0;
+  const ridgeNoiseSeed = (seedNumber + 0xc2b2ae35) >>> 0;
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const normalizedX = (x + 0.5) / width;
       const normalizedY = (y + 0.5) / height;
 
-      let noiseValue = octaveNoise(
-        (normalizedX + noiseOffsetX) * noiseScale,
-        (normalizedY + noiseOffsetY) * noiseScale,
-        seedNumber || 1,
-        4,
-        0.55,
-        2.0
+      const idx = y * width + x;
+      const plateSample = sampleContinentalPlates(normalizedX, normalizedY, continentalPlates);
+
+      const baseNoise = octaveNoise(
+        (normalizedX + baseNoiseOffsetX) * baseNoiseScale,
+        (normalizedY + baseNoiseOffsetY) * baseNoiseScale,
+        baseNoiseSeed,
+        3,
+        0.6,
+        1.9
       );
 
-      if (Number.isNaN(noiseValue)) {
-        noiseValue = 0;
-      }
+      const detailNoise = octaveNoise(
+        (normalizedX + detailNoiseOffsetX) * detailNoiseScale,
+        (normalizedY + detailNoiseOffsetY) * detailNoiseScale,
+        detailNoiseSeed,
+        4,
+        0.55,
+        2.2
+      );
+
+      const ridgeNoise = octaveNoise(
+        (normalizedX + detailNoiseOffsetX * 0.5) * ridgeNoiseScale,
+        (normalizedY + detailNoiseOffsetY * 0.5) * ridgeNoiseScale,
+        ridgeNoiseSeed,
+        2,
+        0.45,
+        2.4
+      );
 
       const maskSample = sampleLandMask(normalizedX, normalizedY);
+      const edgeDistance = Math.min(normalizedX, 1 - normalizedX, normalizedY, 1 - normalizedY);
+      const edgeFalloff = clamp(1 - edgeDistance * 3.1, 0, 1);
+
+      let heightValue = plateSample.height;
+      heightValue = lerp(heightValue, plateSample.mask, 0.35);
+      heightValue += (baseNoise - 0.5) * (0.35 + plateSample.mask * 0.25);
+      heightValue += (detailNoise - 0.5) * 0.18;
+      heightValue += (ridgeNoise - 0.5) * 0.1 * plateSample.mask;
+      heightValue -= edgeFalloff * edgeFalloff * 0.45;
+
       if (maskSample !== null && maskSample !== undefined) {
-        noiseValue = (noiseValue + maskSample) / 2;
+        heightValue = lerp(heightValue, maskSample, 0.5);
       }
 
-      noiseValue = clamp(noiseValue, 0, 1);
+      heightValue = clamp(heightValue, -1, 1);
+      elevationField[idx] = heightValue;
+    }
+  }
 
-      const baseKey = noiseValue < 0.5 ? 'WATER' : 'GRASS';
-      tiles[y][x] = { base: resolveTileName(baseKey), overlay: null };
+  normalizeField(elevationField);
+
+  const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
+  const tiles = Array.from({ length: height }, () => Array.from({ length: width }, () => ({ base: 'GRASS', overlay: null })));
+  const waterMask = new Uint8Array(width * height);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const isWater = elevationField[idx] <= seaLevel;
+      waterMask[idx] = isWater ? 1 : 0;
+      tiles[y][x] = {
+        base: resolveTileName(isWater ? 'WATER' : 'GRASS'),
+        overlay: null
+      };
+    }
+  }
+
+  const neighborOffsets = [
+    [-1, -1],
+    [0, -1],
+    [1, -1],
+    [-1, 0],
+    [1, 0],
+    [-1, 1],
+    [0, 1],
+    [1, 1]
+  ];
+
+  for (let y = 1; y < height - 1; y += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const idx = y * width + x;
+      if (!waterMask[idx]) {
+        continue;
+      }
+      let landNeighbors = 0;
+      for (let i = 0; i < neighborOffsets.length; i += 1) {
+        const nx = x + neighborOffsets[i][0];
+        const ny = y + neighborOffsets[i][1];
+        if (waterMask[ny * width + nx] === 0) {
+          landNeighbors += 1;
+        }
+      }
+      if (landNeighbors >= 6) {
+        waterMask[idx] = 0;
+        tiles[y][x] = {
+          base: resolveTileName('GRASS'),
+          overlay: null
+        };
+      }
     }
   }
 
