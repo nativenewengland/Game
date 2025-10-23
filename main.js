@@ -1277,9 +1277,10 @@ const chronologyBias = {
     exponent: 1.6
   },
   year: {
-    min: 50,
+    min: 0,
     max: 50000,
-    exponent: 18
+    exponent: 2.8,
+    biasWeight: 0.65
   }
 };
 
@@ -1304,8 +1305,19 @@ function randomAge() {
 }
 
 function randomYear() {
-  const { min, max, exponent } = chronologyBias.year;
-  return biasedRandomInt(min, max, exponent);
+  const { min, max, exponent, biasWeight = 1 } = chronologyBias.year;
+  const lower = Math.ceil(min);
+  const upper = Math.floor(max);
+  if (upper <= lower) {
+    return lower;
+  }
+  const range = upper - lower;
+  const clampedWeight = clamp(biasWeight, 0, 1);
+  const biasedSample = Math.pow(Math.random(), Math.max(exponent, 1));
+  const uniformSample = Math.random();
+  const blended = clampedWeight * biasedSample + (1 - clampedWeight) * uniformSample;
+  const value = lower + Math.round(blended * range);
+  return clamp(value, lower, upper);
 }
 
 function generateRandomChronology() {
@@ -1320,15 +1332,16 @@ function isChronologyValid(chronology) {
   return (
     Number.isFinite(year) &&
     Number.isFinite(age) &&
-    year >= 50 &&
-    year <= 50000 &&
+    year >= chronologyBias.year.min &&
+    year <= chronologyBias.year.max &&
     age >= chronologyBias.age.min &&
     age <= chronologyBias.age.max
   );
 }
 
 function sanitizeChronologyValues(yearValue, ageValue) {
-  const safeYear = clamp(Math.round(yearValue), 50, 50000);
+  const { min: yearMin, max: yearMax } = chronologyBias.year;
+  const safeYear = clamp(Math.round(yearValue), yearMin, yearMax);
   const { min: ageMin, max: ageMax } = chronologyBias.age;
   const safeAge = clamp(Math.round(ageValue), ageMin, ageMax);
   return { year: safeYear, age: safeAge };
@@ -1375,7 +1388,7 @@ function getSanitisedChronologyFromInputs() {
   if (
     Number.isNaN(parsedYear) ||
     Number.isNaN(parsedAge) ||
-    parsedYear < 1 ||
+    parsedYear < chronologyBias.year.min ||
     parsedAge < 1
   ) {
     return null;
