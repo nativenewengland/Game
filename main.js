@@ -1946,28 +1946,50 @@ function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.
 
 function generateContinentalPlates(rng) {
   const plates = [];
-  const desired = 3 + Math.floor(rng() * 3);
-  const maxAttempts = desired * 25;
-  const minDistance = 0.22;
+  const majorTarget = 4 + Math.floor(rng() * 4);
+  const fragmentTarget = 3 + Math.floor(rng() * 5);
+  const totalTarget = majorTarget + fragmentTarget;
+  const maxAttempts = totalTarget * 40;
+  const minDistance = 0.14;
+  const fragmentDistance = 0.08;
 
-  for (let attempt = 0; attempt < maxAttempts && plates.length < desired; attempt += 1) {
-    const radiusBase = 0.2 + rng() * 0.24;
+  const randomUint32 = () => Math.floor(rng() * 0xffffffff);
+
+  for (let attempt = 0; attempt < maxAttempts && plates.length < totalTarget; attempt += 1) {
+    const isFragment = plates.length >= majorTarget;
+    const radiusBase = isFragment ? 0.08 + rng() * 0.14 : 0.18 + rng() * 0.24;
     const rotation = rng() * Math.PI * 2;
+    const oceanChance = isFragment ? 0.25 : 0.4;
+    const isOcean = rng() < oceanChance;
+    const strengthBase = isOcean
+      ? -(0.4 + rng() * 0.35) * (isFragment ? 0.7 : 1)
+      : (0.6 + rng() * 0.55) * (isFragment ? 0.75 : 1);
+    const jaggedness = isFragment ? 0.8 + rng() * 1.1 : 0.45 + rng() * 0.8;
+    const turbulence = 0.4 + rng() * 0.6;
+
     const candidate = {
-      x: rng() * 0.7 + 0.15,
-      y: rng() * 0.7 + 0.15,
-      radiusX: radiusBase * (0.85 + rng() * 1.45),
-      radiusY: radiusBase * (0.55 + rng() * 0.8),
-      falloff: 1.15 + rng() * 1.7,
-      sharpness: 1.1 + rng() * 1.6,
-      strength: 0.68 + rng() * 0.4,
+      x: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
+      y: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
+      radiusX: radiusBase * (0.7 + rng() * 1.6),
+      radiusY: radiusBase * (0.6 + rng() * 1.4),
+      falloff: 1.15 + rng() * 1.8,
+      sharpness: 1.1 + rng() * 1.3,
+      strength: strengthBase,
       rotation,
       cos: Math.cos(rotation),
-      sin: Math.sin(rotation)
+      sin: Math.sin(rotation),
+      type: isOcean ? 'ocean' : 'land',
+      jaggedness,
+      turbulence,
+      noiseScale: isFragment ? 6 + rng() * 10 : 3 + rng() * 6,
+      noiseSeed: randomUint32(),
+      noiseOffsetX: rng() * 256,
+      noiseOffsetY: rng() * 256
     };
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
-    if (edgeDistance < 0.08) {
+    const minEdge = isFragment ? 0.02 : 0.06;
+    if (edgeDistance < minEdge) {
       continue;
     }
 
@@ -1975,7 +1997,8 @@ function generateContinentalPlates(rng) {
     for (let i = 0; i < plates.length; i += 1) {
       const existing = plates[i];
       const separation = Math.hypot(candidate.x - existing.x, candidate.y - existing.y);
-      if (separation < minDistance) {
+      const limit = existing.type === candidate.type ? (isFragment ? fragmentDistance : minDistance) : minDistance * 0.75;
+      if (separation < limit) {
         tooClose = true;
         break;
       }
@@ -1988,36 +2011,26 @@ function generateContinentalPlates(rng) {
     plates.push(candidate);
   }
 
-  if (plates.length === 0) {
+  if (!plates.some((plate) => plate.strength > 0)) {
     const rotation = rng() * Math.PI * 2;
     plates.push({
       x: 0.5,
       y: 0.5,
-      radiusX: 0.32,
-      radiusY: 0.24,
-      falloff: 1.6,
-      sharpness: 1.4,
-      strength: 0.9,
+      radiusX: 0.26,
+      radiusY: 0.2,
+      falloff: 1.5,
+      sharpness: 1.3,
+      strength: 0.85,
       rotation,
       cos: Math.cos(rotation),
-      sin: Math.sin(rotation)
-    });
-  }
-
-  const islandCount = 2 + Math.floor(rng() * 4);
-  for (let i = 0; i < islandCount; i += 1) {
-    const rotation = rng() * Math.PI * 2;
-    plates.push({
-      x: clamp(rng() * 0.92, 0.04, 0.96),
-      y: clamp(rng() * 0.92, 0.04, 0.96),
-      radiusX: 0.07 + rng() * 0.08,
-      radiusY: 0.05 + rng() * 0.07,
-      falloff: 1.4 + rng() * 1.4,
-      sharpness: 1.2 + rng() * 1.1,
-      strength: 0.4 + rng() * 0.35,
-      rotation,
-      cos: Math.cos(rotation),
-      sin: Math.sin(rotation)
+      sin: Math.sin(rotation),
+      type: 'land',
+      jaggedness: 0.7,
+      turbulence: 0.6,
+      noiseScale: 4.5,
+      noiseSeed: randomUint32(),
+      noiseOffsetX: rng() * 128,
+      noiseOffsetY: rng() * 128
     });
   }
 
@@ -2029,10 +2042,15 @@ function sampleContinentalPlates(x, y, plates) {
     return { height: 0, mask: 0 };
   }
 
-  let maxContribution = 0;
-  let secondContribution = 0;
-  let sum = 0;
-  let weight = 0;
+  let landSum = 0;
+  let landWeight = 0;
+  let oceanSum = 0;
+  let oceanWeight = 0;
+  let maxLand = 0;
+  let secondLand = 0;
+  let maxOcean = 0;
+  let secondOcean = 0;
+  let variation = 0;
 
   for (let i = 0; i < plates.length; i += 1) {
     const plate = plates[i];
@@ -2040,26 +2058,69 @@ function sampleContinentalPlates(x, y, plates) {
     const dy = y - plate.y;
     const rotatedX = dx * plate.cos + dy * plate.sin;
     const rotatedY = dy * plate.cos - dx * plate.sin;
-    const distX = rotatedX / plate.radiusX;
-    const distY = rotatedY / plate.radiusY;
+
+    const boundaryNoise = octaveNoise(
+      (rotatedX + plate.noiseOffsetX) * plate.noiseScale,
+      (rotatedY + plate.noiseOffsetY) * plate.noiseScale,
+      plate.noiseSeed,
+      3,
+      0.55 + plate.turbulence * 0.25,
+      2 + plate.turbulence * 0.9
+    );
+
+    const radiusScale = clamp(1 + (boundaryNoise - 0.5) * plate.jaggedness, 0.35, 2.8);
+    const distX = rotatedX / (plate.radiusX * radiusScale);
+    const distY = rotatedY / (plate.radiusY * radiusScale);
     const distance = Math.sqrt(distX * distX + distY * distY);
+
     let influence = clamp(1 - Math.pow(distance, plate.falloff), 0, 1);
     influence = Math.pow(influence, plate.sharpness);
-    const contribution = influence * plate.strength;
-    if (contribution > maxContribution) {
-      secondContribution = maxContribution;
-      maxContribution = contribution;
-    } else if (contribution > secondContribution) {
-      secondContribution = contribution;
+
+    if (influence <= 0) {
+      continue;
     }
-    sum += contribution;
-    weight += plate.strength;
+
+    const contribution = influence * Math.abs(plate.strength);
+    const turbulence = Math.pow(Math.abs(boundaryNoise - 0.5) * 2, 1.35) * plate.turbulence * influence;
+
+    if (plate.strength >= 0) {
+      if (contribution > maxLand) {
+        secondLand = maxLand;
+        maxLand = contribution;
+      } else if (contribution > secondLand) {
+        secondLand = contribution;
+      }
+      landSum += contribution;
+      landWeight += Math.abs(plate.strength);
+      variation += turbulence;
+    } else {
+      if (contribution > maxOcean) {
+        secondOcean = maxOcean;
+        maxOcean = contribution;
+      } else if (contribution > secondOcean) {
+        secondOcean = contribution;
+      }
+      oceanSum += contribution;
+      oceanWeight += Math.abs(plate.strength);
+      variation -= turbulence;
+    }
   }
 
-  const average = weight > 0 ? sum / weight : 0;
-  const separation = Math.max(0, maxContribution - secondContribution * 0.65);
-  const height = clamp(lerp(maxContribution, average, 0.4) + separation * 0.18, 0, 1);
-  const mask = clamp(maxContribution, 0, 1);
+  if (landWeight === 0 && oceanWeight === 0) {
+    return { height: 0, mask: 0 };
+  }
+
+  const landAvg = landWeight > 0 ? landSum / landWeight : 0;
+  const oceanAvg = oceanWeight > 0 ? oceanSum / oceanWeight : 0;
+
+  const separation = Math.max(0, maxLand - secondLand * 0.65);
+  const oceanSeparation = Math.max(0, maxOcean - secondOcean * 0.7);
+
+  let height = landAvg - oceanAvg * 0.9 + separation * 0.25 - oceanSeparation * 0.22 + variation * 0.18;
+  const mask = clamp(landAvg + separation * 0.6 - oceanAvg * 0.8, 0, 1);
+
+  height = clamp(height, -1, 1);
+
   return { height, mask };
 }
 
@@ -2322,6 +2383,8 @@ function createWorld(seedString) {
   const baseNoiseScale = 1.2 + rng() * 0.8;
   const detailNoiseScale = 3.6 + rng() * 3.2;
   const ridgeNoiseScale = 6.4 + rng() * 4.2;
+  const edgeTaper = 2.4 + rng() * 0.8;
+  const edgeDrop = 0.28 + rng() * 0.14;
 
   const baseNoiseSeed = (seedNumber + 0x9e3779b9) >>> 0;
   const detailNoiseSeed = (seedNumber + 0x85ebca6b) >>> 0;
@@ -2364,14 +2427,14 @@ function createWorld(seedString) {
 
       const maskSample = sampleLandMask(normalizedX, normalizedY);
       const edgeDistance = Math.min(normalizedX, 1 - normalizedX, normalizedY, 1 - normalizedY);
-      const edgeFalloff = clamp(1 - edgeDistance * 3.1, 0, 1);
+      const edgeFalloff = clamp(1 - edgeDistance * edgeTaper, 0, 1);
 
       let heightValue = plateSample.height;
       heightValue = lerp(heightValue, plateSample.mask, 0.35);
       heightValue += (baseNoise - 0.5) * (0.35 + plateSample.mask * 0.25);
       heightValue += (detailNoise - 0.5) * 0.18;
       heightValue += (ridgeNoise - 0.5) * 0.1 * plateSample.mask;
-      heightValue -= edgeFalloff * edgeFalloff * 0.45;
+      heightValue -= edgeFalloff * edgeFalloff * edgeDrop;
 
       if (maskSample !== null && maskSample !== undefined) {
         heightValue = lerp(heightValue, maskSample, 0.5);
