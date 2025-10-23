@@ -315,7 +315,7 @@ const state = {
   }
 };
 
-const defaultDwarfCount = 7;
+const defaultDwarfCount = 1;
 
 const dwarfOptions = {
   gender: [
