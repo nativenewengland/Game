@@ -286,7 +286,8 @@ const state = {
   tileSheets,
   landMask: null,
   ready: false,
-  worldName: ''
+  worldName: '',
+  worldChronology: null
 };
 
 const musicTracks = [
@@ -338,6 +339,10 @@ const elements = {
   worldInfoForm: document.getElementById('world-info-form'),
   worldInfoSize: document.getElementById('world-info-size'),
   worldInfoSeed: document.getElementById('world-info-seed'),
+  worldInfoChronology: document.getElementById('world-info-chronology'),
+  worldYearInput: document.getElementById('world-year-input'),
+  worldAgeInput: document.getElementById('world-age-input'),
+  worldChronologyRandom: document.getElementById('world-chronology-random'),
   worldNameInput: document.getElementById('world-name-input'),
   worldNameRandom: document.getElementById('world-name-random'),
   worldInfoCancel: document.getElementById('world-info-cancel')
@@ -479,6 +484,160 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function randomInt(min, max) {
+  const lower = Math.ceil(min);
+  const upper = Math.floor(max);
+  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+}
+
+const ageWeights = Array.from({ length: 30 }, (_, index) => {
+  const age = index + 1;
+  if (age >= 3 && age <= 6) {
+    return 12;
+  }
+  if (age <= 2) {
+    return 4;
+  }
+  if (age <= 10) {
+    return 6;
+  }
+  if (age <= 20) {
+    return 3;
+  }
+  return 1;
+});
+
+const yearBands = [
+  { min: 100, max: 5000, weight: 0.65 },
+  { min: 1, max: 99, weight: 0.1 },
+  { min: 5001, max: 20000, weight: 0.15 },
+  { min: 20001, max: 50000, weight: 0.1 }
+];
+
+const yearBandWeights = yearBands.map((band) => band.weight);
+
+function weightedRandomIndex(weights) {
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  if (totalWeight <= 0) {
+    return 0;
+  }
+  let roll = Math.random() * totalWeight;
+  for (let i = 0; i < weights.length; i += 1) {
+    roll -= weights[i];
+    if (roll <= 0) {
+      return i;
+    }
+  }
+  return weights.length - 1;
+}
+
+function randomAge() {
+  const index = weightedRandomIndex(ageWeights);
+  return index + 1;
+}
+
+function randomYear() {
+  const index = weightedRandomIndex(yearBandWeights);
+  const selectedBand = yearBands[index] || yearBands[0];
+  return randomInt(selectedBand.min, selectedBand.max);
+}
+
+function generateRandomChronology() {
+  return { year: randomYear(), age: randomAge() };
+}
+
+function isChronologyValid(chronology) {
+  if (!chronology) {
+    return false;
+  }
+  const { year, age } = chronology;
+  return (
+    Number.isFinite(year) &&
+    Number.isFinite(age) &&
+    year >= 1 &&
+    year <= 50000 &&
+    age >= 1 &&
+    age <= 30
+  );
+}
+
+function sanitizeChronologyValues(yearValue, ageValue) {
+  const safeYear = clamp(Math.round(yearValue), 1, 50000);
+  const safeAge = clamp(Math.round(ageValue), 1, 30);
+  return { year: safeYear, age: safeAge };
+}
+
+function ensureChronology() {
+  if (!isChronologyValid(state.worldChronology)) {
+    state.worldChronology = generateRandomChronology();
+  }
+  return state.worldChronology;
+}
+
+function formatOrdinal(value) {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) {
+    return 'th';
+  }
+  switch (value % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+}
+
+function formatChronology(year, age) {
+  const ordinal = formatOrdinal(age);
+  const formattedYear = Number.isFinite(year)
+    ? year.toLocaleString('en-US')
+    : String(year);
+  return `Year ${formattedYear} of the ${age}${ordinal} Age`;
+}
+
+function getSanitisedChronologyFromInputs() {
+  if (!elements.worldYearInput || !elements.worldAgeInput) {
+    return null;
+  }
+  const parsedYear = Number.parseInt(elements.worldYearInput.value, 10);
+  const parsedAge = Number.parseInt(elements.worldAgeInput.value, 10);
+  if (
+    Number.isNaN(parsedYear) ||
+    Number.isNaN(parsedAge) ||
+    parsedYear < 1 ||
+    parsedAge < 1
+  ) {
+    return null;
+  }
+  return sanitizeChronologyValues(parsedYear, parsedAge);
+}
+
+function updateChronologyDisplay() {
+  if (!elements.worldInfoChronology) {
+    return;
+  }
+  const inputChronology = getSanitisedChronologyFromInputs();
+  if (inputChronology) {
+    elements.worldInfoChronology.textContent = formatChronology(
+      inputChronology.year,
+      inputChronology.age
+    );
+    return;
+  }
+  if (isChronologyValid(state.worldChronology)) {
+    elements.worldInfoChronology.textContent = formatChronology(
+      state.worldChronology.year,
+      state.worldChronology.age
+    );
+    return;
+  }
+  elements.worldInfoChronology.textContent = '—';
+}
+
 function getRandomWorldName(excludeName) {
   if (worldNames.length === 0) {
     return 'Unnamed World';
@@ -514,6 +673,7 @@ function openWorldInfoModal() {
     if (!state.worldName) {
       state.worldName = getRandomWorldName();
     }
+    ensureChronology();
     beginGame();
     ensureMusicStarted();
     return;
@@ -527,6 +687,15 @@ function openWorldInfoModal() {
   if (elements.seedInput) {
     elements.seedInput.value = seed;
   }
+
+  const chronology = ensureChronology();
+  if (elements.worldYearInput) {
+    elements.worldYearInput.value = chronology.year.toString();
+  }
+  if (elements.worldAgeInput) {
+    elements.worldAgeInput.value = chronology.age.toString();
+  }
+  updateChronologyDisplay();
 
   const currentName = (state.worldName || '').trim();
   const nameToUse = currentName || getRandomWorldName();
@@ -1475,7 +1644,10 @@ function drawWorld(world) {
   state.settings.lastSeedString = seedString;
   state.settings.seedString = seedString;
   const worldLabel = state.worldName ? `World: ${state.worldName} | ` : '';
-  elements.seedDisplay.textContent = `${worldLabel}Seed: ${seedString} | ${width}×${height}`;
+  const chronologyLabel = isChronologyValid(state.worldChronology)
+    ? `${formatChronology(state.worldChronology.year, state.worldChronology.age)} | `
+    : '';
+  elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}×${height}`;
 }
 
 function beginGame() {
@@ -1545,6 +1717,19 @@ function attachEvents() {
       event.preventDefault();
       const submittedName = elements.worldNameInput ? elements.worldNameInput.value.trim() : '';
       state.worldName = submittedName || getRandomWorldName(state.worldName);
+      const submittedChronology = getSanitisedChronologyFromInputs();
+      if (submittedChronology) {
+        state.worldChronology = submittedChronology;
+      } else {
+        state.worldChronology = generateRandomChronology();
+        if (elements.worldYearInput) {
+          elements.worldYearInput.value = state.worldChronology.year.toString();
+        }
+        if (elements.worldAgeInput) {
+          elements.worldAgeInput.value = state.worldChronology.age.toString();
+        }
+      }
+      updateChronologyDisplay();
       closeWorldInfoModal();
       beginGame();
       ensureMusicStarted();
@@ -1554,6 +1739,30 @@ function attachEvents() {
   if (elements.worldInfoCancel) {
     elements.worldInfoCancel.addEventListener('click', () => {
       closeWorldInfoModal(true);
+    });
+  }
+
+  if (elements.worldYearInput) {
+    elements.worldYearInput.addEventListener('input', updateChronologyDisplay);
+  }
+
+  if (elements.worldAgeInput) {
+    elements.worldAgeInput.addEventListener('input', updateChronologyDisplay);
+  }
+
+  if (elements.worldChronologyRandom) {
+    elements.worldChronologyRandom.addEventListener('click', () => {
+      const newChronology = generateRandomChronology();
+      state.worldChronology = newChronology;
+      if (elements.worldYearInput) {
+        elements.worldYearInput.value = newChronology.year.toString();
+        elements.worldYearInput.focus();
+        elements.worldYearInput.select();
+      }
+      if (elements.worldAgeInput) {
+        elements.worldAgeInput.value = newChronology.age.toString();
+      }
+      updateChronologyDisplay();
     });
   }
 
