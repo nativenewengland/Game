@@ -59,6 +59,25 @@ function registerTiles(sheetKey, coordMap) {
 
 registerTiles('base', baseTileCoords);
 
+const mapSizePresets = [
+  { key: 'mini', label: 'Mini', width: 120, height: 90 },
+  { key: 'small', label: 'Small', width: 160, height: 120 },
+  { key: 'normal', label: 'Normal', width: 200, height: 150 },
+  { key: 'large', label: 'Large', width: 260, height: 195 },
+  { key: 'extra-large', label: 'Extra Large', width: 320, height: 240 }
+];
+
+const mapSizeByKey = mapSizePresets.reduce((acc, preset) => {
+  acc[preset.key] = preset;
+  return acc;
+}, {});
+
+function getMapSizePreset(key) {
+  return mapSizeByKey[key] || mapSizeByKey.normal;
+}
+
+const defaultMapSize = getMapSizePreset('normal');
+
 const worldNames = [
   'Nûrn',
   'Ardganor',
@@ -181,8 +200,9 @@ function resolveTileName(baseKey) {
 
 const state = {
   settings: {
-    width: 200,
-    height: 150,
+    mapSize: defaultMapSize.key,
+    width: defaultMapSize.width,
+    height: defaultMapSize.height,
     seedString: '',
     lastSeedString: ''
   },
@@ -468,8 +488,7 @@ const elements = {
   canvas: document.getElementById('world-canvas'),
   canvasWrapper: document.querySelector('.canvas-wrapper'),
   seedDisplay: document.querySelector('.seed-display'),
-  mapWidthInput: document.getElementById('map-width'),
-  mapHeightInput: document.getElementById('map-height'),
+  mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
@@ -646,12 +665,13 @@ function toggleOptions(forceState) {
 }
 
 function applyFormSettings() {
-  const width = clamp(parseInt(elements.mapWidthInput.value, 10) || state.settings.width, 30, 1024);
-  const height = clamp(parseInt(elements.mapHeightInput.value, 10) || state.settings.height, 20, 1024);
+  const selectedKey = elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize;
+  const preset = getMapSizePreset(selectedKey);
   const seedString = (elements.seedInput.value || '').trim();
 
-  state.settings.width = width;
-  state.settings.height = height;
+  state.settings.mapSize = preset.key;
+  state.settings.width = preset.width;
+  state.settings.height = preset.height;
   state.settings.seedString = seedString;
 }
 
@@ -1464,7 +1484,9 @@ function openWorldInfoModal() {
   }
   const width = state.settings.width;
   const height = state.settings.height;
-  elements.worldInfoSize.textContent = `${width} × ${height} tiles`;
+  const sizePreset = getMapSizePreset(state.settings.mapSize);
+  const sizeLabel = sizePreset ? `${sizePreset.label} — ${sizePreset.width} × ${sizePreset.height} tiles` : `${width} × ${height} tiles`;
+  elements.worldInfoSize.textContent = sizeLabel;
 
   const seed = ensureSeedString();
   elements.worldInfoSeed.textContent = seed;
@@ -2799,9 +2821,12 @@ function handleRegenerate() {
 }
 
 function syncInputsWithSettings() {
-  elements.mapWidthInput.value = state.settings.width.toString();
-  elements.mapHeightInput.value = state.settings.height.toString();
-  elements.seedInput.value = state.settings.seedString;
+  if (elements.mapSizeSelect) {
+    elements.mapSizeSelect.value = state.settings.mapSize;
+  }
+  if (elements.seedInput) {
+    elements.seedInput.value = state.settings.seedString;
+  }
 }
 
 function attachEvents() {

@@ -22,14 +22,14 @@
     <section id="options-panel" class="modal hidden" aria-label="Game options">
       <form id="options-form">
         <h2>World Options</h2>
-        <label>
-          Map width (tiles)
-          <input type="number" id="map-width" name="mapWidth" min="30" max="1024" value="200" />
-        </label>
-        <label>
-          Map height (tiles)
-          <input type="number" id="map-height" name="mapHeight" min="20" max="1024" value="150" />
-        </label>
+        <label for="map-size">Map size</label>
+        <select id="map-size" name="mapSize">
+          <option value="mini">Mini</option>
+          <option value="small">Small</option>
+          <option value="normal" selected>Normal</option>
+          <option value="large">Large</option>
+          <option value="extra-large">Extra Large</option>
+        </select>
         <label>
           World seed
           <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
