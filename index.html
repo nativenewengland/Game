@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dwarfhold Valley</title>
+    <title>Dwarfhold</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="title-screen" class="screen">
       <div class="title-background" aria-hidden="true"></div>
       <div class="title-overlay">
-        <h1 class="game-title">Dwarfhold Valley</h1>
+        <h1 class="game-title">Dwarfhold</h1>
         <p class="tagline">Procedural realms carved from stone and soil.</p>
         <div class="title-buttons">
           <button id="start-button" class="primary">Start Game</button>
@@ -41,31 +41,248 @@
       </form>
     </section>
 
-    <section id="world-info" class="modal hidden" aria-label="World information">
-      <form id="world-info-form">
-        <h2>Embark Preparation</h2>
-        <p class="modal-description">
-          Review the details of the realm you are about to shape. You can rename the world before embarking.
-        </p>
-        <dl class="world-stats" aria-live="polite">
-          <div>
-            <dt>Map size</dt>
-            <dd id="world-info-size">—</dd>
-          </div>
-          <div>
-            <dt>Seed</dt>
-            <dd id="world-info-seed">—</dd>
-          </div>
-        </dl>
-        <label for="world-name-input">World name</label>
-        <div class="world-name-input">
-          <input type="text" id="world-name-input" name="worldName" maxlength="60" autocomplete="off" required />
-          <button type="button" id="world-name-random" class="secondary">Randomise</button>
+    <section id="world-info" class="screen hidden embark-screen" aria-label="World information">
+      <div class="embark-backdrop" aria-hidden="true"></div>
+      <form id="world-info-form" class="embark-panel">
+        <header class="embark-header">
+          <p class="embark-eyebrow">Embark Preparation</p>
+          <h2>Ready the Expedition</h2>
+          <p class="embark-description">
+            Review the realm before you and give your dwarves a worthy tale to tell.
+          </p>
+        </header>
+        <div class="embark-content">
+          <section class="embark-summary" aria-live="polite">
+            <dl class="world-stats">
+              <div>
+                <dt>Map size</dt>
+                <dd id="world-info-size">—</dd>
+              </div>
+              <div>
+                <dt>Seed</dt>
+                <dd id="world-info-seed">—</dd>
+              </div>
+              <div>
+                <dt>Chronology</dt>
+                <dd id="world-info-chronology">—</dd>
+              </div>
+            </dl>
+            <div class="embark-hero" aria-hidden="true">
+              <div class="embark-hero-overlay"></div>
+            </div>
+          </section>
+          <section class="embark-form">
+            <div class="world-chronology-inputs">
+              <label for="world-year-input">
+                Year
+                <input
+                  type="number"
+                  id="world-year-input"
+                  name="worldYear"
+                  min="1"
+                  max="50000"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  required
+                />
+              </label>
+              <label for="world-age-input">
+                Age
+                <input
+                  type="number"
+                  id="world-age-input"
+                  name="worldAge"
+                  min="1"
+                  max="30"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  required
+                />
+              </label>
+              <button type="button" id="world-chronology-random" class="secondary">Randomise</button>
+            </div>
+            <label class="world-name-label" for="world-name-input">World name</label>
+            <div class="world-name-input">
+              <input type="text" id="world-name-input" name="worldName" maxlength="60" autocomplete="off" required />
+              <button type="button" id="world-name-random" class="secondary">Randomise</button>
+            </div>
+            <p class="embark-flavour">
+              "Strike the earth!" whispers through the caverns. Only you can choose the legend they'll carve.
+            </p>
+          </section>
         </div>
-        <div class="modal-buttons">
+        <footer class="embark-actions">
           <button type="button" id="world-info-cancel" class="secondary">Back</button>
           <button type="submit" class="primary">Embark</button>
+        </footer>
+      </form>
+    </section>
+
+    <section
+      id="dwarf-customizer"
+      class="screen hidden embark-screen"
+      aria-label="Expedition party customiser"
+    >
+      <div class="embark-backdrop" aria-hidden="true"></div>
+      <form id="dwarf-customizer-form" class="embark-panel">
+        <header class="embark-header">
+          <p class="embark-eyebrow">Expedition Roster</p>
+          <h2>Design Your Founders</h2>
+          <p class="embark-description">
+            Tune the look of each dwarf before striking the earth.
+          </p>
+        </header>
+        <div class="customizer-layout">
+          <aside class="roster-column" aria-label="Party overview">
+            <h3>Expedition Party</h3>
+            <ul id="dwarf-roster-list" class="dwarf-roster-list" role="list"></ul>
+            <div class="roster-actions">
+              <button type="button" id="dwarf-randomise-all" class="secondary">
+                Randomise Entire Party
+              </button>
+            </div>
+          </aside>
+          <section class="customizer-main" aria-live="polite">
+            <div class="customizer-top-bar">
+              <button type="button" id="dwarf-prev" class="secondary" aria-label="Previous dwarf">
+                ◀
+              </button>
+              <div class="dwarf-slot-info">
+                <p id="dwarf-slot-label" class="slot-label">Dwarf 1 of 1</p>
+                <label class="field-label" for="dwarf-name-input">Name</label>
+                <input
+                  type="text"
+                  id="dwarf-name-input"
+                  class="dwarf-name-input"
+                  maxlength="40"
+                  autocomplete="off"
+                  required
+                />
+              </div>
+              <button type="button" id="dwarf-next" class="secondary" aria-label="Next dwarf">
+                ▶
+              </button>
+            </div>
+            <div class="customizer-preview" role="group" aria-label="Appearance preview">
+              <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
+                <canvas
+                  id="dwarf-portrait-canvas"
+                  class="dwarf-portrait-canvas"
+                  width="128"
+                  height="128"
+                  aria-hidden="true"
+                ></canvas>
+              </div>
+              <p id="dwarf-trait-summary" class="trait-summary"></p>
+            </div>
+            <div class="customizer-fields">
+              <label for="dwarf-gender-select" class="field-label">Gender</label>
+              <select id="dwarf-gender-select" class="field-control">
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="nonbinary">Non-binary</option>
+              </select>
+
+              <label for="dwarf-clan-select" class="field-label">Clan</label>
+              <select id="dwarf-clan-select" class="field-control">
+                <option value="stonebeard">Stonebeard</option>
+                <option value="ironfist">Ironfist</option>
+                <option value="coppervein">Coppervein</option>
+                <option value="graniteheart">Graniteheart</option>
+                <option value="deepdelver">Deepdelver</option>
+                <option value="amberpick">Amberpick</option>
+                <option value="oakenshield">Oakenshield</option>
+                <option value="frosthammer">Frosthammer</option>
+                <option value="berylbraid">Berylbraid</option>
+                <option value="silverhollow">Silverhollow</option>
+              </select>
+
+              <label for="dwarf-guild-select" class="field-label">Guild</label>
+              <select id="dwarf-guild-select" class="field-control">
+                <option value="stone-wardens">Stone Wardens Guild</option>
+                <option value="anvilguard">Anvilguard Guild</option>
+                <option value="brewmasters">Brewmasters Circle</option>
+                <option value="gearwrights">Gearwrights Assembly</option>
+                <option value="lorekeepers">Lorekeepers Consortium</option>
+                <option value="hearthguard">Hearthguard Lodge</option>
+                <option value="artificers">Artificers Union</option>
+                <option value="merchants">Merchant's League</option>
+              </select>
+
+              <label for="dwarf-profession-select" class="field-label">Profession</label>
+              <select id="dwarf-profession-select" class="field-control">
+                <option value="miner">Miner</option>
+                <option value="mason">Master Mason</option>
+                <option value="smith">Master Smith</option>
+                <option value="brewer">Brewmaster</option>
+                <option value="engineer">Chief Engineer</option>
+                <option value="scholar">Lore Scholar</option>
+                <option value="ranger">Ranger Captain</option>
+                <option value="carpenter">Master Carpenter</option>
+                <option value="jewelcrafter">Gemcutter</option>
+              </select>
+
+              <label for="dwarf-skin-select" class="field-label">Skin tone</label>
+              <select id="dwarf-skin-select" class="field-control">
+                <option value="umber">Deep Umber</option>
+                <option value="russet">Russet Bronze</option>
+                <option value="sienna">Burnt Sienna</option>
+                <option value="dawn">Dawn Rose</option>
+                <option value="pearl">Pale Pearl</option>
+                <option value="ashen">Ashen Slate</option>
+              </select>
+
+              <label for="dwarf-eye-select" class="field-label">Eye colour</label>
+              <select id="dwarf-eye-select" class="field-control">
+                <option value="amber">Amber</option>
+                <option value="hazel">Hazel</option>
+                <option value="emerald">Emerald</option>
+                <option value="ice">Ice Blue</option>
+                <option value="onyx">Onyx</option>
+                <option value="steel">Steel Grey</option>
+                <option value="violet">Violet</option>
+              </select>
+
+              <label for="dwarf-hair-style-select" class="field-label">Hair style</label>
+              <select id="dwarf-hair-style-select" class="field-control">
+                <option value="straight_shoulder">Straight — Shoulder Length</option>
+                <option value="straight_short">Straight — Short Crop</option>
+                <option value="straight_braided">Straight — Braided Tail</option>
+                <option value="curly_short">Curly — Close Curls</option>
+                <option value="curly_full">Curly — Full Curls</option>
+                <option value="curly_wild">Curly — Wild Mane</option>
+              </select>
+
+              <label for="dwarf-hair-select" class="field-label">Hair colour</label>
+              <select id="dwarf-hair-select" class="field-control">
+                <option value="obsidian">Obsidian Black</option>
+                <option value="umber">Rich Umber</option>
+                <option value="auburn">Deep Auburn</option>
+                <option value="copper">Copper Red</option>
+                <option value="golden">Golden Wheat</option>
+                <option value="ashen">Ashen Silver</option>
+                <option value="white">Snow White</option>
+              </select>
+
+              <label for="dwarf-beard-select" class="field-label">Beard style</label>
+              <select id="dwarf-beard-select" class="field-control">
+                <option value="clean">Clean-shaven</option>
+                <option value="short">Short Beard</option>
+                <option value="full">Full Beard</option>
+                <option value="braided">Braided Beard</option>
+                <option value="forked">Forked Beard</option>
+                <option value="mutton">Mutton Chops</option>
+              </select>
+            </div>
+            <div class="customizer-inline-actions">
+              <button type="button" id="dwarf-randomise" class="secondary">Randomise Dwarf</button>
+            </div>
+          </section>
         </div>
+        <footer class="embark-actions customizer-actions">
+          <button type="button" id="dwarf-back" class="secondary">Back</button>
+          <button type="submit" class="primary">Begin Expedition</button>
+        </footer>
       </form>
     </section>
 
