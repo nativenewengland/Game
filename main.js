@@ -38,7 +38,7 @@ const dwarfSpriteSheets = {
 
 const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
-  TREE: { row: 1, col: 1 },
+  TREE: { row: 0, col: 2 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 }
 };
@@ -79,7 +79,7 @@ const worldNames = [
   'Nûrnheim',
   'Midkemia',
   'Skarnheim',
-  'Shannara World',
+  'Shannara',
   'Alagaësia',
   'Syf',
   'Elysium',
