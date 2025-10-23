@@ -1055,6 +1055,12 @@ function createWorld(seedString) {
       const shelf = octaveNoise(sampleX * 0.22, sampleY * 0.22, fieldSeeds.elevation + 503, 3, 0.68, 1.7);
       let heightValue = continental * 0.55 + ridge * 0.35 + shelf * 0.1;
 
+      const radialX = x / width - 0.5;
+      const radialY = y / height - 0.5;
+      const radialDistance = Math.sqrt(radialX * radialX + radialY * radialY);
+      const radialInfluence = clamp(1 - Math.pow(radialDistance, 1.15), 0, 1);
+      heightValue = lerp(heightValue, radialInfluence, 0.18) - (1 - radialInfluence) * 0.12;
+
       if (landMaskValue !== null) {
         heightValue = lerp(heightValue, landMaskValue, 0.45) + (landMaskValue - 0.5) * 0.08;
       }
@@ -1097,9 +1103,9 @@ function createWorld(seedString) {
     }
   }
 
-  const targetWaterRatio = 0.35 + rng() * 0.25;
-  const { seaLevel, deepSeaLevel } = estimateSeaLevels(elevation, targetWaterRatio);
-  const beachBand = lerp(0.02, 0.05, rng());
+  const seaLevel = 0.42;
+  const deepSeaLevel = 0.24;
+  const beachBand = 0.035;
   const mountainSlope = 0.7;
   const mountainPeak = 0.82;
 
