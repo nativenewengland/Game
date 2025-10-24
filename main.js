@@ -3980,6 +3980,16 @@ function createWorld(seedString) {
   const desertSuitabilityOffsetX = hasSandTile ? rng() * 8192 : 0;
   const desertSuitabilityOffsetY = hasSandTile ? rng() * 8192 : 0;
   const desertSuitabilityStrength = hasSandTile ? 0.18 + rng() * 0.15 : 0;
+  const desertThresholdSeed = hasSandTile ? (seedNumber + 0x84caa73d) >>> 0 : 0;
+  const desertThresholdScale = hasSandTile ? 3.6 + rng() * 3.2 : 1;
+  const desertThresholdOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertThresholdOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertThresholdStrength = hasSandTile ? 0.05 + rng() * 0.06 : 0;
+  const desertVariationSeed = hasSandTile ? (seedNumber + 0x7c3f0a5b) >>> 0 : 0;
+  const desertVariationScale = hasSandTile ? 4.4 + rng() * 3.8 : 1;
+  const desertVariationOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertVariationOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertVariationStrength = hasSandTile ? 0.08 + rng() * 0.07 : 0;
 
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
@@ -4079,6 +4089,24 @@ function createWorld(seedString) {
           1;
         suitability = clamp(
           suitability + suitabilityNoise * desertSuitabilityStrength,
+            0,
+            1
+        );
+      }
+      if (desertVariationStrength > 0) {
+        const variationNoise =
+          octaveNoise(
+            (normalizedX + warpX + desertVariationOffsetX) * desertVariationScale,
+            (normalizedY + warpY + desertVariationOffsetY) * desertVariationScale,
+            desertVariationSeed,
+            4,
+            0.55,
+            2.15
+          ) *
+            2 -
+          1;
+        suitability = clamp(
+          suitability + variationNoise * desertVariationStrength,
           0,
           1
         );
@@ -4092,7 +4120,25 @@ function createWorld(seedString) {
           0.55,
           2.15
         );
-        const latitudeThreshold = lerp(0.58, 0.52, equatorialAlignment);
+        let latitudeThreshold = lerp(0.58, 0.52, equatorialAlignment);
+        if (desertThresholdStrength > 0) {
+          const thresholdNoise =
+            octaveNoise(
+              (normalizedX + warpX + desertThresholdOffsetX) * desertThresholdScale,
+              (normalizedY + warpY + desertThresholdOffsetY) * desertThresholdScale,
+              desertThresholdSeed,
+              3,
+              0.55,
+              2.1
+            ) *
+              2 -
+            1;
+          latitudeThreshold = clamp(
+            latitudeThreshold + thresholdNoise * desertThresholdStrength,
+            0.45,
+            0.65
+          );
+        }
         if (desertNoise < suitability && suitability > latitudeThreshold) {
           return sandTileKey;
         }
