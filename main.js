@@ -2915,7 +2915,7 @@ function createWorld(seedString) {
       ? 0
       : Math.sign(mountainBiasLinear) * Math.pow(Math.abs(mountainBiasLinear), 0.8);
   const mountainScarcity = 1 - mountainFrequencyNormalized;
-  const mountainGrowthFactor = 0.55 + mountainFrequencyNormalized * 0.9;
+  const mountainGrowthFactor = 0.42 + mountainFrequencyNormalized * 0.7;
 
   const continentalPlates = generateContinentalPlates(rng);
   const elevationField = new Float32Array(width * height);
@@ -3078,9 +3078,9 @@ function createWorld(seedString) {
     const ridgeDirectionStrength = new Float32Array(width * height);
     const mountainMask = new Uint8Array(width * height);
     const directionOpposites = new Int8Array([7, 6, 5, 4, 3, 2, 1, 0]);
-    const baseMountainSeedThreshold = 0.76;
-    const baseMountainCandidateThreshold = 0.46;
-    const baseMountainPruneThreshold = 0.88;
+    const baseMountainSeedThreshold = 0.8;
+    const baseMountainCandidateThreshold = 0.52;
+    const baseMountainPruneThreshold = 0.9;
     const mountainSeedThreshold = clamp(
       baseMountainSeedThreshold - mountainBias * 0.32,
       0.52,
@@ -3335,7 +3335,7 @@ function createWorld(seedString) {
         }
       }
       fallbackCandidates.sort((a, b) => mountainScores[b] - mountainScores[a]);
-      const maxFallbackSeeds = Math.round(6 * mountainFrequencyNormalized);
+      const maxFallbackSeeds = Math.max(1, Math.round(4 * mountainFrequencyNormalized));
       const limit = Math.min(maxFallbackSeeds, fallbackCandidates.length);
       for (let i = 0; i < limit; i += 1) {
         const idx = fallbackCandidates[i];
@@ -3388,7 +3388,8 @@ function createWorld(seedString) {
       }
       const seedScore = mountainScores[seedIdx];
       const ridgeStrength = ridgeField[seedIdx];
-      const baseLength = 2 + Math.floor((seedScore * 6 + ridgeStrength * 5) * (0.6 + reliability * 0.5));
+      const rangeScale = (seedScore * 4 + ridgeStrength * 3) * (0.5 + reliability * 0.4);
+      const baseLength = 2 + Math.floor(rangeScale);
       const forwardSteps = Math.min(18, baseLength + Math.floor(rng() * 3));
       const backwardSteps = Math.max(1, Math.floor(forwardSteps * 0.45));
       const startX = seedIdx % width;
@@ -3408,7 +3409,7 @@ function createWorld(seedString) {
       extendRangeFromSeed(seedIndices[i]);
     }
 
-    for (let pass = 0; pass < 3; pass += 1) {
+    for (let pass = 0; pass < 2; pass += 1) {
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
@@ -3439,10 +3440,31 @@ function createWorld(seedString) {
           } else if (orientationStrength > 0.55) {
             minNeighbors = 2;
           }
-          const probability = Math.min(
-            0.95,
-            (0.18 + score * 0.75 + orientationStrength * 0.2) * mountainGrowthFactor
-          );
+          const dirIndex = ridgeDirectionIndex[idx];
+          let directionalSupport = false;
+          if (dirIndex >= 0) {
+            const directionalOffsets = [dirIndex, directionOpposites[dirIndex]];
+            for (let i = 0; i < directionalOffsets.length; i += 1) {
+              const offset = neighborOffsets8[directionalOffsets[i]];
+              const nx = x + offset[0];
+              const ny = y + offset[1];
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              if (mountainMask[ny * width + nx]) {
+                directionalSupport = true;
+                break;
+              }
+            }
+          }
+          const baseProbability = 0.12 + score * 0.6 + orientationStrength * 0.25;
+          let probability = Math.min(0.85, baseProbability * mountainGrowthFactor);
+          if (!directionalSupport) {
+            probability *= 0.45;
+            if (orientationStrength > 0.6) {
+              probability *= 0.6;
+            }
+          }
           const highScoreThreshold = 0.75 + mountainScarcity * 0.12;
           if (
             mountainNeighbors >= minNeighbors &&
