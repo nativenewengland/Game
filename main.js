@@ -795,7 +795,7 @@ function generateDwarfholdDetails(name, random) {
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
 
-  const classification = population >= 3000 ? 'greatDwarfhold' : 'dwarfhold';
+  const classification = population >= 4000 ? 'greatDwarfhold' : 'dwarfhold';
   const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
 
   return {
