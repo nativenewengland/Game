@@ -817,35 +817,16 @@ button:hover:not(:disabled) {
   place-items: center;
 }
 
+
 .dwarf-nav-icon {
-  --nav-arrow-color: #f0c674;
-  position: relative;
   width: 1.8rem;
   height: 1.8rem;
   display: block;
-}
-
-.dwarf-nav-icon::before,
-.dwarf-nav-icon::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  background-color: var(--nav-arrow-color);
-  border-radius: 2px;
-}
-
-.dwarf-nav-icon::before {
-  width: 0.38rem;
-  height: 1.1rem;
-}
-
-.dwarf-nav-icon::after {
-  width: 1.05rem;
-  height: 1.05rem;
-  clip-path: polygon(0 50%, 100% 0, 100% 100%);
-  left: calc(50% + 0.22rem);
+  background-image: url("tilesheet/arrow.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
 }
 
 .dwarf-nav-button--prev .dwarf-nav-icon {
