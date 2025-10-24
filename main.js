@@ -562,7 +562,9 @@ function generateDwarfholdPopulationBreakdown(population, random) {
   const races = dwarfholdPopulationRaceOptions.slice();
   const dwarfConfig = races[0];
   const shares = [];
-  const dwarfShare = clamp(0.62 + randomFn() * 0.2, 0, 1);
+  // Ensure dwarves make up the overwhelming majority of a dwarfhold's population.
+  // The range gives a 90-100% share so only a small remainder is left for other races.
+  const dwarfShare = clamp(0.9 + randomFn() * 0.1, 0, 1);
   shares.push({ config: dwarfConfig, share: dwarfShare });
 
   const remainingConfigs = races.slice(1);
