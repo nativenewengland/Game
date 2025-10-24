@@ -501,7 +501,7 @@ button:hover:not(:disabled) {
   left: var(--customizer-frame-left);
   background:
     linear-gradient(135deg, rgba(8, 9, 15, 0.9), rgba(8, 9, 15, 0.7)),
-    url('tilesheet/backgroundmenu.png') center/240px repeat;
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   border-radius: 18px;
   pointer-events: none;
@@ -560,7 +560,7 @@ button:hover:not(:disabled) {
   inset: 0;
   background:
     linear-gradient(145deg, rgba(8, 9, 15, 0.94), rgba(8, 9, 15, 0.7)),
-    url('tilesheet/backgroundmenu.png') center/240px repeat;
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   border-radius: inherit;
   pointer-events: none;
@@ -619,7 +619,7 @@ button:hover:not(:disabled) {
   inset: 0;
   background:
     linear-gradient(145deg, rgba(8, 9, 15, 0.94), rgba(8, 9, 15, 0.7)),
-    url('tilesheet/backgroundmenu.png') center/240px repeat;
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   border-radius: inherit;
   pointer-events: none;
@@ -657,7 +657,7 @@ button:hover:not(:disabled) {
   border: 3px solid rgba(48, 36, 60, 0.95);
   background:
     linear-gradient(150deg, rgba(18, 14, 28, 0.95), rgba(14, 12, 24, 0.78)),
-    url('tilesheet/backgroundmenu.png') center/220px repeat;
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   display: grid;
   gap: 0.35rem;
@@ -759,7 +759,7 @@ button:hover:not(:disabled) {
   border: 3px solid rgba(48, 36, 60, 0.95);
   background:
     linear-gradient(160deg, rgba(20, 16, 30, 0.96), rgba(16, 13, 26, 0.78)),
-    url('tilesheet/backgroundmenu.png') center/220px repeat;
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   color: #f4ecdd;
   font-size: 1rem;
@@ -773,8 +773,8 @@ button:hover:not(:disabled) {
     linear-gradient(160deg, rgba(20, 16, 30, 0.96), rgba(16, 13, 26, 0.78)),
     url('tilesheet/backgroundmenu.png'),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f0c674' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat, no-repeat;
-  background-size: cover, 220px 220px, 12px 8px;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: cover, cover, 12px 8px;
   background-position: center, center, right 0.9rem center;
 }
 
@@ -832,7 +832,7 @@ button:hover:not(:disabled) {
   border: 4px solid rgba(48, 36, 60, 0.95);
   background:
     linear-gradient(155deg, rgba(20, 16, 30, 0.95), rgba(16, 12, 28, 0.78)),
-    url('tilesheet/backgroundmenu.png') center/200px repeat;
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.2), 0 1.2rem 2.6rem rgba(0, 0, 0, 0.5);
   display: flex;
