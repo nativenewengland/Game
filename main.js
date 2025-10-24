@@ -404,6 +404,8 @@ const dwarfholdPopulationRaceOptions = [
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
+const DWARFHOLD_TOWN_PROXIMITY_TILES = 14;
+
 const townNamePrefixes = [
   'Oak',
   'River',
@@ -611,29 +613,77 @@ function pickUniqueFrom(array, count, random) {
   return picks;
 }
 
-function generateDwarfholdPopulationBreakdown(population, random) {
+function generateDwarfholdPopulationBreakdown(population, random, context = {}) {
   if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
     return [];
   }
 
-  const randomFn = typeof random === 'function' ? random : Math.random;
-  const races = dwarfholdPopulationRaceOptions.slice();
-  const dwarfConfig = races[0];
+  const contextRandom = typeof context.randomFn === 'function' ? context.randomFn : null;
+  const randomFn = contextRandom || (typeof random === 'function' ? random : Math.random);
+  const nearTown = Boolean(context.nearTown);
+  const raceMap = new Map(dwarfholdPopulationRaceOptions.map((config) => [config.key, config]));
+  const dwarfConfig = raceMap.get('dwarves');
+  if (!dwarfConfig) {
+    return [];
+  }
+
   const shares = [];
-  // Ensure dwarves make up the overwhelming majority of a dwarfhold's population.
-  // The range gives a 90-100% share so only a small remainder is left for other races.
-  const dwarfShare = clamp(0.9 + randomFn() * 0.1, 0, 1);
+  const dwarfShareBaseMin = nearTown ? 0.82 : 0.86;
+  const dwarfShareRange = nearTown ? 0.11 : 0.1;
+  const dwarfShare = clamp(dwarfShareBaseMin + randomFn() * dwarfShareRange, 0, 1);
   shares.push({ config: dwarfConfig, share: dwarfShare });
 
-  const remainingConfigs = races.slice(1);
-  if (remainingConfigs.length > 0) {
-    const remainingShare = Math.max(0, 1 - dwarfShare);
-    const weights = remainingConfigs.map(() => 0.25 + randomFn());
-    const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
-    remainingConfigs.forEach((config, index) => {
-      const portion = weights[index] / weightSum;
-      shares.push({ config, share: remainingShare * portion });
-    });
+  const remainder = Math.max(0, 1 - dwarfShare);
+  if (remainder > 0) {
+    const weightEntries = [];
+
+    const addWeight = (key, base, spread, options = {}) => {
+      const config = raceMap.get(key);
+      if (!config) {
+        return;
+      }
+      if (typeof options.chance === 'number' && options.chance >= 0 && options.chance <= 1) {
+        if (randomFn() > options.chance) {
+          return;
+        }
+      }
+      const variation = spread > 0 ? (randomFn() * 2 - 1) * spread : 0;
+      let weight = base + variation;
+      if (typeof options.min === 'number') {
+        weight = Math.max(options.min, weight);
+      }
+      if (typeof options.max === 'number') {
+        weight = Math.min(options.max, weight);
+      }
+      weight = Math.max(0, weight);
+      if (weight > 0) {
+        weightEntries.push({ config, weight });
+      }
+    };
+
+    addWeight('gnomes', nearTown ? 1.1 : 1.3, 0.4, { min: 0.2 });
+
+    if (nearTown) {
+      addWeight('goblins', 0.55, 0.35, { min: 0.12 });
+      addWeight('kobolds', 0.5, 0.3, { min: 0.1 });
+      addWeight('humans', 0.9, 0.35, { min: 0.18 });
+      addWeight('elves', 0.4, 0.22, { chance: 0.65, min: 0.08 });
+    } else {
+      addWeight('goblins', 1.45, 0.6, { min: 0.4 });
+      addWeight('kobolds', 1.2, 0.5, { min: 0.3 });
+      addWeight('humans', 0.25, 0.18, { chance: 0.25, min: 0 });
+      addWeight('elves', 0.15, 0.1, { chance: 0.08, min: 0 });
+    }
+
+    const weightTotal = weightEntries.reduce((sum, entry) => sum + entry.weight, 0);
+    if (weightTotal > 0) {
+      weightEntries.forEach((entry) => {
+        const share = (entry.weight / weightTotal) * remainder;
+        if (share > 0) {
+          shares.push({ config: entry.config, share });
+        }
+      });
+    }
   }
 
   let totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
@@ -645,10 +695,12 @@ function generateDwarfholdPopulationBreakdown(population, random) {
   }
 
   const safeTotalShare = totalShare > 0 ? totalShare : 1;
-  const normalizedShares = shares.map((entry) => ({
-    config: entry.config,
-    share: clamp(entry.share / safeTotalShare, 0, 1)
-  }));
+  const normalizedShares = shares
+    .map((entry) => ({
+      config: entry.config,
+      share: clamp(entry.share / safeTotalShare, 0, 1)
+    }))
+    .filter((entry) => entry.share > 0);
 
   const percentageDecimals = 2;
   const percentageScale = 10 ** percentageDecimals;
@@ -703,20 +755,25 @@ function generateDwarfholdPopulationBreakdown(population, random) {
 
   const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
 
-  return scaledEntries.map(({ config }, index) => {
-    const percentage = clamp(baseUnits[index] / percentageScale, 0, 100);
-    const count =
-      resolvedPopulation === null
-        ? null
-        : Math.max(0, Math.round((resolvedPopulation * percentage) / 100));
-    return {
-      key: config.key,
-      label: config.label,
-      color: config.color,
-      percentage,
-      population: count
-    };
-  });
+  return scaledEntries
+    .map(({ config }, index) => {
+      const percentage = clamp(baseUnits[index] / percentageScale, 0, 100);
+      if (percentage <= 0) {
+        return null;
+      }
+      const count =
+        resolvedPopulation === null
+          ? null
+          : Math.max(0, Math.round((resolvedPopulation * percentage) / 100));
+      return {
+        key: config.key,
+        label: config.label,
+        color: config.color,
+        percentage,
+        population: count
+      };
+    })
+    .filter(Boolean);
 }
 
 function generateDwarfholdName(random) {
@@ -739,7 +796,7 @@ function generateDwarfholdName(random) {
   return baseName;
 }
 
-function generateDwarfholdDetails(name, random) {
+function generateDwarfholdDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
   const genderRoll = randomFn();
@@ -769,7 +826,13 @@ function generateDwarfholdDetails(name, random) {
   );
   const majorExportCount = clamp(Math.floor(2 + randomFn() * 2), 1, dwarfholdExportOptions.length);
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
-  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
+  const populationContext = options.populationContext || {};
+  const populationRandomFn =
+    typeof populationContext.randomFn === 'function' ? populationContext.randomFn : randomFn;
+  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, populationRandomFn, {
+    ...populationContext,
+    randomFn: populationRandomFn
+  });
 
   return {
     type: 'dwarfhold',
@@ -3134,6 +3197,14 @@ function hashCoords(x, y, seed) {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
 }
 
+function createDwarfholdPopulationRng(baseSeed, x, y) {
+  const salt = (baseSeed + 0x9e3779b9) >>> 0;
+  const hashValue = hashCoords(x, y, salt);
+  const scaled = Math.floor(hashValue * 0xffffffff) >>> 0;
+  const resolvedSeed = scaled === 0 ? (salt || 1) : scaled;
+  return mulberry32(resolvedSeed);
+}
+
 function fade(t) {
   return t * t * t * (t * (t * 6 - 15) + 10);
 }
@@ -4919,7 +4990,14 @@ function createWorld(seedString) {
             tile.overlay = mountainOverlayKey;
           }
           const name = generateDwarfholdName(rng);
-          const details = generateDwarfholdDetails(name, rng);
+          const populationRandomFn = createDwarfholdPopulationRng(
+            seedNumber,
+            candidate.x,
+            candidate.y
+          );
+          const details = generateDwarfholdDetails(name, rng, {
+            populationContext: { nearTown: false, randomFn: populationRandomFn }
+          });
           tile.structure = dwarfholdKey;
           tile.structureName = name;
           tile.structureDetails = details;
@@ -4952,7 +5030,14 @@ function createWorld(seedString) {
           if (fallbackCandidate) {
             const tile = tiles[fallbackCandidate.y][fallbackCandidate.x];
             const name = generateDwarfholdName(rng);
-            const details = generateDwarfholdDetails(name, rng);
+            const populationRandomFn = createDwarfholdPopulationRng(
+              seedNumber,
+              fallbackCandidate.x,
+              fallbackCandidate.y
+            );
+            const details = generateDwarfholdDetails(name, rng, {
+              populationContext: { nearTown: false, randomFn: populationRandomFn }
+            });
             tile.structure = dwarfholdKey;
             tile.structureName = name;
             tile.structureDetails = details;
@@ -5200,179 +5285,42 @@ function createWorld(seedString) {
     }
   }
 
-  const towerKey = tileLookup.has('TOWER') ? 'TOWER' : null;
-  if (towerKey) {
-    const towerCandidates = [];
-    for (let y = 0; y < height; y += 1) {
-      for (let x = 0; x < width; x += 1) {
-        const idx = y * width + x;
-        if (waterMask[idx]) {
+  if (dwarfholds.length > 0) {
+    const proximityRadius = Math.max(0, Math.round(DWARFHOLD_TOWN_PROXIMITY_TILES));
+    if (proximityRadius > 0) {
+      const proximitySq = proximityRadius * proximityRadius;
+      for (let i = 0; i < dwarfholds.length; i += 1) {
+        const hold = dwarfholds[i];
+        if (!hold) {
           continue;
         }
-        const tile = tiles[y][x];
-        if (
-          !tile ||
-          tile.base !== grassTileKey ||
-          tile.overlay ||
-          tile.structure ||
-          tile.river
-        ) {
-          continue;
-        }
-        const elevationValue = elevationField[idx];
-        const heightScore = clamp((elevationValue - seaLevel) * 3.1, 0, 1);
-        let adjacency = 0;
-        for (let i = 0; i < neighborOffsets8.length; i += 1) {
-          const nx = x + neighborOffsets8[i][0];
-          const ny = y + neighborOffsets8[i][1];
-          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+        let nearTown = false;
+        for (let j = 0; j < towns.length; j += 1) {
+          const town = towns[j];
+          if (!town) {
             continue;
           }
-          const nIdx = ny * width + nx;
-          if (mountainMask && mountainMask[nIdx]) {
-            adjacency += 1;
-            continue;
-          }
-          if (hillKey) {
-            const neighborTile = tiles[ny][nx];
-            if (neighborTile && neighborTile.overlay === hillKey) {
-              adjacency += 0.5;
-            }
-          }
-        }
-        const adjacencyScore = clamp(adjacency / 3, 0, 1);
-        const drynessPreference = clamp(1 - rainfallField[idx], 0, 1);
-        const score = adjacencyScore * 0.45 + heightScore * 0.4 + drynessPreference * 0.15 + rng() * 0.15;
-        towerCandidates.push({ x, y, score });
-      }
-    }
-
-    if (towerCandidates.length > 0) {
-      towerCandidates.sort((a, b) => b.score - a.score);
-      const area = width * height;
-      const baseTarget = Math.max(1, Math.round(area / 12000));
-      const maxTowers = computeStructurePlacementLimit(baseTarget, 18, humanSettlementMultiplier);
-      const minDistanceBase = Math.max(5, Math.round(Math.min(width, height) / 18));
-      const minDistance = adjustMinDistance(minDistanceBase, humanSettlementFrequencyNormalized);
-      const minDistanceSq = minDistance * minDistance;
-      const placed = [];
-
-      for (let i = 0; i < towerCandidates.length; i += 1) {
-        if (placed.length >= maxTowers) {
-          break;
-        }
-        const candidate = towerCandidates[i];
-        if (candidate.score < 0.25) {
-          continue;
-        }
-        let tooClose = false;
-        for (let j = 0; j < placed.length; j += 1) {
-          const other = placed[j];
-          const dx = candidate.x - other.x;
-          const dy = candidate.y - other.y;
-          if (dx * dx + dy * dy < minDistanceSq) {
-            tooClose = true;
+          const dx = hold.x - town.x;
+          const dy = hold.y - town.y;
+          if (dx * dx + dy * dy <= proximitySq) {
+            nearTown = true;
             break;
           }
         }
-        if (tooClose) {
-          continue;
-        }
-        const tile = tiles[candidate.y][candidate.x];
-        if (!tile || tile.overlay || tile.structure || tile.river || tile.base !== grassTileKey) {
-          continue;
-        }
-        const name = generateTowerName(rng);
-        tile.structure = towerKey;
-        tile.structureName = name;
-        tile.structureDetails = { type: 'tower', name };
-        towers.push({ x: candidate.x, y: candidate.y, name });
-        placed.push(candidate);
-      }
-    }
-  }
 
-  const evilWizardTowerKey = tileLookup.has('EVIL_WIZARDS_TOWER') ? 'EVIL_WIZARDS_TOWER' : null;
-  if (evilWizardTowerKey) {
-    const wizardTowerCandidates = [];
-    for (let y = 0; y < height; y += 1) {
-      for (let x = 0; x < width; x += 1) {
-        const idx = y * width + x;
-        if (waterMask[idx] || (mountainMask && mountainMask[idx])) {
-          continue;
-        }
-        const tile = tiles[y][x];
-        if (!tile || tile.overlay || tile.structure || tile.river) {
-          continue;
-        }
-        const elevationValue = elevationField[idx];
-        const rainfallValue = rainfallField[idx];
-        const isolationRadius = 3;
-        let nearbyStructures = 0;
-        for (let oy = -isolationRadius; oy <= isolationRadius; oy += 1) {
-          for (let ox = -isolationRadius; ox <= isolationRadius; ox += 1) {
-            if (ox === 0 && oy === 0) {
-              continue;
-            }
-            const nx = x + ox;
-            const ny = y + oy;
-            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-              continue;
-            }
-            const neighborTile = tiles[ny][nx];
-            if (neighborTile && neighborTile.structure) {
-              nearbyStructures += 1;
-            }
-          }
-        }
-        const isolationScore = clamp(1 - nearbyStructures / 10, 0, 1);
-        const mysticScore = clamp(rainfallValue * 0.4 + (1 - Math.abs(elevationValue - (seaLevel + 0.05)) * 2.2) * 0.6, 0, 1);
-        const score = isolationScore * 0.6 + mysticScore * 0.3 + rng() * 0.2;
-        wizardTowerCandidates.push({ x, y, score });
-      }
-    }
+        const populationRandomFn = createDwarfholdPopulationRng(seedNumber, hold.x, hold.y);
+        const populationBreakdown = generateDwarfholdPopulationBreakdown(
+          hold.population,
+          populationRandomFn,
+          { nearTown, randomFn: populationRandomFn }
+        );
+        hold.populationBreakdown = populationBreakdown;
 
-    if (wizardTowerCandidates.length > 0) {
-      wizardTowerCandidates.sort((a, b) => b.score - a.score);
-      const area = width * height;
-      const baseTarget = Math.max(1, Math.round(area / 26000));
-      const maxWizardTowers = Math.max(1, Math.min(baseTarget, Math.round(baseTarget * 1.2)));
-      const minDistanceBase = Math.max(8, Math.round(Math.min(width, height) / 14));
-      const minDistance = Math.max(5, Math.round(minDistanceBase * 1.1));
-      const minDistanceSq = minDistance * minDistance;
-      const placed = [];
-
-      for (let i = 0; i < wizardTowerCandidates.length; i += 1) {
-        if (placed.length >= maxWizardTowers) {
-          break;
+        const tileRow = tiles[hold.y];
+        const tile = tileRow ? tileRow[hold.x] : null;
+        if (tile?.structureDetails?.type === 'dwarfhold') {
+          tile.structureDetails.populationBreakdown = populationBreakdown;
         }
-        const candidate = wizardTowerCandidates[i];
-        if (candidate.score < 0.32) {
-          continue;
-        }
-        let tooClose = false;
-        for (let j = 0; j < placed.length; j += 1) {
-          const other = placed[j];
-          const dx = candidate.x - other.x;
-          const dy = candidate.y - other.y;
-          if (dx * dx + dy * dy < minDistanceSq) {
-            tooClose = true;
-            break;
-          }
-        }
-        if (tooClose) {
-          continue;
-        }
-        const tile = tiles[candidate.y][candidate.x];
-        if (!tile || tile.overlay || tile.structure || tile.river || waterMask[candidate.y * width + candidate.x]) {
-          continue;
-        }
-        const name = generateEvilWizardTowerName(rng);
-        tile.structure = evilWizardTowerKey;
-        tile.structureName = name;
-        tile.structureDetails = { type: 'tower', alignment: 'evil', name };
-        evilWizardTowers.push({ x: candidate.x, y: candidate.y, name });
-        placed.push(candidate);
       }
     }
   }
