@@ -61,10 +61,10 @@
               min="0"
               max="100"
               step="1"
-              value="50"
+              value="35"
             />
             <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
-              >50% — Balanced</span
+              >35% — Low</span
             >
           </div>
         </label>
@@ -349,6 +349,15 @@
                         aria-label="Randomise dwarf"
                       ></button>
                     </div>
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="next"
+                      data-trait="skin"
+                      aria-label="Next skin color option"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
                   </div>
                 </div>
                 <div class="cc-fields cc-subpanel">
@@ -603,11 +612,43 @@
                         </button>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="next"
+                      data-trait="clothing"
+                      aria-label="Next clothing option"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
                   </div>
                 </div>
               </div>
+              <p id="dwarf-trait-summary" class="trait-summary"></p>
             </div>
-          </section>
+            <div class="character-creation-column character-creation-column--right">
+              <div class="character-creation-preview">
+                <canvas
+                  id="dwarf-full-preview-canvas"
+                  class="character-creation-preview__canvas"
+                  width="128"
+                  height="160"
+                  aria-hidden="true"
+                ></canvas>
+              </div>
+              <div class="character-creation-actions">
+                <button
+                  type="button"
+                  id="dwarf-randomise"
+                  class="randomise-button__dice"
+                  aria-label="Randomise dwarf"
+                ></button>
+                <button type="submit" id="dwarf-create-button" class="primary character-creation-submit">
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <footer class="cc-footer">
           <button type="button" id="dwarf-back" class="cc-back-button">Back</button>
