@@ -134,11 +134,11 @@ if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
 }
 
 const mapSizePresets = [
-  { key: 'mini', label: 'Mini', width: 120, height: 90 },
-  { key: 'small', label: 'Small', width: 160, height: 120 },
-  { key: 'normal', label: 'Normal', width: 200, height: 150 },
-  { key: 'large', label: 'Large', width: 260, height: 195 },
-  { key: 'extra-large', label: 'Extra Large', width: 320, height: 240 }
+  { key: 'mini', label: 'Mini', width: 192, height: 144 },
+  { key: 'small', label: 'Small', width: 260, height: 195 },
+  { key: 'normal', label: 'Normal', width: 324, height: 243 },
+  { key: 'large', label: 'Large', width: 424, height: 318 },
+  { key: 'extra-large', label: 'Extra Large', width: 520, height: 390 }
 ];
 
 const mapSizeByKey = mapSizePresets.reduce((acc, preset) => {
