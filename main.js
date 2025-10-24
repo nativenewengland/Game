@@ -936,6 +936,7 @@ const dwarfGuildOptions = [
   { value: 'toolmakers-guild', label: "Toolmakers' Guild" },
   { value: 'soapmakers-guild', label: 'Soapmakers Guild' },
   { value: 'candlelighters-guild', label: 'Candlelighters Guild' },
+  { value: 'lamplighters-guild', label: 'Lamplighters Guild' },
   { value: 'butchers-guild', label: 'Butchers Guild' },
   { value: 'ropemakers-guild', label: 'Ropemakers Guild' },
   { value: 'cartwrights-wheelwrights-guild', label: 'Cartwrights & Wheelwrights Guild' },
