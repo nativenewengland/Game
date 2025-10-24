@@ -998,24 +998,90 @@ const dwarfHairStyles = {
     sheet: 'hair',
     rows: { default: 8 }
   },
-  curly_short: {
-    label: 'Curly — Close Curls',
-    description: 'close-cropped curly',
+  curly_stubble: {
+    label: 'Curly — Close Shave',
+    description: 'closely shorn curly',
+    sheet: 'hairCurly',
+    rows: { default: 0 }
+  },
+  curly_short_unkempt: {
+    label: 'Curly — Short & Tousled',
+    description: 'short unkempt curly',
+    sheet: 'hairCurly',
+    rows: { default: 1 }
+  },
+  curly_mid_unkempt: {
+    label: 'Curly — Mid-Length Tousled',
+    description: 'mid-length unkempt curly',
+    sheet: 'hairCurly',
+    rows: { default: 2 }
+  },
+  curly_long_unkempt: {
+    label: 'Curly — Long & Tousled',
+    description: 'long unkempt curly',
+    sheet: 'hairCurly',
+    rows: { default: 3 }
+  },
+  curly_short_combed: {
+    label: 'Curly — Short Combed',
+    description: 'short combed curly',
     sheet: 'hairCurly',
     rows: { default: 4 }
   },
-  curly_full: {
-    label: 'Curly — Full Curls',
-    description: 'full curly',
+  curly_mid_combed: {
+    label: 'Curly — Mid-Length Combed',
+    description: 'mid-length combed curly',
     sheet: 'hairCurly',
     rows: { default: 5 }
   },
-  curly_wild: {
-    label: 'Curly — Wild Mane',
-    description: 'wild curly',
+  curly_long_combed: {
+    label: 'Curly — Long Combed',
+    description: 'long combed curly',
     sheet: 'hairCurly',
     rows: { default: 6 }
+  },
+  curly_short_braided: {
+    label: 'Curly — Short Braids',
+    description: 'short braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 7 }
+  },
+  curly_mid_braided: {
+    label: 'Curly — Mid Braids',
+    description: 'mid-length braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 8 }
+  },
+  curly_long_braided: {
+    label: 'Curly — Long Braids',
+    description: 'long braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 9 }
+  },
+  curly_short_double_braids: {
+    label: 'Curly — Short Double Braids',
+    description: 'short double-braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 10 }
+  },
+  curly_mid_double_braids: {
+    label: 'Curly — Mid Double Braids',
+    description: 'mid-length double-braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 11 }
+  },
+  curly_long_double_braids: {
+    label: 'Curly — Long Double Braids',
+    description: 'long double-braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 12 }
   }
+};
+
+const dwarfHairStyleAliases = {
+  curly_short: 'curly_short_combed',
+  curly_full: 'curly_mid_combed',
+  curly_wild: 'curly_long_combed'
 };
 
 const dwarfOptions = {
@@ -1124,7 +1190,12 @@ const dwarfHairColorToFrame = {
 };
 
 function resolveHairStyleValue(value) {
-  return value && dwarfHairStyles[value] ? value : defaultHairStyleValue;
+  if (!value) {
+    return defaultHairStyleValue;
+  }
+  const alias = dwarfHairStyleAliases[value];
+  const key = alias || value;
+  return dwarfHairStyles[key] ? key : defaultHairStyleValue;
 }
 
 function getHairStyleConfig(value) {
@@ -1604,7 +1675,8 @@ function getOptionByValue(category, value) {
   if (!bucket || bucket.length === 0) {
     return null;
   }
-  return bucket.find((option) => option.value === value) || bucket[0];
+  const resolvedValue = category === 'hairStyle' ? resolveHairStyleValue(value) : value;
+  return bucket.find((option) => option.value === resolvedValue) || bucket[0];
 }
 
 function getOptionLabel(category, value) {
