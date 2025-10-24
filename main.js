@@ -4069,6 +4069,8 @@ function createWorld(seedString) {
   const desertVariationOffsetX = hasSandTile ? rng() * 4096 : 0;
   const desertVariationOffsetY = hasSandTile ? rng() * 4096 : 0;
   const desertVariationStrength = hasSandTile ? 0.08 + rng() * 0.07 : 0;
+  const desertSuitabilityField = hasSandTile ? new Float32Array(width * height) : null;
+  const desertMask = hasSandTile ? new Uint8Array(width * height) : null;
 
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
@@ -4077,6 +4079,12 @@ function createWorld(seedString) {
     let warpedLatitude = latitude;
     let warpX = 0;
     let warpY = 0;
+    const idx = y * width + x;
+
+    if (hasSandTile) {
+      desertSuitabilityField[idx] = 0;
+      desertMask[idx] = 0;
+    }
 
     if (hasSandTile && desertWarpStrength > 0) {
       const warpSampleX = octaveNoise(
@@ -4123,7 +4131,6 @@ function createWorld(seedString) {
     }
 
     if (hasSandTile) {
-      const idx = y * width + x;
       const rainfallValue = rainfallField[idx];
       const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
       let equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
@@ -4190,6 +4197,8 @@ function createWorld(seedString) {
           1
         );
       }
+      desertSuitabilityField[idx] = suitability;
+      desertMask[idx] = 0;
       if (suitability > 0.52) {
         const desertNoise = octaveNoise(
           (normalizedX + warpX + desertNoiseOffsetX) * desertNoiseScale,
@@ -4219,6 +4228,7 @@ function createWorld(seedString) {
           );
         }
         if (desertNoise < suitability && suitability > latitudeThreshold) {
+          desertMask[idx] = 1;
           return sandTileKey;
         }
       }
@@ -4297,6 +4307,163 @@ function createWorld(seedString) {
       tile.structureName = null;
       tile.structureDetails = null;
       tile.river = null;
+    }
+  }
+
+  if (hasSandTile) {
+    const blurIterations = 2;
+    const blurRadius = 2;
+    const smoothingSamples = [];
+    for (let dy = -blurRadius; dy <= blurRadius; dy += 1) {
+      for (let dx = -blurRadius; dx <= blurRadius; dx += 1) {
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const weight = distance === 0 ? 1.25 : 1 / (1 + distance);
+        smoothingSamples.push({ dx, dy, weight });
+      }
+    }
+    let blurFieldCurrent = new Float32Array(width * height);
+    let blurFieldBuffer = new Float32Array(width * height);
+    blurFieldCurrent.set(desertSuitabilityField);
+
+    for (let iteration = 0; iteration < blurIterations; iteration += 1) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            blurFieldBuffer[idx] = 0;
+            continue;
+          }
+          const baseTile = tiles[y][x].base;
+          if (baseTile === snowTileKey) {
+            blurFieldBuffer[idx] = 0;
+            continue;
+          }
+          let weightSum = 0;
+          let sampleSum = 0;
+          for (let i = 0; i < smoothingSamples.length; i += 1) {
+            const { dx, dy, weight } = smoothingSamples[i];
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx].base;
+            if (neighborTile === snowTileKey) {
+              continue;
+            }
+            sampleSum += blurFieldCurrent[nIdx] * weight;
+            weightSum += weight;
+          }
+          if (weightSum > 0) {
+            blurFieldBuffer[idx] = sampleSum / weightSum;
+          } else {
+            blurFieldBuffer[idx] = blurFieldCurrent[idx];
+          }
+        }
+      }
+      const swap = blurFieldCurrent;
+      blurFieldCurrent = blurFieldBuffer;
+      blurFieldBuffer = swap;
+    }
+
+    const updatedMask = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          updatedMask[idx] = 0;
+          continue;
+        }
+        const baseTile = tiles[y][x].base;
+        if (baseTile === snowTileKey) {
+          updatedMask[idx] = 0;
+          continue;
+        }
+        const baseSuitability = desertSuitabilityField[idx];
+        const clusteredSuitability = blurFieldCurrent[idx];
+        let neighborDesert = 0;
+        let neighborCount = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx].base;
+          if (neighborTile === snowTileKey) {
+            continue;
+          }
+          neighborDesert += desertMask[nIdx];
+          neighborCount += 1;
+        }
+        const localDensity = neighborCount > 0 ? neighborDesert / neighborCount : desertMask[idx];
+        const combinedScore = baseSuitability * 0.55 + clusteredSuitability * 0.45 + localDensity * 0.15;
+        if (combinedScore > 0.62 && baseSuitability > 0.48) {
+          updatedMask[idx] = 1;
+        } else if (combinedScore < 0.5 || baseSuitability < 0.45) {
+          updatedMask[idx] = 0;
+        } else {
+          updatedMask[idx] = desertMask[idx];
+        }
+      }
+    }
+
+    desertMask.set(updatedMask);
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        if (desertMask[idx]) {
+          tiles[y][x].base = sandTileKey;
+        } else if (tiles[y][x].base === sandTileKey) {
+          tiles[y][x].base = grassTileKey;
+        }
+      }
+    }
+
+    if (hasSnowTile) {
+      const snowClearRadius = 2;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (tiles[y][x].base !== sandTileKey) {
+            continue;
+          }
+          let nearSnow = false;
+          for (let dy = -snowClearRadius; dy <= snowClearRadius && !nearSnow; dy += 1) {
+            for (let dx = -snowClearRadius; dx <= snowClearRadius; dx += 1) {
+              if (dx === 0 && dy === 0) {
+                continue;
+              }
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              const neighborTile = tiles[ny][nx].base;
+              if (neighborTile === snowTileKey) {
+                nearSnow = true;
+                break;
+              }
+            }
+          }
+          if (nearSnow) {
+            tiles[y][x].base = grassTileKey;
+            desertMask[idx] = 0;
+          }
+        }
+      }
     }
   }
 
