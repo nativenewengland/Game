@@ -41,7 +41,9 @@ const baseTileCoords = {
   TREE: { row: 1, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
+  STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 3 },
+  WOOD_ELF_GROVES: { row: 1, col: 4 },
   TOWN: { row: 2, col: 1 }
 };
 
@@ -367,6 +369,50 @@ const townNameDescriptors = [
   'Hollow'
 ];
 
+const woodElfGrovePrefixes = [
+  'Sylvan',
+  'Moon',
+  'Star',
+  'Silver',
+  'Verdant',
+  'Thorn',
+  'Whisper',
+  'Autumn',
+  'Lark',
+  'Eversong',
+  'Glimmer',
+  'Sun',
+  'Briar',
+  'Moss',
+  'Willow'
+];
+
+const woodElfGroveSuffixes = [
+  'Grove',
+  'Glade',
+  'Haven',
+  'Refuge',
+  'Circle',
+  'Hollow',
+  'Sanctum',
+  'Enclave',
+  'Retreat',
+  'Thicket'
+];
+
+const woodElfGroveDescriptors = [
+  'of the Dawn Chorus',
+  'of Whispering Leaves',
+  'of Starlit Boughs',
+  'of the Emerald Court',
+  'of the Eternal Spring',
+  'of the Moonlit Vale',
+  'of the Verdant Watch',
+  'of the First Trees',
+  'of Glimmering Dew',
+  'of the Silver Song'
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -411,6 +457,18 @@ function generateTownName(random) {
     return baseName;
   }
   return `Town of ${baseName}`;
+}
+
+function generateWoodElfGroveName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(woodElfGrovePrefixes, randomFn) || 'Sylvan';
+  const suffix = pickRandomFrom(woodElfGroveSuffixes, randomFn) || 'Grove';
+  const baseName = `${prefix} ${suffix}`;
+  const descriptor = pickRandomFrom(woodElfGroveDescriptors, randomFn);
+  if (descriptor && randomFn() < 0.65) {
+    return `${baseName} ${descriptor}`;
+  }
+  return baseName;
 }
 
 function resolveTileName(baseKey) {
@@ -2909,6 +2967,7 @@ function createWorld(seedString) {
   const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
   const grassTileKey = resolveTileName('GRASS');
   const waterTileKey = resolveTileName('WATER');
+  const stoneTileKey = tileLookup.has('STONE') ? 'STONE' : grassTileKey;
   const tiles = Array.from(
     { length: height },
     () =>
@@ -2921,6 +2980,7 @@ function createWorld(seedString) {
   );
   const dwarfholds = [];
   const towns = [];
+  const woodElfGroves = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
@@ -3407,7 +3467,11 @@ function createWorld(seedString) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
         if (mountainMask[idx]) {
-          tiles[y][x].overlay = mountainOverlayKey;
+          const tile = tiles[y][x];
+          tile.overlay = mountainOverlayKey;
+          if (tile.base === grassTileKey) {
+            tile.base = stoneTileKey;
+          }
         }
       }
     }
@@ -3720,10 +3784,67 @@ function createWorld(seedString) {
         tile.overlay = treeOverlayKey;
       }
     }
+
+    const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
+    if (woodElfGroveKey) {
+      const groveCandidates = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+            continue;
+          }
+          const score = treeDensityField ? treeDensityField[idx] : 0;
+          groveCandidates.push({ x, y, score });
+        }
+      }
+
+      if (groveCandidates.length > 0) {
+        groveCandidates.sort((a, b) => b.score - a.score);
+        const desiredCount = Math.max(1, Math.round(groveCandidates.length / 450));
+        const maxGroves = Math.min(desiredCount, 28);
+        const minDistance = 6;
+        const minDistanceSq = minDistance * minDistance;
+        const placed = [];
+
+        for (let i = 0; i < groveCandidates.length; i += 1) {
+          if (placed.length >= maxGroves) {
+            break;
+          }
+          const candidate = groveCandidates[i];
+          if (candidate.score < 0.28) {
+            continue;
+          }
+          let tooClose = false;
+          for (let j = 0; j < placed.length; j += 1) {
+            const other = placed[j];
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose) {
+            continue;
+          }
+          const tile = tiles[candidate.y][candidate.x];
+          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+            continue;
+          }
+          const name = generateWoodElfGroveName(rng);
+          tile.structure = woodElfGroveKey;
+          tile.structureName = name;
+          placed.push(candidate);
+          woodElfGroves.push({ x: candidate.x, y: candidate.y, name });
+        }
+      }
+    }
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds, towns };
+  return { tiles, seedString: finalSeed, dwarfholds, towns, woodElfGroves };
 }
 
 function generateSeedString(seedNumber) {
