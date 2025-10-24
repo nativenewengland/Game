@@ -471,6 +471,12 @@ button:hover:not(:disabled) {
   border-radius: 0;
   overflow: visible;
   position: relative;
+  background: linear-gradient(
+      135deg,
+      rgba(8, 9, 15, 0.86),
+      rgba(8, 9, 15, 0.72)
+    ),
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
 }
 
 #dwarf-customizer-form::before {
