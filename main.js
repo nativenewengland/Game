@@ -4522,6 +4522,11 @@ function createWorld(seedString) {
   const needSnowPresenceField = hasSnowTile || hasIcebergOverlay;
   const snowPresenceField = needSnowPresenceField ? new Uint8Array(width * height) : null;
   const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
+  const icebergPresenceSeed = hasIcebergOverlay ? (seedNumber + 0x5ad1f32b) >>> 0 : 0;
+  const icebergPresenceScale = hasIcebergOverlay ? 1.6 + rng() * 1.8 : 1;
+  const icebergPresenceOffsetX = hasIcebergOverlay ? rng() * 8192 : 0;
+  const icebergPresenceOffsetY = hasIcebergOverlay ? rng() * 8192 : 0;
+  const icebergPresenceThreshold = hasIcebergOverlay ? 0.72 + rng() * 0.1 : 1;
 
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
@@ -5612,6 +5617,19 @@ function createWorld(seedString) {
           continue;
         }
         if (!snowPresenceField[idx]) {
+          continue;
+        }
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const icebergPresenceNoise = octaveNoise(
+          (normalizedX + icebergPresenceOffsetX) * icebergPresenceScale,
+          (normalizedY + icebergPresenceOffsetY) * icebergPresenceScale,
+          icebergPresenceSeed,
+          3,
+          0.55,
+          2.15
+        );
+        if (icebergPresenceNoise < icebergPresenceThreshold) {
           continue;
         }
         const tile = tiles[y][x];
