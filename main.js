@@ -1672,13 +1672,12 @@ function randomYear() {
   if (upper <= lower) {
     return lower;
   }
-  const range = upper - lower;
+  if (!Number.isFinite(exponent) || exponent <= 0) {
+    return randomInt(lower, upper);
+  }
   const clampedWeight = clamp(biasWeight, 0, 1);
-  const biasedSample = Math.pow(Math.random(), Math.max(exponent, 1));
-  const uniformSample = Math.random();
-  const blended = clampedWeight * biasedSample + (1 - clampedWeight) * uniformSample;
-  const value = lower + Math.round(blended * range);
-  return clamp(value, lower, upper);
+  const effectiveExponent = 1 + clampedWeight * (exponent - 1);
+  return biasedRandomInt(lower, upper, effectiveExponent);
 }
 
 function generateRandomChronology() {
