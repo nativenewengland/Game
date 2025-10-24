@@ -2878,7 +2878,14 @@ function createWorld(seedString) {
   const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
   const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
   const forestBias = forestFrequencySetting / 50 - 1;
-  const mountainBias = mountainFrequencySetting / 50 - 1;
+  const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
+  const mountainBiasLinear = mountainFrequencyNormalized * 2 - 1;
+  const mountainBias =
+    mountainBiasLinear === 0
+      ? 0
+      : Math.sign(mountainBiasLinear) * Math.pow(Math.abs(mountainBiasLinear), 0.8);
+  const mountainScarcity = 1 - mountainFrequencyNormalized;
+  const mountainGrowthFactor = 0.55 + mountainFrequencyNormalized * 0.9;
 
   const continentalPlates = generateContinentalPlates(rng);
   const elevationField = new Float32Array(width * height);
@@ -2988,12 +2995,15 @@ function createWorld(seedString) {
   let mountainFullThreshold = hasMountainTile ? Math.min(0.98, mountainBaseThreshold + 0.35) : 1;
   let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
   if (hasMountainTile) {
-    const thresholdShift = mountainBias * 0.1;
-    const minBaseThreshold = Math.min(Math.max(seaLevel + 0.05, 0.5), 0.9);
-    mountainBaseThreshold = clamp(mountainBaseThreshold - thresholdShift, minBaseThreshold, 0.9);
+    const thresholdShift = mountainBias * 0.18;
+    const minBaseThreshold = Math.min(
+      Math.max(seaLevel + 0.08 + mountainScarcity * 0.05, 0.5),
+      0.92
+    );
+    mountainBaseThreshold = clamp(mountainBaseThreshold - thresholdShift, minBaseThreshold, 0.92);
     mountainFullThreshold = clamp(
-      mountainFullThreshold - thresholdShift * 1.2,
-      mountainBaseThreshold + 0.1,
+      mountainFullThreshold - thresholdShift * 1.3,
+      mountainBaseThreshold + 0.12,
       0.99
     );
     mountainRange = Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001);
@@ -3043,18 +3053,18 @@ function createWorld(seedString) {
     const baseMountainCandidateThreshold = 0.46;
     const baseMountainPruneThreshold = 0.88;
     const mountainSeedThreshold = clamp(
-      baseMountainSeedThreshold - mountainBias * 0.18,
-      0.55,
-      0.96
+      baseMountainSeedThreshold - mountainBias * 0.32,
+      0.52,
+      0.97
     );
     const mountainCandidateThreshold = clamp(
-      baseMountainCandidateThreshold - mountainBias * 0.18,
-      0.22,
-      0.7
+      baseMountainCandidateThreshold - mountainBias * 0.28,
+      0.2,
+      0.78
     );
     const mountainPruneThreshold = clamp(
-      baseMountainPruneThreshold - mountainBias * 0.14,
-      0.65,
+      baseMountainPruneThreshold - mountainBias * 0.2,
+      0.62,
       0.97
     );
 
@@ -3296,7 +3306,8 @@ function createWorld(seedString) {
         }
       }
       fallbackCandidates.sort((a, b) => mountainScores[b] - mountainScores[a]);
-      const limit = Math.min(6, fallbackCandidates.length);
+      const maxFallbackSeeds = Math.round(6 * mountainFrequencyNormalized);
+      const limit = Math.min(maxFallbackSeeds, fallbackCandidates.length);
       for (let i = 0; i < limit; i += 1) {
         const idx = fallbackCandidates[i];
         const x = idx % width;
@@ -3399,8 +3410,15 @@ function createWorld(seedString) {
           } else if (orientationStrength > 0.55) {
             minNeighbors = 2;
           }
-          const probability = Math.min(0.95, 0.18 + score * 0.75 + orientationStrength * 0.2);
-          if (mountainNeighbors >= minNeighbors && (score > 0.75 || rng() < probability)) {
+          const probability = Math.min(
+            0.95,
+            (0.18 + score * 0.75 + orientationStrength * 0.2) * mountainGrowthFactor
+          );
+          const highScoreThreshold = 0.75 + mountainScarcity * 0.12;
+          if (
+            mountainNeighbors >= minNeighbors &&
+            (score > highScoreThreshold || rng() < probability)
+          ) {
             mountainMask[idx] = 1;
           }
         }
@@ -3429,7 +3447,9 @@ function createWorld(seedString) {
           }
         }
         const orientationStrength = ridgeDirectionStrength[idx];
-        const requiredNeighbors = orientationStrength > 0.6 ? 2 : orientationStrength > 0.35 ? 3 : 4;
+        const baseRequiredNeighbors = orientationStrength > 0.6 ? 2 : orientationStrength > 0.35 ? 3 : 4;
+        const scarcityNeighborPenalty = mountainScarcity > 0.6 ? 2 : mountainScarcity > 0.35 ? 1 : 0;
+        const requiredNeighbors = Math.min(7, baseRequiredNeighbors + scarcityNeighborPenalty);
         if (mountainNeighbors >= requiredNeighbors) {
           mountainMask[idx] = 1;
         }
@@ -3456,7 +3476,9 @@ function createWorld(seedString) {
         }
         const orientationStrength = ridgeDirectionStrength[idx];
         const minSupport = orientationStrength > 0.65 ? 0 : 1;
-        const effectiveThreshold = mountainPruneThreshold * (1 - orientationStrength * 0.25);
+        const pruneBoost = lerp(1.18, 0.85, mountainFrequencyNormalized);
+        const effectiveThreshold =
+          mountainPruneThreshold * pruneBoost * (1 - orientationStrength * 0.25);
         if (mountainNeighbors <= minSupport && score < effectiveThreshold) {
           mountainMask[idx] = 0;
         }
