@@ -2878,22 +2878,43 @@ function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
   return riverMap;
 }
 
+const riverNeighborDefinitions = [
+  { dx: 0, dy: -1, key: 'N', bit: 1 },
+  { dx: 1, dy: 0, key: 'E', bit: 2 },
+  { dx: 0, dy: 1, key: 'S', bit: 4 },
+  { dx: -1, dy: 0, key: 'W', bit: 8 }
+];
+
+const riverMaskSuffixLookup = {
+  0: '0',
+  1: 'N',
+  2: 'E',
+  3: 'NE',
+  4: 'S',
+  5: 'NS',
+  6: 'SE',
+  7: 'NSE',
+  8: 'W',
+  9: 'NW',
+  10: 'WE',
+  11: 'NWE',
+  12: 'SW',
+  13: 'NSW',
+  14: 'SWE',
+  15: 'NSWE'
+};
+
 function resolveRiverTile(riverMap, width, height, x, y) {
   const idx = y * width + x;
-  if (riverMap[idx] === 0) {
+  const strength = riverMap[idx];
+  if (strength === 0) {
     return null;
   }
 
   const prefix = 'RIVER_';
-  const neighbors = [
-    { dx: 0, dy: -1, key: 'N', bit: 1 },
-    { dx: 1, dy: 0, key: 'E', bit: 2 },
-    { dx: 0, dy: 1, key: 'S', bit: 4 },
-    { dx: -1, dy: 0, key: 'W', bit: 8 }
-  ];
 
   let mask = 0;
-  neighbors.forEach(({ dx, dy, bit }) => {
+  riverNeighborDefinitions.forEach(({ dx, dy, bit }) => {
     const nx = x + dx;
     const ny = y + dy;
     if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
@@ -2903,42 +2924,13 @@ function resolveRiverTile(riverMap, width, height, x, y) {
       mask |= bit;
     }
   });
-
-  switch (mask) {
-    case 0:
-      return `${prefix}0`;
-    case 1:
-      return `${prefix}N`;
-    case 2:
-      return `${prefix}E`;
-    case 4:
-      return `${prefix}S`;
-    case 8:
-      return `${prefix}W`;
-    case 1 | 4:
-      return `${prefix}NS`;
-    case 2 | 8:
-      return `${prefix}WE`;
-    case 1 | 2:
-      return `${prefix}NE`;
-    case 1 | 8:
-      return `${prefix}NW`;
-    case 2 | 4:
-      return `${prefix}SE`;
-    case 4 | 8:
-      return `${prefix}SW`;
-    case 1 | 2 | 4:
-      return `${prefix}NSE`;
-    case 1 | 4 | 8:
-      return `${prefix}NSW`;
-    case 1 | 2 | 8:
-      return `${prefix}NWE`;
-    case 2 | 4 | 8:
-      return `${prefix}SWE`;
-    case 1 | 2 | 4 | 8:
-    default:
-      return `${prefix}NSWE`;
-  }
+  const suffix = riverMaskSuffixLookup[mask] || 'NSWE';
+  return {
+    key: `${prefix}${suffix}`,
+    mask,
+    strength,
+    connections: suffix
+  };
 }
 
 function createWorld(seedString) {
@@ -3061,6 +3053,105 @@ function createWorld(seedString) {
   normalizeField(tectonicActivityField);
 
   const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
+  const rainfallField = new Float32Array(width * height);
+  const drainageField = new Float32Array(width * height);
+  const rainfallBaseSeed = (seedNumber + 0x7f4a7c15) >>> 0;
+  const rainfallDetailSeed = (seedNumber + 0x6c8e9cf1) >>> 0;
+  const rainfallBaseScale = 2.2 + rng() * 1.8;
+  const rainfallDetailScale = 5.4 + rng() * 4.1;
+  const rainfallBaseOffsetX = rng() * 4096;
+  const rainfallBaseOffsetY = rng() * 4096;
+  const rainfallDetailOffsetX = rng() * 8192;
+  const rainfallDetailOffsetY = rng() * 8192;
+  const drainageNoiseSeed = (seedNumber + 0x51a7f5d3) >>> 0;
+  const drainageNoiseOffsetX = rng() * 4096;
+  const drainageNoiseOffsetY = rng() * 4096;
+  const drainageNoiseScale = 4.3 + rng() * 3.6;
+  const drainageOffsets = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1]
+  ];
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const normalizedX = (x + 0.5) / width;
+      const normalizedY = (y + 0.5) / height;
+      const elevationValue = elevationField[idx];
+      const baseRainNoise = octaveNoise(
+        (normalizedX + rainfallBaseOffsetX) * rainfallBaseScale,
+        (normalizedY + rainfallBaseOffsetY) * rainfallBaseScale,
+        rainfallBaseSeed,
+        3,
+        0.6,
+        2.05
+      );
+      const detailRainNoise = octaveNoise(
+        (normalizedX + rainfallDetailOffsetX) * rainfallDetailScale,
+        (normalizedY + rainfallDetailOffsetY) * rainfallDetailScale,
+        rainfallDetailSeed,
+        4,
+        0.55,
+        2.25
+      );
+      const latitudeInfluence = 1 - Math.abs(normalizedY - 0.5) * 1.8;
+      const coastalInfluence = clamp(1 - Math.abs(elevationValue - seaLevel) * 2.4, 0, 1);
+      let rainfallValue = baseRainNoise * 0.65 + detailRainNoise * 0.35;
+      rainfallValue = clamp(
+        rainfallValue * 0.55 + latitudeInfluence * 0.25 + coastalInfluence * 0.2,
+        0,
+        1
+      );
+      rainfallField[idx] = rainfallValue;
+
+      let outwardSlope = 0;
+      let inwardSlope = 0;
+      let neighborCount = 0;
+      for (let i = 0; i < drainageOffsets.length; i += 1) {
+        const nx = x + drainageOffsets[i][0];
+        const ny = y + drainageOffsets[i][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        const diff = elevationValue - elevationField[nIdx];
+        if (diff > 0) {
+          outwardSlope += diff;
+        } else {
+          inwardSlope += -diff;
+        }
+        neighborCount += 1;
+      }
+      const slopeAverage = neighborCount > 0 ? outwardSlope / neighborCount : 0;
+      const basinAverage = neighborCount > 0 ? inwardSlope / neighborCount : 0;
+      const slopeComponent = clamp(slopeAverage * 5.2, 0, 1);
+      const basinComponent = clamp(basinAverage * 3.2, 0, 1);
+      const drainageNoise = octaveNoise(
+        (normalizedX + drainageNoiseOffsetX) * drainageNoiseScale,
+        (normalizedY + drainageNoiseOffsetY) * drainageNoiseScale,
+        drainageNoiseSeed,
+        3,
+        0.6,
+        2.2
+      );
+      let drainageValue = slopeComponent * 0.7 + (1 - basinComponent) * 0.3;
+      drainageValue = clamp(drainageValue * 0.68 + drainageNoise * 0.32, 0, 1);
+      if (elevationValue <= seaLevel) {
+        drainageValue = 1;
+      }
+      drainageField[idx] = drainageValue;
+    }
+  }
+
+  const adjustedRainfall = applyRainShadow(elevationField, rainfallField, width, height);
+  rainfallField.set(adjustedRainfall);
+  normalizeField(drainageField);
   const grassTileKey = resolveTileName('GRASS');
   const waterTileKey = resolveTileName('WATER');
   const tiles = Array.from(
@@ -3070,7 +3161,8 @@ function createWorld(seedString) {
         base: grassTileKey,
         overlay: null,
         structure: null,
-        structureName: null
+        structureName: null,
+        river: null
       }))
   );
   const dwarfholds = [];
@@ -3125,6 +3217,7 @@ function createWorld(seedString) {
       tile.overlay = null;
       tile.structure = null;
       tile.structureName = null;
+      tile.river = null;
     }
   }
 
@@ -3652,7 +3745,7 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.overlay !== mountainOverlayKey || tile.structure) {
+          if (!tile || tile.overlay !== mountainOverlayKey || tile.structure || tile.river) {
             continue;
           }
           const name = generateDwarfholdName(rng);
@@ -3686,7 +3779,25 @@ function createWorld(seedString) {
         tile.overlay = null;
         tile.structure = null;
         tile.structureName = null;
+        tile.river = null;
       }
+    }
+  }
+
+  const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const tile = tiles[y][x];
+      if (!tile) {
+        continue;
+      }
+      if (riverMap[idx] === 0 || waterMask[idx]) {
+        tile.river = null;
+        continue;
+      }
+      const riverTile = resolveRiverTile(riverMap, width, height, x, y);
+      tile.river = riverTile || null;
     }
   }
 
@@ -3700,7 +3811,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure) {
+        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure || tile.river) {
           continue;
         }
         const elevationValue = elevationField[idx];
@@ -3726,7 +3837,21 @@ function createWorld(seedString) {
         const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
         const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2);
         const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
-        const score = elevationScore * 0.45 + slopeScore * 0.25 + edgeScore * 0.15 + rng() * 0.25;
+        let riverAdjacency = 0;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (neighborTile && neighborTile.river) {
+            riverAdjacency += 1;
+          }
+        }
+        const riverScore = riverAdjacency > 0 ? clamp(0.18 + riverAdjacency * 0.06, 0, 0.32) : 0;
+        const score =
+          elevationScore * 0.4 + slopeScore * 0.25 + edgeScore * 0.15 + riverScore + rng() * 0.2;
         townCandidates.push({ x, y, score });
       }
     }
@@ -3760,7 +3885,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[candidate.y][candidate.x];
-        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure) {
+        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure || tile.river) {
           continue;
         }
         const name = generateTownName(rng);
@@ -3837,6 +3962,8 @@ function createWorld(seedString) {
         const elevationPreference = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.12)) * 2.6, 0, 1);
         let density = baseNoise * 0.68 + detailNoise * 0.32;
         density = clamp(density * 0.6 + elevationPreference * 0.4, 0, 1);
+        const rainfallValue = rainfallField[idx];
+        density = clamp(density * 0.55 + rainfallValue * 0.45, 0, 1);
         density = clamp(density * (1 + forestBias * 0.25), 0, 1);
         treeDensityField[idx] = density;
       }
@@ -3849,7 +3976,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey || tile.structure) {
+        if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
           continue;
         }
         const density = treeDensityField[idx];
@@ -3873,7 +4000,7 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
-          if (tile.overlay || tile.base !== grassTileKey || tile.structure) {
+          if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
             continue;
           }
           let neighborTrees = 0;
@@ -3918,7 +4045,7 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey || tile.structure) {
+        if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
           continue;
         }
         treeMask[idx] = 1;
@@ -3997,6 +4124,60 @@ function generateSeedString(seedNumber) {
   return seedNumber.toString(16).padStart(8, '0');
 }
 
+function drawRiverSegment(ctx, river, x, y) {
+  if (!river) {
+    return;
+  }
+  const { mask, strength } = river;
+  const cellSize = drawSize;
+  const halfSize = cellSize / 2;
+  const left = x * cellSize;
+  const top = y * cellSize;
+  const centerX = left + halfSize;
+  const centerY = top + halfSize;
+  const baseWidth = Math.max(2, Math.round(cellSize * (0.12 + strength * 0.045)));
+  const outlineColor = 'rgba(16, 52, 105, 0.8)';
+  const riverColors = ['#3aa0f0', '#2f8ce2', '#297bd6', '#2369c6'];
+  const mainColor = riverColors[Math.min(riverColors.length - 1, Math.max(0, strength - 1))];
+  const highlightWidth = Math.max(1, Math.round(baseWidth * 0.4));
+  const highlightColor = 'rgba(190, 235, 255, 0.85)';
+  const centerRadius = Math.max(2, baseWidth * 0.45);
+  ctx.save();
+  ctx.lineCap = 'round';
+
+  const drawSegments = (color, width, lengthFactor = 1) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    if (mask === 0) {
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, Math.max(width / 2, centerRadius), 0, Math.PI * 2);
+      ctx.stroke();
+      return;
+    }
+    const length = halfSize * lengthFactor;
+    riverNeighborDefinitions.forEach(({ bit, dx, dy }) => {
+      if ((mask & bit) === 0) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + dx * length, centerY + dy * length);
+      ctx.stroke();
+    });
+  };
+
+  drawSegments(outlineColor, baseWidth + 2);
+  drawSegments(mainColor, baseWidth);
+  drawSegments(highlightColor, highlightWidth, 0.9);
+
+  ctx.fillStyle = '#3f9cec';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, centerRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function drawWorld(world) {
   const { tiles, seedString } = world;
   hideMapTooltip();
@@ -4036,6 +4217,10 @@ function drawWorld(world) {
         drawSize,
         drawSize
       );
+
+      if (cell.river) {
+        drawRiverSegment(ctx, cell.river, x, y);
+      }
 
       if (cell.overlay) {
         const overlayDefinition = tileLookup.get(cell.overlay);
