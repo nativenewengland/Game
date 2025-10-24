@@ -391,6 +391,8 @@ const dwarfholdPopulationRaceOptions = [
   { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
   { key: 'elves', label: 'Elves', color: '#6ecf85' },
   { key: 'halflings', label: 'Halflings', color: '#f7a072' },
+  { key: 'goblins', label: 'Goblins', color: '#7f8c4d' },
+  { key: 'kobolds', label: 'Kobolds', color: '#b1c8ff' },
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
