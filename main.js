@@ -6272,6 +6272,7 @@ function attachEvents() {
     elements.dwarfRandomise.addEventListener('click', () => {
       randomiseActiveDwarf();
       playSoundEffect(soundEffects.randomiseClick);
+      elements.dwarfRandomise.classList.add('randomise-button__dice--rolled');
     });
   }
 
