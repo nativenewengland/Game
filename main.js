@@ -598,6 +598,7 @@ const state = {
     lastSeedString: '',
     forestFrequency: 50,
     mountainFrequency: 50,
+    riverFrequency: 50,
     humanSettlementFrequency: 50,
     dwarfSettlementFrequency: 50,
     woodElfSettlementFrequency: 50
@@ -887,6 +888,8 @@ const elements = {
   forestFrequencyValue: document.getElementById('forest-frequency-value'),
   mountainFrequencyInput: document.getElementById('mountain-frequency'),
   mountainFrequencyValue: document.getElementById('mountain-frequency-value'),
+  riverFrequencyInput: document.getElementById('river-frequency'),
+  riverFrequencyValue: document.getElementById('river-frequency-value'),
   humanSettlementFrequencyInput: document.getElementById('human-settlement-frequency'),
   humanSettlementFrequencyValue: document.getElementById('human-settlement-frequency-value'),
   dwarfSettlementFrequencyInput: document.getElementById('dwarf-settlement-frequency'),
@@ -1101,6 +1104,9 @@ function applyFormSettings() {
   const mountainFrequencyRaw = elements.mountainFrequencyInput
     ? Number.parseInt(elements.mountainFrequencyInput.value, 10)
     : state.settings.mountainFrequency;
+  const riverFrequencyRaw = elements.riverFrequencyInput
+    ? Number.parseInt(elements.riverFrequencyInput.value, 10)
+    : state.settings.riverFrequency;
   const humanSettlementFrequencyRaw = elements.humanSettlementFrequencyInput
     ? Number.parseInt(elements.humanSettlementFrequencyInput.value, 10)
     : state.settings.humanSettlementFrequency;
@@ -1122,6 +1128,10 @@ function applyFormSettings() {
   state.settings.mountainFrequency = sanitizeFrequencyValue(
     Number.isNaN(mountainFrequencyRaw) ? state.settings.mountainFrequency : mountainFrequencyRaw,
     state.settings.mountainFrequency
+  );
+  state.settings.riverFrequency = sanitizeFrequencyValue(
+    Number.isNaN(riverFrequencyRaw) ? state.settings.riverFrequency : riverFrequencyRaw,
+    state.settings.riverFrequency
   );
   state.settings.humanSettlementFrequency = sanitizeFrequencyValue(
     Number.isNaN(humanSettlementFrequencyRaw)
@@ -2996,7 +3006,25 @@ function determineAlignmentSuffix(alignment, savagery) {
   return '';
 }
 
-function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
+function buildRiverMap(
+  elevation,
+  rainfall,
+  drainage,
+  width,
+  height,
+  seaLevel,
+  options = {}
+) {
+  const frequencyNormalized = clamp(
+    typeof options.frequencyNormalized === 'number' ? options.frequencyNormalized : 0.5,
+    0,
+    1
+  );
+  const frequencyMultiplier = lerp(0.45, 1.75, frequencyNormalized);
+  const rainfallThreshold = lerp(0.65, 0.45, frequencyNormalized);
+  const weightThreshold = 0.12 * lerp(1.7, 0.6, frequencyNormalized);
+  const majorRiverThreshold = lerp(0.45, 0.28, frequencyNormalized);
+
   const riverMap = new Uint8Array(width * height);
   const candidates = [];
   for (let y = 1; y < height - 1; y += 1) {
@@ -3007,19 +3035,20 @@ function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
         continue;
       }
       const rain = rainfall[idx];
-      if (rain < 0.5) {
+      if (rain < rainfallThreshold) {
         continue;
       }
       const sink = 1 - drainage[idx];
       const weight = rain * rain * (elev - seaLevel) * (0.5 + sink * 0.5);
-      if (weight > 0.12) {
+      if (weight > weightThreshold) {
         candidates.push({ x, y, weight });
       }
     }
   }
 
   candidates.sort((a, b) => b.weight - a.weight);
-  const maxSources = Math.max(8, Math.floor((width * height) / 3200));
+  const baseSources = Math.max(8, Math.floor((width * height) / 3200));
+  const maxSources = Math.max(4, Math.round(baseSources * frequencyMultiplier));
   const directions = [
     [0, -1],
     [1, 0],
@@ -3030,7 +3059,7 @@ function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
   for (let i = 0; i < candidates.length && i < maxSources; i += 1) {
     let { x, y } = candidates[i];
     let steps = 0;
-    let strength = candidates[i].weight > 0.35 ? 2 : 1;
+    let strength = candidates[i].weight > majorRiverThreshold ? 2 : 1;
     while (steps < width + height) {
       const idx = y * width + x;
       riverMap[idx] = Math.min(4, riverMap[idx] + strength);
@@ -3274,6 +3303,7 @@ function createWorld(seedString) {
   const height = state.settings.height;
   const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
   const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+  const riverFrequencySetting = sanitizeFrequencyValue(state.settings.riverFrequency, 50);
   const humanSettlementFrequencySetting = sanitizeFrequencyValue(
     state.settings.humanSettlementFrequency,
     50
@@ -3288,6 +3318,7 @@ function createWorld(seedString) {
   );
   const forestBias = forestFrequencySetting / 50 - 1;
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
+  const riverFrequencyNormalized = clamp(riverFrequencySetting / 100, 0, 1);
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
   const dwarfSettlementFrequencyNormalized = clamp(dwarfSettlementFrequencySetting / 100, 0, 1);
   const woodElfSettlementFrequencyNormalized = clamp(woodElfSettlementFrequencySetting / 100, 0, 1);
@@ -4123,7 +4154,9 @@ function createWorld(seedString) {
     }
   }
 
-  const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel);
+  const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel, {
+    frequencyNormalized: riverFrequencyNormalized
+  });
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -4638,6 +4671,11 @@ function syncInputsWithSettings() {
     elements.mountainFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.mountainFrequencyValue, value);
   }
+  if (elements.riverFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.riverFrequency, 50);
+    elements.riverFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.riverFrequencyValue, value);
+  }
   if (elements.humanSettlementFrequencyInput) {
     const value = sanitizeFrequencyValue(state.settings.humanSettlementFrequency, 50);
     elements.humanSettlementFrequencyInput.value = value.toString();
@@ -4679,6 +4717,13 @@ function attachEvents() {
     elements.mountainFrequencyInput.addEventListener('input', (event) => {
       const value = sanitizeFrequencyValue(event.target.value, state.settings.mountainFrequency);
       updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+    });
+  }
+
+  if (elements.riverFrequencyInput) {
+    elements.riverFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.riverFrequency);
+      updateFrequencyDisplay(elements.riverFrequencyValue, value);
     });
   }
 
