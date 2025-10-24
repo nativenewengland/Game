@@ -53,6 +53,7 @@ const baseTileCoords = {
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
+  EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   TOWN: { row: 2, col: 1 }
 };
@@ -4231,6 +4232,7 @@ function createWorld(seedString) {
   const dwarfholds = [];
   const towns = [];
   const towers = [];
+  const evilWizardTowers = [];
   const woodElfGroves = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
@@ -5281,6 +5283,93 @@ function createWorld(seedString) {
     }
   }
 
+  const evilWizardTowerKey = tileLookup.has('EVIL_WIZARDS_TOWER') ? 'EVIL_WIZARDS_TOWER' : null;
+  if (evilWizardTowerKey) {
+    const towerCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && tile.overlay === mountainOverlayKey) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const overlayIsTree =
+          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        const heightValue = elevationField[idx];
+        const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
+        const rainfallValue = rainfallField[idx];
+        const drynessScore = clamp(1 - rainfallValue, 0, 1);
+        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        if (baseIsSnow) {
+          terrainBonus += 0.18;
+        } else if (baseIsGrass) {
+          terrainBonus += 0.12;
+        }
+        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2.2);
+        const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
+        const score =
+          elevationScore * 0.35 + drynessScore * 0.2 + terrainBonus + edgeScore * 0.15 + rng() * 0.3;
+        towerCandidates.push({ x, y, score });
+      }
+    }
+
+    if (towerCandidates.length > 0) {
+      towerCandidates.sort((a, b) => b.score - a.score);
+      const area = width * height;
+      const baseTarget = Math.max(1, Math.round(area / 7200));
+      const maxTowers = computeStructurePlacementLimit(baseTarget, 30, towerSettlementMultiplier);
+      const baseMinDistance = Math.max(5, Math.round(Math.min(width, height) / 14));
+      const minDistance = adjustMinDistance(baseMinDistance, towerSettlementFrequencyNormalized);
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < towerCandidates.length; i += 1) {
+        if (placed.length >= maxTowers) {
+          break;
+        }
+        const candidate = towerCandidates[i];
+        if (candidate.score < 0.22) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && tile.overlay === mountainOverlayKey) {
+          continue;
+        }
+        const name = `Evil Wizard's ${generateTowerName(rng)}`;
+        tile.structure = evilWizardTowerKey;
+        tile.structureName = name;
+        tile.structureDetails = null;
+        placed.push(candidate);
+        evilWizardTowers.push({ x: candidate.x, y: candidate.y, name });
+      }
+    }
+  }
+
   const towerKey = tileLookup.has('TOWER') ? 'TOWER' : null;
   if (towerKey) {
     const towerCandidates = [];
@@ -5379,7 +5468,7 @@ function createWorld(seedString) {
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds, towns, towers, woodElfGroves };
+  return { tiles, seedString: finalSeed, dwarfholds, towns, towers, evilWizardTowers, woodElfGroves };
 }
 
 function generateSeedString(seedNumber) {
