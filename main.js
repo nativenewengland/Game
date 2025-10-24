@@ -204,7 +204,9 @@ const state = {
     width: defaultMapSize.width,
     height: defaultMapSize.height,
     seedString: '',
-    lastSeedString: ''
+    lastSeedString: '',
+    forestFrequency: 50,
+    mountainFrequency: 50
   },
   tileSheets,
   landMask: null,
@@ -490,6 +492,10 @@ const elements = {
   seedDisplay: document.querySelector('.seed-display'),
   mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
+  forestFrequencyInput: document.getElementById('forest-frequency'),
+  forestFrequencyValue: document.getElementById('forest-frequency-value'),
+  mountainFrequencyInput: document.getElementById('mountain-frequency'),
+  mountainFrequencyValue: document.getElementById('mountain-frequency-value'),
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
   musicNowPlaying: document.getElementById('music-now-playing'),
@@ -668,15 +674,71 @@ function applyFormSettings() {
   const selectedKey = elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize;
   const preset = getMapSizePreset(selectedKey);
   const seedString = (elements.seedInput.value || '').trim();
+  const forestFrequencyRaw = elements.forestFrequencyInput
+    ? Number.parseInt(elements.forestFrequencyInput.value, 10)
+    : state.settings.forestFrequency;
+  const mountainFrequencyRaw = elements.mountainFrequencyInput
+    ? Number.parseInt(elements.mountainFrequencyInput.value, 10)
+    : state.settings.mountainFrequency;
 
   state.settings.mapSize = preset.key;
   state.settings.width = preset.width;
   state.settings.height = preset.height;
   state.settings.seedString = seedString;
+  state.settings.forestFrequency = sanitizeFrequencyValue(
+    Number.isNaN(forestFrequencyRaw) ? state.settings.forestFrequency : forestFrequencyRaw,
+    state.settings.forestFrequency
+  );
+  state.settings.mountainFrequency = sanitizeFrequencyValue(
+    Number.isNaN(mountainFrequencyRaw) ? state.settings.mountainFrequency : mountainFrequencyRaw,
+    state.settings.mountainFrequency
+  );
 }
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function sanitizeFrequencyValue(value, fallback) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return clamp(value, 0, 100);
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return clamp(fallback, 0, 100);
+  }
+  return clamp(parsed, 0, 100);
+}
+
+function describeFrequency(value) {
+  const numeric = clamp(Math.round(value), 0, 100);
+  if (numeric <= 10) {
+    return 'Minimal';
+  }
+  if (numeric <= 30) {
+    return 'Sparse';
+  }
+  if (numeric <= 45) {
+    return 'Low';
+  }
+  if (numeric < 60) {
+    return 'Balanced';
+  }
+  if (numeric <= 75) {
+    return 'High';
+  }
+  if (numeric <= 90) {
+    return 'Dense';
+  }
+  return 'Abundant';
+}
+
+function updateFrequencyDisplay(displayElement, value) {
+  if (!displayElement) {
+    return;
+  }
+  const numeric = clamp(Math.round(value), 0, 100);
+  displayElement.textContent = `${numeric}% — ${describeFrequency(numeric)}`;
 }
 
 function randomInt(min, max) {
@@ -2409,6 +2471,10 @@ function createWorld(seedString) {
   const rng = mulberry32(seedNumber || 1);
   const width = state.settings.width;
   const height = state.settings.height;
+  const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+  const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+  const forestBias = forestFrequencySetting / 50 - 1;
+  const mountainBias = mountainFrequencySetting / 50 - 1;
 
   const continentalPlates = generateContinentalPlates(rng);
   const elevationField = new Float32Array(width * height);
@@ -2498,6 +2564,17 @@ function createWorld(seedString) {
   let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.1, 0.58), 0.82) : 1;
   let mountainFullThreshold = hasMountainTile ? Math.min(0.98, mountainBaseThreshold + 0.35) : 1;
   let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
+  if (hasMountainTile) {
+    const thresholdShift = mountainBias * 0.1;
+    const minBaseThreshold = Math.min(Math.max(seaLevel + 0.05, 0.5), 0.9);
+    mountainBaseThreshold = clamp(mountainBaseThreshold - thresholdShift, minBaseThreshold, 0.9);
+    mountainFullThreshold = clamp(
+      mountainFullThreshold - thresholdShift * 1.2,
+      mountainBaseThreshold + 0.1,
+      0.99
+    );
+    mountainRange = Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001);
+  }
   const mountainScores = hasMountainTile ? new Float32Array(width * height) : null;
   const cardinalOffsets = [
     [0, -1],
@@ -2535,6 +2612,24 @@ function createWorld(seedString) {
 
   if (hasMountainTile) {
     const mountainMask = new Uint8Array(width * height);
+    const baseMountainSeedThreshold = 0.88;
+    const baseMountainCandidateThreshold = 0.55;
+    const baseMountainPruneThreshold = 0.92;
+    const mountainSeedThreshold = clamp(
+      baseMountainSeedThreshold - mountainBias * 0.2,
+      0.6,
+      0.98
+    );
+    const mountainCandidateThreshold = clamp(
+      baseMountainCandidateThreshold - mountainBias * 0.2,
+      0.25,
+      0.75
+    );
+    const mountainPruneThreshold = clamp(
+      baseMountainPruneThreshold - mountainBias * 0.15,
+      0.7,
+      0.99
+    );
 
     const isTooCoastal = (x, y) => {
       let coastalNeighbors = 0;
@@ -2559,7 +2654,7 @@ function createWorld(seedString) {
           continue;
         }
         const score = mountainScores[idx];
-        if (score >= 0.88 && !isTooCoastal(x, y)) {
+        if (score >= mountainSeedThreshold && !isTooCoastal(x, y)) {
           mountainMask[idx] = 1;
         }
       }
@@ -2603,7 +2698,7 @@ function createWorld(seedString) {
           continue;
         }
         const score = mountainScores[idx];
-        if (score < 0.55 || isTooCoastal(x, y)) {
+        if (score < mountainCandidateThreshold || isTooCoastal(x, y)) {
           continue;
         }
         let mountainNeighbors = 0;
@@ -2641,7 +2736,7 @@ function createWorld(seedString) {
             mountainNeighbors += 1;
           }
         }
-        if (mountainNeighbors <= 1 && score < 0.92) {
+        if (mountainNeighbors <= 1 && score < mountainPruneThreshold) {
           mountainMask[idx] = 0;
         }
       }
@@ -2704,6 +2799,22 @@ function createWorld(seedString) {
       [0, 1],
       [1, 1]
     ];
+    const baseSeedThreshold = 0.66;
+    const baseSoftSeedThreshold = 0.56;
+    const baseGrowthBaseline = 0.48;
+    const baseNeighborBonus = 0.08;
+    const baseDensityAlwaysAdd = 0.6;
+    const baseSoftSeedMultiplier = 1.8;
+    const seedThreshold = clamp(baseSeedThreshold - forestBias * 0.18, 0.35, 0.9);
+    const softSeedThreshold = clamp(baseSoftSeedThreshold - forestBias * 0.16, 0.25, 0.85);
+    const growthBaseline = clamp(baseGrowthBaseline - forestBias * 0.14, 0.2, 0.7);
+    const neighborBonus = clamp(baseNeighborBonus + forestBias * 0.04, 0.02, 0.14);
+    const densityAlwaysAddThreshold = clamp(
+      baseDensityAlwaysAdd - forestBias * 0.12,
+      0.4,
+      0.78
+    );
+    const softSeedMultiplier = clamp(baseSoftSeedMultiplier + forestBias * 0.6, 0.8, 2.6);
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -2730,12 +2841,10 @@ function createWorld(seedString) {
         const elevationPreference = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.12)) * 2.6, 0, 1);
         let density = baseNoise * 0.68 + detailNoise * 0.32;
         density = clamp(density * 0.6 + elevationPreference * 0.4, 0, 1);
+        density = clamp(density * (1 + forestBias * 0.25), 0, 1);
         treeDensityField[idx] = density;
       }
     }
-
-    const seedThreshold = 0.66;
-    const softSeedThreshold = 0.56;
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -2748,7 +2857,10 @@ function createWorld(seedString) {
           continue;
         }
         const density = treeDensityField[idx];
-        if (density >= seedThreshold || (density > softSeedThreshold && rng() < (density - softSeedThreshold) * 1.8)) {
+        if (
+          density >= seedThreshold ||
+          (density > softSeedThreshold && rng() < (density - softSeedThreshold) * softSeedMultiplier)
+        ) {
           treeMask[idx] = 1;
           tile.overlay = treeOverlayKey;
         }
@@ -2784,8 +2896,12 @@ function createWorld(seedString) {
             continue;
           }
           const density = treeDensityField[idx];
-          const probability = clamp((density - 0.48) / 0.52 + neighborTrees * 0.08, 0, 1);
-          if (density > 0.6 || rng() < probability) {
+          const probability = clamp(
+            (density - growthBaseline) / 0.52 + neighborTrees * neighborBonus,
+            0,
+            1
+          );
+          if (density > densityAlwaysAddThreshold || rng() < probability) {
             additions.push(idx);
           }
         }
@@ -2931,6 +3047,16 @@ function syncInputsWithSettings() {
   if (elements.seedInput) {
     elements.seedInput.value = state.settings.seedString;
   }
+  if (elements.forestFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+    elements.forestFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.forestFrequencyValue, value);
+  }
+  if (elements.mountainFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+    elements.mountainFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+  }
 }
 
 function attachEvents() {
@@ -2945,6 +3071,20 @@ function attachEvents() {
   });
 
   elements.closeOptions.addEventListener('click', () => toggleOptions(false));
+
+  if (elements.forestFrequencyInput) {
+    elements.forestFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.forestFrequency);
+      updateFrequencyDisplay(elements.forestFrequencyValue, value);
+    });
+  }
+
+  if (elements.mountainFrequencyInput) {
+    elements.mountainFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.mountainFrequency);
+      updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+    });
+  }
 
   elements.optionsForm.addEventListener('submit', (event) => {
     event.preventDefault();
