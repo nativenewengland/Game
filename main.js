@@ -40,7 +40,8 @@ const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
   TREE: { row: 1, col: 0 },
   WATER: { row: 1, col: 4 },
-  MOUNTAIN: { row: 0, col: 3 }
+  MOUNTAIN: { row: 0, col: 3 },
+  DWARFHOLD: { row: 1, col: 3 }
 };
 
 const tileLookup = new Map();
@@ -2556,7 +2557,8 @@ function createWorld(seedString) {
   const waterTileKey = resolveTileName('WATER');
   const tiles = Array.from(
     { length: height },
-    () => Array.from({ length: width }, () => ({ base: grassTileKey, overlay: null }))
+    () =>
+      Array.from({ length: width }, () => ({ base: grassTileKey, overlay: null, structure: null }))
   );
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
@@ -2605,7 +2607,8 @@ function createWorld(seedString) {
       }
       tiles[y][x] = {
         base: isWater ? waterTileKey : grassTileKey,
-        overlay: null
+        overlay: null,
+        structure: null
       };
     }
   }
@@ -2750,6 +2753,57 @@ function createWorld(seedString) {
         }
       }
     }
+
+    const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
+    if (dwarfholdKey) {
+      const dwarfholdCandidates = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (tile.overlay !== mountainOverlayKey) {
+            continue;
+          }
+          const score = mountainScores ? mountainScores[idx] : 0;
+          dwarfholdCandidates.push({ x, y, score });
+        }
+      }
+
+      if (dwarfholdCandidates.length > 0) {
+        dwarfholdCandidates.sort((a, b) => b.score - a.score);
+        const desiredCount = Math.max(1, Math.round(dwarfholdCandidates.length / 500));
+        const maxDwarfholds = Math.min(desiredCount, 24);
+        const minDistance = 5;
+        const minDistanceSq = minDistance * minDistance;
+        const placed = [];
+
+        for (let i = 0; i < dwarfholdCandidates.length; i += 1) {
+          if (placed.length >= maxDwarfholds) {
+            break;
+          }
+          const candidate = dwarfholdCandidates[i];
+          let tooClose = false;
+          for (let j = 0; j < placed.length; j += 1) {
+            const other = placed[j];
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose) {
+            continue;
+          }
+          const tile = tiles[candidate.y][candidate.x];
+          if (!tile || tile.overlay !== mountainOverlayKey || tile.structure) {
+            continue;
+          }
+          tile.structure = dwarfholdKey;
+          placed.push(candidate);
+        }
+      }
+    }
   }
 
   for (let y = 1; y < height - 1; y += 1) {
@@ -2770,7 +2824,8 @@ function createWorld(seedString) {
         waterMask[idx] = 0;
         tiles[y][x] = {
           base: grassTileKey,
-          overlay: null
+          overlay: null,
+          structure: null
         };
       }
     }
@@ -2993,6 +3048,28 @@ function drawWorld(world) {
           overlayDefinition.sy,
           overlayDefinition.size,
           overlayDefinition.size,
+          x * drawSize,
+          y * drawSize,
+          drawSize,
+          drawSize
+        );
+      }
+
+      if (cell.structure) {
+        const structureDefinition = tileLookup.get(cell.structure);
+        if (!structureDefinition) {
+          continue;
+        }
+        const structureSheet = state.tileSheets[structureDefinition.sheet];
+        if (!structureSheet || !structureSheet.image) {
+          continue;
+        }
+        ctx.drawImage(
+          structureSheet.image,
+          structureDefinition.sx,
+          structureDefinition.sy,
+          structureDefinition.size,
+          structureDefinition.size,
           x * drawSize,
           y * drawSize,
           drawSize,
