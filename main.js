@@ -52,6 +52,7 @@ const baseTileCoords = {
   MOUNTAIN: { row: 0, col: 3 },
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 5 },
+  TOWER: { row: 1, col: 6 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   TOWN: { row: 2, col: 1 }
 };
@@ -481,6 +482,50 @@ const townNameDescriptors = [
   'Hollow'
 ];
 
+const towerNamePrefixes = [
+  'Obsidian',
+  'Gilded',
+  'Runed',
+  'Frost',
+  'Storm',
+  'Ivory',
+  'Crimson',
+  'Verdant',
+  'Azure',
+  'Shadow',
+  'Sunset',
+  'Moonrise',
+  'Starfall',
+  'Ember',
+  'Sapphire'
+];
+
+const towerNameNouns = [
+  'Tower',
+  'Spire',
+  'Watch',
+  'Keep',
+  'Pinnacle',
+  'Bastion',
+  'Citadel',
+  'Lantern'
+];
+
+const towerNameQualifiers = [
+  'of Dawn',
+  'of Twilight',
+  'of Storms',
+  'of Secrets',
+  'of Embers',
+  'of Whispers',
+  'of the North',
+  'of the Veil',
+  'of Echoes',
+  'of the First Light',
+  'of the Last Watch',
+  'of the Silent Choir'
+];
+
 const woodElfGrovePrefixes = [
   'Sylvan',
   'Moon',
@@ -745,6 +790,24 @@ function generateTownName(random) {
     return baseName;
   }
   return `Town of ${baseName}`;
+}
+
+function generateTowerName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(towerNamePrefixes, randomFn) || 'Obsidian';
+  const noun = pickRandomFrom(towerNameNouns, randomFn) || 'Tower';
+  const qualifier = pickRandomFrom(towerNameQualifiers, randomFn);
+  const styleRoll = randomFn();
+  if (styleRoll < 0.35 && qualifier) {
+    return `${prefix} ${noun} ${qualifier}`;
+  }
+  if (styleRoll < 0.65) {
+    return `${prefix} ${noun}`;
+  }
+  if (qualifier) {
+    return `Tower ${qualifier}`;
+  }
+  return `${prefix} ${noun}`;
 }
 
 function generateWoodElfGroveName(random) {
@@ -3740,9 +3803,13 @@ function createWorld(seedString) {
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
   const dwarfSettlementFrequencyNormalized = clamp(dwarfSettlementFrequencySetting / 100, 0, 1);
   const woodElfSettlementFrequencyNormalized = clamp(woodElfSettlementFrequencySetting / 100, 0, 1);
+  const towerSettlementFrequencySetting =
+    (humanSettlementFrequencySetting + dwarfSettlementFrequencySetting) / 2;
+  const towerSettlementFrequencyNormalized = clamp(towerSettlementFrequencySetting / 100, 0, 1);
   const humanSettlementMultiplier = computeFrequencyMultiplier(humanSettlementFrequencySetting);
   const dwarfSettlementMultiplier = computeFrequencyMultiplier(dwarfSettlementFrequencySetting);
   const woodElfSettlementMultiplier = computeFrequencyMultiplier(woodElfSettlementFrequencySetting);
+  const towerSettlementMultiplier = computeFrequencyMultiplier(towerSettlementFrequencySetting);
   const mountainBiasLinear = mountainFrequencyNormalized * 2 - 1;
   const mountainBias =
     mountainBiasLinear === 0
@@ -4163,6 +4230,7 @@ function createWorld(seedString) {
   );
   const dwarfholds = [];
   const towns = [];
+  const towers = [];
   const woodElfGroves = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
@@ -4967,9 +5035,9 @@ function createWorld(seedString) {
   }
 
   const hasTreeTile = tileLookup.has('TREE');
+  const treeOverlayKey = hasTreeTile ? 'TREE' : null;
+  const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
   if (hasTreeTile) {
-    const treeOverlayKey = 'TREE';
-    const treeSnowOverlayKey = tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
     const treeBaseScale = 2.4 + rng() * 1.6;
@@ -5213,8 +5281,105 @@ function createWorld(seedString) {
     }
   }
 
+  const towerKey = tileLookup.has('TOWER') ? 'TOWER' : null;
+  if (towerKey) {
+    const towerCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const overlayIsTree =
+          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+          continue;
+        }
+        const heightValue = elevationField[idx];
+        const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
+        const rainfallValue = rainfallField[idx];
+        const drynessScore = clamp(1 - rainfallValue, 0, 1);
+        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        if (baseIsSnow) {
+          terrainBonus += 0.18;
+        } else if (baseIsGrass) {
+          terrainBonus += 0.12;
+        }
+        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2.2);
+        const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
+        const score =
+          elevationScore * 0.35 + drynessScore * 0.2 + terrainBonus + edgeScore * 0.15 + rng() * 0.3;
+        towerCandidates.push({ x, y, score });
+      }
+    }
+
+    if (towerCandidates.length > 0) {
+      towerCandidates.sort((a, b) => b.score - a.score);
+      const area = width * height;
+      const baseTarget = Math.max(1, Math.round(area / 7200));
+      const maxTowers = computeStructurePlacementLimit(baseTarget, 30, towerSettlementMultiplier);
+      const baseMinDistance = Math.max(5, Math.round(Math.min(width, height) / 14));
+      const minDistance = adjustMinDistance(baseMinDistance, towerSettlementFrequencyNormalized);
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < towerCandidates.length; i += 1) {
+        if (placed.length >= maxTowers) {
+          break;
+        }
+        const candidate = towerCandidates[i];
+        if (candidate.score < 0.22) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const overlayIsTree =
+          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+          continue;
+        }
+        const name = generateTowerName(rng);
+        tile.structure = towerKey;
+        tile.structureName = name;
+        tile.structureDetails = null;
+        placed.push(candidate);
+        towers.push({ x: candidate.x, y: candidate.y, name });
+      }
+    }
+  }
+
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds, towns, woodElfGroves };
+  return { tiles, seedString: finalSeed, dwarfholds, towns, towers, woodElfGroves };
 }
 
 function generateSeedString(seedNumber) {
