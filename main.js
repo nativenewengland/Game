@@ -5000,7 +5000,13 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (tile.overlay || !isLandBaseTile(tile.base) || tile.structure || tile.river) {
+        if (
+          tile.overlay ||
+          !isLandBaseTile(tile.base) ||
+          tile.structure ||
+          tile.river ||
+          (hasSandTile && tile.base === sandTileKey)
+        ) {
           continue;
         }
         const density = treeDensityField[idx];
@@ -5024,7 +5030,13 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
-          if (tile.overlay || !isLandBaseTile(tile.base) || tile.structure || tile.river) {
+          if (
+            tile.overlay ||
+            !isLandBaseTile(tile.base) ||
+            tile.structure ||
+            tile.river ||
+            (hasSandTile && tile.base === sandTileKey)
+          ) {
             continue;
           }
           let neighborTrees = 0;
@@ -5069,7 +5081,13 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
-        if (tile.overlay || !isLandBaseTile(tile.base) || tile.structure || tile.river) {
+        if (
+          tile.overlay ||
+          !isLandBaseTile(tile.base) ||
+          tile.structure ||
+          tile.river ||
+          (hasSandTile && tile.base === sandTileKey)
+        ) {
           continue;
         }
         treeMask[idx] = 1;
