@@ -5694,6 +5694,12 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
+          continue;
+        }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
           continue;
         }
@@ -5755,6 +5761,12 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
+          continue;
+        }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
           continue;
         }
@@ -5779,6 +5791,12 @@ function createWorld(seedString) {
         }
         const tile = tiles[y][x];
         if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
           continue;
         }
         if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
@@ -5843,6 +5861,12 @@ function createWorld(seedString) {
         }
         const tile = tiles[candidate.y][candidate.x];
         if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
           continue;
         }
         if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
