@@ -311,30 +311,14 @@
                 <div class="customizer-visuals">
                   <div class="customizer-preview pixel-subpanel" role="group" aria-label="Appearance preview">
                     <h3 class="subpanel-title">Appearance</h3>
-                    <div class="dwarf-preview-stack">
-                      <div
-                        id="dwarf-portrait"
-                        class="dwarf-portrait"
-                        role="img"
-                        aria-label="Dwarf portrait"
-                      >
-                        <canvas
-                          id="dwarf-portrait-canvas"
-                          class="dwarf-portrait-canvas"
-                          width="128"
-                          height="128"
-                          aria-hidden="true"
-                        ></canvas>
-                      </div>
-                      <div class="dwarf-full-preview" aria-hidden="true">
-                        <canvas
-                          id="dwarf-full-preview-canvas"
-                          class="dwarf-full-preview-canvas"
-                          width="128"
-                          height="160"
-                          aria-hidden="true"
-                        ></canvas>
-                      </div>
+                    <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
+                      <canvas
+                        id="dwarf-portrait-canvas"
+                        class="dwarf-portrait-canvas"
+                        width="128"
+                        height="128"
+                        aria-hidden="true"
+                      ></canvas>
                     </div>
                     <p id="dwarf-trait-summary" class="trait-summary"></p>
                   </div>
@@ -352,7 +336,7 @@
                   </div>
                 </div>
                 <div class="customizer-fields pixel-subpanel">
-                  <div class="field-grid" id="dwarf-trait-controls">
+                  <div class="field-grid">
                     <div class="field-group field-group--gender">
                       <p id="dwarf-gender-label" class="field-label">Gender</p>
                       <div
@@ -396,212 +380,141 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="clan">
-                      <p id="dwarf-clan-label" class="field-label">Clan</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-clan-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous clan option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next clan option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group">
+                      <label for="dwarf-clan-select" class="field-label">Clan</label>
+                      <select id="dwarf-clan-select" class="field-control">
+                        <option value="stonebeard">Stonebeard</option>
+                        <option value="ironfist">Ironfist</option>
+                        <option value="coppervein">Coppervein</option>
+                        <option value="graniteheart">Graniteheart</option>
+                        <option value="deepdelver">Deepdelver</option>
+                        <option value="amberpick">Amberpick</option>
+                        <option value="oakenshield">Oakenshield</option>
+                        <option value="frosthammer">Frosthammer</option>
+                        <option value="berylbraid">Berylbraid</option>
+                        <option value="silverhollow">Silverhollow</option>
+                      </select>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="guild">
-                      <p id="dwarf-guild-label" class="field-label">Guild</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-guild-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous guild option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next guild option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group">
+                      <label for="dwarf-guild-select" class="field-label">Guild</label>
+                      <select id="dwarf-guild-select" class="field-control">
+                        <option value="miners-guild">Miners Guild</option>
+                        <option value="merchants-guild">Merchants Guild</option>
+                        <option value="commerce-guild">Commerce Guild</option>
+                        <option value="armourers-weaponsmiths-guild">Armourers and Weaponsmiths Guild</option>
+                        <option value="artisans-guild">Artisans Guild</option>
+                        <option value="bakers-guild">Bakers Guild</option>
+                        <option value="brewers-guild">Brewers Guild</option>
+                        <option value="carpenters-guild">Carpenters Guild</option>
+                        <option value="construction-guild">Construction Guild</option>
+                        <option value="distiller-guild">Distiller Guild</option>
+                        <option value="dyers-guild">Dyers Guild</option>
+                        <option value="engineers-guild">Engineers Guild</option>
+                        <option value="farmers-herders-guild">Farmers and Herders Guild</option>
+                        <option value="gemcutters-guild">Gemcutters Guild</option>
+                        <option value="goldsmiths-guild">Goldsmiths Guild</option>
+                        <option value="guild-of-alchemists">Guild of Alchemists</option>
+                        <option value="jewelsmiths-guild">Jewelsmiths Guild</option>
+                        <option value="leatherworkers-guild">Leatherworkers Guild</option>
+                        <option value="metalsmiths-guild">Metalsmiths Guild</option>
+                        <option value="powdermakers-guild">Powdermakers Guild</option>
+                        <option value="saltworkers-guild">Saltworkers Guild</option>
+                        <option value="stonemasons-guild">Stonemasons Guild</option>
+                        <option value="runescribes-guild">Runescribes Guild</option>
+                        <option value="runesmiths">Runesmiths</option>
+                        <option value="warriors-guild">Warriors Guild</option>
+                        <option value="toolmakers-guild">Toolmakers' Guild</option>
+                        <option value="soapmakers-guild">Soapmakers Guild</option>
+                        <option value="candlelighters-guild">Candlelighters Guild</option>
+                        <option value="butchers-guild">Butchers Guild</option>
+                        <option value="ropemakers-guild">Ropemakers Guild</option>
+                        <option value="cartwrights-wheelwrights-guild">Cartwrights &amp; Wheelwrights Guild</option>
+                        <option value="glassblowers-guild">Glassblowers Guild</option>
+                        <option value="millers-guild">Millers Guild</option>
+                        <option value="cobblers-guild">Cobblers Guild</option>
+                        <option value="cartographers-guild">Cartographers Guild</option>
+                        <option value="lorekeepers-guild">Lorekeepers Guild</option>
+                        <option value="tunnel-wardens-guild">Tunnel Wardens Guild</option>
+                        <option value="smelters-guild">Smelters Guild</option>
+                      </select>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="profession">
-                      <p id="dwarf-profession-label" class="field-label">Profession</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-profession-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous profession option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next profession option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group">
+                      <label for="dwarf-profession-select" class="field-label">Profession</label>
+                      <select id="dwarf-profession-select" class="field-control">
+                        <option value="miner">Miner</option>
+                        <option value="mason">Master Mason</option>
+                        <option value="smith">Master Smith</option>
+                        <option value="brewer">Brewmaster</option>
+                        <option value="engineer">Chief Engineer</option>
+                        <option value="scholar">Lore Scholar</option>
+                        <option value="ranger">Ranger Captain</option>
+                        <option value="carpenter">Master Carpenter</option>
+                        <option value="jewelcrafter">Gemcutter</option>
+                      </select>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="skin">
-                      <p id="dwarf-skin-label" class="field-label">Skin tone</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-skin-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous skin tone option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next skin tone option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group">
+                      <label for="dwarf-skin-select" class="field-label">Skin tone</label>
+                      <select id="dwarf-skin-select" class="field-control">
+                        <option value="umber">Deep Umber</option>
+                        <option value="russet">Russet Bronze</option>
+                        <option value="sienna">Burnt Sienna</option>
+                        <option value="dawn">Dawn Rose</option>
+                        <option value="pearl">Pale Pearl</option>
+                        <option value="ashen">Ashen Slate</option>
+                      </select>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="eyes">
-                      <p id="dwarf-eye-label" class="field-label">Eye colour</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-eye-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous eye colour option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next eye colour option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group">
+                      <label for="dwarf-eye-select" class="field-label">Eye colour</label>
+                      <select id="dwarf-eye-select" class="field-control">
+                        <option value="amber">Amber</option>
+                        <option value="hazel">Hazel</option>
+                        <option value="emerald">Emerald</option>
+                        <option value="ice">Ice Blue</option>
+                        <option value="onyx">Onyx</option>
+                        <option value="steel">Steel Grey</option>
+                        <option value="violet">Violet</option>
+                      </select>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="hairStyle">
-                      <p id="dwarf-hair-style-label" class="field-label">Hair style</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-hair-style-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous hair style option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next hair style option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group">
+                      <label for="dwarf-hair-style-select" class="field-label">Hair style</label>
+                      <select id="dwarf-hair-style-select" class="field-control">
+                        <option value="straight_shoulder">Straight — Shoulder Length</option>
+                        <option value="straight_short">Straight — Short Crop</option>
+                        <option value="straight_braided">Straight — Braided Tail</option>
+                        <option value="curly_short">Curly — Close Curls</option>
+                        <option value="curly_full">Curly — Full Curls</option>
+                        <option value="curly_wild">Curly — Wild Mane</option>
+                      </select>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="hair">
-                      <p id="dwarf-hair-label" class="field-label">Hair colour</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-hair-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous hair colour option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next hair colour option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group">
+                      <label for="dwarf-hair-select" class="field-label">Hair colour</label>
+                      <select id="dwarf-hair-select" class="field-control">
+                        <option value="obsidian">Obsidian Black</option>
+                        <option value="umber">Rich Umber</option>
+                        <option value="auburn">Deep Auburn</option>
+                        <option value="copper">Copper Red</option>
+                        <option value="golden">Golden Wheat</option>
+                        <option value="ashen">Ashen Silver</option>
+                        <option value="white">Snow White</option>
+                      </select>
                     </div>
 
-                    <div class="field-group cc-control" id="dwarf-beard-field-group" data-trait-control="beard">
-                      <p id="dwarf-beard-label" class="field-label">Beard style</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-beard-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous beard style option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next beard style option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
+                    <div class="field-group" id="dwarf-beard-field-group">
+                      <label for="dwarf-beard-select" class="field-label">Beard style</label>
+                      <select id="dwarf-beard-select" class="field-control">
+                        <option value="clean">Clean-shaven</option>
+                        <option value="short">Short Beard</option>
+                        <option value="full">Full Beard</option>
+                        <option value="braided">Braided Beard</option>
+                        <option value="forked">Forked Beard</option>
+                        <option value="mutton">Mutton Chops</option>
+                      </select>
                     </div>
                   </div>
                 </div>
