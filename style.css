@@ -8,6 +8,8 @@
   --panel-border: rgba(255, 255, 255, 0.12);
   --button-bg: rgba(20, 23, 33, 0.85);
   --button-border: rgba(255, 255, 255, 0.18);
+  --cursor-wand-default: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZ2xvdyIgY3g9IjE2IiBjeT0iMTYiIHI9IjEyIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZjdjYyIgc3RvcC1vcGFjaXR5PSIwLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMC40NSIgc3RvcC1jb2xvcj0iI2Y2ZDc3ZCIgc3RvcC1vcGFjaXR5PSIwLjg1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2U2YTkzZCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxMiIgZmlsbD0idXJsKCNnbG93KSIvPgogIDxwYXRoIGQ9Ik02IDVsNiAxOCAyLTcgNyAyTDYgNXoiIGZpbGw9IiNmNGU0YjIiIHN0cm9rZT0iIzNiMjQ1ZCIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNMTQgMTZsMTAgMTAiIHN0cm9rZT0iIzNiMjQ1ZCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMTQuNSAxNC41bDkuNSA5LjUiIHN0cm9rZT0iI2Q5YjY0YiIgc3Ryb2tlLXdpZHRoPSIxLjEiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjIzLjUiIGN5PSIyMy41IiByPSI0IiBmaWxsPSIjZjhkZjdjIiBzdHJva2U9IiM0NTI4NmQiIHN0cm9rZS13aWR0aD0iMS4yIi8+CiAgPHBhdGggZD0iTTIzLjUgMTkuNXYyLjJNMjMuNSAyNS44djIuMk0xOS41IDIzLjVoMi4yTTI1LjggMjMuNUgyOCIgc3Ryb2tlPSIjZmRmM2NjIiBzdHJva2Utd2lkdGg9IjEuMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPg==") 4 4, auto;
+  --cursor-wand-pointer: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZ2xvdyIgY3g9IjE2IiBjeT0iMTYiIHI9IjEzIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZjJiZCIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMC40IiBzdG9wLWNvbG9yPSIjZjhkMDY3IiBzdG9wLW9wYWNpdHk9IjAuOTUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZDk4YjJkIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY3g9IjE2IiBjeT0iMTYiIHI9IjEzIiBmaWxsPSJ1cmwoI2dsb3cpIi8+CiAgPHBhdGggZD0iTTYgNWw2IDE4IDItNyA3IDJMNiA1eiIgZmlsbD0iI2ZmZTlhNyIgc3Ryb2tlPSIjNGIyZDdiIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0xNCAxNmwxMCAxMCIgc3Ryb2tlPSIjNGIyZDdiIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTE0LjIgMTQuMmwxMC4yIDEwLjIiIHN0cm9rZT0iI2YxYzU1MCIgc3Ryb2tlLXdpZHRoPSIxLjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjI0IiBjeT0iMjQiIHI9IjQuMiIgZmlsbD0iI2ZmZTdhMyIgc3Ryb2tlPSIjNTkzMDhmIiBzdHJva2Utd2lkdGg9IjEuNCIvPgogIDxwYXRoIGQ9Ik0yNCAxOWwtMSAyLjQgMi40LTEtMSAyLjQgMi40LTEtMSAyLjQgMi40LTEtMSAyLjQiIHN0cm9rZT0iI2ZmZjhkNiIgc3Ryb2tlLXdpZHRoPSIxLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4=") 6 4, pointer;
 }
 
 * {
@@ -24,6 +26,19 @@ body {
   align-items: stretch;
   justify-content: center;
   overflow: hidden;
+  cursor: var(--cursor-wand-default);
+}
+
+a,
+[role='button'],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+input[type='range'],
+label[for],
+select,
+.clickable {
+  cursor: var(--cursor-wand-pointer);
 }
 
 .screen {
@@ -227,7 +242,7 @@ body {
 }
 
 button {
-  cursor: pointer;
+  cursor: var(--cursor-wand-pointer);
   font-size: 1rem;
   padding: 0.9rem 2.4rem;
   border-radius: 999px;
@@ -287,6 +302,26 @@ button:hover:not(:disabled) {
   gap: 0.5rem;
   font-size: 0.95rem;
   margin-bottom: 1rem;
+}
+
+.modal .slider-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal input[type='range'] {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+}
+
+.slider-value {
+  min-width: 120px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-variant-numeric: tabular-nums;
 }
 
 .world-stats {
@@ -721,6 +756,31 @@ button:hover:not(:disabled) {
   );
   mix-blend-mode: lighten;
   opacity: 0.25;
+}
+
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(12, 14, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 0.45rem 0.75rem;
+  color: #f5f7ff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 120ms ease;
+  max-width: min(240px, 70vw);
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  z-index: 5;
+}
+
+.map-tooltip.visible {
+  opacity: 1;
 }
 
 canvas {

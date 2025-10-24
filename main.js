@@ -38,9 +38,10 @@ const dwarfSpriteSheets = {
 
 const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
-  TREE: { row: 0, col: 2 },
+  TREE: { row: 1, col: 0 },
   WATER: { row: 1, col: 4 },
-  MOUNTAIN: { row: 0, col: 3 }
+  MOUNTAIN: { row: 0, col: 3 },
+  DWARFHOLD: { row: 1, col: 3 }
 };
 
 const tileLookup = new Map();
@@ -58,6 +59,25 @@ function registerTiles(sheetKey, coordMap) {
 }
 
 registerTiles('base', baseTileCoords);
+
+const mapSizePresets = [
+  { key: 'mini', label: 'Mini', width: 120, height: 90 },
+  { key: 'small', label: 'Small', width: 160, height: 120 },
+  { key: 'normal', label: 'Normal', width: 200, height: 150 },
+  { key: 'large', label: 'Large', width: 260, height: 195 },
+  { key: 'extra-large', label: 'Extra Large', width: 320, height: 240 }
+];
+
+const mapSizeByKey = mapSizePresets.reduce((acc, preset) => {
+  acc[preset.key] = preset;
+  return acc;
+}, {});
+
+function getMapSizePreset(key) {
+  return mapSizeByKey[key] || mapSizeByKey.normal;
+}
+
+const defaultMapSize = getMapSizePreset('normal');
 
 const worldNames = [
   'Nûrn',
@@ -175,16 +195,135 @@ const worldNames = [
   'Skibiti Toliterium'
 ];
 
+const dwarfholdNamePrefixes = [
+  'Stone',
+  'Iron',
+  'Granite',
+  'Amber',
+  'Bronze',
+  'Deep',
+  'Rune',
+  'Frost',
+  'Obsidian',
+  'Storm',
+  'Thunder',
+  'Gilded',
+  'Anvil',
+  'Forge',
+  'Hammer',
+  'High',
+  'Cinder',
+  'Mithril',
+  'Coal',
+  'Crag',
+  'Beryl',
+  'Bright',
+  'Shield',
+  'Ember',
+  'Crystal',
+  'Bastion',
+  'Vault'
+];
+
+const dwarfholdNameSuffixes = [
+  'hold',
+  'hall',
+  'gate',
+  'delve',
+  'keep',
+  'reach',
+  'spire',
+  'guard',
+  'vault',
+  'crown',
+  'forge',
+  'fast',
+  'home',
+  'rest',
+  'watch',
+  'deep',
+  'peak'
+];
+
+const dwarfholdNameDescriptors = [
+  'Citadel',
+  'Stronghold',
+  'Holdfast',
+  'Sanctum',
+  'Throne',
+  'Bastion',
+  'Redoubt',
+  'Garrison',
+  'Watch',
+  'Reliquary',
+  'Enclave',
+  'Caverns',
+  'Fortress',
+  'Outpost',
+  'Ward'
+];
+
+const dwarfholdNameRegions = [
+  'the North',
+  'the Deep',
+  'the First Kings',
+  'the Ancients',
+  'Stonehome',
+  'Stormpeak',
+  'Ember Range',
+  'Thunderholt',
+  'the Underway',
+  'Skyforge',
+  'the Iron Sea',
+  'Grimspire',
+  'Highstone',
+  'Runecrest',
+  'the Brass Line'
+];
+
+function pickRandomFrom(array, random) {
+  if (!Array.isArray(array) || array.length === 0) {
+    return '';
+  }
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const index = Math.floor(randomFn() * array.length);
+  const clampedIndex = Math.max(0, Math.min(array.length - 1, index));
+  return array[clampedIndex];
+}
+
+function generateDwarfholdName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
+  const suffix = pickRandomFrom(dwarfholdNameSuffixes, randomFn) || 'hold';
+  const baseName = `${prefix}${suffix}`;
+  const descriptor = pickRandomFrom(dwarfholdNameDescriptors, randomFn);
+  const region = pickRandomFrom(dwarfholdNameRegions, randomFn);
+  const styleRoll = randomFn();
+  if (styleRoll < 0.4 && descriptor) {
+    return `${baseName} ${descriptor}`;
+  }
+  if (styleRoll < 0.8 && region) {
+    return `${baseName} of ${region}`;
+  }
+  if (descriptor && styleRoll < 0.95) {
+    return `${baseName} ${descriptor}`;
+  }
+  return baseName;
+}
+
 function resolveTileName(baseKey) {
   return tileLookup.has(baseKey) ? baseKey : 'GRASS';
 }
 
 const state = {
   settings: {
-    width: 200,
-    height: 150,
+    mapSize: defaultMapSize.key,
+    width: defaultMapSize.width,
+    height: defaultMapSize.height,
     seedString: '',
-    lastSeedString: ''
+    lastSeedString: '',
+    forestFrequency: 50,
+    mountainFrequency: 50
   },
   tileSheets,
   landMask: null,
@@ -194,7 +333,8 @@ const state = {
   dwarfParty: {
     dwarves: [],
     activeIndex: 0
-  }
+  },
+  currentWorld: null
 };
 
 const defaultDwarfCount = 1;
@@ -467,10 +607,14 @@ const elements = {
   regenerate: document.getElementById('regenerate-button'),
   canvas: document.getElementById('world-canvas'),
   canvasWrapper: document.querySelector('.canvas-wrapper'),
+  mapTooltip: document.getElementById('world-tooltip'),
   seedDisplay: document.querySelector('.seed-display'),
-  mapWidthInput: document.getElementById('map-width'),
-  mapHeightInput: document.getElementById('map-height'),
+  mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
+  forestFrequencyInput: document.getElementById('forest-frequency'),
+  forestFrequencyValue: document.getElementById('forest-frequency-value'),
+  mountainFrequencyInput: document.getElementById('mountain-frequency'),
+  mountainFrequencyValue: document.getElementById('mountain-frequency-value'),
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
   musicNowPlaying: document.getElementById('music-now-playing'),
@@ -646,17 +790,74 @@ function toggleOptions(forceState) {
 }
 
 function applyFormSettings() {
-  const width = clamp(parseInt(elements.mapWidthInput.value, 10) || state.settings.width, 30, 1024);
-  const height = clamp(parseInt(elements.mapHeightInput.value, 10) || state.settings.height, 20, 1024);
+  const selectedKey = elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize;
+  const preset = getMapSizePreset(selectedKey);
   const seedString = (elements.seedInput.value || '').trim();
+  const forestFrequencyRaw = elements.forestFrequencyInput
+    ? Number.parseInt(elements.forestFrequencyInput.value, 10)
+    : state.settings.forestFrequency;
+  const mountainFrequencyRaw = elements.mountainFrequencyInput
+    ? Number.parseInt(elements.mountainFrequencyInput.value, 10)
+    : state.settings.mountainFrequency;
 
-  state.settings.width = width;
-  state.settings.height = height;
+  state.settings.mapSize = preset.key;
+  state.settings.width = preset.width;
+  state.settings.height = preset.height;
   state.settings.seedString = seedString;
+  state.settings.forestFrequency = sanitizeFrequencyValue(
+    Number.isNaN(forestFrequencyRaw) ? state.settings.forestFrequency : forestFrequencyRaw,
+    state.settings.forestFrequency
+  );
+  state.settings.mountainFrequency = sanitizeFrequencyValue(
+    Number.isNaN(mountainFrequencyRaw) ? state.settings.mountainFrequency : mountainFrequencyRaw,
+    state.settings.mountainFrequency
+  );
 }
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function sanitizeFrequencyValue(value, fallback) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return clamp(value, 0, 100);
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return clamp(fallback, 0, 100);
+  }
+  return clamp(parsed, 0, 100);
+}
+
+function describeFrequency(value) {
+  const numeric = clamp(Math.round(value), 0, 100);
+  if (numeric <= 10) {
+    return 'Minimal';
+  }
+  if (numeric <= 30) {
+    return 'Sparse';
+  }
+  if (numeric <= 45) {
+    return 'Low';
+  }
+  if (numeric < 60) {
+    return 'Balanced';
+  }
+  if (numeric <= 75) {
+    return 'High';
+  }
+  if (numeric <= 90) {
+    return 'Dense';
+  }
+  return 'Abundant';
+}
+
+function updateFrequencyDisplay(displayElement, value) {
+  if (!displayElement) {
+    return;
+  }
+  const numeric = clamp(Math.round(value), 0, 100);
+  displayElement.textContent = `${numeric}% — ${describeFrequency(numeric)}`;
 }
 
 function randomInt(min, max) {
@@ -1272,14 +1473,15 @@ function closeDwarfCustomizer(options = {}) {
 
 const chronologyBias = {
   age: {
-    min: 1,
-    max: 30,
-    exponent: 1.4
+    min: 2,
+    max: 20,
+    exponent: 1.6
   },
   year: {
-    min: 1,
+    min: 0,
     max: 50000,
-    exponent: 2.8
+    exponent: 2.8,
+    biasWeight: 0.65
   }
 };
 
@@ -1304,8 +1506,19 @@ function randomAge() {
 }
 
 function randomYear() {
-  const { min, max, exponent } = chronologyBias.year;
-  return biasedRandomInt(min, max, exponent);
+  const { min, max, exponent, biasWeight = 1 } = chronologyBias.year;
+  const lower = Math.ceil(min);
+  const upper = Math.floor(max);
+  if (upper <= lower) {
+    return lower;
+  }
+  const range = upper - lower;
+  const clampedWeight = clamp(biasWeight, 0, 1);
+  const biasedSample = Math.pow(Math.random(), Math.max(exponent, 1));
+  const uniformSample = Math.random();
+  const blended = clampedWeight * biasedSample + (1 - clampedWeight) * uniformSample;
+  const value = lower + Math.round(blended * range);
+  return clamp(value, lower, upper);
 }
 
 function generateRandomChronology() {
@@ -1320,16 +1533,18 @@ function isChronologyValid(chronology) {
   return (
     Number.isFinite(year) &&
     Number.isFinite(age) &&
-    year >= 1 &&
-    year <= 50000 &&
-    age >= 1 &&
-    age <= 30
+    year >= chronologyBias.year.min &&
+    year <= chronologyBias.year.max &&
+    age >= chronologyBias.age.min &&
+    age <= chronologyBias.age.max
   );
 }
 
 function sanitizeChronologyValues(yearValue, ageValue) {
-  const safeYear = clamp(Math.round(yearValue), 1, 50000);
-  const safeAge = clamp(Math.round(ageValue), 1, 30);
+  const { min: yearMin, max: yearMax } = chronologyBias.year;
+  const safeYear = clamp(Math.round(yearValue), yearMin, yearMax);
+  const { min: ageMin, max: ageMax } = chronologyBias.age;
+  const safeAge = clamp(Math.round(ageValue), ageMin, ageMax);
   return { year: safeYear, age: safeAge };
 }
 
@@ -1374,7 +1589,7 @@ function getSanitisedChronologyFromInputs() {
   if (
     Number.isNaN(parsedYear) ||
     Number.isNaN(parsedAge) ||
-    parsedYear < 1 ||
+    parsedYear < chronologyBias.year.min ||
     parsedAge < 1
   ) {
     return null;
@@ -1450,7 +1665,9 @@ function openWorldInfoModal() {
   }
   const width = state.settings.width;
   const height = state.settings.height;
-  elements.worldInfoSize.textContent = `${width} × ${height} tiles`;
+  const sizePreset = getMapSizePreset(state.settings.mapSize);
+  const sizeLabel = sizePreset ? `${sizePreset.label} — ${sizePreset.width} × ${sizePreset.height} tiles` : `${width} × ${height} tiles`;
+  elements.worldInfoSize.textContent = sizeLabel;
 
   const seed = ensureSeedString();
   elements.worldInfoSeed.textContent = seed;
@@ -1555,6 +1772,44 @@ function applyViewTransform() {
   elements.canvas.style.transform = `translate(${viewState.translateX}px, ${viewState.translateY}px) scale(${viewState.scale})`;
 }
 
+function hideMapTooltip() {
+  if (!elements.mapTooltip) {
+    return;
+  }
+  elements.mapTooltip.classList.remove('visible');
+  elements.mapTooltip.setAttribute('aria-hidden', 'true');
+}
+
+function showMapTooltip(label, pointerX, pointerY, boundsRect) {
+  if (!elements.mapTooltip) {
+    return;
+  }
+  const tooltip = elements.mapTooltip;
+  tooltip.textContent = label;
+  tooltip.classList.add('visible');
+  tooltip.setAttribute('aria-hidden', 'false');
+  const margin = 16;
+  const tooltipWidth = tooltip.offsetWidth || 0;
+  const tooltipHeight = tooltip.offsetHeight || 0;
+  const availableWidth = boundsRect ? boundsRect.width : tooltipWidth + margin * 2;
+  const availableHeight = boundsRect ? boundsRect.height : tooltipHeight + margin * 2;
+
+  let left = pointerX + margin;
+  if (left + tooltipWidth > availableWidth - margin) {
+    left = Math.max(margin, availableWidth - tooltipWidth - margin);
+  }
+  let top = pointerY - tooltipHeight - margin;
+  if (top < margin) {
+    top = pointerY + margin;
+  }
+  if (top + tooltipHeight > availableHeight - margin) {
+    top = Math.max(margin, availableHeight - tooltipHeight - margin);
+  }
+
+  tooltip.style.left = `${Math.round(left)}px`;
+  tooltip.style.top = `${Math.round(top)}px`;
+}
+
 function resetView(worldWidth, worldHeight) {
   if (!elements.canvasWrapper) {
     return;
@@ -1572,6 +1827,7 @@ function resetView(worldWidth, worldHeight) {
   viewState.translateY = (rect.height - worldHeight * viewState.scale) / 2;
   viewState.hasInteracted = false;
   applyViewTransform();
+  hideMapTooltip();
 }
 
 function handleResize() {
@@ -1615,6 +1871,7 @@ function handleResize() {
   }
 
   applyViewTransform();
+  hideMapTooltip();
 }
 
 function setupMapInteractions() {
@@ -1626,10 +1883,71 @@ function setupMapInteractions() {
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
 
+  const updateHover = (event) => {
+    if (!elements.canvasWrapper) {
+      return;
+    }
+    const tiles = state.currentWorld ? state.currentWorld.tiles : null;
+    if (!Array.isArray(tiles) || tiles.length === 0) {
+      hideMapTooltip();
+      return;
+    }
+    if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
+      hideMapTooltip();
+      return;
+    }
+    if (isPanning && event.pointerId === activePointerId) {
+      hideMapTooltip();
+      return;
+    }
+    const rect = elements.canvasWrapper.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) {
+      hideMapTooltip();
+      return;
+    }
+    if (pointerX < 0 || pointerY < 0 || pointerX > rect.width || pointerY > rect.height) {
+      hideMapTooltip();
+      return;
+    }
+    const worldPixelX = (pointerX - viewState.translateX) / viewState.scale;
+    const worldPixelY = (pointerY - viewState.translateY) / viewState.scale;
+    if (
+      !Number.isFinite(worldPixelX) ||
+      !Number.isFinite(worldPixelY) ||
+      worldPixelX < 0 ||
+      worldPixelY < 0 ||
+      worldPixelX >= viewState.worldSize.width ||
+      worldPixelY >= viewState.worldSize.height
+    ) {
+      hideMapTooltip();
+      return;
+    }
+    const tileX = Math.floor(worldPixelX / drawSize);
+    const tileY = Math.floor(worldPixelY / drawSize);
+    if (tileY < 0 || tileY >= tiles.length) {
+      hideMapTooltip();
+      return;
+    }
+    const row = tiles[tileY];
+    if (!Array.isArray(row) || tileX < 0 || tileX >= row.length) {
+      hideMapTooltip();
+      return;
+    }
+    const tile = row[tileX];
+    if (!tile || !tile.structureName) {
+      hideMapTooltip();
+      return;
+    }
+    showMapTooltip(tile.structureName, pointerX, pointerY, rect);
+  };
+
   const handleWheel = (event) => {
     if (!elements.canvas) {
       return;
     }
+    hideMapTooltip();
     event.preventDefault();
     const rect = elements.canvasWrapper.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
@@ -1654,6 +1972,7 @@ function setupMapInteractions() {
     if (event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch') {
       return;
     }
+    hideMapTooltip();
     event.preventDefault();
     isPanning = true;
     activePointerId = event.pointerId;
@@ -1663,6 +1982,7 @@ function setupMapInteractions() {
   };
 
   const handlePointerMove = (event) => {
+    updateHover(event);
     if (!isPanning || event.pointerId !== activePointerId) {
       return;
     }
@@ -1678,12 +1998,14 @@ function setupMapInteractions() {
   };
 
   const handlePointerUp = (event) => {
-    if (event.pointerId !== activePointerId) {
+    if (event.pointerId === activePointerId) {
+      elements.canvasWrapper.releasePointerCapture(event.pointerId);
+      isPanning = false;
+      activePointerId = null;
+      updateHover(event);
       return;
     }
-    elements.canvasWrapper.releasePointerCapture(event.pointerId);
-    isPanning = false;
-    activePointerId = null;
+    updateHover(event);
   };
 
   const handleDoubleClick = () => {
@@ -1698,6 +2020,8 @@ function setupMapInteractions() {
   elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
   elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
   elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
+  elements.canvasWrapper.addEventListener('pointerenter', updateHover);
+  elements.canvasWrapper.addEventListener('pointerleave', hideMapTooltip);
   elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
   window.addEventListener('resize', handleResize);
 }
@@ -2373,6 +2697,10 @@ function createWorld(seedString) {
   const rng = mulberry32(seedNumber || 1);
   const width = state.settings.width;
   const height = state.settings.height;
+  const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+  const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+  const forestBias = forestFrequencySetting / 50 - 1;
+  const mountainBias = mountainFrequencySetting / 50 - 1;
 
   const continentalPlates = generateContinentalPlates(rng);
   const elevationField = new Float32Array(width * height);
@@ -2454,59 +2782,40 @@ function createWorld(seedString) {
   const waterTileKey = resolveTileName('WATER');
   const tiles = Array.from(
     { length: height },
-    () => Array.from({ length: width }, () => ({ base: grassTileKey, overlay: null }))
+    () =>
+      Array.from({ length: width }, () => ({
+        base: grassTileKey,
+        overlay: null,
+        structure: null,
+        structureName: null
+      }))
   );
+  const dwarfholds = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
-  let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.2, 0.62), 0.85) : 1;
-  let mountainFullThreshold = hasMountainTile ? Math.min(0.97, mountainBaseThreshold + 0.25) : 1;
+  let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.1, 0.58), 0.82) : 1;
+  let mountainFullThreshold = hasMountainTile ? Math.min(0.98, mountainBaseThreshold + 0.35) : 1;
   let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
+  if (hasMountainTile) {
+    const thresholdShift = mountainBias * 0.1;
+    const minBaseThreshold = Math.min(Math.max(seaLevel + 0.05, 0.5), 0.9);
+    mountainBaseThreshold = clamp(mountainBaseThreshold - thresholdShift, minBaseThreshold, 0.9);
+    mountainFullThreshold = clamp(
+      mountainFullThreshold - thresholdShift * 1.2,
+      mountainBaseThreshold + 0.1,
+      0.99
+    );
+    mountainRange = Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001);
+  }
+  const mountainScores = hasMountainTile ? new Float32Array(width * height) : null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
     [0, 1],
     [-1, 0]
   ];
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const idx = y * width + x;
-      const heightValue = elevationField[idx];
-      const isWater = heightValue <= seaLevel;
-      waterMask[idx] = isWater ? 1 : 0;
-      let overlay = null;
-      if (!isWater && mountainOverlayKey) {
-        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
-        if (normalizedHeight > 0) {
-          const probability = normalizedHeight * 0.55 + normalizedHeight * normalizedHeight * 0.45;
-          if (normalizedHeight > 0.85 || rng() < probability) {
-            let coastalNeighbors = 0;
-            for (let i = 0; i < cardinalOffsets.length; i += 1) {
-              const nx = x + cardinalOffsets[i][0];
-              const ny = y + cardinalOffsets[i][1];
-              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-                continue;
-              }
-              const neighborIdx = ny * width + nx;
-              if (elevationField[neighborIdx] <= seaLevel) {
-                coastalNeighbors += 1;
-              }
-            }
-            if (coastalNeighbors < 2) {
-              overlay = mountainOverlayKey;
-            }
-          }
-        }
-      }
-      tiles[y][x] = {
-        base: isWater ? waterTileKey : grassTileKey,
-        overlay
-      };
-    }
-  }
-
-  const neighborOffsets = [
+  const neighborOffsets8 = [
     [-1, -1],
     [0, -1],
     [1, -1],
@@ -2517,6 +2826,220 @@ function createWorld(seedString) {
     [1, 1]
   ];
 
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const heightValue = elevationField[idx];
+      const isWater = heightValue <= seaLevel;
+      waterMask[idx] = isWater ? 1 : 0;
+      if (!isWater && mountainOverlayKey) {
+        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
+        mountainScores[idx] = normalizedHeight;
+      }
+      const tile = tiles[y][x];
+      tile.base = isWater ? waterTileKey : grassTileKey;
+      tile.overlay = null;
+      tile.structure = null;
+      tile.structureName = null;
+    }
+  }
+
+  if (hasMountainTile) {
+    const mountainMask = new Uint8Array(width * height);
+    const baseMountainSeedThreshold = 0.88;
+    const baseMountainCandidateThreshold = 0.55;
+    const baseMountainPruneThreshold = 0.92;
+    const mountainSeedThreshold = clamp(
+      baseMountainSeedThreshold - mountainBias * 0.2,
+      0.6,
+      0.98
+    );
+    const mountainCandidateThreshold = clamp(
+      baseMountainCandidateThreshold - mountainBias * 0.2,
+      0.25,
+      0.75
+    );
+    const mountainPruneThreshold = clamp(
+      baseMountainPruneThreshold - mountainBias * 0.15,
+      0.7,
+      0.99
+    );
+
+    const isTooCoastal = (x, y) => {
+      let coastalNeighbors = 0;
+      for (let i = 0; i < cardinalOffsets.length; i += 1) {
+        const nx = x + cardinalOffsets[i][0];
+        const ny = y + cardinalOffsets[i][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          coastalNeighbors += 1;
+          continue;
+        }
+        if (waterMask[ny * width + nx]) {
+          coastalNeighbors += 1;
+        }
+      }
+      return coastalNeighbors >= 2;
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const score = mountainScores[idx];
+        if (score >= mountainSeedThreshold && !isTooCoastal(x, y)) {
+          mountainMask[idx] = 1;
+        }
+      }
+    }
+
+    for (let pass = 0; pass < 3; pass += 1) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx] || mountainMask[idx]) {
+            continue;
+          }
+          const score = mountainScores[idx];
+          if (score <= 0 || isTooCoastal(x, y)) {
+            continue;
+          }
+          let mountainNeighbors = 0;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            if (mountainMask[ny * width + nx]) {
+              mountainNeighbors += 1;
+            }
+          }
+          const minNeighbors = score > 0.8 ? 1 : score > 0.65 ? 2 : 3;
+          const probability = 0.2 + score * 0.8;
+          if (mountainNeighbors >= minNeighbors && (score > 0.75 || rng() < probability)) {
+            mountainMask[idx] = 1;
+          }
+        }
+      }
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx] || mountainMask[idx]) {
+          continue;
+        }
+        const score = mountainScores[idx];
+        if (score < mountainCandidateThreshold || isTooCoastal(x, y)) {
+          continue;
+        }
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          if (mountainMask[ny * width + nx]) {
+            mountainNeighbors += 1;
+          }
+        }
+        if (mountainNeighbors >= 4) {
+          mountainMask[idx] = 1;
+        }
+      }
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!mountainMask[idx]) {
+          continue;
+        }
+        const score = mountainScores[idx];
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          if (mountainMask[ny * width + nx]) {
+            mountainNeighbors += 1;
+          }
+        }
+        if (mountainNeighbors <= 1 && score < mountainPruneThreshold) {
+          mountainMask[idx] = 0;
+        }
+      }
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (mountainMask[idx]) {
+          tiles[y][x].overlay = mountainOverlayKey;
+        }
+      }
+    }
+
+    const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
+    if (dwarfholdKey) {
+      const dwarfholdCandidates = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (tile.overlay !== mountainOverlayKey) {
+            continue;
+          }
+          const score = mountainScores ? mountainScores[idx] : 0;
+          dwarfholdCandidates.push({ x, y, score });
+        }
+      }
+
+      if (dwarfholdCandidates.length > 0) {
+        dwarfholdCandidates.sort((a, b) => b.score - a.score);
+        const desiredCount = Math.max(1, Math.round(dwarfholdCandidates.length / 500));
+        const maxDwarfholds = Math.min(desiredCount, 24);
+        const minDistance = 5;
+        const minDistanceSq = minDistance * minDistance;
+        const placed = [];
+
+        for (let i = 0; i < dwarfholdCandidates.length; i += 1) {
+          if (placed.length >= maxDwarfholds) {
+            break;
+          }
+          const candidate = dwarfholdCandidates[i];
+          let tooClose = false;
+          for (let j = 0; j < placed.length; j += 1) {
+            const other = placed[j];
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose) {
+            continue;
+          }
+          const tile = tiles[candidate.y][candidate.x];
+          if (!tile || tile.overlay !== mountainOverlayKey || tile.structure) {
+            continue;
+          }
+          const name = generateDwarfholdName(rng);
+          tile.structure = dwarfholdKey;
+          tile.structureName = name;
+          placed.push(candidate);
+          dwarfholds.push({ x: candidate.x, y: candidate.y, name });
+        }
+      }
+    }
+  }
+
   for (let y = 1; y < height - 1; y += 1) {
     for (let x = 1; x < width - 1; x += 1) {
       const idx = y * width + x;
@@ -2524,19 +3047,20 @@ function createWorld(seedString) {
         continue;
       }
       let landNeighbors = 0;
-      for (let i = 0; i < neighborOffsets.length; i += 1) {
-        const nx = x + neighborOffsets[i][0];
-        const ny = y + neighborOffsets[i][1];
+      for (let i = 0; i < neighborOffsets8.length; i += 1) {
+        const nx = x + neighborOffsets8[i][0];
+        const ny = y + neighborOffsets8[i][1];
         if (waterMask[ny * width + nx] === 0) {
           landNeighbors += 1;
         }
       }
       if (landNeighbors >= 6) {
         waterMask[idx] = 0;
-        tiles[y][x] = {
-          base: grassTileKey,
-          overlay: null
-        };
+        const tile = tiles[y][x];
+        tile.base = grassTileKey;
+        tile.overlay = null;
+        tile.structure = null;
+        tile.structureName = null;
       }
     }
   }
@@ -2564,6 +3088,22 @@ function createWorld(seedString) {
       [0, 1],
       [1, 1]
     ];
+    const baseSeedThreshold = 0.66;
+    const baseSoftSeedThreshold = 0.56;
+    const baseGrowthBaseline = 0.48;
+    const baseNeighborBonus = 0.08;
+    const baseDensityAlwaysAdd = 0.6;
+    const baseSoftSeedMultiplier = 1.8;
+    const seedThreshold = clamp(baseSeedThreshold - forestBias * 0.18, 0.35, 0.9);
+    const softSeedThreshold = clamp(baseSoftSeedThreshold - forestBias * 0.16, 0.25, 0.85);
+    const growthBaseline = clamp(baseGrowthBaseline - forestBias * 0.14, 0.2, 0.7);
+    const neighborBonus = clamp(baseNeighborBonus + forestBias * 0.04, 0.02, 0.14);
+    const densityAlwaysAddThreshold = clamp(
+      baseDensityAlwaysAdd - forestBias * 0.12,
+      0.4,
+      0.78
+    );
+    const softSeedMultiplier = clamp(baseSoftSeedMultiplier + forestBias * 0.6, 0.8, 2.6);
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -2590,12 +3130,10 @@ function createWorld(seedString) {
         const elevationPreference = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.12)) * 2.6, 0, 1);
         let density = baseNoise * 0.68 + detailNoise * 0.32;
         density = clamp(density * 0.6 + elevationPreference * 0.4, 0, 1);
+        density = clamp(density * (1 + forestBias * 0.25), 0, 1);
         treeDensityField[idx] = density;
       }
     }
-
-    const seedThreshold = 0.66;
-    const softSeedThreshold = 0.56;
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -2608,7 +3146,10 @@ function createWorld(seedString) {
           continue;
         }
         const density = treeDensityField[idx];
-        if (density >= seedThreshold || (density > softSeedThreshold && rng() < (density - softSeedThreshold) * 1.8)) {
+        if (
+          density >= seedThreshold ||
+          (density > softSeedThreshold && rng() < (density - softSeedThreshold) * softSeedMultiplier)
+        ) {
           treeMask[idx] = 1;
           tile.overlay = treeOverlayKey;
         }
@@ -2644,8 +3185,12 @@ function createWorld(seedString) {
             continue;
           }
           const density = treeDensityField[idx];
-          const probability = clamp((density - 0.48) / 0.52 + neighborTrees * 0.08, 0, 1);
-          if (density > 0.6 || rng() < probability) {
+          const probability = clamp(
+            (density - growthBaseline) / 0.52 + neighborTrees * neighborBonus,
+            0,
+            1
+          );
+          if (density > densityAlwaysAddThreshold || rng() < probability) {
             additions.push(idx);
           }
         }
@@ -2676,7 +3221,7 @@ function createWorld(seedString) {
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed };
+  return { tiles, seedString: finalSeed, dwarfholds };
 }
 
 function generateSeedString(seedNumber) {
@@ -2685,6 +3230,7 @@ function generateSeedString(seedNumber) {
 
 function drawWorld(world) {
   const { tiles, seedString } = world;
+  hideMapTooltip();
   const height = tiles.length;
   const width = tiles[0].length;
   const ctx = elements.canvas.getContext('2d');
@@ -2743,6 +3289,28 @@ function drawWorld(world) {
           drawSize
         );
       }
+
+      if (cell.structure) {
+        const structureDefinition = tileLookup.get(cell.structure);
+        if (!structureDefinition) {
+          continue;
+        }
+        const structureSheet = state.tileSheets[structureDefinition.sheet];
+        if (!structureSheet || !structureSheet.image) {
+          continue;
+        }
+        ctx.drawImage(
+          structureSheet.image,
+          structureDefinition.sx,
+          structureDefinition.sy,
+          structureDefinition.size,
+          structureDefinition.size,
+          x * drawSize,
+          y * drawSize,
+          drawSize,
+          drawSize
+        );
+      }
     }
   }
 
@@ -2768,7 +3336,9 @@ function beginGame() {
 
 function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
+  hideMapTooltip();
   const world = createWorld(seedToUse);
+  state.currentWorld = world;
   drawWorld(world);
   elements.seedInput.value = world.seedString;
 }
@@ -2785,9 +3355,22 @@ function handleRegenerate() {
 }
 
 function syncInputsWithSettings() {
-  elements.mapWidthInput.value = state.settings.width.toString();
-  elements.mapHeightInput.value = state.settings.height.toString();
-  elements.seedInput.value = state.settings.seedString;
+  if (elements.mapSizeSelect) {
+    elements.mapSizeSelect.value = state.settings.mapSize;
+  }
+  if (elements.seedInput) {
+    elements.seedInput.value = state.settings.seedString;
+  }
+  if (elements.forestFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+    elements.forestFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.forestFrequencyValue, value);
+  }
+  if (elements.mountainFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+    elements.mountainFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+  }
 }
 
 function attachEvents() {
@@ -2802,6 +3385,20 @@ function attachEvents() {
   });
 
   elements.closeOptions.addEventListener('click', () => toggleOptions(false));
+
+  if (elements.forestFrequencyInput) {
+    elements.forestFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.forestFrequency);
+      updateFrequencyDisplay(elements.forestFrequencyValue, value);
+    });
+  }
+
+  if (elements.mountainFrequencyInput) {
+    elements.mountainFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.mountainFrequency);
+      updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+    });
+  }
 
   elements.optionsForm.addEventListener('submit', (event) => {
     event.preventDefault();

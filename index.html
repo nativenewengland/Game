@@ -22,17 +22,51 @@
     <section id="options-panel" class="modal hidden" aria-label="Game options">
       <form id="options-form">
         <h2>World Options</h2>
-        <label>
-          Map width (tiles)
-          <input type="number" id="map-width" name="mapWidth" min="30" max="1024" value="200" />
-        </label>
-        <label>
-          Map height (tiles)
-          <input type="number" id="map-height" name="mapHeight" min="20" max="1024" value="150" />
-        </label>
+        <label for="map-size">Map size</label>
+        <select id="map-size" name="mapSize">
+          <option value="mini">Mini</option>
+          <option value="small">Small</option>
+          <option value="normal" selected>Normal</option>
+          <option value="large">Large</option>
+          <option value="extra-large">Extra Large</option>
+        </select>
         <label>
           World seed
           <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
+        </label>
+        <label for="forest-frequency">
+          Forest frequency
+          <div class="slider-control">
+            <input
+              id="forest-frequency"
+              name="forestFrequency"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="50"
+            />
+            <span id="forest-frequency-value" class="slider-value" aria-live="polite"
+              >50% — Balanced</span
+            >
+          </div>
+        </label>
+        <label for="mountain-frequency">
+          Mountain frequency
+          <div class="slider-control">
+            <input
+              id="mountain-frequency"
+              name="mountainFrequency"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="50"
+            />
+            <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
+              >50% — Balanced</span
+            >
+          </div>
         </label>
         <div class="modal-buttons">
           <button type="submit" class="primary">Apply</button>
@@ -79,7 +113,7 @@
                   type="number"
                   id="world-year-input"
                   name="worldYear"
-                  min="1"
+                  min="0"
                   max="50000"
                   inputmode="numeric"
                   autocomplete="off"
@@ -92,8 +126,8 @@
                   type="number"
                   id="world-age-input"
                   name="worldAge"
-                  min="1"
-                  max="30"
+                  min="2"
+                  max="20"
                   inputmode="numeric"
                   autocomplete="off"
                   required
@@ -336,6 +370,7 @@
       </header>
       <main class="canvas-wrapper">
         <canvas id="world-canvas" width="6400" height="4800"></canvas>
+        <div id="world-tooltip" class="map-tooltip" aria-hidden="true"></div>
       </main>
     </div>
 
