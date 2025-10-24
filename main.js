@@ -928,6 +928,7 @@ const elements = {
   dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
   dwarfHairSelect: document.getElementById('dwarf-hair-select'),
   dwarfBeardSelect: document.getElementById('dwarf-beard-select'),
+  dwarfBeardFieldGroup: document.getElementById('dwarf-beard-field-group'),
   dwarfRandomise: document.getElementById('dwarf-randomise'),
   dwarfBack: document.getElementById('dwarf-back'),
   dwarfPortrait: document.getElementById('dwarf-portrait'),
@@ -1290,7 +1291,10 @@ function createRandomDwarf(preferredGender) {
   const eyeOption = randomChoice(dwarfOptions.eyes) || dwarfOptions.eyes[0];
   const hairStyleOption = randomChoice(dwarfOptions.hairStyle) || dwarfOptions.hairStyle[0];
   const hairOption = randomChoice(dwarfOptions.hair) || dwarfOptions.hair[0];
-  const beardOption = randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
+  const beardOption =
+    genderValue === 'female'
+      ? dwarfOptions.beard.find((option) => option.value === 'clean') || dwarfOptions.beard[0]
+      : randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
   const clanOption = randomChoice(dwarfOptions.clan) || dwarfOptions.clan[0];
   const guildOption = randomChoice(dwarfOptions.guild) || dwarfOptions.guild[0];
   const professionOption = randomChoice(dwarfOptions.profession) || dwarfOptions.profession[0];
@@ -1302,7 +1306,7 @@ function createRandomDwarf(preferredGender) {
     eyes: eyeOption.value,
     hairStyle: resolveHairStyleValue(hairStyleOption.value),
     hair: hairOption.value,
-    beard: beardOption.value,
+    beard: genderValue === 'female' ? 'clean' : beardOption.value,
     clan: clanOption?.value,
     guild: guildOption?.value,
     profession: professionOption?.value
@@ -1410,7 +1414,11 @@ function getHairFrame(dwarf, hairOption, hairStyleValue) {
   };
 }
 
-function getBeardFrame(beardValue, hairOption) {
+function getBeardFrame(dwarf, hairOption) {
+  if (!dwarf || dwarf.gender === 'female') {
+    return null;
+  }
+  const beardValue = dwarf.beard || 'clean';
   const row = dwarfBeardRows[beardValue] ?? dwarfBeardRows.default;
   if (row === null || row === undefined) {
     return null;
@@ -1459,7 +1467,7 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
     drawTintedSprite(ctx, hairFrame.sheet, hairFrame, baseX, baseY, scale, hairFrame.tint);
   }
 
-  const beardFrame = getBeardFrame(dwarf.beard || 'clean', hairOption);
+  const beardFrame = getBeardFrame(dwarf, hairOption);
   if (beardFrame) {
     drawTintedSprite(ctx, beardFrame.sheet, beardFrame, baseX, baseY, scale, beardFrame.tint);
   }
@@ -1674,6 +1682,23 @@ function updateGenderButtonsUI(selectedValue) {
   });
 }
 
+function updateBeardFieldState(dwarf) {
+  const fieldGroup = elements.dwarfBeardFieldGroup;
+  const beardSelect = elements.dwarfBeardSelect;
+  if (!fieldGroup || !beardSelect) {
+    return;
+  }
+  const isFemale = dwarf?.gender === 'female';
+  fieldGroup.classList.toggle('hidden', isFemale);
+  fieldGroup.setAttribute('aria-hidden', isFemale ? 'true' : 'false');
+  beardSelect.disabled = isFemale;
+  if (isFemale) {
+    beardSelect.setAttribute('tabindex', '-1');
+  } else {
+    beardSelect.removeAttribute('tabindex');
+  }
+}
+
 function updateCustomizerUI() {
   ensureDwarfParty();
   const dwarf = getActiveDwarf();
@@ -1728,11 +1753,16 @@ function updateCustomizerUI() {
     dwarf.hair,
     dwarfOptions.hair[0].value
   );
+  if (dwarf.gender === 'female' && dwarf.beard !== 'clean') {
+    dwarf.beard = 'clean';
+  }
   ensureSelectValue(
     elements.dwarfBeardSelect,
     dwarf.beard,
     dwarfOptions.beard[0].value
   );
+
+  updateBeardFieldState(dwarf);
 
   updateDwarfPortrait(dwarf);
   updateDwarfTraitSummary();
@@ -1788,7 +1818,16 @@ function updateDwarfTrait(trait, value) {
       dwarf.name = generateDwarfName(dwarf.gender, value);
     }
   } else if (editableDwarfTraits.has(trait)) {
-    dwarf[trait] = trait === 'hairStyle' ? resolveHairStyleValue(value) : value;
+    if (trait === 'hairStyle') {
+      dwarf[trait] = resolveHairStyleValue(value);
+    } else if (trait === 'beard' && dwarf.gender === 'female') {
+      dwarf.beard = 'clean';
+    } else {
+      dwarf[trait] = value;
+    }
+    if (trait === 'gender' && value === 'female') {
+      dwarf.beard = 'clean';
+    }
   }
   updateCustomizerUI();
 }
