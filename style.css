@@ -71,7 +71,7 @@ select,
 
 #dwarf-customizer .embark-backdrop {
   background: linear-gradient(135deg, rgba(8, 9, 15, 0.85), rgba(8, 9, 15, 0.6)),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+    url('titlescreen/Titlescreen image.png') center/cover no-repeat;
 }
 
 .embark-panel {
@@ -471,12 +471,7 @@ button:hover:not(:disabled) {
   border-radius: 0;
   overflow: visible;
   position: relative;
-  background: linear-gradient(
-      135deg,
-      rgba(8, 9, 15, 0.86),
-      rgba(8, 9, 15, 0.72)
-    ),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+  z-index: 0;
 }
 
 #dwarf-customizer-form::before {
@@ -495,6 +490,24 @@ button:hover:not(:disabled) {
   border-image-width: 1;
   border-image-repeat: round;
   pointer-events: none;
+}
+
+#dwarf-customizer-form::after {
+  content: '';
+  position: absolute;
+  top: var(--customizer-frame-top);
+  right: var(--customizer-frame-right);
+  bottom: var(--customizer-frame-bottom);
+  left: var(--customizer-frame-left);
+  background: linear-gradient(
+      135deg,
+      rgba(8, 9, 15, 0.86),
+      rgba(8, 9, 15, 0.72)
+    ),
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+  border-radius: 18px;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .roster-column {
