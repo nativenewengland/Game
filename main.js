@@ -50,6 +50,10 @@ const baseTileCoords = {
   TREE_SNOW: { row: 1, col: 1 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
+  MOUNTAIN_TOP_A: { row: 0, col: 4 },
+  MOUNTAIN_TOP_B: { row: 0, col: 5 },
+  MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
+  MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 5 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
@@ -166,6 +170,7 @@ function getMapSizeLabel(preset, width, height) {
 }
 
 const defaultMapSize = getMapSizePreset('normal');
+const defaultMountainFrequency = 35;
 
 const worldNames = [
   'Nûrn',
@@ -869,7 +874,7 @@ const state = {
     seedString: '',
     lastSeedString: '',
     forestFrequency: 50,
-    mountainFrequency: 50,
+    mountainFrequency: defaultMountainFrequency,
     riverFrequency: 50,
     humanSettlementFrequency: 50,
     dwarfSettlementFrequency: 50,
@@ -913,6 +918,7 @@ const dwarfGuildOptions = [
   { value: 'brewers-guild', label: 'Brewers Guild' },
   { value: 'carpenters-guild', label: 'Carpenters Guild' },
   { value: 'construction-guild', label: 'Construction Guild' },
+  { value: 'corpsebinders-guild', label: 'Corpsebinders Guild' },
   { value: 'distiller-guild', label: 'Distiller Guild' },
   { value: 'dyers-guild', label: 'Dyers Guild' },
   { value: 'engineers-guild', label: 'Engineers Guild' },
@@ -932,6 +938,7 @@ const dwarfGuildOptions = [
   { value: 'toolmakers-guild', label: "Toolmakers' Guild" },
   { value: 'soapmakers-guild', label: 'Soapmakers Guild' },
   { value: 'candlelighters-guild', label: 'Candlelighters Guild' },
+  { value: 'lamplighters-guild', label: 'Lamplighters Guild' },
   { value: 'butchers-guild', label: 'Butchers Guild' },
   { value: 'ropemakers-guild', label: 'Ropemakers Guild' },
   { value: 'cartwrights-wheelwrights-guild', label: 'Cartwrights & Wheelwrights Guild' },
@@ -1230,10 +1237,12 @@ const elements = {
   dwarfClanSelect: document.getElementById('dwarf-clan-select'),
   dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
-  dwarfSkinSelect: document.getElementById('dwarf-skin-select'),
+  dwarfSkinSlider: document.getElementById('dwarf-skin-slider'),
+  dwarfSkinSliderValue: document.getElementById('dwarf-skin-slider-value'),
   dwarfEyeSlider: document.getElementById('dwarf-eye-slider'),
   dwarfEyeSliderValue: document.getElementById('dwarf-eye-slider-value'),
-  dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
+  dwarfHairStyleSlider: document.getElementById('dwarf-hair-style-slider'),
+  dwarfHairStyleSliderValue: document.getElementById('dwarf-hair-style-slider-value'),
   dwarfHairSlider: document.getElementById('dwarf-hair-slider'),
   dwarfHairSliderValue: document.getElementById('dwarf-hair-slider-value'),
   dwarfBeardSlider: document.getElementById('dwarf-beard-slider'),
@@ -1756,7 +1765,8 @@ function getBeardFrame(dwarf, hairOption) {
     return null;
   }
   const beardValue = dwarf.beard || 'clean';
-  const row = dwarfBeardRows[beardValue] ?? dwarfBeardRows.default;
+  const hasBeardConfig = Object.prototype.hasOwnProperty.call(dwarfBeardRows, beardValue);
+  const row = hasBeardConfig ? dwarfBeardRows[beardValue] : dwarfBeardRows.default;
   if (row === null || row === undefined) {
     return null;
   }
@@ -2168,8 +2178,10 @@ function updateCustomizerUI() {
     dwarf.profession,
     dwarfOptions.profession[0].value
   );
-  ensureSelectValue(
-    elements.dwarfSkinSelect,
+  ensureTraitSliderValue(
+    'skin',
+    elements.dwarfSkinSlider,
+    elements.dwarfSkinSliderValue,
     dwarf.skin,
     dwarfOptions.skin[0].value
   );
@@ -2180,8 +2192,10 @@ function updateCustomizerUI() {
     dwarf.eyes,
     dwarfOptions.eyes[0].value
   );
-  ensureSelectValue(
-    elements.dwarfHairStyleSelect,
+  ensureTraitSliderValue(
+    'hairStyle',
+    elements.dwarfHairStyleSlider,
+    elements.dwarfHairStyleSliderValue,
     resolveHairStyleValue(dwarf.hairStyle),
     defaultHairStyleValue
   );
@@ -3973,7 +3987,10 @@ function createWorld(seedString) {
   const width = state.settings.width;
   const height = state.settings.height;
   const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
-  const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+  const mountainFrequencySetting = sanitizeFrequencyValue(
+    state.settings.mountainFrequency,
+    defaultMountainFrequency
+  );
   const riverFrequencySetting = sanitizeFrequencyValue(state.settings.riverFrequency, 50);
   const humanSettlementFrequencySetting = sanitizeFrequencyValue(
     state.settings.humanSettlementFrequency,
@@ -4436,6 +4453,21 @@ function createWorld(seedString) {
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
+  const mountainTopVariantKeys = hasMountainTile
+    ? ['MOUNTAIN_TOP_A', 'MOUNTAIN_TOP_B'].filter((key) => tileLookup.has(key))
+    : [];
+  const mountainBottomVariantKeys = hasMountainTile
+    ? ['MOUNTAIN_BOTTOM_A', 'MOUNTAIN_BOTTOM_B'].filter((key) => tileLookup.has(key))
+    : [];
+  const mountainOverlayKeySet = hasMountainTile
+    ? new Set([
+        mountainOverlayKey,
+        ...mountainTopVariantKeys,
+        ...mountainBottomVariantKeys
+      ].filter(Boolean))
+    : new Set();
+  const isMountainOverlay = (overlayKey) =>
+    overlayKey != null && mountainOverlayKeySet.has(overlayKey);
   let mountainBaseThreshold = hasMountainTile ? Math.min(Math.max(seaLevel + 0.1, 0.58), 0.82) : 1;
   let mountainFullThreshold = hasMountainTile ? Math.min(0.98, mountainBaseThreshold + 0.35) : 1;
   let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
@@ -4455,6 +4487,7 @@ function createWorld(seedString) {
   }
   let mountainScores = null;
   let mountainCandidateThreshold = null;
+  let mountainMask = null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
@@ -4652,7 +4685,7 @@ function createWorld(seedString) {
     const ridgeDirectionIndex = new Int8Array(width * height);
     ridgeDirectionIndex.fill(-1);
     const ridgeDirectionStrength = new Float32Array(width * height);
-    const mountainMask = new Uint8Array(width * height);
+    mountainMask = new Uint8Array(width * height);
     const directionOpposites = new Int8Array([7, 6, 5, 4, 3, 2, 1, 0]);
     const baseMountainSeedThreshold = 0.8;
     const baseMountainCandidateThreshold = 0.52;
@@ -5141,7 +5174,7 @@ function createWorld(seedString) {
             continue;
           }
           const score = mountainScores ? mountainScores[idx] : 0;
-          const isMountainTile = tile.overlay === mountainOverlayKey;
+          const isMountainTile = isMountainOverlay(tile.overlay);
           const fallbackEligible =
             !isMountainTile &&
             !tile.overlay &&
@@ -5661,7 +5694,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (mountainOverlayKey && tile.overlay === mountainOverlayKey) {
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
@@ -5722,7 +5755,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (mountainOverlayKey && tile.overlay === mountainOverlayKey) {
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
           continue;
         }
         const name = `Evil Wizard's ${generateTowerName(rng)}`;
@@ -5828,6 +5861,51 @@ function createWorld(seedString) {
         tile.structureDetails = null;
         placed.push(candidate);
         towers.push({ x: candidate.x, y: candidate.y, name });
+      }
+    }
+  }
+
+  if (
+    mountainOverlayKey &&
+    mountainMask &&
+    (mountainTopVariantKeys.length > 0 || mountainBottomVariantKeys.length > 0)
+  ) {
+    const selectVariant = (keys, x, y) => {
+      if (!keys || keys.length === 0) {
+        return null;
+      }
+      const hash = ((x + 1) * 73856093) ^ ((y + 1) * 19349663);
+      const index = Math.abs(hash) % keys.length;
+      return keys[index];
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!mountainMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || !isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const hasMountainAbove = y > 0 && mountainMask[(y - 1) * width + x];
+        const hasMountainBelow = y < height - 1 && mountainMask[(y + 1) * width + x];
+        if (!hasMountainAbove && hasMountainBelow) {
+          const variant = selectVariant(mountainTopVariantKeys, x, y);
+          if (variant) {
+            tile.overlay = variant;
+            continue;
+          }
+        }
+        if (!hasMountainBelow && hasMountainAbove) {
+          const variant = selectVariant(mountainBottomVariantKeys, x, y);
+          if (variant) {
+            tile.overlay = variant;
+            continue;
+          }
+        }
+        tile.overlay = mountainOverlayKey;
       }
     }
   }
@@ -6032,7 +6110,10 @@ function syncInputsWithSettings() {
     updateFrequencyDisplay(elements.forestFrequencyValue, value);
   }
   if (elements.mountainFrequencyInput) {
-    const value = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+    const value = sanitizeFrequencyValue(
+      state.settings.mountainFrequency,
+      defaultMountainFrequency
+    );
     elements.mountainFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.mountainFrequencyValue, value);
   }
@@ -6360,20 +6441,13 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfSkinSelect) {
-    elements.dwarfSkinSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('skin', event.target.value);
-    });
-  }
-
+  setupTraitSliderControl('skin', elements.dwarfSkinSlider, elements.dwarfSkinSliderValue);
   setupTraitSliderControl('eyes', elements.dwarfEyeSlider, elements.dwarfEyeSliderValue);
-
-  if (elements.dwarfHairStyleSelect) {
-    elements.dwarfHairStyleSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('hairStyle', event.target.value);
-    });
-  }
-
+  setupTraitSliderControl(
+    'hairStyle',
+    elements.dwarfHairStyleSlider,
+    elements.dwarfHairStyleSliderValue
+  );
   setupTraitSliderControl('hair', elements.dwarfHairSlider, elements.dwarfHairSliderValue);
 
   setupTraitSliderControl('beard', elements.dwarfBeardSlider, elements.dwarfBeardSliderValue);
