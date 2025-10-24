@@ -43,12 +43,15 @@ const dwarfSpriteSheets = {
 };
 
 const baseTileCoords = {
+  SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
+  SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
+  TREE_SNOW: { row: 1, col: 1 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
   STONE: { row: 0, col: 3 },
-  DWARFHOLD: { row: 1, col: 3 },
+  DWARFHOLD: { row: 1, col: 5 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   TOWN: { row: 2, col: 1 }
 };
@@ -338,18 +341,23 @@ const dwarfholdRulerTitles = {
   female: [
     'High Thane',
     'Forge Matron',
-    'Runesmith Queen',
     'Hearthmother',
-    'Deepwarden'
+    'Deepwarden',
+    'Queen',
+    'Thane',
+    'High Queen'
   ],
   male: [
     'High Thane',
     'Forge Lord',
-    'Runesmith Prince',
     'Mountain King',
-    'Deepwarden'
-  ],
-  neutral: ['High Thane', 'Forge Thane']
+    'Deepwarden',
+    'Thane',
+    'King',
+    'King Under The Mountain',
+    'Prince',
+    'High Runesmith'
+  ]
 };
 
 const dwarfholdHallmarks = [
@@ -363,6 +371,29 @@ const dwarfholdHallmarks = [
   'Traders deal in starlight opals mined from midnight caverns.',
   'Their forges are stoked by dragonfire bound in crystal cages.',
   'Tunnel gardens yield luminous mushrooms for distant markets.'
+];
+
+const dwarfholdExportOptions = [
+  'Cut gemstones and faceted crystals',
+  'Masterwork steel arms and armor',
+  'Runic circuitry and precision mechanisms',
+  'Barrels of triple-aged stout and spirits',
+  'Thunderpowder and blasting charges',
+  'Refined mithril ingots and alloys',
+  'Architectural plans and rune-etched stonework',
+  'Highland woolens and leatherwork',
+  'Engraved jewelry and heirloom trinkets'
+];
+
+const dwarfholdPopulationRaceOptions = [
+  { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
+  { key: 'humans', label: 'Humans', color: '#9bb6d8' },
+  { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
+  { key: 'elves', label: 'Elves', color: '#6ecf85' },
+  { key: 'halflings', label: 'Halflings', color: '#f7a072' },
+  { key: 'goblins', label: 'Goblins', color: '#7f8c4d' },
+  { key: 'kobolds', label: 'Kobolds', color: '#b1c8ff' },
+  { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
 const townNamePrefixes = [
@@ -504,6 +535,133 @@ function pickRandomFrom(array, random) {
   return array[clampedIndex];
 }
 
+function pickUniqueFrom(array, count, random) {
+  if (!Array.isArray(array) || array.length === 0 || count <= 0) {
+    return [];
+  }
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const pool = array.slice();
+  const picks = [];
+  const maxCount = Math.min(Math.max(count, 0), pool.length);
+  for (let i = 0; i < maxCount; i += 1) {
+    const index = Math.floor(randomFn() * pool.length);
+    const clampedIndex = Math.max(0, Math.min(pool.length - 1, index));
+    const [choice] = pool.splice(clampedIndex, 1);
+    if (choice !== undefined) {
+      picks.push(choice);
+    }
+  }
+  return picks;
+}
+
+function generateDwarfholdPopulationBreakdown(population, random) {
+  if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
+    return [];
+  }
+
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const races = dwarfholdPopulationRaceOptions.slice();
+  const dwarfConfig = races[0];
+  const shares = [];
+  // Ensure dwarves make up the overwhelming majority of a dwarfhold's population.
+  // The range gives a 90-100% share so only a small remainder is left for other races.
+  const dwarfShare = clamp(0.9 + randomFn() * 0.1, 0, 1);
+  shares.push({ config: dwarfConfig, share: dwarfShare });
+
+  const remainingConfigs = races.slice(1);
+  if (remainingConfigs.length > 0) {
+    const remainingShare = Math.max(0, 1 - dwarfShare);
+    const weights = remainingConfigs.map(() => 0.25 + randomFn());
+    const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
+    remainingConfigs.forEach((config, index) => {
+      const portion = weights[index] / weightSum;
+      shares.push({ config, share: remainingShare * portion });
+    });
+  }
+
+  let totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+  if (shares.length > 0 && Number.isFinite(totalShare) && totalShare !== 1) {
+    const lastEntry = shares[shares.length - 1];
+    const adjustment = clamp(1 - totalShare, -1, 1);
+    lastEntry.share = clamp(lastEntry.share + adjustment, 0, 1);
+    totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+  }
+
+  const safeTotalShare = totalShare > 0 ? totalShare : 1;
+  const normalizedShares = shares.map((entry) => ({
+    config: entry.config,
+    share: clamp(entry.share / safeTotalShare, 0, 1)
+  }));
+
+  const percentageDecimals = 2;
+  const percentageScale = 10 ** percentageDecimals;
+  const totalUnits = 100 * percentageScale;
+
+  const scaledEntries = normalizedShares.map(({ config, share }) => {
+    const safeShare = clamp(share, 0, 1);
+    const rawPercentage = safeShare * 100;
+    const scaledRaw = rawPercentage * percentageScale;
+    const baseUnit = Math.floor(scaledRaw);
+    const fraction = Math.max(0, Math.min(1, scaledRaw - baseUnit));
+    return {
+      config,
+      baseUnit,
+      fraction
+    };
+  });
+
+  const baseUnits = scaledEntries.map((entry) => entry.baseUnit);
+  let remainderUnits = totalUnits - baseUnits.reduce((sum, value) => sum + value, 0);
+  const fractionalOrder = scaledEntries
+    .map((entry, index) => ({ index, fraction: entry.fraction }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  if (fractionalOrder.length > 0) {
+    let incrementIndex = 0;
+    while (remainderUnits > 0) {
+      const target = fractionalOrder[incrementIndex % fractionalOrder.length];
+      baseUnits[target.index] += 1;
+      remainderUnits -= 1;
+      incrementIndex += 1;
+    }
+
+    const ascending = fractionalOrder.slice().reverse();
+    let decrementIndex = 0;
+    while (remainderUnits < 0 && ascending.length > 0) {
+      const target = ascending[decrementIndex % ascending.length];
+      if (baseUnits[target.index] > 0) {
+        baseUnits[target.index] -= 1;
+        remainderUnits += 1;
+      }
+      decrementIndex += 1;
+    }
+  }
+
+  if (remainderUnits !== 0 && baseUnits.length > 0) {
+    const lastIndex = baseUnits.length - 1;
+    const adjusted = Math.max(0, Math.min(totalUnits, baseUnits[lastIndex] + remainderUnits));
+    remainderUnits -= adjusted - baseUnits[lastIndex];
+    baseUnits[lastIndex] = adjusted;
+  }
+
+  const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+
+  return scaledEntries.map(({ config }, index) => {
+    const percentage = clamp(baseUnits[index] / percentageScale, 0, 100);
+    const count =
+      resolvedPopulation === null
+        ? null
+        : Math.max(0, Math.round((resolvedPopulation * percentage) / 100));
+    return {
+      key: config.key,
+      label: config.label,
+      color: config.color,
+      percentage,
+      population: count
+    };
+  });
+}
+
 function generateDwarfholdName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
@@ -528,20 +686,33 @@ function generateDwarfholdDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
   const genderRoll = randomFn();
-  const gender = genderRoll < 0.45 ? 'female' : genderRoll > 0.9 ? 'neutral' : 'male';
-  const namePool = dwarfNamePools[gender === 'neutral' ? 'male' : gender] || dwarfNamePools.male;
+  const gender = genderRoll < 0.9 ? 'male' : 'female';
+  const namePool = dwarfNamePools[gender] || dwarfNamePools.male;
   const firstName = pickRandomFrom(namePool, randomFn) || 'Urist';
   const clanOption = pickRandomFrom(dwarfOptions.clan, randomFn) || dwarfOptions.clan?.[0];
   const clanName = clanOption?.label || 'Stonebeard';
-  const titlePool =
-    dwarfholdRulerTitles[gender === 'neutral' ? 'neutral' : gender] || dwarfholdRulerTitles.neutral;
-  const titleFallback = dwarfholdRulerTitles.neutral?.[0] || 'High Thane';
-  const rulerTitle = pickRandomFrom(titlePool, randomFn) || titleFallback;
+  const titlePool = dwarfholdRulerTitles[gender] || dwarfholdRulerTitles.male;
+  const titleFallback = 'Thane';
+  const thaneBiasRoll = randomFn();
+  const nonThaneTitles = titlePool.filter((title) => title !== 'Thane');
+  const rulerTitle =
+    thaneBiasRoll < 0.65 || nonThaneTitles.length === 0
+      ? 'Thane'
+      : pickRandomFrom(nonThaneTitles, randomFn) || titleFallback;
   const hallmark = pickRandomFrom(dwarfholdHallmarks, randomFn) ||
     'Renowned for stout walls and heartier spirits.';
   const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
   const prominentClanOption = randomFn() < 0.35 ? pickRandomFrom(dwarfOptions.clan, randomFn) : clanOption;
   const prominentClan = prominentClanOption?.label || clanName;
+  const majorGuildCount = clamp(Math.floor(2 + randomFn() * 3), 1, dwarfGuildOptions.length);
+  const majorGuilds = pickUniqueFrom(
+    dwarfGuildOptions.map((option) => option.label),
+    majorGuildCount,
+    randomFn
+  );
+  const majorExportCount = clamp(Math.floor(2 + randomFn() * 2), 1, dwarfholdExportOptions.length);
+  const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
+  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
 
   return {
     type: 'dwarfhold',
@@ -553,7 +724,10 @@ function generateDwarfholdDetails(name, random) {
     },
     foundedYearsAgo,
     prominentClan,
-    hallmark
+    hallmark,
+    majorGuilds,
+    majorExports,
+    populationBreakdown
   };
 }
 
@@ -632,14 +806,44 @@ const dwarfClanOptions = [
 ];
 
 const dwarfGuildOptions = [
-  { value: 'stone-wardens', label: 'Stone Wardens Guild' },
-  { value: 'anvilguard', label: 'Anvilguard Guild' },
-  { value: 'brewmasters', label: 'Brewmasters Circle' },
-  { value: 'gearwrights', label: 'Gearwrights Assembly' },
-  { value: 'lorekeepers', label: 'Lorekeepers Consortium' },
-  { value: 'hearthguard', label: 'Hearthguard Lodge' },
-  { value: 'artificers', label: 'Artificers Union' },
-  { value: 'merchants', label: "Merchant's League" }
+  { value: 'miners-guild', label: 'Miners Guild' },
+  { value: 'merchants-guild', label: 'Merchants Guild' },
+  { value: 'commerce-guild', label: 'Commerce Guild' },
+  { value: 'armourers-weaponsmiths-guild', label: 'Armourers and Weaponsmiths Guild' },
+  { value: 'artisans-guild', label: 'Artisans Guild' },
+  { value: 'bakers-guild', label: 'Bakers Guild' },
+  { value: 'brewers-guild', label: 'Brewers Guild' },
+  { value: 'carpenters-guild', label: 'Carpenters Guild' },
+  { value: 'construction-guild', label: 'Construction Guild' },
+  { value: 'distiller-guild', label: 'Distiller Guild' },
+  { value: 'dyers-guild', label: 'Dyers Guild' },
+  { value: 'engineers-guild', label: 'Engineers Guild' },
+  { value: 'farmers-herders-guild', label: 'Farmers and Herders Guild' },
+  { value: 'gemcutters-guild', label: 'Gemcutters Guild' },
+  { value: 'goldsmiths-guild', label: 'Goldsmiths Guild' },
+  { value: 'guild-of-alchemists', label: 'Guild of Alchemists' },
+  { value: 'jewelsmiths-guild', label: 'Jewelsmiths Guild' },
+  { value: 'leatherworkers-guild', label: 'Leatherworkers Guild' },
+  { value: 'metalsmiths-guild', label: 'Metalsmiths Guild' },
+  { value: 'powdermakers-guild', label: 'Powdermakers Guild' },
+  { value: 'saltworkers-guild', label: 'Saltworkers Guild' },
+  { value: 'stonemasons-guild', label: 'Stonemasons Guild' },
+  { value: 'runescribes-guild', label: 'Runescribes Guild' },
+  { value: 'runesmiths', label: 'Runesmiths' },
+  { value: 'warriors-guild', label: 'Warriors Guild' },
+  { value: 'toolmakers-guild', label: "Toolmakers' Guild" },
+  { value: 'soapmakers-guild', label: 'Soapmakers Guild' },
+  { value: 'candlelighters-guild', label: 'Candlelighters Guild' },
+  { value: 'butchers-guild', label: 'Butchers Guild' },
+  { value: 'ropemakers-guild', label: 'Ropemakers Guild' },
+  { value: 'cartwrights-wheelwrights-guild', label: 'Cartwrights & Wheelwrights Guild' },
+  { value: 'glassblowers-guild', label: 'Glassblowers Guild' },
+  { value: 'millers-guild', label: 'Millers Guild' },
+  { value: 'cobblers-guild', label: 'Cobblers Guild' },
+  { value: 'cartographers-guild', label: 'Cartographers Guild' },
+  { value: 'lorekeepers-guild', label: 'Lorekeepers Guild' },
+  { value: 'tunnel-wardens-guild', label: 'Tunnel Wardens Guild' },
+  { value: 'smelters-guild', label: 'Smelters Guild' }
 ];
 
 const dwarfProfessionOptions = [
@@ -784,6 +988,10 @@ const dwarfNamePools = {
   ]
 };
 
+const presetDwarfFirstNames = new Set(
+  Object.values(dwarfNamePools).reduce((allNames, pool) => allNames.concat(pool), [])
+);
+
 const dwarfHairColorToFrame = {
   obsidian: { column: 2 },
   umber: { column: 6 },
@@ -927,6 +1135,7 @@ const elements = {
   dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
   dwarfHairSelect: document.getElementById('dwarf-hair-select'),
   dwarfBeardSelect: document.getElementById('dwarf-beard-select'),
+  dwarfBeardFieldGroup: document.getElementById('dwarf-beard-field-group'),
   dwarfRandomise: document.getElementById('dwarf-randomise'),
   dwarfBack: document.getElementById('dwarf-back'),
   dwarfPortrait: document.getElementById('dwarf-portrait'),
@@ -1280,6 +1489,22 @@ function generateDwarfName(gender, clanValue) {
   return `${firstName} ${clanName}`;
 }
 
+function extractFirstName(fullName) {
+  if (!fullName) {
+    return '';
+  }
+  const trimmed = fullName.trim();
+  if (!trimmed) {
+    return '';
+  }
+  const [firstName] = trimmed.split(/\s+/);
+  return firstName || '';
+}
+
+function isPresetDwarfFirstName(firstName) {
+  return presetDwarfFirstNames.has(firstName);
+}
+
 function createRandomDwarf(preferredGender) {
   const genderOption = preferredGender
     ? getOptionByValue('gender', preferredGender)
@@ -1289,7 +1514,10 @@ function createRandomDwarf(preferredGender) {
   const eyeOption = randomChoice(dwarfOptions.eyes) || dwarfOptions.eyes[0];
   const hairStyleOption = randomChoice(dwarfOptions.hairStyle) || dwarfOptions.hairStyle[0];
   const hairOption = randomChoice(dwarfOptions.hair) || dwarfOptions.hair[0];
-  const beardOption = randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
+  const beardOption =
+    genderValue === 'female'
+      ? dwarfOptions.beard.find((option) => option.value === 'clean') || dwarfOptions.beard[0]
+      : randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
   const clanOption = randomChoice(dwarfOptions.clan) || dwarfOptions.clan[0];
   const guildOption = randomChoice(dwarfOptions.guild) || dwarfOptions.guild[0];
   const professionOption = randomChoice(dwarfOptions.profession) || dwarfOptions.profession[0];
@@ -1301,7 +1529,7 @@ function createRandomDwarf(preferredGender) {
     eyes: eyeOption.value,
     hairStyle: resolveHairStyleValue(hairStyleOption.value),
     hair: hairOption.value,
-    beard: beardOption.value,
+    beard: genderValue === 'female' ? 'clean' : beardOption.value,
     clan: clanOption?.value,
     guild: guildOption?.value,
     profession: professionOption?.value
@@ -1409,7 +1637,11 @@ function getHairFrame(dwarf, hairOption, hairStyleValue) {
   };
 }
 
-function getBeardFrame(beardValue, hairOption) {
+function getBeardFrame(dwarf, hairOption) {
+  if (!dwarf || dwarf.gender === 'female') {
+    return null;
+  }
+  const beardValue = dwarf.beard || 'clean';
   const row = dwarfBeardRows[beardValue] ?? dwarfBeardRows.default;
   if (row === null || row === undefined) {
     return null;
@@ -1458,7 +1690,7 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
     drawTintedSprite(ctx, hairFrame.sheet, hairFrame, baseX, baseY, scale, hairFrame.tint);
   }
 
-  const beardFrame = getBeardFrame(dwarf.beard || 'clean', hairOption);
+  const beardFrame = getBeardFrame(dwarf, hairOption);
   if (beardFrame) {
     drawTintedSprite(ctx, beardFrame.sheet, beardFrame, baseX, baseY, scale, beardFrame.tint);
   }
@@ -1673,6 +1905,23 @@ function updateGenderButtonsUI(selectedValue) {
   });
 }
 
+function updateBeardFieldState(dwarf) {
+  const fieldGroup = elements.dwarfBeardFieldGroup;
+  const beardSelect = elements.dwarfBeardSelect;
+  if (!fieldGroup || !beardSelect) {
+    return;
+  }
+  const isFemale = dwarf?.gender === 'female';
+  fieldGroup.classList.toggle('hidden', isFemale);
+  fieldGroup.setAttribute('aria-hidden', isFemale ? 'true' : 'false');
+  beardSelect.disabled = isFemale;
+  if (isFemale) {
+    beardSelect.setAttribute('tabindex', '-1');
+  } else {
+    beardSelect.removeAttribute('tabindex');
+  }
+}
+
 function updateCustomizerUI() {
   ensureDwarfParty();
   const dwarf = getActiveDwarf();
@@ -1727,11 +1976,16 @@ function updateCustomizerUI() {
     dwarf.hair,
     dwarfOptions.hair[0].value
   );
+  if (dwarf.gender === 'female' && dwarf.beard !== 'clean') {
+    dwarf.beard = 'clean';
+  }
   ensureSelectValue(
     elements.dwarfBeardSelect,
     dwarf.beard,
     dwarfOptions.beard[0].value
   );
+
+  updateBeardFieldState(dwarf);
 
   updateDwarfPortrait(dwarf);
   updateDwarfTraitSummary();
@@ -1787,7 +2041,31 @@ function updateDwarfTrait(trait, value) {
       dwarf.name = generateDwarfName(dwarf.gender, value);
     }
   } else if (editableDwarfTraits.has(trait)) {
-    dwarf[trait] = trait === 'hairStyle' ? resolveHairStyleValue(value) : value;
+    if (trait === 'gender') {
+      const previousGender = dwarf.gender;
+      const trimmedName = (dwarf.name || '').trim();
+      dwarf.gender = value;
+      if (value === 'female') {
+        dwarf.beard = 'clean';
+      }
+      if (value !== previousGender && trimmedName) {
+        const firstName = extractFirstName(trimmedName);
+        const clanLabel = dwarf.clan ? getOptionLabel('clan', dwarf.clan) : null;
+        const matchesClan = clanLabel
+          ? trimmedName === `${firstName} ${clanLabel}`
+          : trimmedName === firstName;
+        if (firstName && matchesClan && isPresetDwarfFirstName(firstName)) {
+          const newFirstName = generateDwarfFirstName(value);
+          dwarf.name = clanLabel ? `${newFirstName} ${clanLabel}` : newFirstName;
+        }
+      }
+    } else if (trait === 'hairStyle') {
+      dwarf[trait] = resolveHairStyleValue(value);
+    } else if (trait === 'beard' && dwarf.gender === 'female') {
+      dwarf.beard = 'clean';
+    } else {
+      dwarf[trait] = value;
+    }
   }
   updateCustomizerUI();
 }
@@ -1889,7 +2167,26 @@ function randomYear() {
   }
   const clampedWeight = clamp(biasWeight, 0, 1);
   const effectiveExponent = 1 + clampedWeight * (exponent - 1);
-  return biasedRandomInt(lower, upper, effectiveExponent);
+  const quadrupleDigitThreshold = 1000;
+  const maxRetries = 4;
+  const highYearPenalty = 0.85;
+
+  let year = biasedRandomInt(lower, upper, effectiveExponent);
+
+  if (year >= quadrupleDigitThreshold) {
+    let retries = 0;
+    const amplifiedExponent = effectiveExponent * 1.5;
+    while (
+      year >= quadrupleDigitThreshold &&
+      retries < maxRetries &&
+      Math.random() < highYearPenalty
+    ) {
+      year = biasedRandomInt(lower, upper, amplifiedExponent);
+      retries += 1;
+    }
+  }
+
+  return year;
 }
 
 function generateRandomChronology() {
@@ -2151,6 +2448,103 @@ function hideMapTooltip() {
   elements.mapTooltip.setAttribute('aria-hidden', 'true');
 }
 
+function formatPercentageDisplay(value) {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  const rounded = Math.round(value * 100) / 100;
+  return rounded.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+}
+
+function formatGradientPercentage(value) {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  const rounded = Math.round(value * 100) / 100;
+  return Number(rounded.toFixed(2)).toString();
+}
+
+function buildPopulationBreakdownSection(resolvedName, breakdown) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) {
+    return '';
+  }
+
+  const resolvedEntries = breakdown
+    .filter((entry) => Number.isFinite(entry?.percentage) && entry.percentage > 0)
+    .map((entry) => {
+      const rawPercentage = Number(entry.percentage);
+      const safePercentage = Number.isFinite(rawPercentage) ? Math.max(0, rawPercentage) : 0;
+      const roundedPercentage = Math.round(safePercentage * 100) / 100;
+      return {
+        label: entry.label || entry.key || 'Unknown',
+        percentage: roundedPercentage,
+        color: entry.color || '#999999',
+        population:
+          Number.isFinite(entry.population) && entry.population > 0
+            ? Math.max(0, Math.round(entry.population))
+            : null
+      };
+    });
+
+  if (resolvedEntries.length === 0) {
+    return '';
+  }
+
+  let cumulative = 0;
+  const stops = resolvedEntries.map((entry, index) => {
+    const start = Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    cumulative = Math.round((cumulative + entry.percentage) * 100) / 100;
+    const end =
+      index === resolvedEntries.length - 1
+        ? 100
+        : Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    return `${entry.color} ${formatGradientPercentage(start)}% ${formatGradientPercentage(end)}%`;
+  });
+
+  if (stops.length === 0) {
+    return '';
+  }
+
+  const pieStyle = `background: conic-gradient(${stops.join(', ')});`;
+  const ariaLabelParts = ['Population breakdown'];
+  if (resolvedName) {
+    ariaLabelParts.push(`for ${resolvedName}`);
+  }
+  const ariaLabel = ariaLabelParts.join(' ');
+
+  const legendItems = resolvedEntries
+    .map((entry) => {
+      const valueParts = [`${formatPercentageDisplay(entry.percentage)}%`];
+      if (entry.population !== null) {
+        valueParts.push(`(${entry.population.toLocaleString('en-US')})`);
+      }
+      return `
+        <li>
+          <span class="legend-swatch" style="background:${escapeHtml(entry.color)}"></span>
+          <span class="legend-label">${escapeHtml(entry.label)}</span>
+          <span class="legend-value">${escapeHtml(valueParts.join(' '))}</span>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <div class="tooltip-subtitle">Population Breakdown</div>
+    <div class="tooltip-chart">
+      <div
+        class="tooltip-chart-pie"
+        role="img"
+        aria-label="${escapeHtml(ariaLabel)}"
+        style="${escapeHtml(pieStyle)}"
+      ></div>
+      <ul class="tooltip-chart-legend">${legendItems}</ul>
+    </div>
+  `;
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile || !tile.structureName) {
     return null;
@@ -2187,6 +2581,24 @@ function buildStructureTooltipContent(tile) {
       entries.push({ label: 'Prominent Clan', value: details.prominentClan });
     }
 
+    if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
+      const uniqueGuilds = Array.from(
+        new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
+      );
+      if (uniqueGuilds.length > 0) {
+        entries.push({ label: 'Major Guilds', value: uniqueGuilds.join(', ') });
+      }
+    }
+
+    if (Array.isArray(details.majorExports) && details.majorExports.length > 0) {
+      const uniqueExports = Array.from(
+        new Set(details.majorExports.filter((item) => typeof item === 'string' && item.trim()))
+      );
+      if (uniqueExports.length > 0) {
+        entries.push({ label: 'Major Exports', value: uniqueExports.join(', ') });
+      }
+    }
+
     if (entries.length > 0) {
       const listItems = entries
         .map(
@@ -2197,6 +2609,12 @@ function buildStructureTooltipContent(tile) {
         )
         .join('');
       sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+
+    const breakdownSection = buildPopulationBreakdownSection(resolvedName, details.populationBreakdown);
+
+    if (breakdownSection) {
+      sections.push(breakdownSection);
     }
 
     if (details.hallmark) {
@@ -3519,6 +3937,218 @@ function createWorld(seedString) {
   normalizeField(drainageField);
   const grassTileKey = resolveTileName('GRASS');
   const waterTileKey = resolveTileName('WATER');
+  const hasSnowTile = tileLookup.has('SNOW');
+  const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
+  const hasSandTile = tileLookup.has('SAND');
+  const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
+  const landBaseKeys = new Set([grassTileKey]);
+  if (hasSnowTile) {
+    landBaseKeys.add(snowTileKey);
+  }
+  if (hasSandTile) {
+    landBaseKeys.add(sandTileKey);
+  }
+  const snowLatitudeStart = 0.7;
+  const snowLatitudeFull = 0.86;
+  const snowLatitudeRange = Math.max(snowLatitudeFull - snowLatitudeStart, 0.0001);
+  const snowNoiseSeed = (seedNumber + 0x27d4eb2d) >>> 0;
+  const snowNoiseScale = 5.3 + rng() * 3.2;
+  const snowNoiseOffsetX = rng() * 4096;
+  const snowNoiseOffsetY = rng() * 4096;
+
+  const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
+  const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
+  const desertNoiseOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertNoiseOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertWarpSeedX = hasSandTile ? (seedNumber + 0x2a58d2a5) >>> 0 : 0;
+  const desertWarpSeedY = hasSandTile ? (seedNumber + 0x165667b1) >>> 0 : 0;
+  const desertWarpScale = hasSandTile ? 2.2 + rng() * 2.6 : 1;
+  const desertWarpStrength = hasSandTile ? 0.12 + rng() * 0.18 : 0;
+  const desertWarpOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertWarpOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertHeatSeed = hasSandTile ? (seedNumber + 0x3b1d23c7) >>> 0 : 0;
+  const desertHeatScale = hasSandTile ? 3.1 + rng() * 3.3 : 1;
+  const desertHeatOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertHeatOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertBandSeed = hasSandTile ? (seedNumber + 0x6a09e667) >>> 0 : 0;
+  const desertBandScale = hasSandTile ? 1.4 + rng() * 1.6 : 1;
+  const desertBandOffsetX = hasSandTile ? rng() * 2048 : 0;
+  const desertBandOffsetY = hasSandTile ? rng() * 2048 : 0;
+  const desertBandStrength = hasSandTile ? 0.2 + rng() * 0.25 : 0;
+  const desertSuitabilitySeed = hasSandTile ? (seedNumber + 0xbb67ae85) >>> 0 : 0;
+  const desertSuitabilityScale = hasSandTile ? 2.8 + rng() * 2.8 : 1;
+  const desertSuitabilityOffsetX = hasSandTile ? rng() * 8192 : 0;
+  const desertSuitabilityOffsetY = hasSandTile ? rng() * 8192 : 0;
+  const desertSuitabilityStrength = hasSandTile ? 0.18 + rng() * 0.15 : 0;
+  const desertThresholdSeed = hasSandTile ? (seedNumber + 0x84caa73d) >>> 0 : 0;
+  const desertThresholdScale = hasSandTile ? 3.6 + rng() * 3.2 : 1;
+  const desertThresholdOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertThresholdOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertThresholdStrength = hasSandTile ? 0.05 + rng() * 0.06 : 0;
+  const desertVariationSeed = hasSandTile ? (seedNumber + 0x7c3f0a5b) >>> 0 : 0;
+  const desertVariationScale = hasSandTile ? 4.4 + rng() * 3.8 : 1;
+  const desertVariationOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertVariationOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertVariationStrength = hasSandTile ? 0.08 + rng() * 0.07 : 0;
+
+  const determineLandBaseTile = (x, y, heightValue) => {
+    const normalizedX = (x + 0.5) / width;
+    const normalizedY = (y + 0.5) / height;
+    const latitude = 1 - normalizedY;
+    let warpedLatitude = latitude;
+    let warpX = 0;
+    let warpY = 0;
+
+    if (hasSandTile && desertWarpStrength > 0) {
+      const warpSampleX = octaveNoise(
+        (normalizedX + desertWarpOffsetX) * desertWarpScale,
+        (normalizedY + desertWarpOffsetY) * desertWarpScale,
+        desertWarpSeedX,
+        3,
+        0.55,
+        2.05
+      );
+      const warpSampleY = octaveNoise(
+        (normalizedX + desertWarpOffsetX + 37.71) * (desertWarpScale * 1.1),
+        (normalizedY + desertWarpOffsetY + 11.53) * (desertWarpScale * 0.92),
+        desertWarpSeedY,
+        3,
+        0.55,
+        2.05
+      );
+      warpX = (warpSampleX * 2 - 1) * desertWarpStrength;
+      warpY = (warpSampleY * 2 - 1) * desertWarpStrength;
+      warpedLatitude = clamp(latitude + warpY * 0.8, 0, 1);
+    }
+
+    if (hasSnowTile) {
+      if (latitude >= snowLatitudeFull) {
+        return snowTileKey;
+      }
+      if (latitude > snowLatitudeStart) {
+        const snowBandFactor = clamp((latitude - snowLatitudeStart) / snowLatitudeRange, 0, 1);
+        const elevationFactor = clamp((heightValue - seaLevel) * 3.8, 0, 1);
+        const coverage = clamp(snowBandFactor * 0.7 + elevationFactor * 0.3, 0, 1);
+        const snowNoise = octaveNoise(
+          (normalizedX + snowNoiseOffsetX) * snowNoiseScale,
+          (normalizedY + snowNoiseOffsetY) * snowNoiseScale,
+          snowNoiseSeed,
+          3,
+          0.55,
+          2.2
+        );
+        if (snowNoise < coverage) {
+          return snowTileKey;
+        }
+      }
+    }
+
+    if (hasSandTile) {
+      const idx = y * width + x;
+      const rainfallValue = rainfallField[idx];
+      const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
+      let equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
+      if (desertBandStrength > 0) {
+        const bandNoise = octaveNoise(
+          (normalizedX + desertBandOffsetX) * desertBandScale,
+          (normalizedY + desertBandOffsetY) * desertBandScale,
+          desertBandSeed,
+          4,
+          0.55,
+          2.1
+        );
+        const bandWarp = (bandNoise * 2 - 1) * desertBandStrength;
+        equatorialAlignment = clamp(equatorialAlignment + bandWarp, 0, 1);
+      }
+      const elevationFactor = clamp((heightValue - seaLevel) * 2.6, 0, 1);
+      const desertHeatNoise =
+        (octaveNoise(
+          (normalizedX + warpX + desertHeatOffsetX) * desertHeatScale,
+          (normalizedY + warpY + desertHeatOffsetY) * desertHeatScale,
+          desertHeatSeed,
+          4,
+          0.55,
+          2.2
+        ) *
+          2 -
+          1) *
+        0.25;
+      const heat = clamp(equatorialAlignment * 0.55 + (1 - elevationFactor) * 0.3 + desertHeatNoise, 0, 1);
+      let suitability = clamp(aridity * 0.68 + heat * 0.42, 0, 1);
+      if (desertSuitabilityStrength > 0) {
+        const suitabilityNoise =
+          octaveNoise(
+            (normalizedX + warpX + desertSuitabilityOffsetX) * desertSuitabilityScale,
+            (normalizedY + warpY + desertSuitabilityOffsetY) * desertSuitabilityScale,
+            desertSuitabilitySeed,
+            4,
+            0.55,
+            2.2
+          ) *
+            2 -
+          1;
+        suitability = clamp(
+          suitability + suitabilityNoise * desertSuitabilityStrength,
+            0,
+            1
+        );
+      }
+      if (desertVariationStrength > 0) {
+        const variationNoise =
+          octaveNoise(
+            (normalizedX + warpX + desertVariationOffsetX) * desertVariationScale,
+            (normalizedY + warpY + desertVariationOffsetY) * desertVariationScale,
+            desertVariationSeed,
+            4,
+            0.55,
+            2.15
+          ) *
+            2 -
+          1;
+        suitability = clamp(
+          suitability + variationNoise * desertVariationStrength,
+          0,
+          1
+        );
+      }
+      if (suitability > 0.52) {
+        const desertNoise = octaveNoise(
+          (normalizedX + warpX + desertNoiseOffsetX) * desertNoiseScale,
+          (normalizedY + warpY + desertNoiseOffsetY) * desertNoiseScale,
+          desertNoiseSeed,
+          3,
+          0.55,
+          2.15
+        );
+        let latitudeThreshold = lerp(0.58, 0.52, equatorialAlignment);
+        if (desertThresholdStrength > 0) {
+          const thresholdNoise =
+            octaveNoise(
+              (normalizedX + warpX + desertThresholdOffsetX) * desertThresholdScale,
+              (normalizedY + warpY + desertThresholdOffsetY) * desertThresholdScale,
+              desertThresholdSeed,
+              3,
+              0.55,
+              2.1
+            ) *
+              2 -
+            1;
+          latitudeThreshold = clamp(
+            latitudeThreshold + thresholdNoise * desertThresholdStrength,
+            0.45,
+            0.65
+          );
+        }
+        if (desertNoise < suitability && suitability > latitudeThreshold) {
+          return sandTileKey;
+        }
+      }
+    }
+
+    return grassTileKey;
+  };
+
+  const isLandBaseTile = (baseKey) => landBaseKeys.has(baseKey);
   const tiles = Array.from(
     { length: height },
     () =>
@@ -3555,6 +4185,7 @@ function createWorld(seedString) {
     mountainRange = Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001);
   }
   let mountainScores = null;
+  let mountainCandidateThreshold = null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
@@ -3579,7 +4210,7 @@ function createWorld(seedString) {
       const isWater = heightValue <= seaLevel;
       waterMask[idx] = isWater ? 1 : 0;
       const tile = tiles[y][x];
-      tile.base = isWater ? waterTileKey : grassTileKey;
+      tile.base = isWater ? waterTileKey : determineLandBaseTile(x, y, heightValue);
       tile.overlay = null;
       tile.structure = null;
       tile.structureName = null;
@@ -3605,7 +4236,7 @@ function createWorld(seedString) {
       0.52,
       0.97
     );
-    const mountainCandidateThreshold = clamp(
+    mountainCandidateThreshold = clamp(
       baseMountainCandidateThreshold - mountainBias * 0.28,
       0.2,
       0.78
@@ -4067,16 +4698,32 @@ function createWorld(seedString) {
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     if (dwarfholdKey) {
+      const fallbackMountainScoreThreshold =
+        mountainScores && mountainCandidateThreshold !== null
+          ? clamp(mountainCandidateThreshold * 0.85, 0.28, 0.62)
+          : 0.45;
       const dwarfholdCandidates = [];
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
           const tile = tiles[y][x];
-          if (tile.overlay !== mountainOverlayKey) {
+          if (!tile) {
             continue;
           }
           const score = mountainScores ? mountainScores[idx] : 0;
-          dwarfholdCandidates.push({ x, y, score });
+          const isMountainTile = tile.overlay === mountainOverlayKey;
+          const fallbackEligible =
+            !isMountainTile &&
+            !tile.overlay &&
+            mountainScores &&
+            score >= fallbackMountainScoreThreshold;
+          if (!isMountainTile && !fallbackEligible) {
+            continue;
+          }
+          dwarfholdCandidates.push({ x, y, score, isMountainTile });
         }
       }
 
@@ -4112,8 +4759,21 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.overlay !== mountainOverlayKey || tile.structure || tile.river) {
+          if (!tile || tile.structure || tile.river) {
             continue;
+          }
+          const idx = candidate.y * width + candidate.x;
+          const qualifiesForPlacement =
+            candidate.isMountainTile ||
+            (!tile.overlay &&
+              mountainScores &&
+              mountainScores[idx] >= fallbackMountainScoreThreshold &&
+              !waterMask[idx]);
+          if (!qualifiesForPlacement) {
+            continue;
+          }
+          if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
+            tile.overlay = mountainOverlayKey;
           }
           const name = generateDwarfholdName(rng);
           const details = generateDwarfholdDetails(name, rng);
@@ -4122,6 +4782,40 @@ function createWorld(seedString) {
           tile.structureDetails = details;
           placed.push(candidate);
           dwarfholds.push({ x: candidate.x, y: candidate.y, ...details });
+        }
+
+        if (placed.length === 0) {
+          const fallbackCandidate = dwarfholdCandidates.find((candidate) => {
+            const tile = tiles[candidate.y][candidate.x];
+            if (!tile || tile.structure || tile.river) {
+              return false;
+            }
+            const idx = candidate.y * width + candidate.x;
+            const qualifiesForPlacement =
+              candidate.isMountainTile ||
+              (!tile.overlay &&
+                mountainScores &&
+                mountainScores[idx] >= fallbackMountainScoreThreshold &&
+                !waterMask[idx]);
+            if (!qualifiesForPlacement) {
+              return false;
+            }
+            if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
+              tile.overlay = mountainOverlayKey;
+            }
+            return true;
+          });
+
+          if (fallbackCandidate) {
+            const tile = tiles[fallbackCandidate.y][fallbackCandidate.x];
+            const name = generateDwarfholdName(rng);
+            const details = generateDwarfholdDetails(name, rng);
+            tile.structure = dwarfholdKey;
+            tile.structureName = name;
+            tile.structureDetails = details;
+            placed.push(fallbackCandidate);
+            dwarfholds.push({ x: fallbackCandidate.x, y: fallbackCandidate.y, ...details });
+          }
         }
       }
     }
@@ -4144,7 +4838,8 @@ function createWorld(seedString) {
       if (landNeighbors >= 6) {
         waterMask[idx] = 0;
         const tile = tiles[y][x];
-        tile.base = grassTileKey;
+        const heightValue = elevationField[idx];
+        tile.base = determineLandBaseTile(x, y, heightValue);
         tile.overlay = null;
         tile.structure = null;
         tile.structureName = null;
@@ -4184,7 +4879,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure || tile.river) {
+        if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
         const elevationValue = elevationField[idx];
@@ -4258,7 +4953,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[candidate.y][candidate.x];
-        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure || tile.river) {
+        if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
         const name = generateTownName(rng);
@@ -4274,6 +4969,7 @@ function createWorld(seedString) {
   const hasTreeTile = tileLookup.has('TREE');
   if (hasTreeTile) {
     const treeOverlayKey = 'TREE';
+    const treeSnowOverlayKey = tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
     const treeBaseScale = 2.4 + rng() * 1.6;
@@ -4350,7 +5046,13 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
+        if (
+          tile.overlay ||
+          !isLandBaseTile(tile.base) ||
+          tile.structure ||
+          tile.river ||
+          (hasSandTile && tile.base === sandTileKey)
+        ) {
           continue;
         }
         const density = treeDensityField[idx];
@@ -4359,7 +5061,7 @@ function createWorld(seedString) {
           (density > softSeedThreshold && rng() < (density - softSeedThreshold) * softSeedMultiplier)
         ) {
           treeMask[idx] = 1;
-          tile.overlay = treeOverlayKey;
+          tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
         }
       }
     }
@@ -4374,7 +5076,13 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
-          if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
+          if (
+            tile.overlay ||
+            !isLandBaseTile(tile.base) ||
+            tile.structure ||
+            tile.river ||
+            (hasSandTile && tile.base === sandTileKey)
+          ) {
             continue;
           }
           let neighborTrees = 0;
@@ -4419,11 +5127,17 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
+        if (
+          tile.overlay ||
+          !isLandBaseTile(tile.base) ||
+          tile.structure ||
+          tile.river ||
+          (hasSandTile && tile.base === sandTileKey)
+        ) {
           continue;
         }
         treeMask[idx] = 1;
-        tile.overlay = treeOverlayKey;
+        tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
       }
     }
 
@@ -4434,7 +5148,11 @@ function createWorld(seedString) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
           const tile = tiles[y][x];
-          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+          if (
+            !tile ||
+            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
+            tile.structure
+          ) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -4477,7 +5195,11 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+          if (
+            !tile ||
+            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
+            tile.structure
+          ) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
