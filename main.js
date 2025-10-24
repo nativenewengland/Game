@@ -2467,7 +2467,7 @@ function generateContinentalPlates(rng) {
 
 function sampleContinentalPlates(x, y, plates) {
   if (!plates || plates.length === 0) {
-    return { height: 0, mask: 0 };
+    return { height: 0, mask: 0, tectonic: 0 };
   }
 
   let landSum = 0;
@@ -2479,6 +2479,8 @@ function sampleContinentalPlates(x, y, plates) {
   let maxOcean = 0;
   let secondOcean = 0;
   let variation = 0;
+  let landTurbulence = 0;
+  let boundaryMix = 0;
 
   for (let i = 0; i < plates.length; i += 1) {
     const plate = plates[i];
@@ -2521,6 +2523,8 @@ function sampleContinentalPlates(x, y, plates) {
       landSum += contribution;
       landWeight += Math.abs(plate.strength);
       variation += turbulence;
+      landTurbulence += turbulence;
+      boundaryMix += contribution * 0.75;
     } else {
       if (contribution > maxOcean) {
         secondOcean = maxOcean;
@@ -2531,11 +2535,12 @@ function sampleContinentalPlates(x, y, plates) {
       oceanSum += contribution;
       oceanWeight += Math.abs(plate.strength);
       variation -= turbulence;
+      boundaryMix += contribution * 0.45;
     }
   }
 
   if (landWeight === 0 && oceanWeight === 0) {
-    return { height: 0, mask: 0 };
+    return { height: 0, mask: 0, tectonic: 0 };
   }
 
   const landAvg = landWeight > 0 ? landSum / landWeight : 0;
@@ -2549,7 +2554,20 @@ function sampleContinentalPlates(x, y, plates) {
 
   height = clamp(height, -1, 1);
 
-  return { height, mask };
+  const normalizedLandTurbulence = landTurbulence / (landWeight || 1);
+  const totalWeight = landWeight + oceanWeight;
+  const normalizedBoundaryMix = boundaryMix / (totalWeight || 1);
+  const tectonicActivity = clamp(
+    separation * 0.85 +
+      oceanSeparation * 0.55 +
+      Math.max(0, variation) * 0.4 +
+      normalizedLandTurbulence * 0.3 +
+      normalizedBoundaryMix * 0.15,
+    0,
+    1
+  );
+
+  return { height, mask, tectonic: tectonicActivity };
 }
 
 function normalizeField(field) {
@@ -2806,6 +2824,7 @@ function createWorld(seedString) {
 
   const continentalPlates = generateContinentalPlates(rng);
   const elevationField = new Float32Array(width * height);
+  const tectonicActivityField = new Float32Array(width * height);
 
   const baseNoiseOffsetX = rng() * 2048;
   const baseNoiseOffsetY = rng() * 2048;
@@ -2821,6 +2840,12 @@ function createWorld(seedString) {
   const baseNoiseSeed = (seedNumber + 0x9e3779b9) >>> 0;
   const detailNoiseSeed = (seedNumber + 0x85ebca6b) >>> 0;
   const ridgeNoiseSeed = (seedNumber + 0xc2b2ae35) >>> 0;
+  const ridgeDetailSeed = (seedNumber + 0x4cf5ad43) >>> 0;
+  const ridgeOrientationSeed = (seedNumber + 0x94d049bb) >>> 0;
+  const ridgeDetailOffsetX = rng() * 8192;
+  const ridgeDetailOffsetY = rng() * 8192;
+  const ridgeOrientationOffsetX = rng() * 4096;
+  const ridgeOrientationOffsetY = rng() * 4096;
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -2829,6 +2854,7 @@ function createWorld(seedString) {
 
       const idx = y * width + x;
       const plateSample = sampleContinentalPlates(normalizedX, normalizedY, continentalPlates);
+      tectonicActivityField[idx] = plateSample.tectonic;
 
       const baseNoise = octaveNoise(
         (normalizedX + baseNoiseOffsetX) * baseNoiseScale,
@@ -2878,6 +2904,7 @@ function createWorld(seedString) {
   }
 
   normalizeField(elevationField);
+  normalizeField(tectonicActivityField);
 
   const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
   const grassTileKey = resolveTileName('GRASS');
@@ -2911,7 +2938,7 @@ function createWorld(seedString) {
     );
     mountainRange = Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001);
   }
-  const mountainScores = hasMountainTile ? new Float32Array(width * height) : null;
+  let mountainScores = null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
@@ -2935,10 +2962,6 @@ function createWorld(seedString) {
       const heightValue = elevationField[idx];
       const isWater = heightValue <= seaLevel;
       waterMask[idx] = isWater ? 1 : 0;
-      if (!isWater && mountainOverlayKey) {
-        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
-        mountainScores[idx] = normalizedHeight;
-      }
       const tile = tiles[y][x];
       tile.base = isWater ? waterTileKey : grassTileKey;
       tile.overlay = null;
@@ -2948,27 +2971,222 @@ function createWorld(seedString) {
   }
 
   if (hasMountainTile) {
+    mountainScores = new Float32Array(width * height);
+    const mountainHeightField = new Float32Array(width * height);
+    let ridgeField = new Float32Array(width * height);
+    const ridgeDirectionIndex = new Int8Array(width * height);
+    ridgeDirectionIndex.fill(-1);
+    const ridgeDirectionStrength = new Float32Array(width * height);
     const mountainMask = new Uint8Array(width * height);
-    const baseMountainSeedThreshold = 0.88;
-    const baseMountainCandidateThreshold = 0.55;
-    const baseMountainPruneThreshold = 0.92;
+    const directionOpposites = new Int8Array([7, 6, 5, 4, 3, 2, 1, 0]);
+    const baseMountainSeedThreshold = 0.76;
+    const baseMountainCandidateThreshold = 0.46;
+    const baseMountainPruneThreshold = 0.88;
     const mountainSeedThreshold = clamp(
-      baseMountainSeedThreshold - mountainBias * 0.2,
-      0.6,
-      0.98
+      baseMountainSeedThreshold - mountainBias * 0.18,
+      0.55,
+      0.96
     );
     const mountainCandidateThreshold = clamp(
-      baseMountainCandidateThreshold - mountainBias * 0.2,
-      0.25,
-      0.75
+      baseMountainCandidateThreshold - mountainBias * 0.18,
+      0.22,
+      0.7
     );
     const mountainPruneThreshold = clamp(
-      baseMountainPruneThreshold - mountainBias * 0.15,
-      0.7,
-      0.99
+      baseMountainPruneThreshold - mountainBias * 0.14,
+      0.65,
+      0.97
     );
 
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          mountainHeightField[idx] = 0;
+          ridgeField[idx] = 0;
+          continue;
+        }
+
+        const heightValue = elevationField[idx];
+        const normalizedHeight = clamp((heightValue - mountainBaseThreshold) / mountainRange, 0, 1);
+        mountainHeightField[idx] = normalizedHeight;
+
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const left = x > 0 ? elevationField[idx - 1] : heightValue;
+        const right = x < width - 1 ? elevationField[idx + 1] : heightValue;
+        const up = y > 0 ? elevationField[idx - width] : heightValue;
+        const down = y < height - 1 ? elevationField[idx + width] : heightValue;
+
+        const gradX = (right - left) * 0.5;
+        const gradY = (down - up) * 0.5;
+        const slopeMagnitude = Math.sqrt(gradX * gradX + gradY * gradY);
+
+        const tectLeft = x > 0 ? tectonicActivityField[idx - 1] : tectonicActivityField[idx];
+        const tectRight = x < width - 1 ? tectonicActivityField[idx + 1] : tectonicActivityField[idx];
+        const tectUp = y > 0 ? tectonicActivityField[idx - width] : tectonicActivityField[idx];
+        const tectDown = y < height - 1 ? tectonicActivityField[idx + width] : tectonicActivityField[idx];
+        const tectGradX = (tectRight - tectLeft) * 0.5;
+        const tectGradY = (tectDown - tectUp) * 0.5;
+        const tectMag = Math.sqrt(tectGradX * tectGradX + tectGradY * tectGradY);
+
+        let neighborSum = 0;
+        let neighborCount = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          neighborSum += elevationField[ny * width + nx];
+          neighborCount += 1;
+        }
+        const neighborAvg = neighborCount > 0 ? neighborSum / neighborCount : heightValue;
+        const localContrast = Math.max(0, heightValue - neighborAvg);
+
+        const ridgedBase = octaveNoise(
+          (normalizedX + ridgeDetailOffsetX) * 7.4,
+          (normalizedY + ridgeDetailOffsetY) * 7.4,
+          ridgeDetailSeed,
+          5,
+          0.47,
+          2.28
+        );
+        const ridged = Math.pow(1 - Math.abs(ridgedBase * 2 - 1), 1.25);
+
+        const tectonicValue = clamp(tectonicActivityField[idx], 0, 1);
+        const tectonicBoost = Math.pow(tectonicValue, 0.85);
+        const slopeComponent = clamp(slopeMagnitude * 2.4, 0, 1);
+
+        let dirX = 0;
+        let dirY = 0;
+        if (tectMag > 0.0003) {
+          dirX += -tectGradY * 1.6;
+          dirY += tectGradX * 1.6;
+        }
+        if (slopeMagnitude > 0.00035) {
+          dirX += -gradY * 0.7;
+          dirY += gradX * 0.7;
+        }
+        const orientationNoise = octaveNoise(
+          (normalizedX + ridgeOrientationOffsetX) * 9.2,
+          (normalizedY + ridgeOrientationOffsetY) * 9.2,
+          ridgeOrientationSeed,
+          3,
+          0.58,
+          2.05
+        );
+        const noiseAngle = (orientationNoise * 2 - 1) * Math.PI;
+        if (Math.abs(dirX) + Math.abs(dirY) < 1e-4) {
+          dirX = Math.cos(noiseAngle);
+          dirY = Math.sin(noiseAngle);
+        } else {
+          const dirMag = Math.hypot(dirX, dirY) || 1;
+          dirX = (dirX / dirMag) * 0.8 + Math.cos(noiseAngle) * 0.2;
+          dirY = (dirY / dirMag) * 0.8 + Math.sin(noiseAngle) * 0.2;
+        }
+        const finalDirMag = Math.hypot(dirX, dirY);
+        if (finalDirMag > 1e-4) {
+          dirX /= finalDirMag;
+          dirY /= finalDirMag;
+          const orientationStrength = clamp(Math.sqrt(tectMag) * 3.5 + slopeMagnitude * 2.1, 0, 1);
+          ridgeDirectionStrength[idx] = orientationStrength;
+          let bestIndex = -1;
+          let bestDot = 0.35;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const offset = neighborOffsets8[i];
+            const length = Math.hypot(offset[0], offset[1]) || 1;
+            const dot = (dirX * offset[0] + dirY * offset[1]) / length;
+            if (dot > bestDot) {
+              bestDot = dot;
+              bestIndex = i;
+            }
+          }
+          ridgeDirectionIndex[idx] = bestIndex;
+        }
+
+        const erosionPenalty = Math.max(0, neighborAvg - heightValue) * 0.35;
+        const rawRidgeScore =
+          normalizedHeight * 0.28 +
+          Math.pow(Math.max(0, normalizedHeight), 1.6) * 0.3 +
+          localContrast * 0.9 +
+          slopeComponent * 0.55 +
+          tectonicBoost * 0.75 +
+          ridged * 0.4 -
+          erosionPenalty;
+
+        ridgeField[idx] = Math.max(0, rawRidgeScore);
+      }
+    }
+
+    let ridgeWorking = ridgeField;
+    let ridgeBuffer = new Float32Array(ridgeField.length);
+    for (let iter = 0; iter < 2; iter += 1) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            ridgeBuffer[idx] = 0;
+            continue;
+          }
+          const dirIndex = ridgeDirectionIndex[idx];
+          if (dirIndex < 0) {
+            ridgeBuffer[idx] = ridgeWorking[idx];
+            continue;
+          }
+          const strength = ridgeDirectionStrength[idx];
+          const baseValue = ridgeWorking[idx];
+          let weight = 1;
+          let weightedSum = baseValue;
+          const offsets = [dirIndex, directionOpposites[dirIndex]];
+          for (let i = 0; i < offsets.length; i += 1) {
+            const offset = neighborOffsets8[offsets[i]];
+            const nx = x + offset[0];
+            const ny = y + offset[1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              continue;
+            }
+            const neighborWeight = 0.8 + strength * 0.6;
+            weightedSum += ridgeWorking[nIdx] * neighborWeight;
+            weight += neighborWeight;
+          }
+          ridgeBuffer[idx] = weightedSum / weight;
+        }
+      }
+      const swap = ridgeWorking;
+      ridgeWorking = ridgeBuffer;
+      ridgeBuffer = swap;
+    }
+    ridgeField = ridgeWorking;
+    normalizeField(ridgeField);
+
+    for (let idx = 0; idx < mountainScores.length; idx += 1) {
+      if (waterMask[idx]) {
+        mountainScores[idx] = 0;
+        continue;
+      }
+      const normalizedHeight = mountainHeightField[idx];
+      const ridgeValue = ridgeField[idx];
+      const tectonicValue = clamp(tectonicActivityField[idx], 0, 1);
+      const orientationBonus = ridgeDirectionStrength[idx] * 0.18;
+      const combined = clamp(
+        ridgeValue * 0.6 +
+          Math.pow(Math.max(0, normalizedHeight), 1.6) * 0.25 +
+          normalizedHeight * 0.18 +
+          Math.pow(tectonicValue, 0.9) * 0.35 +
+          orientationBonus,
+        0,
+        1
+      );
+      mountainScores[idx] = combined;
+    }
+
     const isTooCoastal = (x, y) => {
+      const idx = y * width + x;
       let coastalNeighbors = 0;
       for (let i = 0; i < cardinalOffsets.length; i += 1) {
         const nx = x + cardinalOffsets[i][0];
@@ -2981,9 +3199,17 @@ function createWorld(seedString) {
           coastalNeighbors += 1;
         }
       }
-      return coastalNeighbors >= 2;
+      if (coastalNeighbors < 2) {
+        return false;
+      }
+      const tectonic = tectonicActivityField[idx];
+      if (coastalNeighbors >= 3) {
+        return tectonic < 0.6;
+      }
+      return tectonic < 0.35;
     };
 
+    let seedCount = 0;
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
@@ -2993,8 +3219,93 @@ function createWorld(seedString) {
         const score = mountainScores[idx];
         if (score >= mountainSeedThreshold && !isTooCoastal(x, y)) {
           mountainMask[idx] = 1;
+          seedCount += 1;
         }
       }
+    }
+
+    if (seedCount === 0) {
+      const fallbackCandidates = [];
+      for (let idx = 0; idx < mountainScores.length; idx += 1) {
+        if (waterMask[idx]) {
+          continue;
+        }
+        const score = mountainScores[idx];
+        if (score >= mountainSeedThreshold * 0.85) {
+          fallbackCandidates.push(idx);
+        }
+      }
+      fallbackCandidates.sort((a, b) => mountainScores[b] - mountainScores[a]);
+      const limit = Math.min(6, fallbackCandidates.length);
+      for (let i = 0; i < limit; i += 1) {
+        const idx = fallbackCandidates[i];
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+        if (!isTooCoastal(x, y)) {
+          mountainMask[idx] = 1;
+        }
+      }
+    }
+
+    const traceDirection = (startX, startY, startDirIndex, maxSteps, initialReliability) => {
+      let cx = startX;
+      let cy = startY;
+      let currentDirIndex = startDirIndex;
+      let reliability = initialReliability;
+      for (let step = 0; step < maxSteps; step += 1) {
+        const offset = neighborOffsets8[currentDirIndex];
+        const nx = cx + offset[0];
+        const ny = cy + offset[1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          break;
+        }
+        const nIdx = ny * width + nx;
+        if (waterMask[nIdx]) {
+          break;
+        }
+        if (mountainScores[nIdx] < mountainCandidateThreshold * 0.85) {
+          break;
+        }
+        mountainMask[nIdx] = 1;
+        cx = nx;
+        cy = ny;
+        const nextDirIndex = ridgeDirectionIndex[nIdx];
+        if (nextDirIndex >= 0) {
+          currentDirIndex = nextDirIndex;
+        }
+        reliability = Math.max(ridgeDirectionStrength[nIdx], reliability * 0.82);
+        if (reliability < 0.06) {
+          break;
+        }
+      }
+    };
+
+    const extendRangeFromSeed = (seedIdx) => {
+      const baseDirIndex = ridgeDirectionIndex[seedIdx];
+      const reliability = ridgeDirectionStrength[seedIdx];
+      if (baseDirIndex < 0 || reliability < 0.05) {
+        return;
+      }
+      const seedScore = mountainScores[seedIdx];
+      const ridgeStrength = ridgeField[seedIdx];
+      const baseLength = 2 + Math.floor((seedScore * 6 + ridgeStrength * 5) * (0.6 + reliability * 0.5));
+      const forwardSteps = Math.min(18, baseLength + Math.floor(rng() * 3));
+      const backwardSteps = Math.max(1, Math.floor(forwardSteps * 0.45));
+      const startX = seedIdx % width;
+      const startY = Math.floor(seedIdx / width);
+      traceDirection(startX, startY, baseDirIndex, forwardSteps, reliability);
+      traceDirection(startX, startY, directionOpposites[baseDirIndex], backwardSteps, reliability * 0.85);
+    };
+
+    const seedIndices = [];
+    for (let idx = 0; idx < mountainMask.length; idx += 1) {
+      if (mountainMask[idx]) {
+        seedIndices.push(idx);
+      }
+    }
+    seedIndices.sort((a, b) => mountainScores[b] - mountainScores[a]);
+    for (let i = 0; i < seedIndices.length; i += 1) {
+      extendRangeFromSeed(seedIndices[i]);
     }
 
     for (let pass = 0; pass < 3; pass += 1) {
@@ -3019,8 +3330,16 @@ function createWorld(seedString) {
               mountainNeighbors += 1;
             }
           }
-          const minNeighbors = score > 0.8 ? 1 : score > 0.65 ? 2 : 3;
-          const probability = 0.2 + score * 0.8;
+          const orientationStrength = ridgeDirectionStrength[idx];
+          let minNeighbors = 3;
+          if (score > 0.82 || orientationStrength > 0.7) {
+            minNeighbors = 1;
+          } else if (score > 0.66) {
+            minNeighbors = orientationStrength > 0.45 ? 1 : 2;
+          } else if (orientationStrength > 0.55) {
+            minNeighbors = 2;
+          }
+          const probability = Math.min(0.95, 0.18 + score * 0.75 + orientationStrength * 0.2);
           if (mountainNeighbors >= minNeighbors && (score > 0.75 || rng() < probability)) {
             mountainMask[idx] = 1;
           }
@@ -3049,7 +3368,9 @@ function createWorld(seedString) {
             mountainNeighbors += 1;
           }
         }
-        if (mountainNeighbors >= 4) {
+        const orientationStrength = ridgeDirectionStrength[idx];
+        const requiredNeighbors = orientationStrength > 0.6 ? 2 : orientationStrength > 0.35 ? 3 : 4;
+        if (mountainNeighbors >= requiredNeighbors) {
           mountainMask[idx] = 1;
         }
       }
@@ -3073,7 +3394,10 @@ function createWorld(seedString) {
             mountainNeighbors += 1;
           }
         }
-        if (mountainNeighbors <= 1 && score < mountainPruneThreshold) {
+        const orientationStrength = ridgeDirectionStrength[idx];
+        const minSupport = orientationStrength > 0.65 ? 0 : 1;
+        const effectiveThreshold = mountainPruneThreshold * (1 - orientationStrength * 0.25);
+        if (mountainNeighbors <= minSupport && score < effectiveThreshold) {
           mountainMask[idx] = 0;
         }
       }
