@@ -2983,16 +2983,46 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
       };
     });
 
-  if (resolvedEntries.length === 0) {
+  const majorEntries = [];
+  let otherPercentage = 0;
+  let otherPopulation = 0;
+  let otherPopulationKnown = true;
+
+  resolvedEntries.forEach((entry) => {
+    if (entry.percentage < 0.5) {
+      otherPercentage += entry.percentage;
+      if (entry.population === null) {
+        otherPopulationKnown = false;
+      } else if (otherPopulationKnown) {
+        otherPopulation += entry.population;
+      }
+    } else {
+      majorEntries.push(entry);
+    }
+  });
+
+  if (otherPercentage > 0) {
+    const roundedOtherPercentage = Math.round(otherPercentage * 100) / 100;
+    majorEntries.push({
+      label: 'Other',
+      percentage: roundedOtherPercentage,
+      color: '#666666',
+      population: otherPopulationKnown ? otherPopulation : null
+    });
+  }
+
+  const displayEntries = majorEntries.length > 0 ? majorEntries : resolvedEntries;
+
+  if (displayEntries.length === 0) {
     return '';
   }
 
   let cumulative = 0;
-  const stops = resolvedEntries.map((entry, index) => {
+  const stops = displayEntries.map((entry, index) => {
     const start = Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
     cumulative = Math.round((cumulative + entry.percentage) * 100) / 100;
     const end =
-      index === resolvedEntries.length - 1
+      index === displayEntries.length - 1
         ? 100
         : Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
     return `${entry.color} ${formatGradientPercentage(start)}% ${formatGradientPercentage(end)}%`;
@@ -3009,7 +3039,7 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
   }
   const ariaLabel = ariaLabelParts.join(' ');
 
-  const legendItems = resolvedEntries
+  const legendItems = displayEntries
     .map((entry) => {
       const valueParts = [`${formatPercentageDisplay(entry.percentage)}%`];
       if (entry.population !== null) {
