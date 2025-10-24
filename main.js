@@ -146,6 +146,25 @@ function getMapSizePreset(key) {
   return mapSizeByKey[key] || mapSizeByKey.normal;
 }
 
+function applyMapSizePresetToState(preset) {
+  if (!preset) {
+    return;
+  }
+  state.settings.mapSize = preset.key;
+  state.settings.width = preset.width;
+  state.settings.height = preset.height;
+}
+
+function getMapSizeLabel(preset, width, height) {
+  if (preset) {
+    return `${preset.label} — ${preset.width} × ${preset.height} tiles`;
+  }
+  if (typeof width === 'number' && typeof height === 'number') {
+    return `${width} × ${height} tiles`;
+  }
+  return '—';
+}
+
 const defaultMapSize = getMapSizePreset('normal');
 
 const worldNames = [
@@ -1171,6 +1190,8 @@ const elements = {
   seedDisplay: document.querySelector('.seed-display'),
   mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
+  worldMapSizeSelect: document.getElementById('world-map-size-select'),
+  worldSeedInput: document.getElementById('world-seed-input'),
   forestFrequencyInput: document.getElementById('forest-frequency'),
   forestFrequencyValue: document.getElementById('forest-frequency-value'),
   mountainFrequencyInput: document.getElementById('mountain-frequency'),
@@ -1405,10 +1426,11 @@ function applyFormSettings() {
     ? Number.parseInt(elements.woodElfSettlementFrequencyInput.value, 10)
     : state.settings.woodElfSettlementFrequency;
 
-  state.settings.mapSize = preset.key;
-  state.settings.width = preset.width;
-  state.settings.height = preset.height;
+  applyMapSizePresetToState(preset);
   state.settings.seedString = seedString;
+  if (seedString) {
+    state.settings.lastSeedString = seedString;
+  }
   state.settings.forestFrequency = sanitizeFrequencyValue(
     Number.isNaN(forestFrequencyRaw) ? state.settings.forestFrequency : forestFrequencyRaw,
     state.settings.forestFrequency
@@ -1439,6 +1461,16 @@ function applyFormSettings() {
       : woodElfSettlementFrequencyRaw,
     state.settings.woodElfSettlementFrequency
   );
+
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
+
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = state.settings.seedString;
+  }
+  updateWorldInfoSeedDisplay(state.settings.seedString);
 }
 
 function clamp(value, min, max) {
@@ -2366,6 +2398,26 @@ function updateChronologyDisplay() {
   elements.worldInfoChronology.textContent = '—';
 }
 
+function updateWorldInfoSizeDisplay() {
+  if (!elements.worldInfoSize) {
+    return;
+  }
+  const preset = getMapSizePreset(state.settings.mapSize);
+  elements.worldInfoSize.textContent = getMapSizeLabel(
+    preset,
+    state.settings.width,
+    state.settings.height
+  );
+}
+
+function updateWorldInfoSeedDisplay(seedValue) {
+  if (!elements.worldInfoSeed) {
+    return;
+  }
+  const trimmed = typeof seedValue === 'string' ? seedValue.trim() : '';
+  elements.worldInfoSeed.textContent = trimmed || 'Random';
+}
+
 function getRandomWorldName(excludeName) {
   if (worldNames.length === 0) {
     return 'Unnamed World';
@@ -2410,17 +2462,25 @@ function openWorldInfoModal() {
     ensureMusicStarted();
     return;
   }
-  const width = state.settings.width;
-  const height = state.settings.height;
   const sizePreset = getMapSizePreset(state.settings.mapSize);
-  const sizeLabel = sizePreset ? `${sizePreset.label} — ${sizePreset.width} × ${sizePreset.height} tiles` : `${width} × ${height} tiles`;
-  elements.worldInfoSize.textContent = sizeLabel;
+  applyMapSizePresetToState(sizePreset);
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  if (elements.mapSizeSelect) {
+    elements.mapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
 
   const seed = ensureSeedString();
-  elements.worldInfoSeed.textContent = seed;
+  state.settings.lastSeedString = seed;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = seed;
+  }
   if (elements.seedInput) {
     elements.seedInput.value = seed;
   }
+  updateWorldInfoSeedDisplay(seed);
 
   const chronology = ensureChronology();
   if (elements.worldYearInput) {
@@ -5789,6 +5849,14 @@ function drawWorld(world) {
 
   state.settings.lastSeedString = seedString;
   state.settings.seedString = seedString;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = seedString;
+  }
+  updateWorldInfoSeedDisplay(seedString);
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
   const worldLabel = state.worldName ? `World: ${state.worldName} | ` : '';
   const chronologyLabel = isChronologyValid(state.worldChronology)
     ? `${formatChronology(state.worldChronology.year, state.worldChronology.age)} | `
@@ -5814,6 +5882,10 @@ function generateAndRender(seedOverride) {
   state.currentWorld = world;
   drawWorld(world);
   elements.seedInput.value = world.seedString;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = world.seedString;
+  }
+  updateWorldInfoSeedDisplay(world.seedString);
 }
 
 function randomSeedString() {
@@ -5824,6 +5896,10 @@ function handleRegenerate() {
   const randomSeed = randomSeedString();
   state.settings.seedString = randomSeed;
   elements.seedInput.value = randomSeed;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = randomSeed;
+  }
+  updateWorldInfoSeedDisplay(randomSeed);
   generateAndRender(randomSeed);
 }
 
@@ -5831,9 +5907,17 @@ function syncInputsWithSettings() {
   if (elements.mapSizeSelect) {
     elements.mapSizeSelect.value = state.settings.mapSize;
   }
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
   if (elements.seedInput) {
     elements.seedInput.value = state.settings.seedString;
   }
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = state.settings.seedString;
+  }
+  updateWorldInfoSeedDisplay(state.settings.seedString);
   if (elements.forestFrequencyInput) {
     const value = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
     elements.forestFrequencyInput.value = value.toString();
@@ -5950,6 +6034,35 @@ function attachEvents() {
   if (elements.worldInfoForm) {
     elements.worldInfoForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      const selectedMapSizeKey = elements.worldMapSizeSelect
+        ? elements.worldMapSizeSelect.value
+        : state.settings.mapSize;
+      const selectedPreset = getMapSizePreset(selectedMapSizeKey);
+      applyMapSizePresetToState(selectedPreset);
+      if (elements.worldMapSizeSelect) {
+        elements.worldMapSizeSelect.value = state.settings.mapSize;
+      }
+      if (elements.mapSizeSelect) {
+        elements.mapSizeSelect.value = state.settings.mapSize;
+      }
+      updateWorldInfoSizeDisplay();
+
+      if (elements.worldSeedInput) {
+        state.settings.seedString = elements.worldSeedInput.value.trim();
+      }
+      let finalSeed = state.settings.seedString;
+      if (!finalSeed) {
+        finalSeed = ensureSeedString();
+        if (elements.worldSeedInput) {
+          elements.worldSeedInput.value = finalSeed;
+        }
+      }
+      state.settings.lastSeedString = finalSeed;
+      if (elements.seedInput) {
+        elements.seedInput.value = finalSeed;
+      }
+      updateWorldInfoSeedDisplay(finalSeed);
+
       const submittedName = elements.worldNameInput ? elements.worldNameInput.value.trim() : '';
       state.worldName = submittedName || getRandomWorldName(state.worldName);
       const submittedChronology = getSanitisedChronologyFromInputs();
@@ -6007,6 +6120,28 @@ function attachEvents() {
         elements.worldNameInput.value = newName;
         elements.worldNameInput.focus();
         elements.worldNameInput.select();
+      }
+    });
+  }
+
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.addEventListener('change', (event) => {
+      const preset = getMapSizePreset(event.target.value);
+      applyMapSizePresetToState(preset);
+      if (elements.mapSizeSelect) {
+        elements.mapSizeSelect.value = state.settings.mapSize;
+      }
+      updateWorldInfoSizeDisplay();
+    });
+  }
+
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.addEventListener('input', (event) => {
+      const newValue = event.target.value;
+      state.settings.seedString = newValue.trim();
+      updateWorldInfoSeedDisplay(newValue);
+      if (elements.seedInput && elements.seedInput !== event.target) {
+        elements.seedInput.value = newValue;
       }
     });
   }
