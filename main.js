@@ -5004,7 +5004,7 @@ function createWorld(seedString) {
   const icebergPresenceScale = hasIcebergOverlay ? 1.6 + rng() * 1.8 : 1;
   const icebergPresenceOffsetX = hasIcebergOverlay ? rng() * 8192 : 0;
   const icebergPresenceOffsetY = hasIcebergOverlay ? rng() * 8192 : 0;
-  const icebergPresenceThreshold = hasIcebergOverlay ? 0.72 + rng() * 0.1 : 1;
+  const icebergPresenceThreshold = hasIcebergOverlay ? 0.55 + rng() * 0.12 : 1;
 
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
@@ -6098,6 +6098,8 @@ function createWorld(seedString) {
   }
 
   if (hasIcebergOverlay && snowPresenceField) {
+    let icebergPlacementCount = 0;
+    let strongestIcebergCandidate = null;
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
@@ -6117,6 +6119,12 @@ function createWorld(seedString) {
           0.55,
           2.15
         );
+        if (
+          !strongestIcebergCandidate ||
+          icebergPresenceNoise > strongestIcebergCandidate.noise
+        ) {
+          strongestIcebergCandidate = { x, y, noise: icebergPresenceNoise };
+        }
         if (icebergPresenceNoise < icebergPresenceThreshold) {
           continue;
         }
@@ -6124,6 +6132,20 @@ function createWorld(seedString) {
         if (!tile || tile.overlay) {
           continue;
         }
+        const variantNoise = hashCoords(x, y, icebergVariantSeed);
+        const variantIndex = Math.min(
+          icebergOverlayKeys.length - 1,
+          Math.floor(variantNoise * icebergOverlayKeys.length)
+        );
+        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        tile.overlay = overlayKey;
+        icebergPlacementCount += 1;
+      }
+    }
+    if (icebergPlacementCount === 0 && strongestIcebergCandidate) {
+      const { x, y } = strongestIcebergCandidate;
+      const tile = tiles[y][x];
+      if (tile && !tile.overlay) {
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
