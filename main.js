@@ -3963,9 +3963,23 @@ function createWorld(seedString) {
   const desertWarpSeedX = hasSandTile ? (seedNumber + 0x2a58d2a5) >>> 0 : 0;
   const desertWarpSeedY = hasSandTile ? (seedNumber + 0x165667b1) >>> 0 : 0;
   const desertWarpScale = hasSandTile ? 2.2 + rng() * 2.6 : 1;
-  const desertWarpStrength = hasSandTile ? 0.05 + rng() * 0.08 : 0;
+  const desertWarpStrength = hasSandTile ? 0.12 + rng() * 0.18 : 0;
   const desertWarpOffsetX = hasSandTile ? rng() * 4096 : 0;
   const desertWarpOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertHeatSeed = hasSandTile ? (seedNumber + 0x3b1d23c7) >>> 0 : 0;
+  const desertHeatScale = hasSandTile ? 3.1 + rng() * 3.3 : 1;
+  const desertHeatOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertHeatOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertBandSeed = hasSandTile ? (seedNumber + 0x6a09e667) >>> 0 : 0;
+  const desertBandScale = hasSandTile ? 1.4 + rng() * 1.6 : 1;
+  const desertBandOffsetX = hasSandTile ? rng() * 2048 : 0;
+  const desertBandOffsetY = hasSandTile ? rng() * 2048 : 0;
+  const desertBandStrength = hasSandTile ? 0.2 + rng() * 0.25 : 0;
+  const desertSuitabilitySeed = hasSandTile ? (seedNumber + 0xbb67ae85) >>> 0 : 0;
+  const desertSuitabilityScale = hasSandTile ? 2.8 + rng() * 2.8 : 1;
+  const desertSuitabilityOffsetX = hasSandTile ? rng() * 8192 : 0;
+  const desertSuitabilityOffsetY = hasSandTile ? rng() * 8192 : 0;
+  const desertSuitabilityStrength = hasSandTile ? 0.18 + rng() * 0.15 : 0;
 
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
@@ -4023,10 +4037,52 @@ function createWorld(seedString) {
       const idx = y * width + x;
       const rainfallValue = rainfallField[idx];
       const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
-      const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
+      let equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
+      if (desertBandStrength > 0) {
+        const bandNoise = octaveNoise(
+          (normalizedX + desertBandOffsetX) * desertBandScale,
+          (normalizedY + desertBandOffsetY) * desertBandScale,
+          desertBandSeed,
+          4,
+          0.55,
+          2.1
+        );
+        const bandWarp = (bandNoise * 2 - 1) * desertBandStrength;
+        equatorialAlignment = clamp(equatorialAlignment + bandWarp, 0, 1);
+      }
       const elevationFactor = clamp((heightValue - seaLevel) * 2.6, 0, 1);
-      const heat = clamp(equatorialAlignment * 0.75 + (1 - elevationFactor) * 0.35, 0, 1);
-      const suitability = clamp(aridity * 0.7 + heat * 0.4, 0, 1);
+      const desertHeatNoise =
+        (octaveNoise(
+          (normalizedX + warpX + desertHeatOffsetX) * desertHeatScale,
+          (normalizedY + warpY + desertHeatOffsetY) * desertHeatScale,
+          desertHeatSeed,
+          4,
+          0.55,
+          2.2
+        ) *
+          2 -
+          1) *
+        0.25;
+      const heat = clamp(equatorialAlignment * 0.55 + (1 - elevationFactor) * 0.3 + desertHeatNoise, 0, 1);
+      let suitability = clamp(aridity * 0.68 + heat * 0.42, 0, 1);
+      if (desertSuitabilityStrength > 0) {
+        const suitabilityNoise =
+          octaveNoise(
+            (normalizedX + warpX + desertSuitabilityOffsetX) * desertSuitabilityScale,
+            (normalizedY + warpY + desertSuitabilityOffsetY) * desertSuitabilityScale,
+            desertSuitabilitySeed,
+            4,
+            0.55,
+            2.2
+          ) *
+            2 -
+          1;
+        suitability = clamp(
+          suitability + suitabilityNoise * desertSuitabilityStrength,
+          0,
+          1
+        );
+      }
       if (suitability > 0.52) {
         const desertNoise = octaveNoise(
           (normalizedX + warpX + desertNoiseOffsetX) * desertNoiseScale,
