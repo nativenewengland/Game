@@ -5933,7 +5933,7 @@ function createWorld(seedString) {
 
       if (groveCandidates.length > 0) {
         groveCandidates.sort((a, b) => b.score - a.score);
-        const baseTarget = Math.max(1, Math.round(groveCandidates.length / 450));
+        const baseTarget = Math.max(1, Math.round(groveCandidates.length / 1350));
         const maxGroves = computeStructurePlacementLimit(
           baseTarget,
           28,
@@ -5949,7 +5949,7 @@ function createWorld(seedString) {
             break;
           }
           const candidate = groveCandidates[i];
-          if (candidate.score < 0.28) {
+          if (candidate.score < 0.32) {
             continue;
           }
           let tooClose = false;
@@ -6036,8 +6036,8 @@ function createWorld(seedString) {
     if (towerCandidates.length > 0) {
       towerCandidates.sort((a, b) => b.score - a.score);
       const area = width * height;
-      const baseTarget = Math.max(1, Math.round(area / 7200));
-      const maxTowers = computeStructurePlacementLimit(baseTarget, 30, towerSettlementMultiplier);
+      const baseTarget = Math.max(1, Math.round(area / 20000));
+      const maxTowers = computeStructurePlacementLimit(baseTarget, 18, towerSettlementMultiplier);
       const baseMinDistance = Math.max(5, Math.round(Math.min(width, height) / 14));
       const minDistance = adjustMinDistance(baseMinDistance, towerSettlementFrequencyNormalized);
       const minDistanceSq = minDistance * minDistance;
@@ -6144,8 +6144,8 @@ function createWorld(seedString) {
     if (towerCandidates.length > 0) {
       towerCandidates.sort((a, b) => b.score - a.score);
       const area = width * height;
-      const baseTarget = Math.max(1, Math.round(area / 7200));
-      const maxTowers = computeStructurePlacementLimit(baseTarget, 30, towerSettlementMultiplier);
+      const baseTarget = Math.max(1, Math.round(area / 20000));
+      const maxTowers = computeStructurePlacementLimit(baseTarget, 18, towerSettlementMultiplier);
       const baseMinDistance = Math.max(5, Math.round(Math.min(width, height) / 14));
       const minDistance = adjustMinDistance(baseMinDistance, towerSettlementFrequencyNormalized);
       const minDistanceSq = minDistance * minDistance;
