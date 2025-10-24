@@ -3872,11 +3872,42 @@ function createWorld(seedString) {
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
   const desertNoiseOffsetX = hasSandTile ? rng() * 4096 : 0;
   const desertNoiseOffsetY = hasSandTile ? rng() * 4096 : 0;
+  const desertWarpSeedX = hasSandTile ? (seedNumber + 0x2a58d2a5) >>> 0 : 0;
+  const desertWarpSeedY = hasSandTile ? (seedNumber + 0x165667b1) >>> 0 : 0;
+  const desertWarpScale = hasSandTile ? 2.2 + rng() * 2.6 : 1;
+  const desertWarpStrength = hasSandTile ? 0.05 + rng() * 0.08 : 0;
+  const desertWarpOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertWarpOffsetY = hasSandTile ? rng() * 4096 : 0;
 
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
     const normalizedY = (y + 0.5) / height;
     const latitude = 1 - normalizedY;
+    let warpedLatitude = latitude;
+    let warpX = 0;
+    let warpY = 0;
+
+    if (hasSandTile && desertWarpStrength > 0) {
+      const warpSampleX = octaveNoise(
+        (normalizedX + desertWarpOffsetX) * desertWarpScale,
+        (normalizedY + desertWarpOffsetY) * desertWarpScale,
+        desertWarpSeedX,
+        3,
+        0.55,
+        2.05
+      );
+      const warpSampleY = octaveNoise(
+        (normalizedX + desertWarpOffsetX + 37.71) * (desertWarpScale * 1.1),
+        (normalizedY + desertWarpOffsetY + 11.53) * (desertWarpScale * 0.92),
+        desertWarpSeedY,
+        3,
+        0.55,
+        2.05
+      );
+      warpX = (warpSampleX * 2 - 1) * desertWarpStrength;
+      warpY = (warpSampleY * 2 - 1) * desertWarpStrength;
+      warpedLatitude = clamp(latitude + warpY * 0.8, 0, 1);
+    }
 
     if (hasSnowTile) {
       if (latitude >= snowLatitudeFull) {
@@ -3904,14 +3935,14 @@ function createWorld(seedString) {
       const idx = y * width + x;
       const rainfallValue = rainfallField[idx];
       const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
-      const equatorialAlignment = clamp(1 - Math.abs(latitude - 0.5) * 2, 0, 1);
+      const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
       const elevationFactor = clamp((heightValue - seaLevel) * 2.6, 0, 1);
       const heat = clamp(equatorialAlignment * 0.75 + (1 - elevationFactor) * 0.35, 0, 1);
       const suitability = clamp(aridity * 0.7 + heat * 0.4, 0, 1);
       if (suitability > 0.52) {
         const desertNoise = octaveNoise(
-          (normalizedX + desertNoiseOffsetX) * desertNoiseScale,
-          (normalizedY + desertNoiseOffsetY) * desertNoiseScale,
+          (normalizedX + warpX + desertNoiseOffsetX) * desertNoiseScale,
+          (normalizedY + warpY + desertNoiseOffsetY) * desertNoiseScale,
           desertNoiseSeed,
           3,
           0.55,
