@@ -764,17 +764,19 @@ button:hover:not(:disabled) {
   background: rgba(12, 14, 22, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 12px;
-  padding: 0.45rem 0.75rem;
+  padding: 0.75rem 1rem;
   color: #f5f7ff;
-  font-size: 0.85rem;
+  font-size: 1rem;
+  line-height: 1.45;
   font-weight: 500;
   letter-spacing: 0.02em;
   box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.45);
   opacity: 0;
   transform: translate3d(0, 0, 0);
   transition: opacity 120ms ease;
-  max-width: min(240px, 70vw);
-  white-space: nowrap;
+  max-width: min(360px, 85vw);
+  min-width: 220px;
+  white-space: normal;
   backdrop-filter: blur(8px);
   z-index: 5;
 }
