@@ -12,6 +12,12 @@ const tileSheets = {
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
     tileSize: 16,
     image: null
+  },
+  worldEdgeGlacier: {
+    key: 'worldEdgeGlacier',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_edge_glacier.png',
+    tileSize: 16,
+    image: null
   }
 };
 
@@ -106,6 +112,14 @@ const riverTileCoords = {
   RIVER_MAJOR_MOUTH_NARROW_E: { row: 8, col: 15 }
 };
 
+const icebergTileCoords = {
+  ICEBERG_SURROUND_1: { row: 10, col: 4 },
+  ICEBERG_SURROUND_2: { row: 11, col: 4 },
+  ICEBERG_SURROUND_3: { row: 12, col: 4 },
+  ICEBERG_SURROUND_4: { row: 13, col: 4 },
+  ICEBERG_SURROUND_5: { row: 14, col: 4 }
+};
+
 const tileLookup = new Map();
 
 function registerTiles(sheetKey, coordMap) {
@@ -122,6 +136,7 @@ function registerTiles(sheetKey, coordMap) {
 
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
+registerTiles('worldEdgeGlacier', icebergTileCoords);
 
 // The evil wizard tower sprite only shows up on some tilesheets. If the
 // currently loaded set does not define it, fall back to the generic tower so
@@ -4236,6 +4251,34 @@ function createWorld(seedString) {
   const snowNoiseOffsetX = rng() * 4096;
   const snowNoiseOffsetY = rng() * 4096;
 
+  const computeSnowPresence = (normalizedX, normalizedY, heightValue) => {
+    const latitude = 1 - normalizedY;
+    if (latitude >= snowLatitudeFull) {
+      return true;
+    }
+    if (latitude > snowLatitudeStart) {
+      const snowBandFactor = clamp((latitude - snowLatitudeStart) / snowLatitudeRange, 0, 1);
+      const elevationFactor = clamp((heightValue - seaLevel) * 3.8, 0, 1);
+      const coverage = clamp(snowBandFactor * 0.7 + elevationFactor * 0.3, 0, 1);
+      const snowNoise = octaveNoise(
+        (normalizedX + snowNoiseOffsetX) * snowNoiseScale,
+        (normalizedY + snowNoiseOffsetY) * snowNoiseScale,
+        snowNoiseSeed,
+        3,
+        0.55,
+        2.2
+      );
+      return snowNoise < coverage;
+    }
+    return false;
+  };
+
+  const icebergOverlayKeys = Object.keys(icebergTileCoords).filter((key) => tileLookup.has(key));
+  const hasIcebergOverlay = icebergOverlayKeys.length > 0;
+  const needSnowPresenceField = hasSnowTile || hasIcebergOverlay;
+  const snowPresenceField = needSnowPresenceField ? new Uint8Array(width * height) : null;
+  const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
+
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
   const desertNoiseOffsetX = hasSandTile ? rng() * 4096 : 0;
@@ -4309,26 +4352,8 @@ function createWorld(seedString) {
       warpedLatitude = clamp(latitude + warpY * 0.8, 0, 1);
     }
 
-    if (hasSnowTile) {
-      if (latitude >= snowLatitudeFull) {
-        return snowTileKey;
-      }
-      if (latitude > snowLatitudeStart) {
-        const snowBandFactor = clamp((latitude - snowLatitudeStart) / snowLatitudeRange, 0, 1);
-        const elevationFactor = clamp((heightValue - seaLevel) * 3.8, 0, 1);
-        const coverage = clamp(snowBandFactor * 0.7 + elevationFactor * 0.3, 0, 1);
-        const snowNoise = octaveNoise(
-          (normalizedX + snowNoiseOffsetX) * snowNoiseScale,
-          (normalizedY + snowNoiseOffsetY) * snowNoiseScale,
-          snowNoiseSeed,
-          3,
-          0.55,
-          2.2
-        );
-        if (snowNoise < coverage) {
-          return snowTileKey;
-        }
-      }
+    if (hasSnowTile && computeSnowPresence(normalizedX, normalizedY, heightValue)) {
+      return snowTileKey;
     }
 
     if (hasSandTile) {
@@ -5319,6 +5344,43 @@ function createWorld(seedString) {
         tile.structureName = null;
         tile.structureDetails = null;
         tile.river = null;
+      }
+    }
+  }
+
+  if (snowPresenceField) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const heightValue = elevationField[idx];
+        snowPresenceField[idx] = computeSnowPresence(normalizedX, normalizedY, heightValue) ? 1 : 0;
+      }
+    }
+  }
+
+  if (hasIcebergOverlay && snowPresenceField) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!waterMask[idx]) {
+          continue;
+        }
+        if (!snowPresenceField[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.overlay) {
+          continue;
+        }
+        const variantNoise = hashCoords(x, y, icebergVariantSeed);
+        const variantIndex = Math.min(
+          icebergOverlayKeys.length - 1,
+          Math.floor(variantNoise * icebergOverlayKeys.length)
+        );
+        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        tile.overlay = overlayKey;
       }
     }
   }
