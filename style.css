@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Uncial+Antiqua&display=swap');
+
 :root {
   color-scheme: dark;
-  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  font-family: 'Cormorant Garamond', 'Uncial Antiqua', serif;
   --accent: #f0c674;
   --accent-dark: #c49b3f;
   --bg: #08090f;
@@ -220,6 +222,14 @@ select,
   background: rgba(0, 0, 0, 0.45);
   box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.4);
   max-width: 560px;
+}
+
+.game-title,
+h1,
+h2,
+h3,
+.embark-eyebrow {
+  font-family: 'Uncial Antiqua', 'Cormorant Garamond', serif;
 }
 
 .game-title {
