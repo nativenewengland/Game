@@ -1654,8 +1654,8 @@ const dwarfPortraitConfig = {
   hairOffsetY: -2,
   beardOffsetY: 2,
   eyePositions: [
-    { x: 13, y: 11 },
-    { x: 18, y: 11 }
+    { x: 13.75, y: 9.75 },
+    { x: 18.75, y: 9.75 }
   ],
   eyeSize: 2
 };
