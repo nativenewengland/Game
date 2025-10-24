@@ -578,8 +578,7 @@ const dwarfHairStyles = {
 const dwarfOptions = {
   gender: [
     { value: 'female', label: 'Female' },
-    { value: 'male', label: 'Male' },
-    { value: 'nonbinary', label: 'Non-binary' }
+    { value: 'male', label: 'Male' }
   ],
   skin: [
     { value: 'umber', label: 'Deep Umber', color: '#4d3123' },
@@ -664,16 +663,6 @@ const dwarfNamePools = {
     'Thorin',
     'Gorim',
     'Norgrim'
-  ],
-  nonbinary: [
-    'Armak',
-    'Lor',
-    'Egil',
-    'Falk',
-    'Nerin',
-    'Isarn',
-    'Edda',
-    'Kol'
   ]
 };
 
@@ -756,7 +745,7 @@ const audioState = {
 };
 
 const soundEffects = {
-  randomiseClick: createSoundEffect('sound/sounds/single-mouse-click-sound.mp3', {
+  randomiseClick: createSoundEffect('sound/sounds/rolling-dice.mp3', {
     volume: 0.6
   })
 };
