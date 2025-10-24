@@ -30,33 +30,3 @@ Font size: 8x12
 Resizing grid to 150x66
 Resizing font to 8x12
 
-New window size: 3840x2019
-Font size: 8x12
-Resizing grid to 480x168
-Resizing font to 20x30
-
-New window size: 1200x800
-Font size: 8x12
-Resizing grid to 150x66
-Resizing font to 8x12
-
-New window size: 3840x2019
-Font size: 8x12
-Resizing grid to 480x168
-Resizing font to 20x30
-
-New window size: 1200x800
-Font size: 8x12
-Resizing grid to 150x66
-Resizing font to 8x12
-
-New window size: 3840x2019
-Font size: 8x12
-Resizing grid to 480x168
-Resizing font to 20x30
-
-New window size: 1200x800
-Font size: 8x12
-Resizing grid to 150x66
-Resizing font to 8x12
-
