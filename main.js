@@ -6,6 +6,12 @@ const tileSheets = {
     path: 'tilesheet/Overworld.png',
     tileSize: 32,
     image: null
+  },
+  worldDetails: {
+    key: 'worldDetails',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
+    tileSize: 16,
+    image: null
   }
 };
 
@@ -47,6 +53,49 @@ const baseTileCoords = {
   TOWN: { row: 2, col: 1 }
 };
 
+const riverTileCoords = {
+  RIVER_NS: { row: 4, col: 0 },
+  RIVER_WE: { row: 4, col: 1 },
+  RIVER_SE: { row: 4, col: 2 },
+  RIVER_SW: { row: 4, col: 3 },
+  RIVER_NE: { row: 4, col: 4 },
+  RIVER_NW: { row: 4, col: 5 },
+  RIVER_NSE: { row: 4, col: 6 },
+  RIVER_SWE: { row: 4, col: 7 },
+  RIVER_NWE: { row: 4, col: 8 },
+  RIVER_NSW: { row: 4, col: 9 },
+  RIVER_NSWE: { row: 4, col: 10 },
+  RIVER_0: { row: 4, col: 11 },
+  RIVER_N: { row: 4, col: 12 },
+  RIVER_S: { row: 4, col: 13 },
+  RIVER_W: { row: 4, col: 14 },
+  RIVER_E: { row: 4, col: 15 },
+  RIVER_MAJOR_NS: { row: 5, col: 0 },
+  RIVER_MAJOR_WE: { row: 5, col: 1 },
+  RIVER_MAJOR_SE: { row: 5, col: 2 },
+  RIVER_MAJOR_SW: { row: 5, col: 3 },
+  RIVER_MAJOR_NE: { row: 5, col: 4 },
+  RIVER_MAJOR_NW: { row: 5, col: 5 },
+  RIVER_MAJOR_NSE: { row: 5, col: 6 },
+  RIVER_MAJOR_SWE: { row: 5, col: 7 },
+  RIVER_MAJOR_NWE: { row: 5, col: 8 },
+  RIVER_MAJOR_NSW: { row: 5, col: 9 },
+  RIVER_MAJOR_NSWE: { row: 5, col: 10 },
+  RIVER_MAJOR_0: { row: 5, col: 11 },
+  RIVER_MAJOR_N: { row: 5, col: 12 },
+  RIVER_MAJOR_S: { row: 5, col: 13 },
+  RIVER_MAJOR_W: { row: 5, col: 14 },
+  RIVER_MAJOR_E: { row: 5, col: 15 },
+  RIVER_MOUTH_NARROW_N: { row: 7, col: 12 },
+  RIVER_MOUTH_NARROW_S: { row: 7, col: 13 },
+  RIVER_MOUTH_NARROW_W: { row: 7, col: 14 },
+  RIVER_MOUTH_NARROW_E: { row: 7, col: 15 },
+  RIVER_MAJOR_MOUTH_NARROW_N: { row: 8, col: 12 },
+  RIVER_MAJOR_MOUTH_NARROW_S: { row: 8, col: 13 },
+  RIVER_MAJOR_MOUTH_NARROW_W: { row: 8, col: 14 },
+  RIVER_MAJOR_MOUTH_NARROW_E: { row: 8, col: 15 }
+};
+
 const tileLookup = new Map();
 
 function registerTiles(sheetKey, coordMap) {
@@ -62,6 +111,7 @@ function registerTiles(sheetKey, coordMap) {
 }
 
 registerTiles('base', baseTileCoords);
+registerTiles('worldDetails', riverTileCoords);
 
 const mapSizePresets = [
   { key: 'mini', label: 'Mini', width: 120, height: 90 },
@@ -2904,7 +2954,7 @@ const riverMaskSuffixLookup = {
   15: 'NSWE'
 };
 
-function resolveRiverTile(riverMap, width, height, x, y) {
+function resolveRiverTile(riverMap, width, height, x, y, waterMask) {
   const idx = y * width + x;
   const strength = riverMap[idx];
   if (strength === 0) {
@@ -2925,12 +2975,148 @@ function resolveRiverTile(riverMap, width, height, x, y) {
     }
   });
   const suffix = riverMaskSuffixLookup[mask] || 'NSWE';
+  const baseKey = `${prefix}${suffix}`;
+  const majorKey = `RIVER_MAJOR_${suffix}`;
+  const hasMajor = tileLookup.has(majorKey);
+  const useMajor = strength >= 3 && hasMajor;
+
+  let tileKey = useMajor ? majorKey : baseKey;
+
+  if (!useMajor && suffix.length === 1 && suffix !== '0' && waterMask) {
+    const direction = suffix;
+    const mouthKey = `RIVER_MOUTH_NARROW_${direction}`;
+    if (tileLookup.has(mouthKey)) {
+      const neighbor = riverNeighborDefinitions.find(({ key }) => key === direction);
+      if (neighbor) {
+        const nx = x + neighbor.dx;
+        const ny = y + neighbor.dy;
+        if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            tileKey = mouthKey;
+          }
+        }
+      }
+    }
+  }
+
+  if (useMajor && suffix.length === 1 && suffix !== '0' && waterMask) {
+    const direction = suffix;
+    const mouthKey = `RIVER_MAJOR_MOUTH_NARROW_${direction}`;
+    if (tileLookup.has(mouthKey)) {
+      const neighbor = riverNeighborDefinitions.find(({ key }) => key === direction);
+      if (neighbor) {
+        const nx = x + neighbor.dx;
+        const ny = y + neighbor.dy;
+        if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            tileKey = mouthKey;
+          }
+        }
+      }
+    }
+  }
+
   return {
-    key: `${prefix}${suffix}`,
+    key: tileKey,
     mask,
     strength,
-    connections: suffix
+    connections: suffix,
+    tileKey
   };
+}
+
+function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height) {
+  const waterTileKey = tileLookup.has('WATER') ? 'WATER' : null;
+  if (!waterTileKey) {
+    return;
+  }
+
+  const visited = new Uint8Array(width * height);
+
+  const convertToWater = (idx) => {
+    if (waterMask[idx]) {
+      return true;
+    }
+    const x = idx % width;
+    const y = Math.floor(idx / width);
+    const tile = tiles[y] && tiles[y][x];
+    if (!tile) {
+      return false;
+    }
+    tile.base = waterTileKey;
+    tile.overlay = null;
+    tile.structure = null;
+    tile.structureName = null;
+    tile.river = null;
+    waterMask[idx] = 1;
+    return true;
+  };
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (visited[idx] || riverMap[idx] === 0) {
+        continue;
+      }
+
+      const stack = [idx];
+      const component = [];
+      const endpoints = [];
+      let touchesWater = false;
+
+      while (stack.length > 0) {
+        const current = stack.pop();
+        if (visited[current]) {
+          continue;
+        }
+        visited[current] = 1;
+        component.push(current);
+        const cx = current % width;
+        const cy = Math.floor(current / width);
+
+        let neighborCount = 0;
+        riverNeighborDefinitions.forEach(({ dx, dy }) => {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            return;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            touchesWater = true;
+          }
+          if (riverMap[nIdx] > 0) {
+            neighborCount += 1;
+            if (!visited[nIdx]) {
+              stack.push(nIdx);
+            }
+          }
+        });
+
+        if (neighborCount <= 1) {
+          endpoints.push(current);
+        }
+      }
+
+      if (touchesWater) {
+        continue;
+      }
+
+      const candidates = endpoints.length > 0 ? endpoints : component;
+      for (let i = 0; i < candidates.length; i += 1) {
+        if (convertToWater(candidates[i])) {
+          touchesWater = true;
+          break;
+        }
+      }
+
+      if (!touchesWater && component.length > 0) {
+        convertToWater(component[0]);
+      }
+    }
+  }
 }
 
 function createWorld(seedString) {
@@ -3785,6 +3971,7 @@ function createWorld(seedString) {
   }
 
   const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel);
+  ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
@@ -3796,7 +3983,7 @@ function createWorld(seedString) {
         tile.river = null;
         continue;
       }
-      const riverTile = resolveRiverTile(riverMap, width, height, x, y);
+      const riverTile = resolveRiverTile(riverMap, width, height, x, y, waterMask);
       tile.river = riverTile || null;
     }
   }
@@ -4128,54 +4315,25 @@ function drawRiverSegment(ctx, river, x, y) {
   if (!river) {
     return;
   }
-  const { mask, strength } = river;
-  const cellSize = drawSize;
-  const halfSize = cellSize / 2;
-  const left = x * cellSize;
-  const top = y * cellSize;
-  const centerX = left + halfSize;
-  const centerY = top + halfSize;
-  const baseWidth = Math.max(2, Math.round(cellSize * (0.12 + strength * 0.045)));
-  const outlineColor = 'rgba(16, 52, 105, 0.8)';
-  const riverColors = ['#3aa0f0', '#2f8ce2', '#297bd6', '#2369c6'];
-  const mainColor = riverColors[Math.min(riverColors.length - 1, Math.max(0, strength - 1))];
-  const highlightWidth = Math.max(1, Math.round(baseWidth * 0.4));
-  const highlightColor = 'rgba(190, 235, 255, 0.85)';
-  const centerRadius = Math.max(2, baseWidth * 0.45);
-  ctx.save();
-  ctx.lineCap = 'round';
-
-  const drawSegments = (color, width, lengthFactor = 1) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    if (mask === 0) {
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, Math.max(width / 2, centerRadius), 0, Math.PI * 2);
-      ctx.stroke();
-      return;
-    }
-    const length = halfSize * lengthFactor;
-    riverNeighborDefinitions.forEach(({ bit, dx, dy }) => {
-      if ((mask & bit) === 0) {
-        return;
-      }
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.lineTo(centerX + dx * length, centerY + dy * length);
-      ctx.stroke();
-    });
-  };
-
-  drawSegments(outlineColor, baseWidth + 2);
-  drawSegments(mainColor, baseWidth);
-  drawSegments(highlightColor, highlightWidth, 0.9);
-
-  ctx.fillStyle = '#3f9cec';
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, centerRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
+  const definition = tileLookup.get(river.tileKey || river.key);
+  if (!definition) {
+    return;
+  }
+  const sheet = state.tileSheets[definition.sheet];
+  if (!sheet || !sheet.image) {
+    return;
+  }
+  ctx.drawImage(
+    sheet.image,
+    definition.sx,
+    definition.sy,
+    definition.size,
+    definition.size,
+    x * drawSize,
+    y * drawSize,
+    drawSize,
+    drawSize
+  );
 }
 
 function drawWorld(world) {
