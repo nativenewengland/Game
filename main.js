@@ -41,7 +41,8 @@ const baseTileCoords = {
   TREE: { row: 1, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
-  DWARFHOLD: { row: 1, col: 3 }
+  DWARFHOLD: { row: 1, col: 3 },
+  TOWN: { row: 2, col: 1 }
 };
 
 const tileLookup = new Map();
@@ -281,6 +282,91 @@ const dwarfholdNameRegions = [
   'the Brass Line'
 ];
 
+const townNamePrefixes = [
+  'Oak',
+  'River',
+  'Stone',
+  'Amber',
+  'Green',
+  'Silver',
+  'Gold',
+  'Iron',
+  'Autumn',
+  'Frost',
+  'Sun',
+  'Star',
+  'Moon',
+  'Wolf',
+  'Wind',
+  'Bright',
+  'High',
+  'Low',
+  'Cedar',
+  'Elm',
+  'Maple',
+  'Ash',
+  'Willow',
+  'King',
+  'Queens',
+  'Dragon',
+  'Hearth',
+  'North',
+  'South',
+  'East',
+  'West'
+];
+
+const townNameSuffixes = [
+  'ford',
+  'field',
+  'holm',
+  'stead',
+  'wich',
+  'wick',
+  'haven',
+  'crest',
+  'gate',
+  'watch',
+  'brook',
+  'ton',
+  'ham',
+  'bridge',
+  'moor',
+  'port',
+  'fall',
+  'mere',
+  'bury',
+  'ridge',
+  'moor',
+  'bank',
+  'view',
+  'grove',
+  'vale',
+  'reach',
+  'cross',
+  'run',
+  'rise',
+  'pass'
+];
+
+const townNameDescriptors = [
+  'Market',
+  'Crossroads',
+  'Commons',
+  'Harbor',
+  'Square',
+  'Heights',
+  'Heath',
+  'Village',
+  'Town',
+  'Hold',
+  'Keep',
+  'Exchange',
+  'Quarter',
+  'Reach',
+  'Hollow'
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -309,6 +395,22 @@ function generateDwarfholdName(random) {
     return `${baseName} ${descriptor}`;
   }
   return baseName;
+}
+
+function generateTownName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(townNamePrefixes, randomFn) || 'Oak';
+  const suffix = pickRandomFrom(townNameSuffixes, randomFn) || 'ford';
+  const baseName = `${prefix}${suffix}`;
+  const descriptor = pickRandomFrom(townNameDescriptors, randomFn);
+  const styleRoll = randomFn();
+  if (styleRoll < 0.3 && descriptor) {
+    return `${baseName} ${descriptor}`;
+  }
+  if (styleRoll < 0.65) {
+    return baseName;
+  }
+  return `Town of ${baseName}`;
 }
 
 function resolveTileName(baseKey) {
@@ -2791,6 +2893,7 @@ function createWorld(seedString) {
       }))
   );
   const dwarfholds = [];
+  const towns = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
@@ -3065,6 +3168,81 @@ function createWorld(seedString) {
     }
   }
 
+  const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
+  if (townKey) {
+    const townCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure) {
+          continue;
+        }
+        const elevationValue = elevationField[idx];
+        const elevationScore = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.08)) * 2.6, 0, 1);
+        let waterNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          if (waterMask[ny * width + nx]) {
+            waterNeighbors += 1;
+          }
+        }
+        const waterScore = waterNeighbors / neighborOffsets8.length;
+        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2);
+        const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
+        const score = elevationScore * 0.55 + waterScore * 0.25 + edgeScore * 0.15 + rng() * 0.2;
+        townCandidates.push({ x, y, score });
+      }
+    }
+
+    if (townCandidates.length > 0) {
+      townCandidates.sort((a, b) => b.score - a.score);
+      const area = width * height;
+      const desiredCount = Math.max(2, Math.round(area / 4800));
+      const maxTowns = Math.min(desiredCount, 36);
+      const minDistance = Math.max(6, Math.round(Math.min(width, height) / 12));
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < townCandidates.length; i += 1) {
+        if (placed.length >= maxTowns) {
+          break;
+        }
+        const candidate = townCandidates[i];
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure) {
+          continue;
+        }
+        const name = generateTownName(rng);
+        tile.structure = townKey;
+        tile.structureName = name;
+        towns.push({ x: candidate.x, y: candidate.y, name });
+        placed.push(candidate);
+      }
+    }
+  }
+
   const hasTreeTile = tileLookup.has('TREE');
   if (hasTreeTile) {
     const treeOverlayKey = 'TREE';
@@ -3142,7 +3320,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey) {
+        if (tile.overlay || tile.base !== grassTileKey || tile.structure) {
           continue;
         }
         const density = treeDensityField[idx];
@@ -3166,7 +3344,7 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
-          if (tile.overlay || tile.base !== grassTileKey) {
+          if (tile.overlay || tile.base !== grassTileKey || tile.structure) {
             continue;
           }
           let neighborTrees = 0;
@@ -3211,7 +3389,7 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey) {
+        if (tile.overlay || tile.base !== grassTileKey || tile.structure) {
           continue;
         }
         treeMask[idx] = 1;
@@ -3221,7 +3399,7 @@ function createWorld(seedString) {
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds };
+  return { tiles, seedString: finalSeed, dwarfholds, towns };
 }
 
 function generateSeedString(seedNumber) {
