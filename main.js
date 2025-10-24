@@ -1206,6 +1206,14 @@ const dwarfTraitAttributeDefinitions = [
       </svg>
     `),
     isActive: (dwarf) => dwarf?.gender === 'male' && dwarf?.beard === 'clean'
+  },
+  {
+    key: 'dark-dwarf',
+    label: 'Dark Dwarf Heritage',
+    description:
+      'Your soot colored skin indicates you to hail from the ash covered lands of Dun Mortis. You are known by your ivory skinned cousins as the Dark Dwarves, a race cast away from the light of the All-father into the refuge bin of Stonebeards furance. You are hated by your kin as an oathbreaker by virture of your birthright and if you attempt to enter into their holds will likely be killed on sight.',
+    icon: 'tilesheet/darkdwarf.png',
+    isActive: (dwarf) => dwarf?.skin === 'umber'
   }
 ];
 
