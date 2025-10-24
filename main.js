@@ -6,6 +6,12 @@ const tileSheets = {
     path: 'tilesheet/Overworld.png',
     tileSize: 32,
     image: null
+  },
+  worldDetails: {
+    key: 'worldDetails',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
+    tileSize: 16,
+    image: null
   }
 };
 
@@ -47,6 +53,49 @@ const baseTileCoords = {
   TOWN: { row: 2, col: 1 }
 };
 
+const riverTileCoords = {
+  RIVER_NS: { row: 4, col: 0 },
+  RIVER_WE: { row: 4, col: 1 },
+  RIVER_SE: { row: 4, col: 2 },
+  RIVER_SW: { row: 4, col: 3 },
+  RIVER_NE: { row: 4, col: 4 },
+  RIVER_NW: { row: 4, col: 5 },
+  RIVER_NSE: { row: 4, col: 6 },
+  RIVER_SWE: { row: 4, col: 7 },
+  RIVER_NWE: { row: 4, col: 8 },
+  RIVER_NSW: { row: 4, col: 9 },
+  RIVER_NSWE: { row: 4, col: 10 },
+  RIVER_0: { row: 4, col: 11 },
+  RIVER_N: { row: 4, col: 12 },
+  RIVER_S: { row: 4, col: 13 },
+  RIVER_W: { row: 4, col: 14 },
+  RIVER_E: { row: 4, col: 15 },
+  RIVER_MAJOR_NS: { row: 5, col: 0 },
+  RIVER_MAJOR_WE: { row: 5, col: 1 },
+  RIVER_MAJOR_SE: { row: 5, col: 2 },
+  RIVER_MAJOR_SW: { row: 5, col: 3 },
+  RIVER_MAJOR_NE: { row: 5, col: 4 },
+  RIVER_MAJOR_NW: { row: 5, col: 5 },
+  RIVER_MAJOR_NSE: { row: 5, col: 6 },
+  RIVER_MAJOR_SWE: { row: 5, col: 7 },
+  RIVER_MAJOR_NWE: { row: 5, col: 8 },
+  RIVER_MAJOR_NSW: { row: 5, col: 9 },
+  RIVER_MAJOR_NSWE: { row: 5, col: 10 },
+  RIVER_MAJOR_0: { row: 5, col: 11 },
+  RIVER_MAJOR_N: { row: 5, col: 12 },
+  RIVER_MAJOR_S: { row: 5, col: 13 },
+  RIVER_MAJOR_W: { row: 5, col: 14 },
+  RIVER_MAJOR_E: { row: 5, col: 15 },
+  RIVER_MOUTH_NARROW_N: { row: 7, col: 12 },
+  RIVER_MOUTH_NARROW_S: { row: 7, col: 13 },
+  RIVER_MOUTH_NARROW_W: { row: 7, col: 14 },
+  RIVER_MOUTH_NARROW_E: { row: 7, col: 15 },
+  RIVER_MAJOR_MOUTH_NARROW_N: { row: 8, col: 12 },
+  RIVER_MAJOR_MOUTH_NARROW_S: { row: 8, col: 13 },
+  RIVER_MAJOR_MOUTH_NARROW_W: { row: 8, col: 14 },
+  RIVER_MAJOR_MOUTH_NARROW_E: { row: 8, col: 15 }
+};
+
 const tileLookup = new Map();
 
 function registerTiles(sheetKey, coordMap) {
@@ -62,6 +111,7 @@ function registerTiles(sheetKey, coordMap) {
 }
 
 registerTiles('base', baseTileCoords);
+registerTiles('worldDetails', riverTileCoords);
 
 const mapSizePresets = [
   { key: 'mini', label: 'Mini', width: 120, height: 90 },
@@ -284,6 +334,37 @@ const dwarfholdNameRegions = [
   'the Brass Line'
 ];
 
+const dwarfholdRulerTitles = {
+  female: [
+    'High Thane',
+    'Forge Matron',
+    'Runesmith Queen',
+    'Hearthmother',
+    'Deepwarden'
+  ],
+  male: [
+    'High Thane',
+    'Forge Lord',
+    'Runesmith Prince',
+    'Mountain King',
+    'Deepwarden'
+  ],
+  neutral: ['High Thane', 'Forge Thane']
+};
+
+const dwarfholdHallmarks = [
+  'Renowned for adamantine vaults that hum with runic wards.',
+  'Brews ember-ale said to warm even a dragonborn heart.',
+  'Forges battleaxes tempered in magmafall cascades.',
+  'Gemcutters here carve prisms that sing when struck.',
+  'Hosts archives of rune-scribed lore older than empires.',
+  'Its sentry golems stand watch over sealed deep-gates.',
+  'Stonewrights sculpt living statues of honoured ancestors.',
+  'Traders deal in starlight opals mined from midnight caverns.',
+  'Their forges are stoked by dragonfire bound in crystal cages.',
+  'Tunnel gardens yield luminous mushrooms for distant markets.'
+];
+
 const townNamePrefixes = [
   'Oak',
   'River',
@@ -443,6 +524,39 @@ function generateDwarfholdName(random) {
   return baseName;
 }
 
+function generateDwarfholdDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
+  const genderRoll = randomFn();
+  const gender = genderRoll < 0.45 ? 'female' : genderRoll > 0.9 ? 'neutral' : 'male';
+  const namePool = dwarfNamePools[gender === 'neutral' ? 'male' : gender] || dwarfNamePools.male;
+  const firstName = pickRandomFrom(namePool, randomFn) || 'Urist';
+  const clanOption = pickRandomFrom(dwarfOptions.clan, randomFn) || dwarfOptions.clan?.[0];
+  const clanName = clanOption?.label || 'Stonebeard';
+  const titlePool =
+    dwarfholdRulerTitles[gender === 'neutral' ? 'neutral' : gender] || dwarfholdRulerTitles.neutral;
+  const titleFallback = dwarfholdRulerTitles.neutral?.[0] || 'High Thane';
+  const rulerTitle = pickRandomFrom(titlePool, randomFn) || titleFallback;
+  const hallmark = pickRandomFrom(dwarfholdHallmarks, randomFn) ||
+    'Renowned for stout walls and heartier spirits.';
+  const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
+  const prominentClanOption = randomFn() < 0.35 ? pickRandomFrom(dwarfOptions.clan, randomFn) : clanOption;
+  const prominentClan = prominentClanOption?.label || clanName;
+
+  return {
+    type: 'dwarfhold',
+    name,
+    population,
+    ruler: {
+      title: rulerTitle,
+      name: `${firstName} ${clanName}`
+    },
+    foundedYearsAgo,
+    prominentClan,
+    hallmark
+  };
+}
+
 function generateTownName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(townNamePrefixes, randomFn) || 'Oak';
@@ -484,6 +598,7 @@ const state = {
     lastSeedString: '',
     forestFrequency: 50,
     mountainFrequency: 50,
+    riverFrequency: 50,
     humanSettlementFrequency: 50,
     dwarfSettlementFrequency: 50,
     woodElfSettlementFrequency: 50
@@ -711,8 +826,8 @@ const dwarfPortraitConfig = {
   hairOffsetY: -2,
   beardOffsetY: 2,
   eyePositions: [
-    { x: 13, y: 15 },
-    { x: 18, y: 15 }
+    { x: 13, y: 11 },
+    { x: 18, y: 11 }
   ],
   eyeSize: 2
 };
@@ -773,6 +888,8 @@ const elements = {
   forestFrequencyValue: document.getElementById('forest-frequency-value'),
   mountainFrequencyInput: document.getElementById('mountain-frequency'),
   mountainFrequencyValue: document.getElementById('mountain-frequency-value'),
+  riverFrequencyInput: document.getElementById('river-frequency'),
+  riverFrequencyValue: document.getElementById('river-frequency-value'),
   humanSettlementFrequencyInput: document.getElementById('human-settlement-frequency'),
   humanSettlementFrequencyValue: document.getElementById('human-settlement-frequency-value'),
   dwarfSettlementFrequencyInput: document.getElementById('dwarf-settlement-frequency'),
@@ -797,7 +914,6 @@ const elements = {
   dwarfCustomizer: document.getElementById('dwarf-customizer'),
   dwarfCustomizerForm: document.getElementById('dwarf-customizer-form'),
   dwarfRosterList: document.getElementById('dwarf-roster-list'),
-  dwarfRollNew: document.getElementById('dwarf-roll-new'),
   dwarfPrev: document.getElementById('dwarf-prev'),
   dwarfNext: document.getElementById('dwarf-next'),
   dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
@@ -988,6 +1104,9 @@ function applyFormSettings() {
   const mountainFrequencyRaw = elements.mountainFrequencyInput
     ? Number.parseInt(elements.mountainFrequencyInput.value, 10)
     : state.settings.mountainFrequency;
+  const riverFrequencyRaw = elements.riverFrequencyInput
+    ? Number.parseInt(elements.riverFrequencyInput.value, 10)
+    : state.settings.riverFrequency;
   const humanSettlementFrequencyRaw = elements.humanSettlementFrequencyInput
     ? Number.parseInt(elements.humanSettlementFrequencyInput.value, 10)
     : state.settings.humanSettlementFrequency;
@@ -1009,6 +1128,10 @@ function applyFormSettings() {
   state.settings.mountainFrequency = sanitizeFrequencyValue(
     Number.isNaN(mountainFrequencyRaw) ? state.settings.mountainFrequency : mountainFrequencyRaw,
     state.settings.mountainFrequency
+  );
+  state.settings.riverFrequency = sanitizeFrequencyValue(
+    Number.isNaN(riverFrequencyRaw) ? state.settings.riverFrequency : riverFrequencyRaw,
+    state.settings.riverFrequency
   );
   state.settings.humanSettlementFrequency = sanitizeFrequencyValue(
     Number.isNaN(humanSettlementFrequencyRaw)
@@ -1032,6 +1155,28 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value).replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return char;
+    }
+  });
 }
 
 function sanitizeFrequencyValue(value, fallback) {
@@ -1657,11 +1802,6 @@ function randomiseActiveDwarf() {
   setActiveDwarf(activeIndex);
 }
 
-function rollNewDwarfProfile() {
-  initialiseDwarfParty();
-  updateCustomizerUI();
-}
-
 function isDwarfCustomizerVisible() {
   return Boolean(elements.dwarfCustomizer && !elements.dwarfCustomizer.classList.contains('hidden'));
 }
@@ -2011,12 +2151,74 @@ function hideMapTooltip() {
   elements.mapTooltip.setAttribute('aria-hidden', 'true');
 }
 
-function showMapTooltip(label, pointerX, pointerY, boundsRect) {
+function buildStructureTooltipContent(tile) {
+  if (!tile || !tile.structureName) {
+    return null;
+  }
+
+  const details = tile.structureDetails;
+  if (details && details.type === 'dwarfhold') {
+    const sections = [];
+    const entries = [];
+    const resolvedName = details.name || tile.structureName;
+    sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+
+    if (Number.isFinite(details.population)) {
+      const populationValue = Math.max(0, Math.round(details.population));
+      const formattedPopulation = populationValue.toLocaleString('en-US');
+      entries.push({ label: 'Population', value: `${formattedPopulation} dwarves` });
+    }
+
+    if (details.ruler) {
+      const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
+      const rulerName = details.ruler.name || '';
+      const combined = `${rulerTitle}${rulerName}`.trim();
+      if (combined) {
+        entries.push({ label: 'Ruler', value: combined });
+      }
+    }
+
+    if (Number.isFinite(details.foundedYearsAgo)) {
+      const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
+      entries.push({ label: 'Founded', value: `${foundedValue} years ago` });
+    }
+
+    if (details.prominentClan) {
+      entries.push({ label: 'Prominent Clan', value: details.prominentClan });
+    }
+
+    if (entries.length > 0) {
+      const listItems = entries
+        .map(
+          ({ label, value }) =>
+            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+              value
+            )}</span></li>`
+        )
+        .join('');
+      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+
+    if (details.hallmark) {
+      sections.push(`<p class="tooltip-note">${escapeHtml(details.hallmark)}</p>`);
+    }
+
+    return sections.join('');
+  }
+
+  return `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
+}
+
+function showMapTooltip(content, pointerX, pointerY, boundsRect) {
   if (!elements.mapTooltip) {
     return;
   }
+  if (!content) {
+    hideMapTooltip();
+    return;
+  }
   const tooltip = elements.mapTooltip;
-  tooltip.textContent = label;
+  tooltip.innerHTML = content;
   tooltip.classList.add('visible');
   tooltip.setAttribute('aria-hidden', 'false');
   const margin = 16;
@@ -2167,11 +2369,16 @@ function setupMapInteractions() {
       return;
     }
     const tile = row[tileX];
-    if (!tile || !tile.structureName) {
+    if (!tile) {
       hideMapTooltip();
       return;
     }
-    showMapTooltip(tile.structureName, pointerX, pointerY, rect);
+    const tooltipContent = buildStructureTooltipContent(tile);
+    if (!tooltipContent) {
+      hideMapTooltip();
+      return;
+    }
+    showMapTooltip(tooltipContent, pointerX, pointerY, rect);
   };
 
   const handleWheel = (event) => {
@@ -2799,7 +3006,25 @@ function determineAlignmentSuffix(alignment, savagery) {
   return '';
 }
 
-function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
+function buildRiverMap(
+  elevation,
+  rainfall,
+  drainage,
+  width,
+  height,
+  seaLevel,
+  options = {}
+) {
+  const frequencyNormalized = clamp(
+    typeof options.frequencyNormalized === 'number' ? options.frequencyNormalized : 0.5,
+    0,
+    1
+  );
+  const frequencyMultiplier = lerp(0.45, 1.75, frequencyNormalized);
+  const rainfallThreshold = lerp(0.65, 0.45, frequencyNormalized);
+  const weightThreshold = 0.12 * lerp(1.7, 0.6, frequencyNormalized);
+  const majorRiverThreshold = lerp(0.45, 0.28, frequencyNormalized);
+
   const riverMap = new Uint8Array(width * height);
   const candidates = [];
   for (let y = 1; y < height - 1; y += 1) {
@@ -2810,19 +3035,20 @@ function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
         continue;
       }
       const rain = rainfall[idx];
-      if (rain < 0.5) {
+      if (rain < rainfallThreshold) {
         continue;
       }
       const sink = 1 - drainage[idx];
       const weight = rain * rain * (elev - seaLevel) * (0.5 + sink * 0.5);
-      if (weight > 0.12) {
+      if (weight > weightThreshold) {
         candidates.push({ x, y, weight });
       }
     }
   }
 
   candidates.sort((a, b) => b.weight - a.weight);
-  const maxSources = Math.max(8, Math.floor((width * height) / 3200));
+  const baseSources = Math.max(8, Math.floor((width * height) / 3200));
+  const maxSources = Math.max(4, Math.round(baseSources * frequencyMultiplier));
   const directions = [
     [0, -1],
     [1, 0],
@@ -2833,7 +3059,7 @@ function buildRiverMap(elevation, rainfall, drainage, width, height, seaLevel) {
   for (let i = 0; i < candidates.length && i < maxSources; i += 1) {
     let { x, y } = candidates[i];
     let steps = 0;
-    let strength = candidates[i].weight > 0.35 ? 2 : 1;
+    let strength = candidates[i].weight > majorRiverThreshold ? 2 : 1;
     while (steps < width + height) {
       const idx = y * width + x;
       riverMap[idx] = Math.min(4, riverMap[idx] + strength);
@@ -2904,7 +3130,7 @@ const riverMaskSuffixLookup = {
   15: 'NSWE'
 };
 
-function resolveRiverTile(riverMap, width, height, x, y) {
+function resolveRiverTile(riverMap, width, height, x, y, waterMask) {
   const idx = y * width + x;
   const strength = riverMap[idx];
   if (strength === 0) {
@@ -2925,12 +3151,149 @@ function resolveRiverTile(riverMap, width, height, x, y) {
     }
   });
   const suffix = riverMaskSuffixLookup[mask] || 'NSWE';
+  const baseKey = `${prefix}${suffix}`;
+  const majorKey = `RIVER_MAJOR_${suffix}`;
+  const hasMajor = tileLookup.has(majorKey);
+  const useMajor = strength >= 3 && hasMajor;
+
+  let tileKey = useMajor ? majorKey : baseKey;
+
+  if (!useMajor && suffix.length === 1 && suffix !== '0' && waterMask) {
+    const direction = suffix;
+    const mouthKey = `RIVER_MOUTH_NARROW_${direction}`;
+    if (tileLookup.has(mouthKey)) {
+      const neighbor = riverNeighborDefinitions.find(({ key }) => key === direction);
+      if (neighbor) {
+        const nx = x + neighbor.dx;
+        const ny = y + neighbor.dy;
+        if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            tileKey = mouthKey;
+          }
+        }
+      }
+    }
+  }
+
+  if (useMajor && suffix.length === 1 && suffix !== '0' && waterMask) {
+    const direction = suffix;
+    const mouthKey = `RIVER_MAJOR_MOUTH_NARROW_${direction}`;
+    if (tileLookup.has(mouthKey)) {
+      const neighbor = riverNeighborDefinitions.find(({ key }) => key === direction);
+      if (neighbor) {
+        const nx = x + neighbor.dx;
+        const ny = y + neighbor.dy;
+        if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            tileKey = mouthKey;
+          }
+        }
+      }
+    }
+  }
+
   return {
-    key: `${prefix}${suffix}`,
+    key: tileKey,
     mask,
     strength,
-    connections: suffix
+    connections: suffix,
+    tileKey
   };
+}
+
+function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height) {
+  const waterTileKey = tileLookup.has('WATER') ? 'WATER' : null;
+  if (!waterTileKey) {
+    return;
+  }
+
+  const visited = new Uint8Array(width * height);
+
+  const convertToWater = (idx) => {
+    if (waterMask[idx]) {
+      return true;
+    }
+    const x = idx % width;
+    const y = Math.floor(idx / width);
+    const tile = tiles[y] && tiles[y][x];
+    if (!tile) {
+      return false;
+    }
+    tile.base = waterTileKey;
+    tile.overlay = null;
+    tile.structure = null;
+    tile.structureName = null;
+    tile.structureDetails = null;
+    tile.river = null;
+    waterMask[idx] = 1;
+    return true;
+  };
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (visited[idx] || riverMap[idx] === 0) {
+        continue;
+      }
+
+      const stack = [idx];
+      const component = [];
+      const endpoints = [];
+      let touchesWater = false;
+
+      while (stack.length > 0) {
+        const current = stack.pop();
+        if (visited[current]) {
+          continue;
+        }
+        visited[current] = 1;
+        component.push(current);
+        const cx = current % width;
+        const cy = Math.floor(current / width);
+
+        let neighborCount = 0;
+        riverNeighborDefinitions.forEach(({ dx, dy }) => {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            return;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            touchesWater = true;
+          }
+          if (riverMap[nIdx] > 0) {
+            neighborCount += 1;
+            if (!visited[nIdx]) {
+              stack.push(nIdx);
+            }
+          }
+        });
+
+        if (neighborCount <= 1) {
+          endpoints.push(current);
+        }
+      }
+
+      if (touchesWater) {
+        continue;
+      }
+
+      const candidates = endpoints.length > 0 ? endpoints : component;
+      for (let i = 0; i < candidates.length; i += 1) {
+        if (convertToWater(candidates[i])) {
+          touchesWater = true;
+          break;
+        }
+      }
+
+      if (!touchesWater && component.length > 0) {
+        convertToWater(component[0]);
+      }
+    }
+  }
 }
 
 function createWorld(seedString) {
@@ -2940,6 +3303,7 @@ function createWorld(seedString) {
   const height = state.settings.height;
   const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
   const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+  const riverFrequencySetting = sanitizeFrequencyValue(state.settings.riverFrequency, 50);
   const humanSettlementFrequencySetting = sanitizeFrequencyValue(
     state.settings.humanSettlementFrequency,
     50
@@ -2954,6 +3318,7 @@ function createWorld(seedString) {
   );
   const forestBias = forestFrequencySetting / 50 - 1;
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
+  const riverFrequencyNormalized = clamp(riverFrequencySetting / 100, 0, 1);
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
   const dwarfSettlementFrequencyNormalized = clamp(dwarfSettlementFrequencySetting / 100, 0, 1);
   const woodElfSettlementFrequencyNormalized = clamp(woodElfSettlementFrequencySetting / 100, 0, 1);
@@ -3162,6 +3527,7 @@ function createWorld(seedString) {
         overlay: null,
         structure: null,
         structureName: null,
+        structureDetails: null,
         river: null
       }))
   );
@@ -3217,6 +3583,7 @@ function createWorld(seedString) {
       tile.overlay = null;
       tile.structure = null;
       tile.structureName = null;
+      tile.structureDetails = null;
       tile.river = null;
     }
   }
@@ -3749,10 +4116,12 @@ function createWorld(seedString) {
             continue;
           }
           const name = generateDwarfholdName(rng);
+          const details = generateDwarfholdDetails(name, rng);
           tile.structure = dwarfholdKey;
           tile.structureName = name;
+          tile.structureDetails = details;
           placed.push(candidate);
-          dwarfholds.push({ x: candidate.x, y: candidate.y, name });
+          dwarfholds.push({ x: candidate.x, y: candidate.y, ...details });
         }
       }
     }
@@ -3779,12 +4148,16 @@ function createWorld(seedString) {
         tile.overlay = null;
         tile.structure = null;
         tile.structureName = null;
+        tile.structureDetails = null;
         tile.river = null;
       }
     }
   }
 
-  const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel);
+  const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel, {
+    frequencyNormalized: riverFrequencyNormalized
+  });
+  ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
@@ -3796,7 +4169,7 @@ function createWorld(seedString) {
         tile.river = null;
         continue;
       }
-      const riverTile = resolveRiverTile(riverMap, width, height, x, y);
+      const riverTile = resolveRiverTile(riverMap, width, height, x, y, waterMask);
       tile.river = riverTile || null;
     }
   }
@@ -3891,6 +4264,7 @@ function createWorld(seedString) {
         const name = generateTownName(rng);
         tile.structure = townKey;
         tile.structureName = name;
+        tile.structureDetails = null;
         towns.push({ x: candidate.x, y: candidate.y, name });
         placed.push(candidate);
       }
@@ -4109,6 +4483,7 @@ function createWorld(seedString) {
           const name = generateWoodElfGroveName(rng);
           tile.structure = woodElfGroveKey;
           tile.structureName = name;
+          tile.structureDetails = null;
           placed.push(candidate);
           woodElfGroves.push({ x: candidate.x, y: candidate.y, name });
         }
@@ -4128,54 +4503,25 @@ function drawRiverSegment(ctx, river, x, y) {
   if (!river) {
     return;
   }
-  const { mask, strength } = river;
-  const cellSize = drawSize;
-  const halfSize = cellSize / 2;
-  const left = x * cellSize;
-  const top = y * cellSize;
-  const centerX = left + halfSize;
-  const centerY = top + halfSize;
-  const baseWidth = Math.max(2, Math.round(cellSize * (0.12 + strength * 0.045)));
-  const outlineColor = 'rgba(16, 52, 105, 0.8)';
-  const riverColors = ['#3aa0f0', '#2f8ce2', '#297bd6', '#2369c6'];
-  const mainColor = riverColors[Math.min(riverColors.length - 1, Math.max(0, strength - 1))];
-  const highlightWidth = Math.max(1, Math.round(baseWidth * 0.4));
-  const highlightColor = 'rgba(190, 235, 255, 0.85)';
-  const centerRadius = Math.max(2, baseWidth * 0.45);
-  ctx.save();
-  ctx.lineCap = 'round';
-
-  const drawSegments = (color, width, lengthFactor = 1) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    if (mask === 0) {
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, Math.max(width / 2, centerRadius), 0, Math.PI * 2);
-      ctx.stroke();
-      return;
-    }
-    const length = halfSize * lengthFactor;
-    riverNeighborDefinitions.forEach(({ bit, dx, dy }) => {
-      if ((mask & bit) === 0) {
-        return;
-      }
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.lineTo(centerX + dx * length, centerY + dy * length);
-      ctx.stroke();
-    });
-  };
-
-  drawSegments(outlineColor, baseWidth + 2);
-  drawSegments(mainColor, baseWidth);
-  drawSegments(highlightColor, highlightWidth, 0.9);
-
-  ctx.fillStyle = '#3f9cec';
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, centerRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
+  const definition = tileLookup.get(river.tileKey || river.key);
+  if (!definition) {
+    return;
+  }
+  const sheet = state.tileSheets[definition.sheet];
+  if (!sheet || !sheet.image) {
+    return;
+  }
+  ctx.drawImage(
+    sheet.image,
+    definition.sx,
+    definition.sy,
+    definition.size,
+    definition.size,
+    x * drawSize,
+    y * drawSize,
+    drawSize,
+    drawSize
+  );
 }
 
 function drawWorld(world) {
@@ -4325,6 +4671,11 @@ function syncInputsWithSettings() {
     elements.mountainFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.mountainFrequencyValue, value);
   }
+  if (elements.riverFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.riverFrequency, 50);
+    elements.riverFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.riverFrequencyValue, value);
+  }
   if (elements.humanSettlementFrequencyInput) {
     const value = sanitizeFrequencyValue(state.settings.humanSettlementFrequency, 50);
     elements.humanSettlementFrequencyInput.value = value.toString();
@@ -4366,6 +4717,13 @@ function attachEvents() {
     elements.mountainFrequencyInput.addEventListener('input', (event) => {
       const value = sanitizeFrequencyValue(event.target.value, state.settings.mountainFrequency);
       updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+    });
+  }
+
+  if (elements.riverFrequencyInput) {
+    elements.riverFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.riverFrequency);
+      updateFrequencyDisplay(elements.riverFrequencyValue, value);
     });
   }
 
@@ -4498,12 +4856,6 @@ function attachEvents() {
     elements.dwarfRandomise.addEventListener('click', () => {
       randomiseActiveDwarf();
       playSoundEffect(soundEffects.randomiseClick);
-    });
-  }
-
-  if (elements.dwarfRollNew) {
-    elements.dwarfRollNew.addEventListener('click', () => {
-      rollNewDwarfProfile();
     });
   }
 
