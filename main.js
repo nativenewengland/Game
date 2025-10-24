@@ -170,6 +170,7 @@ function getMapSizeLabel(preset, width, height) {
 }
 
 const defaultMapSize = getMapSizePreset('normal');
+const defaultMountainFrequency = 35;
 
 const worldNames = [
   'Nûrn',
@@ -873,7 +874,7 @@ const state = {
     seedString: '',
     lastSeedString: '',
     forestFrequency: 50,
-    mountainFrequency: 50,
+    mountainFrequency: defaultMountainFrequency,
     riverFrequency: 50,
     humanSettlementFrequency: 50,
     dwarfSettlementFrequency: 50,
@@ -3984,7 +3985,10 @@ function createWorld(seedString) {
   const width = state.settings.width;
   const height = state.settings.height;
   const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
-  const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+  const mountainFrequencySetting = sanitizeFrequencyValue(
+    state.settings.mountainFrequency,
+    defaultMountainFrequency
+  );
   const riverFrequencySetting = sanitizeFrequencyValue(state.settings.riverFrequency, 50);
   const humanSettlementFrequencySetting = sanitizeFrequencyValue(
     state.settings.humanSettlementFrequency,
@@ -6104,7 +6108,10 @@ function syncInputsWithSettings() {
     updateFrequencyDisplay(elements.forestFrequencyValue, value);
   }
   if (elements.mountainFrequencyInput) {
-    const value = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+    const value = sanitizeFrequencyValue(
+      state.settings.mountainFrequency,
+      defaultMountainFrequency
+    );
     elements.mountainFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.mountainFrequencyValue, value);
   }
