@@ -449,6 +449,15 @@ const dwarfholdPopulationRaceOptions = [
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
+const evilWizardTowerPopulationRaceOptions = [
+  { key: 'wizards', label: 'Wizards', color: '#9c5cff' },
+  { key: 'apprentices', label: 'Apprentices', color: '#b389ff' },
+  { key: 'thralls', label: 'Thralls', color: '#646e78' },
+  { key: 'summoned', label: 'Summoned Entities', color: '#ff8ba7' },
+  { key: 'guards', label: 'Enslaved Guards', color: '#f2cd5c' },
+  { key: 'others', label: 'Others', color: '#9e9e9e' }
+];
+
 const townRulerTitles = {
   male: ['Mayor', 'Lord Mayor', 'High Steward', 'Burgomaster', 'Castellan'],
   female: ['Mayor', 'Lady Mayor', 'High Steward', 'Burgomistress', 'Castellan'],
@@ -533,7 +542,15 @@ const townFirstNamePools = {
   neutral: ['Arlen', 'Ember', 'Finley', 'Morgan', 'Robin', 'Sage', 'Tarian']
 };
 
-const settlementDetailTypes = new Set(['dwarfhold', 'greatDwarfhold', 'town', 'city', 'village', 'hamlet']);
+const settlementDetailTypes = new Set([
+  'dwarfhold',
+  'greatDwarfhold',
+  'town',
+  'city',
+  'village',
+  'hamlet',
+  'evilWizardTower'
+]);
 
 function resolveTownRulerTitle(gender, randomFn) {
   const genderPool =
@@ -671,6 +688,72 @@ const towerNameQualifiers = [
   'of the First Light',
   'of the Last Watch',
   'of the Silent Choir'
+];
+
+const evilWizardRulerTitles = [
+  'Archwizard',
+  'Grand Warlock',
+  'Mistress of Hexes',
+  'Dread Magister',
+  'Shadow Thaumaturge',
+  'High Necromancer'
+];
+
+const evilWizardGivenNames = [
+  'Malachar',
+  'Ilyria',
+  'Vorstag',
+  'Seraphine',
+  'Kharzul',
+  'Nymera',
+  'Vaelix',
+  'Thalorin',
+  'Mordra',
+  'Zephyros',
+  'Elandra',
+  'Raziel'
+];
+
+const evilWizardSurnames = [
+  'Nightweaver',
+  'Grimspire',
+  'Voidbinder',
+  'Dusksong',
+  'Ashmantle',
+  'Frostvein',
+  'Starshroud',
+  'Runeveil'
+];
+
+const evilWizardEpithets = [
+  'the Unseen',
+  'the Cruel',
+  'the Whisperer',
+  'the Pale Flame',
+  'the Crimson Star',
+  'the Endless',
+  'the Voidcalled',
+  'the Shadowed',
+  'the Withering Gale',
+  'the Stormbinder'
+];
+
+const evilWizardCabalNames = [
+  'Circle of Nightglass',
+  'Order of the Ebon Star',
+  'Covenant of Ashen Veils',
+  'Cabal of Thorned Sigils',
+  'Symphony of Hollow Suns',
+  'Chorus of Silent Bells'
+];
+
+const evilWizardTowerHallmarks = [
+  'Shrouded perpetually in stormclouds that crackle with violet lightning.',
+  'Whispers say its halls rearrange themselves with each moonrise.',
+  'The central spire hums with runes that siphon magic from the ley.',
+  'Populated by constructs wrought from obsidian and bone.',
+  'Its beacon pulses nightly, summoning spirits from distant graves.',
+  'Said to house a library bound in the memories of captured heroes.'
 ];
 
 const woodElfGrovePrefixes = [
@@ -881,6 +964,19 @@ function generateDwarfholdPopulationBreakdown(population, random) {
   });
 }
 
+function generateEvilWizardTowerPopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(
+    evilWizardTowerPopulationRaceOptions,
+    population,
+    random,
+    {
+      majorityIndex: 0,
+      majorityShareRange: [0.45, 0.7],
+      ensureMajority: true
+    }
+  );
+}
+
 function generateTownPopulationBreakdown(population, random) {
   return generatePopulationBreakdownFromOptions(townPopulationRaceOptions, population, random, {
     majorityIndex: 0,
@@ -967,6 +1063,48 @@ function generateDwarfholdDetails(name, random) {
   };
 }
 
+function generateEvilWizardTowerDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(40, Math.floor(80 + randomFn() * 520));
+  let classification = 'Wizard Tower';
+  if (population >= 400) {
+    classification = 'Dread Citadel';
+  } else if (population >= 240) {
+    classification = 'Shadow Spire';
+  } else if (population >= 140) {
+    classification = 'Arcane Bastion';
+  }
+
+  const rulerTitle = pickRandomFrom(evilWizardRulerTitles, randomFn) || 'Archwizard';
+  const rulerName = generateEvilWizardName(randomFn);
+  const foundedYearsAgo = Math.max(6, Math.floor(20 + randomFn() * 240));
+  const cabal = pickRandomFrom(evilWizardCabalNames, randomFn);
+  const prominentGroup = cabal || null;
+  const hallmark = pickRandomFrom(evilWizardTowerHallmarks, randomFn) ||
+    'Shrouded in eldritch wards that thrum through the night.';
+  const populationBreakdown = generateEvilWizardTowerPopulationBreakdown(population, randomFn);
+
+  return {
+    type: 'evilWizardTower',
+    classification,
+    name,
+    population,
+    populationLabel: 'Population',
+    populationDescriptor: 'denizens',
+    isSettlement: true,
+    ruler: {
+      title: rulerTitle,
+      name: rulerName
+    },
+    foundedYearsAgo,
+    prominentGroup,
+    prominentGroupLabel: 'Dominant Cabal',
+    hallmark,
+    hallmarkLabel: 'Notorious For',
+    populationBreakdown
+  };
+}
+
 function generateTownName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(townNamePrefixes, randomFn) || 'Oak';
@@ -1046,6 +1184,25 @@ function generateTownDetails(name, random) {
     majorExports,
     populationBreakdown
   };
+}
+
+function generateEvilWizardName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const givenName = pickRandomFrom(evilWizardGivenNames, randomFn) || 'Malachar';
+  const surnameRoll = randomFn();
+  let name = givenName;
+  if (surnameRoll < 0.55) {
+    const surname = pickRandomFrom(evilWizardSurnames, randomFn);
+    if (surname) {
+      name = `${givenName} ${surname}`;
+    }
+  }
+  const epithet = pickRandomFrom(evilWizardEpithets, randomFn);
+  if (epithet && randomFn() < 0.8) {
+    const baseName = name || givenName;
+    name = `${baseName} ${epithet}`;
+  }
+  return name;
 }
 
 function generateTowerName(random) {
@@ -6428,11 +6585,12 @@ function createWorld(seedString) {
           continue;
         }
         const name = `Evil Wizard's ${generateTowerName(rng)}`;
+        const details = generateEvilWizardTowerDetails(name, rng);
         tile.structure = evilWizardTowerKey;
         tile.structureName = name;
-        tile.structureDetails = null;
+        tile.structureDetails = details;
         placed.push(candidate);
-        evilWizardTowers.push({ x: candidate.x, y: candidate.y, name });
+        evilWizardTowers.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
   }
