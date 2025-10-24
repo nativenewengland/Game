@@ -450,15 +450,27 @@
                     </div>
 
                     <div class="field-group">
-                      <label for="dwarf-skin-select" class="field-label">Skin tone</label>
-                      <select id="dwarf-skin-select" class="field-control">
-                        <option value="umber">Deep Umber</option>
-                        <option value="russet">Russet Bronze</option>
-                        <option value="sienna">Burnt Sienna</option>
-                        <option value="dawn">Dawn Rose</option>
-                        <option value="pearl">Pale Pearl</option>
-                        <option value="ashen">Ashen Slate</option>
-                      </select>
+                      <label for="dwarf-skin-slider" class="field-label">Skin tone</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-skin-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-skin-slider-value"
+                          class="trait-slider-value has-color"
+                          aria-live="polite"
+                        >
+                          Deep Umber
+                        </div>
+                      </div>
                     </div>
 
                     <div class="field-group">
@@ -486,15 +498,27 @@
                     </div>
 
                     <div class="field-group">
-                      <label for="dwarf-hair-style-select" class="field-label">Hair style</label>
-                      <select id="dwarf-hair-style-select" class="field-control">
-                        <option value="straight_shoulder">Straight — Shoulder Length</option>
-                        <option value="straight_short">Straight — Short Crop</option>
-                        <option value="straight_braided">Straight — Braided Tail</option>
-                        <option value="curly_short">Curly — Close Curls</option>
-                        <option value="curly_full">Curly — Full Curls</option>
-                        <option value="curly_wild">Curly — Wild Mane</option>
-                      </select>
+                      <label for="dwarf-hair-style-slider" class="field-label">Hair style</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-hair-style-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-hair-style-slider-value"
+                          class="trait-slider-value"
+                          aria-live="polite"
+                        >
+                          Straight — Shoulder Length
+                        </div>
+                      </div>
                     </div>
 
                     <div class="field-group">

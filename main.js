@@ -1230,10 +1230,12 @@ const elements = {
   dwarfClanSelect: document.getElementById('dwarf-clan-select'),
   dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
-  dwarfSkinSelect: document.getElementById('dwarf-skin-select'),
+  dwarfSkinSlider: document.getElementById('dwarf-skin-slider'),
+  dwarfSkinSliderValue: document.getElementById('dwarf-skin-slider-value'),
   dwarfEyeSlider: document.getElementById('dwarf-eye-slider'),
   dwarfEyeSliderValue: document.getElementById('dwarf-eye-slider-value'),
-  dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
+  dwarfHairStyleSlider: document.getElementById('dwarf-hair-style-slider'),
+  dwarfHairStyleSliderValue: document.getElementById('dwarf-hair-style-slider-value'),
   dwarfHairSlider: document.getElementById('dwarf-hair-slider'),
   dwarfHairSliderValue: document.getElementById('dwarf-hair-slider-value'),
   dwarfBeardSlider: document.getElementById('dwarf-beard-slider'),
@@ -2168,8 +2170,10 @@ function updateCustomizerUI() {
     dwarf.profession,
     dwarfOptions.profession[0].value
   );
-  ensureSelectValue(
-    elements.dwarfSkinSelect,
+  ensureTraitSliderValue(
+    'skin',
+    elements.dwarfSkinSlider,
+    elements.dwarfSkinSliderValue,
     dwarf.skin,
     dwarfOptions.skin[0].value
   );
@@ -2180,8 +2184,10 @@ function updateCustomizerUI() {
     dwarf.eyes,
     dwarfOptions.eyes[0].value
   );
-  ensureSelectValue(
-    elements.dwarfHairStyleSelect,
+  ensureTraitSliderValue(
+    'hairStyle',
+    elements.dwarfHairStyleSlider,
+    elements.dwarfHairStyleSliderValue,
     resolveHairStyleValue(dwarf.hairStyle),
     defaultHairStyleValue
   );
@@ -6360,20 +6366,13 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfSkinSelect) {
-    elements.dwarfSkinSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('skin', event.target.value);
-    });
-  }
-
+  setupTraitSliderControl('skin', elements.dwarfSkinSlider, elements.dwarfSkinSliderValue);
   setupTraitSliderControl('eyes', elements.dwarfEyeSlider, elements.dwarfEyeSliderValue);
-
-  if (elements.dwarfHairStyleSelect) {
-    elements.dwarfHairStyleSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('hairStyle', event.target.value);
-    });
-  }
-
+  setupTraitSliderControl(
+    'hairStyle',
+    elements.dwarfHairStyleSlider,
+    elements.dwarfHairStyleSliderValue
+  );
   setupTraitSliderControl('hair', elements.dwarfHairSlider, elements.dwarfHairSliderValue);
 
   setupTraitSliderControl('beard', elements.dwarfBeardSlider, elements.dwarfBeardSliderValue);
