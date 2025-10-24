@@ -46,6 +46,7 @@ const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
+  TREE_SNOW: { row: 1, col: 1 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
   STONE: { row: 0, col: 3 },
@@ -4702,6 +4703,7 @@ function createWorld(seedString) {
   const hasTreeTile = tileLookup.has('TREE');
   if (hasTreeTile) {
     const treeOverlayKey = 'TREE';
+    const treeSnowOverlayKey = tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
     const treeBaseScale = 2.4 + rng() * 1.6;
@@ -4787,7 +4789,7 @@ function createWorld(seedString) {
           (density > softSeedThreshold && rng() < (density - softSeedThreshold) * softSeedMultiplier)
         ) {
           treeMask[idx] = 1;
-          tile.overlay = treeOverlayKey;
+          tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
         }
       }
     }
@@ -4851,7 +4853,7 @@ function createWorld(seedString) {
           continue;
         }
         treeMask[idx] = 1;
-        tile.overlay = treeOverlayKey;
+        tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
       }
     }
 
@@ -4862,7 +4864,11 @@ function createWorld(seedString) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
           const tile = tiles[y][x];
-          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+          if (
+            !tile ||
+            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
+            tile.structure
+          ) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -4905,7 +4911,11 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+          if (
+            !tile ||
+            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
+            tile.structure
+          ) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
