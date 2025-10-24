@@ -1171,6 +1171,44 @@ const editableDwarfTraits = new Set([
   'profession'
 ]);
 
+function createSvgDataUri(svg) {
+  if (typeof svg !== 'string') {
+    return '';
+  }
+  return `data:image/svg+xml,${encodeURIComponent(svg.trim())}`;
+}
+
+const dwarfTraitAttributeDefinitions = [
+  {
+    key: 'beardless',
+    label: 'Beardless',
+    description:
+      'You are the shame of your clan and the disgrace of your holdfast. Without a beard a dwarf is nothing, consider this path to be one that will lead to scorn and ridicule among your peers.',
+    icon: createSvgDataUri(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="28" fill="#2d1b13" stroke="#d6a35f" stroke-width="4" />
+        <path
+          d="M12 34c2.5-7 10-10 16-6 4 2.6 8 2.6 12 0 6-4 13.5-1 16 6-3.5 1.8-7 1.6-10.4-.5-1.9 4.5-6.3 7.5-11.6 7.5s-9.7-3-11.6-7.5C19 35.6 15.5 35.8 12 34Z"
+          fill="#f1d7b7"
+          stroke="#f8efe3"
+          stroke-width="1.5"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M22 31c1 4 3.5 7 10 7s9-3 10-7"
+          stroke="#1b0d07"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+        />
+        <line x1="18" y1="46" x2="46" y2="18" stroke="#c3423f" stroke-width="6" stroke-linecap="round" />
+      </svg>
+    `),
+    isActive: (dwarf) => dwarf?.gender === 'male' && dwarf?.beard === 'clean'
+  }
+];
+
 const dwarfNamePools = {
   female: [
     'Domas',
@@ -1368,7 +1406,8 @@ const elements = {
   dwarfBack: document.getElementById('dwarf-back'),
   dwarfPortrait: document.getElementById('dwarf-portrait'),
   dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
-  dwarfTraitSummary: document.getElementById('dwarf-trait-summary')
+  dwarfTraitSummary: document.getElementById('dwarf-trait-summary'),
+  dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes')
 };
 
 function createSoundEffect(src, options = {}) {
@@ -2068,11 +2107,68 @@ function getDwarfDisplayName(dwarf) {
 }
 
 function updateDwarfTraitSummary() {
-  if (!elements.dwarfTraitSummary) {
+  const dwarf = getActiveDwarf();
+  if (elements.dwarfTraitSummary) {
+    elements.dwarfTraitSummary.textContent = buildDwarfSummary(dwarf);
+  }
+  updateDwarfTraitAttributes(dwarf);
+}
+
+function getActiveTraitAttributes(dwarf) {
+  if (!dwarf) {
+    return [];
+  }
+  return dwarfTraitAttributeDefinitions.filter((attribute) => {
+    try {
+      return typeof attribute.isActive === 'function' ? attribute.isActive(dwarf) : false;
+    } catch (error) {
+      return false;
+    }
+  });
+}
+
+function createTraitAttributeElement(attribute) {
+  const item = document.createElement('div');
+  item.className = 'trait-attribute';
+  item.setAttribute('role', 'listitem');
+  item.setAttribute('tabindex', '0');
+  item.setAttribute('aria-label', attribute.label);
+
+  const icon = document.createElement('img');
+  icon.className = 'trait-attribute__icon';
+  icon.src = attribute.icon;
+  icon.alt = attribute.label;
+  icon.loading = 'lazy';
+
+  const tooltip = document.createElement('span');
+  tooltip.className = 'trait-attribute__tooltip';
+  tooltip.textContent = attribute.description;
+
+  item.appendChild(icon);
+  item.appendChild(tooltip);
+
+  return item;
+}
+
+function updateDwarfTraitAttributes(dwarf = getActiveDwarf()) {
+  const container = elements.dwarfTraitAttributes;
+  if (!container) {
     return;
   }
-  const dwarf = getActiveDwarf();
-  elements.dwarfTraitSummary.textContent = buildDwarfSummary(dwarf);
+  container.innerHTML = '';
+  const activeAttributes = getActiveTraitAttributes(dwarf);
+  if (activeAttributes.length === 0) {
+    container.setAttribute('aria-hidden', 'true');
+    container.dataset.hasAttributes = 'false';
+    return;
+  }
+  container.setAttribute('aria-hidden', 'false');
+  container.dataset.hasAttributes = 'true';
+  const fragment = document.createDocumentFragment();
+  activeAttributes.forEach((attribute) => {
+    fragment.appendChild(createTraitAttributeElement(attribute));
+  });
+  container.appendChild(fragment);
 }
 
 function updateRosterList() {
