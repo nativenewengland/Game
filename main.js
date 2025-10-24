@@ -449,6 +449,101 @@ const dwarfholdPopulationRaceOptions = [
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
+const townRulerTitles = {
+  male: ['Mayor', 'Lord Mayor', 'High Steward', 'Burgomaster', 'Castellan'],
+  female: ['Mayor', 'Lady Mayor', 'High Steward', 'Burgomistress', 'Castellan'],
+  neutral: ['Governor', 'Magistrate', 'Marshal', 'Chamberlain', 'Steward']
+};
+
+const townHallmarks = [
+  'Celebrated for its midsummer lantern festivals that light the riverways.',
+  'Known for bustling markets where spices and silks trade hands till dusk.',
+  'Renowned scribes illuminate tomes commissioned by distant courts.',
+  'Shipwrights here launch swift river cutters and stout coastal cogs.',
+  'Bards gather nightly in its echoing amphitheatre for tale and song.',
+  'Town gardens brim with rare herbs prized by alchemists abroad.',
+  'Its watchfires are said to be seen from the bordering highlands.',
+  'Pilgrims arrive seasonally to venerate relics kept in the hilltop chapel.',
+  'Stone bridges arch over canals lined with copper-roofed warehouses.',
+  'Famous for street performers who juggle embers without being burned.'
+];
+
+const townExportOptions = [
+  'Fine woolens and dyed textiles',
+  'Barrels of spiced wine and cordial',
+  'Carved hardwood furniture and cabinetry',
+  'Glazed ceramics and painted pottery',
+  'Ironmongery tools and horseshoes',
+  'Salted riverfish and smoked eel',
+  'Illuminated manuscripts and scrolls',
+  'Perfumed oils and soaps',
+  'Handcrafted musical instruments',
+  'Leather saddles and tack'
+];
+
+const townPopulationRaceOptions = [
+  { key: 'humans', label: 'Humans', color: '#9bb6d8' },
+  { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
+  { key: 'elves', label: 'Elves', color: '#6ecf85' },
+  { key: 'halflings', label: 'Halflings', color: '#f7a072' },
+  { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
+  { key: 'dragonborn', label: 'Dragonborn', color: '#c16a6a' },
+  { key: 'tieflings', label: 'Tieflings', color: '#b064b0' },
+  { key: 'others', label: 'Others', color: '#9e9e9e' }
+];
+
+const townProminentFamilyNames = [
+  'Ambermere',
+  'Briarhelm',
+  'Crownhill',
+  'Dunleigh',
+  'Emberfast',
+  'Fairbloom',
+  'Hallowmere',
+  'Kestrelbourne',
+  'Marrowind',
+  'Ravenbrook',
+  'Stormholt',
+  'Thornwall',
+  'Underford',
+  'Wintermere'
+];
+
+const townGuildOptions = [
+  'Merchants Consortium',
+  'River Bargemen Union',
+  'Artisan Collective',
+  'Scribes and Illuminators Guild',
+  'Shipwrights Assembly',
+  'Alchemists Conclave',
+  'Vintners Circle',
+  'Weavers Syndicate',
+  'Stevedores Brotherhood',
+  'Stonemasons Chapter',
+  'Cartographers Fellowship',
+  'Apothecaries Guild',
+  'Wrights and Carpenters Lodge',
+  'Guard Captains Council',
+  'Miners Exchange'
+];
+
+const townFirstNamePools = {
+  male: ['Aldric', 'Berend', 'Cedric', 'Darian', 'Edric', 'Garran', 'Henric', 'Loric', 'Rowan', 'Therin'],
+  female: ['Adela', 'Brienne', 'Celia', 'Elowen', 'Fiora', 'Gwendolyn', 'Isolde', 'Maren', 'Rowena', 'Seren'],
+  neutral: ['Arlen', 'Ember', 'Finley', 'Morgan', 'Robin', 'Sage', 'Tarian']
+};
+
+const settlementDetailTypes = new Set(['dwarfhold', 'greatDwarfhold', 'town', 'city', 'village', 'hamlet']);
+
+function resolveTownRulerTitle(gender, randomFn) {
+  const genderPool =
+    (gender === 'male' && townRulerTitles.male) ||
+    (gender === 'female' && townRulerTitles.female) ||
+    townRulerTitles.neutral;
+  const fallbackPool = townRulerTitles.neutral.length > 0 ? townRulerTitles.neutral : townRulerTitles.male;
+  return pickRandomFrom(genderPool && genderPool.length > 0 ? genderPool : fallbackPool, randomFn) || 'Magistrate';
+}
+
 const townNamePrefixes = [
   'Oak',
   'River',
@@ -651,24 +746,43 @@ function pickUniqueFrom(array, count, random) {
   return picks;
 }
 
-function generateDwarfholdPopulationBreakdown(population, random) {
-  if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
+function generatePopulationBreakdownFromOptions(options, population, random, config = {}) {
+  if (!Array.isArray(options) || options.length === 0) {
     return [];
   }
 
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const races = dwarfholdPopulationRaceOptions.slice();
-  const dwarfConfig = races[0];
-  const shares = [];
-  // Ensure dwarves make up the overwhelming majority of a dwarfhold's population.
-  // The range gives a 90-100% share so only a small remainder is left for other races.
-  const dwarfShare = clamp(0.9 + randomFn() * 0.1, 0, 1);
-  shares.push({ config: dwarfConfig, share: dwarfShare });
+  const {
+    majorityIndex = 0,
+    majorityShareRange = [0, 1],
+    ensureMajority = true
+  } = config;
 
-  const remainingConfigs = races.slice(1);
+  const shares = [];
+  const candidates = options.slice();
+  let majorityShare = 0;
+
+  if (ensureMajority && candidates.length > 0) {
+    const rawIndex = Number.isFinite(majorityIndex) ? Math.round(majorityIndex) : 0;
+    const index = clamp(rawIndex, 0, candidates.length - 1);
+    const [rangeMinRaw, rangeMaxRaw] = Array.isArray(majorityShareRange)
+      ? majorityShareRange
+      : [0, 1];
+    const rangeMin = clamp(Number.isFinite(rangeMinRaw) ? rangeMinRaw : 0, 0, 1);
+    const rangeMax = clamp(Number.isFinite(rangeMaxRaw) ? rangeMaxRaw : 1, rangeMin, 1);
+    const [selected] = candidates.splice(index, 1);
+    if (selected) {
+      const shareRange = rangeMax - rangeMin;
+      const share = shareRange <= 0 ? rangeMin : rangeMin + randomFn() * shareRange;
+      majorityShare = clamp(share, 0, 1);
+      shares.push({ config: selected, share: majorityShare });
+    }
+  }
+
+  const remainingConfigs = candidates;
   if (remainingConfigs.length > 0) {
-    const remainingShare = Math.max(0, 1 - dwarfShare);
-    const weights = remainingConfigs.map(() => 0.25 + randomFn());
+    const remainingShare = ensureMajority ? Math.max(0, 1 - majorityShare) : 1;
+    const weights = remainingConfigs.map(() => 0.2 + randomFn());
     const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
     remainingConfigs.forEach((config, index) => {
       const portion = weights[index] / weightSum;
@@ -759,6 +873,22 @@ function generateDwarfholdPopulationBreakdown(population, random) {
   });
 }
 
+function generateDwarfholdPopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(dwarfholdPopulationRaceOptions, population, random, {
+    majorityIndex: 0,
+    majorityShareRange: [0.9, 1],
+    ensureMajority: true
+  });
+}
+
+function generateTownPopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(townPopulationRaceOptions, population, random, {
+    majorityIndex: 0,
+    majorityShareRange: [0.6, 0.85],
+    ensureMajority: true
+  });
+}
+
 function generateDwarfholdName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
@@ -819,12 +949,17 @@ function generateDwarfholdDetails(name, random) {
     classification: classificationLabel,
     name,
     population,
+    populationLabel: 'Population',
+    populationDescriptor: 'dwarves',
+    isSettlement: true,
     ruler: {
       title: rulerTitle,
       name: `${firstName} ${clanName}`
     },
     foundedYearsAgo,
     prominentClan,
+    prominentGroup: prominentClan,
+    prominentGroupLabel: 'Prominent Clan',
     hallmark,
     majorGuilds,
     majorExports,
@@ -846,6 +981,71 @@ function generateTownName(random) {
     return baseName;
   }
   return `Town of ${baseName}`;
+}
+
+function generateTownDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(120, Math.floor(220 + randomFn() * 6000));
+  let classification = 'Village';
+  if (population >= 6000) {
+    classification = 'City';
+  } else if (population >= 3600) {
+    classification = 'Large Town';
+  } else if (population >= 1800) {
+    classification = 'Town';
+  }
+
+  const type = classification === 'City' ? 'city' : classification === 'Village' ? 'village' : 'town';
+  const genderRoll = randomFn();
+  const gender = genderRoll < 0.45 ? 'male' : genderRoll < 0.9 ? 'female' : 'neutral';
+  const firstNamePool =
+    (gender === 'male' && townFirstNamePools.male) ||
+    (gender === 'female' && townFirstNamePools.female) ||
+    townFirstNamePools.neutral;
+  const fallbackPool = townFirstNamePools.male || townFirstNamePools.neutral || [];
+  const firstName = pickRandomFrom(firstNamePool && firstNamePool.length > 0 ? firstNamePool : fallbackPool, randomFn) ||
+    'Aldric';
+  const familyName = pickRandomFrom(townProminentFamilyNames, randomFn) || 'Ambermere';
+  const rulerTitle = resolveTownRulerTitle(gender, randomFn);
+  const hallmark = pickRandomFrom(townHallmarks, randomFn) || 'Bustling markets draw traders from afar.';
+  const foundedYearsAgo = Math.max(12, Math.floor(30 + randomFn() * 420));
+  const prominentFamily = pickRandomFrom(townProminentFamilyNames, randomFn) || familyName;
+  const majorGuildCount = clamp(Math.floor(1 + randomFn() * 3), 1, townGuildOptions.length);
+  const majorGuilds = pickUniqueFrom(townGuildOptions, majorGuildCount, randomFn);
+  const majorExportCount = clamp(Math.floor(1 + randomFn() * 3), 1, townExportOptions.length);
+  const majorExports = pickUniqueFrom(townExportOptions, majorExportCount, randomFn);
+  const populationBreakdown = generateTownPopulationBreakdown(population, randomFn);
+  let populationDescriptor = 'residents';
+  if (classification === 'City') {
+    populationDescriptor = 'citizens';
+  } else if (classification === 'Large Town') {
+    populationDescriptor = 'townsfolk';
+  } else if (classification === 'Village') {
+    populationDescriptor = 'villagers';
+  }
+
+  const prominentGroup = `House ${prominentFamily}`;
+
+  return {
+    type,
+    classification,
+    name,
+    population,
+    populationLabel: 'Population',
+    populationDescriptor,
+    isSettlement: true,
+    ruler: {
+      title: rulerTitle,
+      name: `${firstName} ${familyName}`
+    },
+    foundedYearsAgo,
+    prominentGroup,
+    prominentGroupLabel: 'Prominent House',
+    hallmark,
+    majorGuilds,
+    majorExports,
+    populationBreakdown
+  };
 }
 
 function generateTowerName(random) {
@@ -3075,9 +3275,9 @@ function buildStructureTooltipContent(tile) {
   }
 
   const details = tile.structureDetails;
-  const isDwarfhold =
-    details && (details.type === 'dwarfhold' || details.type === 'greatDwarfhold');
-  if (isDwarfhold) {
+  const isSettlement =
+    details && (details.isSettlement || (details.type && settlementDetailTypes.has(details.type)));
+  if (isSettlement) {
     const sections = [];
     const entries = [];
     const resolvedName = details.name || tile.structureName;
@@ -3090,7 +3290,12 @@ function buildStructureTooltipContent(tile) {
     if (Number.isFinite(details.population)) {
       const populationValue = Math.max(0, Math.round(details.population));
       const formattedPopulation = populationValue.toLocaleString('en-US');
-      entries.push({ label: 'Population', value: `${formattedPopulation} dwarves` });
+      const populationLabel = details.populationLabel || 'Population';
+      const populationDescriptor = details.populationDescriptor || null;
+      const populationDisplay = populationDescriptor
+        ? `${formattedPopulation} ${populationDescriptor}`
+        : formattedPopulation;
+      entries.push({ label: populationLabel, value: populationDisplay });
     }
 
     if (details.ruler) {
@@ -3098,7 +3303,8 @@ function buildStructureTooltipContent(tile) {
       const rulerName = details.ruler.name || '';
       const combined = `${rulerTitle}${rulerName}`.trim();
       if (combined) {
-        entries.push({ label: 'Ruler', value: combined });
+        const rulerLabel = details.ruler.label || 'Ruler';
+        entries.push({ label: rulerLabel, value: combined });
       }
     }
 
@@ -3107,8 +3313,10 @@ function buildStructureTooltipContent(tile) {
       entries.push({ label: 'Founded', value: `${foundedValue} years ago` });
     }
 
-    if (details.prominentClan) {
-      entries.push({ label: 'Prominent Clan', value: details.prominentClan });
+    const prominentGroup = details.prominentGroup || details.prominentClan;
+    if (prominentGroup) {
+      const prominentLabel = details.prominentGroupLabel || (details.prominentClan ? 'Prominent Clan' : 'Prominent Group');
+      entries.push({ label: prominentLabel, value: prominentGroup });
     }
 
     if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
@@ -3116,7 +3324,8 @@ function buildStructureTooltipContent(tile) {
         new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
       );
       if (uniqueGuilds.length > 0) {
-        entries.push({ label: 'Major Guilds', value: uniqueGuilds.join(', ') });
+        const guildsLabel = details.majorGuildsLabel || 'Major Guilds';
+        entries.push({ label: guildsLabel, value: uniqueGuilds.join(', ') });
       }
     }
 
@@ -3125,7 +3334,8 @@ function buildStructureTooltipContent(tile) {
         new Set(details.majorExports.filter((item) => typeof item === 'string' && item.trim()))
       );
       if (uniqueExports.length > 0) {
-        entries.push({ label: 'Major Exports', value: uniqueExports.join(', ') });
+        const exportsLabel = details.majorExportsLabel || 'Major Exports';
+        entries.push({ label: exportsLabel, value: uniqueExports.join(', ') });
       }
     }
 
@@ -3148,7 +3358,16 @@ function buildStructureTooltipContent(tile) {
     }
 
     if (details.hallmark) {
-      sections.push(`<p class="tooltip-note">${escapeHtml(details.hallmark)}</p>`);
+      const hallmarkLabel = details.hallmarkLabel;
+      const noteContent = escapeHtml(details.hallmark);
+      if (hallmarkLabel) {
+        sections.push(`
+          <div class="tooltip-subtitle">${escapeHtml(hallmarkLabel)}</div>
+          <p class="tooltip-note">${noteContent}</p>
+        `);
+      } else {
+        sections.push(`<p class="tooltip-note">${noteContent}</p>`);
+      }
     }
 
     return sections.join('');
@@ -5758,10 +5977,11 @@ function createWorld(seedString) {
           continue;
         }
         const name = generateTownName(rng);
+        const details = generateTownDetails(name, rng);
         tile.structure = townKey;
         tile.structureName = name;
-        tile.structureDetails = null;
-        towns.push({ x: candidate.x, y: candidate.y, name });
+        tile.structureDetails = details;
+        towns.push({ x: candidate.x, y: candidate.y, ...details });
         placed.push(candidate);
       }
     }
