@@ -34,6 +34,40 @@
           World seed
           <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
         </label>
+        <label for="forest-frequency">
+          Forest frequency
+          <div class="slider-control">
+            <input
+              id="forest-frequency"
+              name="forestFrequency"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="50"
+            />
+            <span id="forest-frequency-value" class="slider-value" aria-live="polite"
+              >50% — Balanced</span
+            >
+          </div>
+        </label>
+        <label for="mountain-frequency">
+          Mountain frequency
+          <div class="slider-control">
+            <input
+              id="mountain-frequency"
+              name="mountainFrequency"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="50"
+            />
+            <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
+              >50% — Balanced</span
+            >
+          </div>
+        </label>
         <div class="modal-buttons">
           <button type="submit" class="primary">Apply</button>
           <button type="button" id="close-options" class="secondary">Close</button>
