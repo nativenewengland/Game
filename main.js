@@ -119,6 +119,16 @@ function registerTiles(sheetKey, coordMap) {
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 
+// The evil wizard tower sprite only shows up on some tilesheets. If the
+// currently loaded set does not define it, fall back to the generic tower so
+// the generator can still place the structures.
+if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
+  const fallbackTower = tileLookup.get('TOWER');
+  if (fallbackTower) {
+    tileLookup.set('EVIL_WIZARDS_TOWER', { ...fallbackTower });
+  }
+}
+
 const mapSizePresets = [
   { key: 'mini', label: 'Mini', width: 120, height: 90 },
   { key: 'small', label: 'Small', width: 160, height: 120 },
