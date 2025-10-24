@@ -2500,6 +2500,7 @@ function openWorldInfoModal() {
     elements.titleScreen.classList.add('hidden');
   }
   elements.worldInfoModal.classList.remove('hidden');
+  ensureMusicStarted();
   const focusInput = () => {
     if (!elements.worldNameInput) {
       return;
