@@ -1270,7 +1270,7 @@ button:hover:not(:disabled) {
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.1rem 1.3rem;
 }
 
