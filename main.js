@@ -3555,6 +3555,7 @@ function createWorld(seedString) {
     mountainRange = Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001);
   }
   let mountainScores = null;
+  let mountainCandidateThreshold = null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
@@ -3605,7 +3606,7 @@ function createWorld(seedString) {
       0.52,
       0.97
     );
-    const mountainCandidateThreshold = clamp(
+    mountainCandidateThreshold = clamp(
       baseMountainCandidateThreshold - mountainBias * 0.28,
       0.2,
       0.78
@@ -4067,16 +4068,32 @@ function createWorld(seedString) {
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     if (dwarfholdKey) {
+      const fallbackMountainScoreThreshold =
+        mountainScores && mountainCandidateThreshold !== null
+          ? clamp(mountainCandidateThreshold * 0.85, 0.28, 0.62)
+          : 0.45;
       const dwarfholdCandidates = [];
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
           const tile = tiles[y][x];
-          if (tile.overlay !== mountainOverlayKey) {
+          if (!tile) {
             continue;
           }
           const score = mountainScores ? mountainScores[idx] : 0;
-          dwarfholdCandidates.push({ x, y, score });
+          const isMountainTile = tile.overlay === mountainOverlayKey;
+          const fallbackEligible =
+            !isMountainTile &&
+            !tile.overlay &&
+            mountainScores &&
+            score >= fallbackMountainScoreThreshold;
+          if (!isMountainTile && !fallbackEligible) {
+            continue;
+          }
+          dwarfholdCandidates.push({ x, y, score, isMountainTile });
         }
       }
 
@@ -4112,8 +4129,21 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.overlay !== mountainOverlayKey || tile.structure || tile.river) {
+          if (!tile || tile.structure || tile.river) {
             continue;
+          }
+          const idx = candidate.y * width + candidate.x;
+          const qualifiesForPlacement =
+            candidate.isMountainTile ||
+            (!tile.overlay &&
+              mountainScores &&
+              mountainScores[idx] >= fallbackMountainScoreThreshold &&
+              !waterMask[idx]);
+          if (!qualifiesForPlacement) {
+            continue;
+          }
+          if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
+            tile.overlay = mountainOverlayKey;
           }
           const name = generateDwarfholdName(rng);
           const details = generateDwarfholdDetails(name, rng);
@@ -4122,6 +4152,40 @@ function createWorld(seedString) {
           tile.structureDetails = details;
           placed.push(candidate);
           dwarfholds.push({ x: candidate.x, y: candidate.y, ...details });
+        }
+
+        if (placed.length === 0) {
+          const fallbackCandidate = dwarfholdCandidates.find((candidate) => {
+            const tile = tiles[candidate.y][candidate.x];
+            if (!tile || tile.structure || tile.river) {
+              return false;
+            }
+            const idx = candidate.y * width + candidate.x;
+            const qualifiesForPlacement =
+              candidate.isMountainTile ||
+              (!tile.overlay &&
+                mountainScores &&
+                mountainScores[idx] >= fallbackMountainScoreThreshold &&
+                !waterMask[idx]);
+            if (!qualifiesForPlacement) {
+              return false;
+            }
+            if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
+              tile.overlay = mountainOverlayKey;
+            }
+            return true;
+          });
+
+          if (fallbackCandidate) {
+            const tile = tiles[fallbackCandidate.y][fallbackCandidate.x];
+            const name = generateDwarfholdName(rng);
+            const details = generateDwarfholdDetails(name, rng);
+            tile.structure = dwarfholdKey;
+            tile.structureName = name;
+            tile.structureDetails = details;
+            placed.push(fallbackCandidate);
+            dwarfholds.push({ x: fallbackCandidate.x, y: fallbackCandidate.y, ...details });
+          }
         }
       }
     }
