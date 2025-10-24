@@ -483,7 +483,10 @@ const state = {
     seedString: '',
     lastSeedString: '',
     forestFrequency: 50,
-    mountainFrequency: 50
+    mountainFrequency: 50,
+    humanSettlementFrequency: 50,
+    dwarfSettlementFrequency: 50,
+    woodElfSettlementFrequency: 50
   },
   tileSheets,
   landMask: null,
@@ -770,6 +773,12 @@ const elements = {
   forestFrequencyValue: document.getElementById('forest-frequency-value'),
   mountainFrequencyInput: document.getElementById('mountain-frequency'),
   mountainFrequencyValue: document.getElementById('mountain-frequency-value'),
+  humanSettlementFrequencyInput: document.getElementById('human-settlement-frequency'),
+  humanSettlementFrequencyValue: document.getElementById('human-settlement-frequency-value'),
+  dwarfSettlementFrequencyInput: document.getElementById('dwarf-settlement-frequency'),
+  dwarfSettlementFrequencyValue: document.getElementById('dwarf-settlement-frequency-value'),
+  woodElfSettlementFrequencyInput: document.getElementById('wood-elf-settlement-frequency'),
+  woodElfSettlementFrequencyValue: document.getElementById('wood-elf-settlement-frequency-value'),
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
   musicNowPlaying: document.getElementById('music-now-playing'),
@@ -979,6 +988,15 @@ function applyFormSettings() {
   const mountainFrequencyRaw = elements.mountainFrequencyInput
     ? Number.parseInt(elements.mountainFrequencyInput.value, 10)
     : state.settings.mountainFrequency;
+  const humanSettlementFrequencyRaw = elements.humanSettlementFrequencyInput
+    ? Number.parseInt(elements.humanSettlementFrequencyInput.value, 10)
+    : state.settings.humanSettlementFrequency;
+  const dwarfSettlementFrequencyRaw = elements.dwarfSettlementFrequencyInput
+    ? Number.parseInt(elements.dwarfSettlementFrequencyInput.value, 10)
+    : state.settings.dwarfSettlementFrequency;
+  const woodElfSettlementFrequencyRaw = elements.woodElfSettlementFrequencyInput
+    ? Number.parseInt(elements.woodElfSettlementFrequencyInput.value, 10)
+    : state.settings.woodElfSettlementFrequency;
 
   state.settings.mapSize = preset.key;
   state.settings.width = preset.width;
@@ -991,6 +1009,24 @@ function applyFormSettings() {
   state.settings.mountainFrequency = sanitizeFrequencyValue(
     Number.isNaN(mountainFrequencyRaw) ? state.settings.mountainFrequency : mountainFrequencyRaw,
     state.settings.mountainFrequency
+  );
+  state.settings.humanSettlementFrequency = sanitizeFrequencyValue(
+    Number.isNaN(humanSettlementFrequencyRaw)
+      ? state.settings.humanSettlementFrequency
+      : humanSettlementFrequencyRaw,
+    state.settings.humanSettlementFrequency
+  );
+  state.settings.dwarfSettlementFrequency = sanitizeFrequencyValue(
+    Number.isNaN(dwarfSettlementFrequencyRaw)
+      ? state.settings.dwarfSettlementFrequency
+      : dwarfSettlementFrequencyRaw,
+    state.settings.dwarfSettlementFrequency
+  );
+  state.settings.woodElfSettlementFrequency = sanitizeFrequencyValue(
+    Number.isNaN(woodElfSettlementFrequencyRaw)
+      ? state.settings.woodElfSettlementFrequency
+      : woodElfSettlementFrequencyRaw,
+    state.settings.woodElfSettlementFrequency
   );
 }
 
@@ -1038,6 +1074,22 @@ function updateFrequencyDisplay(displayElement, value) {
   }
   const numeric = clamp(Math.round(value), 0, 100);
   displayElement.textContent = `${numeric}% — ${describeFrequency(numeric)}`;
+}
+
+function computeFrequencyMultiplier(setting, minMultiplier = 0.25, maxMultiplier = 1.75) {
+  const normalized = clamp(setting / 100, 0, 1);
+  return lerp(minMultiplier, maxMultiplier, normalized);
+}
+
+function computeStructurePlacementLimit(baseTarget, baseLimit, multiplier) {
+  const scaledTarget = Math.max(1, Math.round(baseTarget * multiplier));
+  const scaledLimit = Math.max(1, Math.round(baseLimit * multiplier));
+  return Math.min(scaledTarget, scaledLimit);
+}
+
+function adjustMinDistance(baseDistance, normalized) {
+  const scale = lerp(1.35, 0.7, clamp(normalized, 0, 1));
+  return Math.max(2, Math.round(baseDistance * scale));
 }
 
 function randomInt(min, max) {
@@ -2896,8 +2948,26 @@ function createWorld(seedString) {
   const height = state.settings.height;
   const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
   const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
+  const humanSettlementFrequencySetting = sanitizeFrequencyValue(
+    state.settings.humanSettlementFrequency,
+    50
+  );
+  const dwarfSettlementFrequencySetting = sanitizeFrequencyValue(
+    state.settings.dwarfSettlementFrequency,
+    50
+  );
+  const woodElfSettlementFrequencySetting = sanitizeFrequencyValue(
+    state.settings.woodElfSettlementFrequency,
+    50
+  );
   const forestBias = forestFrequencySetting / 50 - 1;
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
+  const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
+  const dwarfSettlementFrequencyNormalized = clamp(dwarfSettlementFrequencySetting / 100, 0, 1);
+  const woodElfSettlementFrequencyNormalized = clamp(woodElfSettlementFrequencySetting / 100, 0, 1);
+  const humanSettlementMultiplier = computeFrequencyMultiplier(humanSettlementFrequencySetting);
+  const dwarfSettlementMultiplier = computeFrequencyMultiplier(dwarfSettlementFrequencySetting);
+  const woodElfSettlementMultiplier = computeFrequencyMultiplier(woodElfSettlementFrequencySetting);
   const mountainBiasLinear = mountainFrequencyNormalized * 2 - 1;
   const mountainBias =
     mountainBiasLinear === 0
@@ -3552,9 +3622,14 @@ function createWorld(seedString) {
 
       if (dwarfholdCandidates.length > 0) {
         dwarfholdCandidates.sort((a, b) => b.score - a.score);
-        const desiredCount = Math.max(1, Math.round(dwarfholdCandidates.length / 500));
-        const maxDwarfholds = Math.min(desiredCount, 24);
-        const minDistance = 5;
+        const baseTarget = Math.max(1, Math.round(dwarfholdCandidates.length / 500));
+        const maxDwarfholds = computeStructurePlacementLimit(
+          baseTarget,
+          24,
+          dwarfSettlementMultiplier
+        );
+        const minDistanceBase = 5;
+        const minDistance = adjustMinDistance(minDistanceBase, dwarfSettlementFrequencyNormalized);
         const minDistanceSq = minDistance * minDistance;
         const placed = [];
 
@@ -3653,9 +3728,10 @@ function createWorld(seedString) {
     if (townCandidates.length > 0) {
       townCandidates.sort((a, b) => b.score - a.score);
       const area = width * height;
-      const desiredCount = Math.max(2, Math.round(area / 4800));
-      const maxTowns = Math.min(desiredCount, 36);
-      const minDistance = Math.max(6, Math.round(Math.min(width, height) / 12));
+      const baseTarget = Math.max(2, Math.round(area / 4800));
+      const maxTowns = computeStructurePlacementLimit(baseTarget, 36, humanSettlementMultiplier);
+      const baseMinDistance = Math.max(6, Math.round(Math.min(width, height) / 12));
+      const minDistance = adjustMinDistance(baseMinDistance, humanSettlementFrequencyNormalized);
       const minDistanceSq = minDistance * minDistance;
       const placed = [];
 
@@ -3861,9 +3937,14 @@ function createWorld(seedString) {
 
       if (groveCandidates.length > 0) {
         groveCandidates.sort((a, b) => b.score - a.score);
-        const desiredCount = Math.max(1, Math.round(groveCandidates.length / 450));
-        const maxGroves = Math.min(desiredCount, 28);
-        const minDistance = 6;
+        const baseTarget = Math.max(1, Math.round(groveCandidates.length / 450));
+        const maxGroves = computeStructurePlacementLimit(
+          baseTarget,
+          28,
+          woodElfSettlementMultiplier
+        );
+        const minDistanceBase = 6;
+        const minDistance = adjustMinDistance(minDistanceBase, woodElfSettlementFrequencyNormalized);
         const minDistanceSq = minDistance * minDistance;
         const placed = [];
 
@@ -4053,6 +4134,21 @@ function syncInputsWithSettings() {
     elements.mountainFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.mountainFrequencyValue, value);
   }
+  if (elements.humanSettlementFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.humanSettlementFrequency, 50);
+    elements.humanSettlementFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.humanSettlementFrequencyValue, value);
+  }
+  if (elements.dwarfSettlementFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.dwarfSettlementFrequency, 50);
+    elements.dwarfSettlementFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.dwarfSettlementFrequencyValue, value);
+  }
+  if (elements.woodElfSettlementFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.woodElfSettlementFrequency, 50);
+    elements.woodElfSettlementFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.woodElfSettlementFrequencyValue, value);
+  }
 }
 
 function attachEvents() {
@@ -4079,6 +4175,36 @@ function attachEvents() {
     elements.mountainFrequencyInput.addEventListener('input', (event) => {
       const value = sanitizeFrequencyValue(event.target.value, state.settings.mountainFrequency);
       updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+    });
+  }
+
+  if (elements.humanSettlementFrequencyInput) {
+    elements.humanSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.humanSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.humanSettlementFrequencyValue, value);
+    });
+  }
+
+  if (elements.dwarfSettlementFrequencyInput) {
+    elements.dwarfSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.dwarfSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.dwarfSettlementFrequencyValue, value);
+    });
+  }
+
+  if (elements.woodElfSettlementFrequencyInput) {
+    elements.woodElfSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.woodElfSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.woodElfSettlementFrequencyValue, value);
     });
   }
 
