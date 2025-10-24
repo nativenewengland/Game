@@ -1732,6 +1732,88 @@ function adjustMinDistance(baseDistance, normalized) {
   return Math.max(2, Math.round(baseDistance * scale));
 }
 
+function tryPlaceDwarfhold(candidate, options) {
+  if (!candidate || !options) {
+    return false;
+  }
+  const {
+    placed,
+    minDistanceSq,
+    tiles,
+    width,
+    waterMask,
+    mountainScores,
+    fallbackMountainScoreThreshold,
+    mountainOverlayKey,
+    dwarfholdKey,
+    greatDwarfholdKey,
+    rng,
+    dwarfholds
+  } = options;
+
+  if (!tiles || !Array.isArray(tiles[candidate.y])) {
+    return false;
+  }
+
+  const tile = tiles[candidate.y][candidate.x];
+  if (!tile || tile.structure || tile.river) {
+    return false;
+  }
+
+  if (
+    Array.isArray(placed) &&
+    Number.isFinite(minDistanceSq) &&
+    minDistanceSq > 0 &&
+    placed.length > 0
+  ) {
+    for (let i = 0; i < placed.length; i += 1) {
+      const other = placed[i];
+      const dx = candidate.x - other.x;
+      const dy = candidate.y - other.y;
+      if (dx * dx + dy * dy < minDistanceSq) {
+        return false;
+      }
+    }
+  }
+
+  const idx = candidate.y * width + candidate.x;
+  const qualifiesForPlacement =
+    candidate.isMountainTile ||
+    (!tile.overlay &&
+      mountainScores &&
+      mountainScores[idx] >= fallbackMountainScoreThreshold &&
+      waterMask &&
+      !waterMask[idx]);
+
+  if (!qualifiesForPlacement) {
+    return false;
+  }
+
+  if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
+    tile.overlay = mountainOverlayKey;
+  }
+
+  const name = generateDwarfholdName(rng);
+  const details = generateDwarfholdDetails(name, rng);
+  const structureKey =
+    details.type === 'greatDwarfhold' && greatDwarfholdKey
+      ? greatDwarfholdKey
+      : dwarfholdKey;
+
+  tile.structure = structureKey;
+  tile.structureName = name;
+  tile.structureDetails = details;
+
+  if (Array.isArray(placed)) {
+    placed.push(candidate);
+  }
+  if (Array.isArray(dwarfholds)) {
+    dwarfholds.push({ x: candidate.x, y: candidate.y, ...details });
+  }
+
+  return true;
+}
+
 function randomInt(min, max) {
   const lower = Math.ceil(min);
   const upper = Math.floor(max);
@@ -5480,89 +5562,99 @@ function createWorld(seedString) {
         const minDistanceSq = minDistance * minDistance;
         const placed = [];
 
-        for (let i = 0; i < dwarfholdCandidates.length; i += 1) {
-          if (placed.length >= maxDwarfholds) {
-            break;
-          }
+        const basePlacementContext = {
+          tiles,
+          width,
+          waterMask,
+          mountainScores,
+          fallbackMountainScoreThreshold,
+          mountainOverlayKey,
+          dwarfholdKey,
+          greatDwarfholdKey,
+          rng,
+          dwarfholds
+        };
+
+        for (let i = 0; i < dwarfholdCandidates.length && placed.length < maxDwarfholds; i += 1) {
           const candidate = dwarfholdCandidates[i];
-          let tooClose = false;
-          for (let j = 0; j < placed.length; j += 1) {
-            const other = placed[j];
-            const dx = candidate.x - other.x;
-            const dy = candidate.y - other.y;
-            if (dx * dx + dy * dy < minDistanceSq) {
-              tooClose = true;
-              break;
-            }
-          }
-          if (tooClose) {
-            continue;
-          }
-          const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.structure || tile.river) {
-            continue;
-          }
-          const idx = candidate.y * width + candidate.x;
-          const qualifiesForPlacement =
-            candidate.isMountainTile ||
-            (!tile.overlay &&
-              mountainScores &&
-              mountainScores[idx] >= fallbackMountainScoreThreshold &&
-              !waterMask[idx]);
-          if (!qualifiesForPlacement) {
-            continue;
-          }
-          if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
-            tile.overlay = mountainOverlayKey;
-          }
-          const name = generateDwarfholdName(rng);
-          const details = generateDwarfholdDetails(name, rng);
-          const structureKey =
-            details.type === 'greatDwarfhold' && greatDwarfholdKey
-              ? greatDwarfholdKey
-              : dwarfholdKey;
-          tile.structure = structureKey;
-          tile.structureName = name;
-          tile.structureDetails = details;
-          placed.push(candidate);
-          dwarfholds.push({ x: candidate.x, y: candidate.y, ...details });
+          tryPlaceDwarfhold(candidate, {
+            ...basePlacementContext,
+            placed,
+            minDistanceSq
+          });
         }
 
         if (placed.length === 0) {
-          const fallbackCandidate = dwarfholdCandidates.find((candidate) => {
-            const tile = tiles[candidate.y][candidate.x];
-            if (!tile || tile.structure || tile.river) {
-              return false;
+          for (let i = 0; i < dwarfholdCandidates.length; i += 1) {
+            if (
+              tryPlaceDwarfhold(dwarfholdCandidates[i], {
+                ...basePlacementContext,
+                placed,
+                minDistanceSq: null
+              })
+            ) {
+              break;
             }
-            const idx = candidate.y * width + candidate.x;
-            const qualifiesForPlacement =
-              candidate.isMountainTile ||
-              (!tile.overlay &&
-                mountainScores &&
-                mountainScores[idx] >= fallbackMountainScoreThreshold &&
-                !waterMask[idx]);
-            if (!qualifiesForPlacement) {
-              return false;
-            }
-            if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
-              tile.overlay = mountainOverlayKey;
-            }
-            return true;
-          });
+          }
+        }
 
-          if (fallbackCandidate) {
-            const tile = tiles[fallbackCandidate.y][fallbackCandidate.x];
-            const name = generateDwarfholdName(rng);
-            const details = generateDwarfholdDetails(name, rng);
-            const structureKey =
-              details.type === 'greatDwarfhold' && greatDwarfholdKey
-                ? greatDwarfholdKey
-                : dwarfholdKey;
-            tile.structure = structureKey;
-            tile.structureName = name;
-            tile.structureDetails = details;
-            placed.push(fallbackCandidate);
-            dwarfholds.push({ x: fallbackCandidate.x, y: fallbackCandidate.y, ...details });
+        const southBoundary = Math.floor(height * 0.45);
+        let southernCandidateCount = 0;
+        for (let i = 0; i < dwarfholdCandidates.length; i += 1) {
+          if (dwarfholdCandidates[i].y >= southBoundary) {
+            southernCandidateCount += 1;
+          }
+        }
+
+        if (southernCandidateCount > 0) {
+          let placedSouthCount = 0;
+          for (let i = 0; i < placed.length; i += 1) {
+            if (placed[i].y >= southBoundary) {
+              placedSouthCount += 1;
+            }
+          }
+
+          const southBaseTarget = Math.max(1, Math.round(southernCandidateCount / 650));
+          const southMax = computeStructurePlacementLimit(
+            southBaseTarget,
+            16,
+            dwarfSettlementMultiplier
+          );
+          const southLimitFromTotal = Math.max(1, Math.ceil(maxDwarfholds * 0.5));
+          const southCandidateCapacity = southernCandidateCount - placedSouthCount;
+          const southExtraNeeded = Math.max(
+            0,
+            Math.min(southMax - placedSouthCount, southLimitFromTotal, southCandidateCapacity)
+          );
+
+          if (southExtraNeeded > 0) {
+            const southMinDistanceBase = Math.max(3, Math.round(minDistanceBase * 0.85));
+            const southMinDistance = adjustMinDistance(
+              southMinDistanceBase,
+              dwarfSettlementFrequencyNormalized
+            );
+            const southMinDistanceSq = southMinDistance * southMinDistance;
+            let southPlaced = 0;
+
+            for (
+              let i = 0;
+              i < dwarfholdCandidates.length && southPlaced < southExtraNeeded;
+              i += 1
+            ) {
+              const candidate = dwarfholdCandidates[i];
+              if (candidate.y < southBoundary) {
+                continue;
+              }
+              if (
+                tryPlaceDwarfhold(candidate, {
+                  ...basePlacementContext,
+                  placed,
+                  minDistanceSq: southMinDistanceSq
+                })
+              ) {
+                southPlaced += 1;
+              }
+            }
           }
         }
       }
