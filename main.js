@@ -785,6 +785,10 @@ const dwarfNamePools = {
   ]
 };
 
+const presetDwarfFirstNames = new Set(
+  Object.values(dwarfNamePools).reduce((allNames, pool) => allNames.concat(pool), [])
+);
+
 const dwarfHairColorToFrame = {
   obsidian: { column: 2 },
   umber: { column: 6 },
@@ -1280,6 +1284,22 @@ function generateDwarfName(gender, clanValue) {
   const firstName = generateDwarfFirstName(gender);
   const clanName = clanValue ? getOptionLabel('clan', clanValue) : generateDwarfClanName();
   return `${firstName} ${clanName}`;
+}
+
+function extractFirstName(fullName) {
+  if (!fullName) {
+    return '';
+  }
+  const trimmed = fullName.trim();
+  if (!trimmed) {
+    return '';
+  }
+  const [firstName] = trimmed.split(/\s+/);
+  return firstName || '';
+}
+
+function isPresetDwarfFirstName(firstName) {
+  return presetDwarfFirstNames.has(firstName);
 }
 
 function createRandomDwarf(preferredGender) {
@@ -1818,15 +1838,30 @@ function updateDwarfTrait(trait, value) {
       dwarf.name = generateDwarfName(dwarf.gender, value);
     }
   } else if (editableDwarfTraits.has(trait)) {
-    if (trait === 'hairStyle') {
+    if (trait === 'gender') {
+      const previousGender = dwarf.gender;
+      const trimmedName = (dwarf.name || '').trim();
+      dwarf.gender = value;
+      if (value === 'female') {
+        dwarf.beard = 'clean';
+      }
+      if (value !== previousGender && trimmedName) {
+        const firstName = extractFirstName(trimmedName);
+        const clanLabel = dwarf.clan ? getOptionLabel('clan', dwarf.clan) : null;
+        const matchesClan = clanLabel
+          ? trimmedName === `${firstName} ${clanLabel}`
+          : trimmedName === firstName;
+        if (firstName && matchesClan && isPresetDwarfFirstName(firstName)) {
+          const newFirstName = generateDwarfFirstName(value);
+          dwarf.name = clanLabel ? `${newFirstName} ${clanLabel}` : newFirstName;
+        }
+      }
+    } else if (trait === 'hairStyle') {
       dwarf[trait] = resolveHairStyleValue(value);
     } else if (trait === 'beard' && dwarf.gender === 'female') {
       dwarf.beard = 'clean';
     } else {
       dwarf[trait] = value;
-    }
-    if (trait === 'gender' && value === 'female') {
-      dwarf.beard = 'clean';
     }
   }
   updateCustomizerUI();
