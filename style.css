@@ -8,6 +8,8 @@
   --panel-border: rgba(255, 255, 255, 0.12);
   --button-bg: rgba(20, 23, 33, 0.85);
   --button-border: rgba(255, 255, 255, 0.18);
+  --cursor-wand-default: url("tilesheet/cursor1.png") 0 0, auto;
+  --cursor-wand-pointer: url("tilesheet/cursor1.png") 0 0, pointer;
 }
 
 * {
@@ -24,6 +26,19 @@ body {
   align-items: stretch;
   justify-content: center;
   overflow: hidden;
+  cursor: var(--cursor-wand-default);
+}
+
+a,
+[role='button'],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+input[type='range'],
+label[for],
+select,
+.clickable {
+  cursor: var(--cursor-wand-pointer);
 }
 
 .screen {
@@ -227,7 +242,7 @@ body {
 }
 
 button {
-  cursor: pointer;
+  cursor: var(--cursor-wand-pointer);
   font-size: 1rem;
   padding: 0.9rem 2.4rem;
   border-radius: 999px;
@@ -287,6 +302,26 @@ button:hover:not(:disabled) {
   gap: 0.5rem;
   font-size: 0.95rem;
   margin-bottom: 1rem;
+}
+
+.modal .slider-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal input[type='range'] {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+}
+
+.slider-value {
+  min-width: 120px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-variant-numeric: tabular-nums;
 }
 
 .world-stats {
@@ -721,6 +756,33 @@ button:hover:not(:disabled) {
   );
   mix-blend-mode: lighten;
   opacity: 0.25;
+}
+
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(12, 14, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: #f5f7ff;
+  font-size: 1rem;
+  line-height: 1.45;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 120ms ease;
+  max-width: min(360px, 85vw);
+  min-width: 220px;
+  white-space: normal;
+  backdrop-filter: blur(8px);
+  z-index: 5;
+}
+
+.map-tooltip.visible {
+  opacity: 1;
 }
 
 canvas {
