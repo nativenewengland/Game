@@ -2973,7 +2973,6 @@ function createWorld(seedString) {
   const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
   const grassTileKey = resolveTileName('GRASS');
   const waterTileKey = resolveTileName('WATER');
-  const stoneTileKey = tileLookup.has('STONE') ? 'STONE' : grassTileKey;
   const tiles = Array.from(
     { length: height },
     () =>
@@ -3490,9 +3489,6 @@ function createWorld(seedString) {
         if (mountainMask[idx]) {
           const tile = tiles[y][x];
           tile.overlay = mountainOverlayKey;
-          if (tile.base === grassTileKey) {
-            tile.base = stoneTileKey;
-          }
         }
       }
     }
