@@ -593,37 +593,61 @@ function generateDwarfholdPopulationBreakdown(population, random) {
     share: clamp(entry.share / safeTotalShare, 0, 1)
   }));
 
-  const rawPercentages = normalizedShares.map(({ config, share }) => ({
-    config,
-    raw: clamp(share, 0, 1) * 100
-  }));
+  const percentageDecimals = 2;
+  const percentageScale = 10 ** percentageDecimals;
+  const totalUnits = 100 * percentageScale;
 
-  const basePercentages = rawPercentages.map((entry) => Math.floor(entry.raw));
-  let baseTotal = basePercentages.reduce((sum, value) => sum + value, 0);
-  let remainder = 100 - baseTotal;
-  const fractionalOrder = rawPercentages
-    .map((entry, index) => ({ index, fraction: entry.raw - basePercentages[index] }))
+  const scaledEntries = normalizedShares.map(({ config, share }) => {
+    const safeShare = clamp(share, 0, 1);
+    const rawPercentage = safeShare * 100;
+    const scaledRaw = rawPercentage * percentageScale;
+    const baseUnit = Math.floor(scaledRaw);
+    const fraction = Math.max(0, Math.min(1, scaledRaw - baseUnit));
+    return {
+      config,
+      baseUnit,
+      fraction
+    };
+  });
+
+  const baseUnits = scaledEntries.map((entry) => entry.baseUnit);
+  let remainderUnits = totalUnits - baseUnits.reduce((sum, value) => sum + value, 0);
+  const fractionalOrder = scaledEntries
+    .map((entry, index) => ({ index, fraction: entry.fraction }))
     .sort((a, b) => b.fraction - a.fraction);
 
-  for (let i = 0; remainder > 0 && i < fractionalOrder.length; i += 1) {
-    basePercentages[fractionalOrder[i].index] += 1;
-    remainder -= 1;
+  if (fractionalOrder.length > 0) {
+    let incrementIndex = 0;
+    while (remainderUnits > 0) {
+      const target = fractionalOrder[incrementIndex % fractionalOrder.length];
+      baseUnits[target.index] += 1;
+      remainderUnits -= 1;
+      incrementIndex += 1;
+    }
+
+    const ascending = fractionalOrder.slice().reverse();
+    let decrementIndex = 0;
+    while (remainderUnits < 0 && ascending.length > 0) {
+      const target = ascending[decrementIndex % ascending.length];
+      if (baseUnits[target.index] > 0) {
+        baseUnits[target.index] -= 1;
+        remainderUnits += 1;
+      }
+      decrementIndex += 1;
+    }
   }
 
-  if (remainder < 0) {
-    const ascending = fractionalOrder.slice().reverse();
-    for (let i = 0; remainder < 0 && i < ascending.length; i += 1) {
-      if (basePercentages[ascending[i].index] > 0) {
-        basePercentages[ascending[i].index] -= 1;
-        remainder += 1;
-      }
-    }
+  if (remainderUnits !== 0 && baseUnits.length > 0) {
+    const lastIndex = baseUnits.length - 1;
+    const adjusted = Math.max(0, Math.min(totalUnits, baseUnits[lastIndex] + remainderUnits));
+    remainderUnits -= adjusted - baseUnits[lastIndex];
+    baseUnits[lastIndex] = adjusted;
   }
 
   const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
 
-  return rawPercentages.map(({ config }, index) => {
-    const percentage = clamp(basePercentages[index], 0, 100);
+  return scaledEntries.map(({ config }, index) => {
+    const percentage = clamp(baseUnits[index] / percentageScale, 0, 100);
     const count =
       resolvedPopulation === null
         ? null
@@ -2424,6 +2448,25 @@ function hideMapTooltip() {
   elements.mapTooltip.setAttribute('aria-hidden', 'true');
 }
 
+function formatPercentageDisplay(value) {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  const rounded = Math.round(value * 100) / 100;
+  return rounded.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+}
+
+function formatGradientPercentage(value) {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  const rounded = Math.round(value * 100) / 100;
+  return Number(rounded.toFixed(2)).toString();
+}
+
 function buildPopulationBreakdownSection(resolvedName, breakdown) {
   if (!Array.isArray(breakdown) || breakdown.length === 0) {
     return '';
@@ -2431,15 +2474,20 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
 
   const resolvedEntries = breakdown
     .filter((entry) => Number.isFinite(entry?.percentage) && entry.percentage > 0)
-    .map((entry) => ({
-      label: entry.label || entry.key || 'Unknown',
-      percentage: Math.max(0, Math.round(entry.percentage)),
-      color: entry.color || '#999999',
-      population:
-        Number.isFinite(entry.population) && entry.population > 0
-          ? Math.max(0, Math.round(entry.population))
-          : null
-    }));
+    .map((entry) => {
+      const rawPercentage = Number(entry.percentage);
+      const safePercentage = Number.isFinite(rawPercentage) ? Math.max(0, rawPercentage) : 0;
+      const roundedPercentage = Math.round(safePercentage * 100) / 100;
+      return {
+        label: entry.label || entry.key || 'Unknown',
+        percentage: roundedPercentage,
+        color: entry.color || '#999999',
+        population:
+          Number.isFinite(entry.population) && entry.population > 0
+            ? Math.max(0, Math.round(entry.population))
+            : null
+      };
+    });
 
   if (resolvedEntries.length === 0) {
     return '';
@@ -2447,10 +2495,13 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
 
   let cumulative = 0;
   const stops = resolvedEntries.map((entry, index) => {
-    const start = Math.min(100, Math.max(0, cumulative));
-    cumulative += entry.percentage;
-    const end = index === resolvedEntries.length - 1 ? 100 : Math.min(100, Math.max(0, cumulative));
-    return `${entry.color} ${start}% ${end}%`;
+    const start = Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    cumulative = Math.round((cumulative + entry.percentage) * 100) / 100;
+    const end =
+      index === resolvedEntries.length - 1
+        ? 100
+        : Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    return `${entry.color} ${formatGradientPercentage(start)}% ${formatGradientPercentage(end)}%`;
   });
 
   if (stops.length === 0) {
@@ -2466,7 +2517,7 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
 
   const legendItems = resolvedEntries
     .map((entry) => {
-      const valueParts = [`${entry.percentage}%`];
+      const valueParts = [`${formatPercentageDisplay(entry.percentage)}%`];
       if (entry.population !== null) {
         valueParts.push(`(${entry.population.toLocaleString('en-US')})`);
       }
