@@ -48,7 +48,7 @@ const baseTileCoords = {
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
   STONE: { row: 0, col: 3 },
-  DWARFHOLD: { row: 1, col: 3 },
+  DWARFHOLD: { row: 1, col: 5 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   TOWN: { row: 2, col: 1 }
 };
