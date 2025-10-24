@@ -918,6 +918,7 @@ const dwarfGuildOptions = [
   { value: 'brewers-guild', label: 'Brewers Guild' },
   { value: 'carpenters-guild', label: 'Carpenters Guild' },
   { value: 'construction-guild', label: 'Construction Guild' },
+  { value: 'corpsebinders-guild', label: 'Corpsebinders Guild' },
   { value: 'distiller-guild', label: 'Distiller Guild' },
   { value: 'dyers-guild', label: 'Dyers Guild' },
   { value: 'engineers-guild', label: 'Engineers Guild' },
