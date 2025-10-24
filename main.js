@@ -334,6 +334,37 @@ const dwarfholdNameRegions = [
   'the Brass Line'
 ];
 
+const dwarfholdRulerTitles = {
+  female: [
+    'High Thane',
+    'Forge Matron',
+    'Runesmith Queen',
+    'Hearthmother',
+    'Deepwarden'
+  ],
+  male: [
+    'High Thane',
+    'Forge Lord',
+    'Runesmith Prince',
+    'Mountain King',
+    'Deepwarden'
+  ],
+  neutral: ['High Thane', 'Forge Thane']
+};
+
+const dwarfholdHallmarks = [
+  'Renowned for adamantine vaults that hum with runic wards.',
+  'Brews ember-ale said to warm even a dragonborn heart.',
+  'Forges battleaxes tempered in magmafall cascades.',
+  'Gemcutters here carve prisms that sing when struck.',
+  'Hosts archives of rune-scribed lore older than empires.',
+  'Its sentry golems stand watch over sealed deep-gates.',
+  'Stonewrights sculpt living statues of honoured ancestors.',
+  'Traders deal in starlight opals mined from midnight caverns.',
+  'Their forges are stoked by dragonfire bound in crystal cages.',
+  'Tunnel gardens yield luminous mushrooms for distant markets.'
+];
+
 const townNamePrefixes = [
   'Oak',
   'River',
@@ -491,6 +522,39 @@ function generateDwarfholdName(random) {
     return `${baseName} ${descriptor}`;
   }
   return baseName;
+}
+
+function generateDwarfholdDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
+  const genderRoll = randomFn();
+  const gender = genderRoll < 0.45 ? 'female' : genderRoll > 0.9 ? 'neutral' : 'male';
+  const namePool = dwarfNamePools[gender === 'neutral' ? 'male' : gender] || dwarfNamePools.male;
+  const firstName = pickRandomFrom(namePool, randomFn) || 'Urist';
+  const clanOption = pickRandomFrom(dwarfOptions.clan, randomFn) || dwarfOptions.clan?.[0];
+  const clanName = clanOption?.label || 'Stonebeard';
+  const titlePool =
+    dwarfholdRulerTitles[gender === 'neutral' ? 'neutral' : gender] || dwarfholdRulerTitles.neutral;
+  const titleFallback = dwarfholdRulerTitles.neutral?.[0] || 'High Thane';
+  const rulerTitle = pickRandomFrom(titlePool, randomFn) || titleFallback;
+  const hallmark = pickRandomFrom(dwarfholdHallmarks, randomFn) ||
+    'Renowned for stout walls and heartier spirits.';
+  const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
+  const prominentClanOption = randomFn() < 0.35 ? pickRandomFrom(dwarfOptions.clan, randomFn) : clanOption;
+  const prominentClan = prominentClanOption?.label || clanName;
+
+  return {
+    type: 'dwarfhold',
+    name,
+    population,
+    ruler: {
+      title: rulerTitle,
+      name: `${firstName} ${clanName}`
+    },
+    foundedYearsAgo,
+    prominentClan,
+    hallmark
+  };
 }
 
 function generateTownName(random) {
@@ -1082,6 +1146,28 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value).replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return char;
+    }
+  });
 }
 
 function sanitizeFrequencyValue(value, fallback) {
@@ -2061,12 +2147,74 @@ function hideMapTooltip() {
   elements.mapTooltip.setAttribute('aria-hidden', 'true');
 }
 
-function showMapTooltip(label, pointerX, pointerY, boundsRect) {
+function buildStructureTooltipContent(tile) {
+  if (!tile || !tile.structureName) {
+    return null;
+  }
+
+  const details = tile.structureDetails;
+  if (details && details.type === 'dwarfhold') {
+    const sections = [];
+    const entries = [];
+    const resolvedName = details.name || tile.structureName;
+    sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+
+    if (Number.isFinite(details.population)) {
+      const populationValue = Math.max(0, Math.round(details.population));
+      const formattedPopulation = populationValue.toLocaleString('en-US');
+      entries.push({ label: 'Population', value: `${formattedPopulation} dwarves` });
+    }
+
+    if (details.ruler) {
+      const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
+      const rulerName = details.ruler.name || '';
+      const combined = `${rulerTitle}${rulerName}`.trim();
+      if (combined) {
+        entries.push({ label: 'Ruler', value: combined });
+      }
+    }
+
+    if (Number.isFinite(details.foundedYearsAgo)) {
+      const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
+      entries.push({ label: 'Founded', value: `${foundedValue} years ago` });
+    }
+
+    if (details.prominentClan) {
+      entries.push({ label: 'Prominent Clan', value: details.prominentClan });
+    }
+
+    if (entries.length > 0) {
+      const listItems = entries
+        .map(
+          ({ label, value }) =>
+            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+              value
+            )}</span></li>`
+        )
+        .join('');
+      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+
+    if (details.hallmark) {
+      sections.push(`<p class="tooltip-note">${escapeHtml(details.hallmark)}</p>`);
+    }
+
+    return sections.join('');
+  }
+
+  return `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
+}
+
+function showMapTooltip(content, pointerX, pointerY, boundsRect) {
   if (!elements.mapTooltip) {
     return;
   }
+  if (!content) {
+    hideMapTooltip();
+    return;
+  }
   const tooltip = elements.mapTooltip;
-  tooltip.textContent = label;
+  tooltip.innerHTML = content;
   tooltip.classList.add('visible');
   tooltip.setAttribute('aria-hidden', 'false');
   const margin = 16;
@@ -2217,11 +2365,16 @@ function setupMapInteractions() {
       return;
     }
     const tile = row[tileX];
-    if (!tile || !tile.structureName) {
+    if (!tile) {
       hideMapTooltip();
       return;
     }
-    showMapTooltip(tile.structureName, pointerX, pointerY, rect);
+    const tooltipContent = buildStructureTooltipContent(tile);
+    if (!tooltipContent) {
+      hideMapTooltip();
+      return;
+    }
+    showMapTooltip(tooltipContent, pointerX, pointerY, rect);
   };
 
   const handleWheel = (event) => {
@@ -3049,6 +3202,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.overlay = null;
     tile.structure = null;
     tile.structureName = null;
+    tile.structureDetails = null;
     tile.river = null;
     waterMask[idx] = 1;
     return true;
@@ -3348,6 +3502,7 @@ function createWorld(seedString) {
         overlay: null,
         structure: null,
         structureName: null,
+        structureDetails: null,
         river: null
       }))
   );
@@ -3403,6 +3558,7 @@ function createWorld(seedString) {
       tile.overlay = null;
       tile.structure = null;
       tile.structureName = null;
+      tile.structureDetails = null;
       tile.river = null;
     }
   }
@@ -3935,10 +4091,12 @@ function createWorld(seedString) {
             continue;
           }
           const name = generateDwarfholdName(rng);
+          const details = generateDwarfholdDetails(name, rng);
           tile.structure = dwarfholdKey;
           tile.structureName = name;
+          tile.structureDetails = details;
           placed.push(candidate);
-          dwarfholds.push({ x: candidate.x, y: candidate.y, name });
+          dwarfholds.push({ x: candidate.x, y: candidate.y, ...details });
         }
       }
     }
@@ -3965,6 +4123,7 @@ function createWorld(seedString) {
         tile.overlay = null;
         tile.structure = null;
         tile.structureName = null;
+        tile.structureDetails = null;
         tile.river = null;
       }
     }
@@ -4078,6 +4237,7 @@ function createWorld(seedString) {
         const name = generateTownName(rng);
         tile.structure = townKey;
         tile.structureName = name;
+        tile.structureDetails = null;
         towns.push({ x: candidate.x, y: candidate.y, name });
         placed.push(candidate);
       }
@@ -4296,6 +4456,7 @@ function createWorld(seedString) {
           const name = generateWoodElfGroveName(rng);
           tile.structure = woodElfGroveKey;
           tile.structureName = name;
+          tile.structureDetails = null;
           placed.push(candidate);
           woodElfGroves.push({ x: candidate.x, y: candidate.y, name });
         }
