@@ -280,339 +280,244 @@
             Tune the look of your dwarf before striking the earth.
           </p>
         </header>
-        <div class="customizer-layout">
-          <aside class="roster-column pixel-panel" aria-label="Founder overview">
-            <h3>Founding Dwarf</h3>
-            <ul id="dwarf-roster-list" class="dwarf-roster-list" role="list"></ul>
-          </aside>
-          <section class="customizer-main" aria-live="polite">
-            <div class="customizer-main-card pixel-panel">
-              <div class="customizer-top-bar pixel-subpanel pixel-bar">
-                <button type="button" id="dwarf-prev" class="secondary" aria-label="Previous dwarf">
-                  ◀
-                </button>
-                <div class="dwarf-slot-info">
-                  <p id="dwarf-slot-label" class="slot-label">Founding Dwarf</p>
-                  <label class="field-label" for="dwarf-name-input">Name</label>
-                  <input
-                    type="text"
-                    id="dwarf-name-input"
-                    class="dwarf-name-input"
-                    maxlength="40"
-                    autocomplete="off"
-                    required
-                  />
-                </div>
-                <button type="button" id="dwarf-next" class="secondary" aria-label="Next dwarf">
-                  ▶
-                </button>
+        <div class="character-creation-panel">
+          <div class="character-creation-banner" role="presentation">
+            <img
+              src="tilesheet/charactercreationtitle.png"
+              alt="Character Creation"
+              class="character-creation-banner__image"
+              width="512"
+              height="128"
+              loading="lazy"
+            />
+          </div>
+          <div class="character-creation-columns" aria-live="polite">
+            <div class="character-creation-column character-creation-column--left">
+              <div
+                id="dwarf-portrait"
+                class="character-creation-portrait"
+                role="img"
+                aria-label="Dwarf portrait"
+              >
+                <canvas
+                  id="dwarf-portrait-canvas"
+                  class="character-creation-portrait__canvas"
+                  width="128"
+                  height="128"
+                  aria-hidden="true"
+                ></canvas>
               </div>
-              <div class="customizer-body">
-                <div class="customizer-visuals">
-                  <div class="customizer-preview pixel-subpanel" role="group" aria-label="Appearance preview">
-                    <h3 class="subpanel-title">Appearance</h3>
-                    <div class="dwarf-preview-stack">
-                      <div
-                        id="dwarf-portrait"
-                        class="dwarf-portrait"
-                        role="img"
-                        aria-label="Dwarf portrait"
-                      >
-                        <canvas
-                          id="dwarf-portrait-canvas"
-                          class="dwarf-portrait-canvas"
-                          width="128"
-                          height="128"
-                          aria-hidden="true"
-                        ></canvas>
-                      </div>
-                      <div class="dwarf-full-preview" aria-hidden="true">
-                        <canvas
-                          id="dwarf-full-preview-canvas"
-                          class="dwarf-full-preview-canvas"
-                          width="128"
-                          height="160"
-                          aria-hidden="true"
-                        ></canvas>
-                      </div>
-                    </div>
-                    <p id="dwarf-trait-summary" class="trait-summary"></p>
-                  </div>
-                  <div class="customizer-inline-actions pixel-subpanel">
-                    <h3 class="subpanel-title">Legendary Luck</h3>
-                    <p class="subpanel-description">Spin the dice for a fresh face.</p>
-                    <div class="randomise-button">
-                      <button
-                        type="button"
-                        id="dwarf-randomise"
-                        class="secondary randomise-button__dice"
-                        aria-label="Randomise dwarf"
-                      ></button>
-                    </div>
-                  </div>
-                </div>
-                <div class="customizer-fields pixel-subpanel">
-                  <div class="field-grid" id="dwarf-trait-controls">
-                    <div class="field-group field-group--gender">
-                      <p id="dwarf-gender-label" class="field-label">Gender</p>
-                      <div
-                        id="dwarf-gender-buttons"
-                        class="gender-toggle"
-                        role="radiogroup"
-                        aria-labelledby="dwarf-gender-label"
-                      >
-                        <button
-                          type="button"
-                          class="gender-toggle-button gender-toggle-button--female"
-                          data-gender-value="female"
-                          role="radio"
-                          aria-checked="true"
-                          tabindex="0"
-                        >
-                          <img
-                            src="tilesheet/gender-button-female.png"
-                            alt="Female"
-                            width="87"
-                            height="88"
-                            loading="lazy"
-                          />
-                        </button>
-                        <button
-                          type="button"
-                          class="gender-toggle-button gender-toggle-button--male"
-                          data-gender-value="male"
-                          role="radio"
-                          aria-checked="false"
-                          tabindex="-1"
-                        >
-                          <img
-                            src="tilesheet/gender-button-male.png"
-                            alt="Male"
-                            width="87"
-                            height="88"
-                            loading="lazy"
-                          />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" data-trait-control="clan">
-                      <p id="dwarf-clan-label" class="field-label">Clan</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-clan-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous clan option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next clan option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" data-trait-control="guild">
-                      <p id="dwarf-guild-label" class="field-label">Guild</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-guild-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous guild option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next guild option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" data-trait-control="profession">
-                      <p id="dwarf-profession-label" class="field-label">Profession</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-profession-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous profession option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next profession option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" data-trait-control="skin">
-                      <p id="dwarf-skin-label" class="field-label">Skin tone</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-skin-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous skin tone option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next skin tone option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" data-trait-control="eyes">
-                      <p id="dwarf-eye-label" class="field-label">Eye colour</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-eye-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous eye colour option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next eye colour option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" data-trait-control="hairStyle">
-                      <p id="dwarf-hair-style-label" class="field-label">Hair style</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-hair-style-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous hair style option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next hair style option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" data-trait-control="hair">
-                      <p id="dwarf-hair-label" class="field-label">Hair colour</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-hair-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous hair colour option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next hair colour option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="field-group cc-control" id="dwarf-beard-field-group" data-trait-control="beard">
-                      <p id="dwarf-beard-label" class="field-label">Beard style</p>
-                      <div class="cc-control-row" role="group" aria-labelledby="dwarf-beard-label">
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="prev"
-                          aria-label="Previous beard style option"
-                        >
-                          <span aria-hidden="true">‹</span>
-                        </button>
-                        <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
-                          <span class="cc-control-swatch" data-trait-swatch hidden></span>
-                          <span class="cc-control-text" data-trait-label></span>
-                        </div>
-                        <button
-                          type="button"
-                          class="cc-arrow-button"
-                          data-direction="next"
-                          aria-label="Next beard style option"
-                        >
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+              <div class="character-creation-gender">
+                <p id="dwarf-gender-label" class="character-creation-label">Gender</p>
+                <div
+                  id="dwarf-gender-buttons"
+                  class="gender-toggle"
+                  role="radiogroup"
+                  aria-labelledby="dwarf-gender-label"
+                >
+                  <button
+                    type="button"
+                    class="gender-toggle-button gender-toggle-button--female"
+                    data-gender-value="female"
+                    role="radio"
+                    aria-checked="true"
+                    tabindex="0"
+                  >
+                    <img
+                      src="tilesheet/gender-button-female.png"
+                      alt="Female"
+                      width="87"
+                      height="88"
+                      loading="lazy"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    class="gender-toggle-button gender-toggle-button--male"
+                    data-gender-value="male"
+                    role="radio"
+                    aria-checked="false"
+                    tabindex="-1"
+                  >
+                    <img
+                      src="tilesheet/gender-button-male.png"
+                      alt="Male"
+                      width="87"
+                      height="88"
+                      loading="lazy"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
-          </section>
+            <div class="character-creation-column character-creation-column--center">
+              <div class="character-creation-controls" id="dwarf-trait-controls">
+                <div class="cc-control-row cc-control-row--name" data-trait-control="name">
+                  <label class="character-creation-label" for="dwarf-name-input">Name</label>
+                  <div class="cc-control-row__actions" role="group" aria-labelledby="dwarf-name-input">
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="prev"
+                      data-trait="name"
+                      aria-label="Previous name option"
+                    >
+                      <span aria-hidden="true">‹</span>
+                    </button>
+                    <input
+                      type="text"
+                      id="dwarf-name-input"
+                      class="dwarf-name-input"
+                      maxlength="40"
+                      autocomplete="off"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="next"
+                      data-trait="name"
+                      aria-label="Next name option"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="cc-control-row" data-trait-control="skin">
+                  <p class="character-creation-label" id="dwarf-skin-label">Skin Color</p>
+                  <div class="cc-control-row__actions" role="group" aria-labelledby="dwarf-skin-label">
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="prev"
+                      data-trait="skin"
+                      aria-label="Previous skin color option"
+                    >
+                      <span aria-hidden="true">‹</span>
+                    </button>
+                    <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
+                      <span class="cc-control-swatch" data-trait-swatch hidden></span>
+                      <span class="cc-control-text" data-trait-label></span>
+                    </div>
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="next"
+                      data-trait="skin"
+                      aria-label="Next skin color option"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="cc-control-row" data-trait-control="hair">
+                  <p class="character-creation-label" id="dwarf-hair-label">Hair Color</p>
+                  <div class="cc-control-row__actions" role="group" aria-labelledby="dwarf-hair-label">
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="prev"
+                      data-trait="hair"
+                      aria-label="Previous hair color option"
+                    >
+                      <span aria-hidden="true">‹</span>
+                    </button>
+                    <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
+                      <span class="cc-control-swatch" data-trait-swatch hidden></span>
+                      <span class="cc-control-text" data-trait-label></span>
+                    </div>
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="next"
+                      data-trait="hair"
+                      aria-label="Next hair color option"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="cc-control-row" id="dwarf-beard-field-group" data-trait-control="beard">
+                  <p class="character-creation-label" id="dwarf-beard-label">Beard Style</p>
+                  <div class="cc-control-row__actions" role="group" aria-labelledby="dwarf-beard-label">
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="prev"
+                      data-trait="beard"
+                      aria-label="Previous beard style option"
+                    >
+                      <span aria-hidden="true">‹</span>
+                    </button>
+                    <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
+                      <span class="cc-control-swatch" data-trait-swatch hidden></span>
+                      <span class="cc-control-text" data-trait-label></span>
+                    </div>
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="next"
+                      data-trait="beard"
+                      aria-label="Next beard style option"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="cc-control-row" data-trait-control="clothing">
+                  <p class="character-creation-label" id="dwarf-clothing-label">Clothing</p>
+                  <div class="cc-control-row__actions" role="group" aria-labelledby="dwarf-clothing-label">
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="prev"
+                      data-trait="clothing"
+                      aria-label="Previous clothing option"
+                    >
+                      <span aria-hidden="true">‹</span>
+                    </button>
+                    <div class="cc-control-value" data-trait-value role="status" aria-live="polite">
+                      <span class="cc-control-swatch" data-trait-swatch hidden></span>
+                      <span class="cc-control-text" data-trait-label></span>
+                    </div>
+                    <button
+                      type="button"
+                      class="cc-arrow-button"
+                      data-direction="next"
+                      data-trait="clothing"
+                      aria-label="Next clothing option"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p id="dwarf-trait-summary" class="trait-summary"></p>
+            </div>
+            <div class="character-creation-column character-creation-column--right">
+              <div class="character-creation-preview">
+                <canvas
+                  id="dwarf-full-preview-canvas"
+                  class="character-creation-preview__canvas"
+                  width="128"
+                  height="160"
+                  aria-hidden="true"
+                ></canvas>
+              </div>
+              <div class="character-creation-actions">
+                <button
+                  type="button"
+                  id="dwarf-randomise"
+                  class="randomise-button__dice"
+                  aria-label="Randomise dwarf"
+                ></button>
+                <button type="submit" id="dwarf-create-button" class="primary character-creation-submit">
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <footer class="embark-actions customizer-actions">
-          <button type="button" id="dwarf-back" class="secondary">Back</button>
-          <button type="submit" class="primary">Begin Expedition</button>
-        </footer>
       </form>
     </section>
 
