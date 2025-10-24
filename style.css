@@ -9,7 +9,7 @@
   --button-bg: rgba(20, 23, 33, 0.85);
   --button-border: rgba(255, 255, 255, 0.18);
   --cursor-wand-default: url("tilesheet/cursor1.png") 0 0, auto;
-  --cursor-wand-pointer: url("tilesheet/cursor1.png") 0 0, pointer;
+  --cursor-wand-pointer: url("tilesheet/altcursor1.png") 0 0, url("tilesheet/cursor1.png") 0 0, pointer;
 }
 
 * {
