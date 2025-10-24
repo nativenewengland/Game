@@ -620,13 +620,13 @@ button:hover:not(:disabled) {
 #dwarf-customizer-form::after {
   content: '';
   position: absolute;
-  top: var(--customizer-frame-top);
-  right: var(--customizer-frame-right);
-  bottom: var(--customizer-frame-bottom);
-  left: var(--customizer-frame-left);
+  top: calc(-1 * var(--customizer-frame-top));
+  right: calc(-1 * var(--customizer-frame-right));
+  bottom: calc(-1 * var(--customizer-frame-bottom));
+  left: calc(-1 * var(--customizer-frame-left));
   background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
-  border-radius: 18px;
+  border-radius: calc(18px + var(--customizer-frame-top));
   pointer-events: none;
   z-index: -1;
 }
