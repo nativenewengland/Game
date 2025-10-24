@@ -43,6 +43,7 @@ const dwarfSpriteSheets = {
 };
 
 const baseTileCoords = {
+  SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
@@ -3850,9 +3851,14 @@ function createWorld(seedString) {
   const waterTileKey = resolveTileName('WATER');
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
+  const hasSandTile = tileLookup.has('SAND');
+  const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
   const landBaseKeys = new Set([grassTileKey]);
   if (hasSnowTile) {
     landBaseKeys.add(snowTileKey);
+  }
+  if (hasSandTile) {
+    landBaseKeys.add(sandTileKey);
   }
   const snowLatitudeStart = 0.7;
   const snowLatitudeFull = 0.86;
@@ -3862,17 +3868,21 @@ function createWorld(seedString) {
   const snowNoiseOffsetX = rng() * 4096;
   const snowNoiseOffsetY = rng() * 4096;
 
-  const determineLandBaseTile = hasSnowTile
-    ? (x, y, heightValue) => {
-        const normalizedX = (x + 0.5) / width;
-        const normalizedY = (y + 0.5) / height;
-        const latitude = 1 - normalizedY;
-        if (latitude >= snowLatitudeFull) {
-          return snowTileKey;
-        }
-        if (latitude <= snowLatitudeStart) {
-          return grassTileKey;
-        }
+  const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
+  const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
+  const desertNoiseOffsetX = hasSandTile ? rng() * 4096 : 0;
+  const desertNoiseOffsetY = hasSandTile ? rng() * 4096 : 0;
+
+  const determineLandBaseTile = (x, y, heightValue) => {
+    const normalizedX = (x + 0.5) / width;
+    const normalizedY = (y + 0.5) / height;
+    const latitude = 1 - normalizedY;
+
+    if (hasSnowTile) {
+      if (latitude >= snowLatitudeFull) {
+        return snowTileKey;
+      }
+      if (latitude > snowLatitudeStart) {
         const snowBandFactor = clamp((latitude - snowLatitudeStart) / snowLatitudeRange, 0, 1);
         const elevationFactor = clamp((heightValue - seaLevel) * 3.8, 0, 1);
         const coverage = clamp(snowBandFactor * 0.7 + elevationFactor * 0.3, 0, 1);
@@ -3884,9 +3894,38 @@ function createWorld(seedString) {
           0.55,
           2.2
         );
-        return snowNoise < coverage ? snowTileKey : grassTileKey;
+        if (snowNoise < coverage) {
+          return snowTileKey;
+        }
       }
-    : () => grassTileKey;
+    }
+
+    if (hasSandTile) {
+      const idx = y * width + x;
+      const rainfallValue = rainfallField[idx];
+      const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
+      const equatorialAlignment = clamp(1 - Math.abs(latitude - 0.5) * 2, 0, 1);
+      const elevationFactor = clamp((heightValue - seaLevel) * 2.6, 0, 1);
+      const heat = clamp(equatorialAlignment * 0.75 + (1 - elevationFactor) * 0.35, 0, 1);
+      const suitability = clamp(aridity * 0.7 + heat * 0.4, 0, 1);
+      if (suitability > 0.52) {
+        const desertNoise = octaveNoise(
+          (normalizedX + desertNoiseOffsetX) * desertNoiseScale,
+          (normalizedY + desertNoiseOffsetY) * desertNoiseScale,
+          desertNoiseSeed,
+          3,
+          0.55,
+          2.15
+        );
+        const latitudeThreshold = lerp(0.58, 0.52, equatorialAlignment);
+        if (desertNoise < suitability && suitability > latitudeThreshold) {
+          return sandTileKey;
+        }
+      }
+    }
+
+    return grassTileKey;
+  };
 
   const isLandBaseTile = (baseKey) => landBaseKeys.has(baseKey);
   const tiles = Array.from(
