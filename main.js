@@ -170,6 +170,7 @@ function getMapSizeLabel(preset, width, height) {
 }
 
 const defaultMapSize = getMapSizePreset('normal');
+const defaultForestFrequency = 35;
 const defaultMountainFrequency = 35;
 
 const worldNames = [
@@ -873,7 +874,7 @@ const state = {
     height: defaultMapSize.height,
     seedString: '',
     lastSeedString: '',
-    forestFrequency: 50,
+    forestFrequency: defaultForestFrequency,
     mountainFrequency: defaultMountainFrequency,
     riverFrequency: 50,
     humanSettlementFrequency: 50,
@@ -3986,7 +3987,10 @@ function createWorld(seedString) {
   const rng = mulberry32(seedNumber || 1);
   const width = state.settings.width;
   const height = state.settings.height;
-  const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+  const forestFrequencySetting = sanitizeFrequencyValue(
+    state.settings.forestFrequency,
+    defaultForestFrequency
+  );
   const mountainFrequencySetting = sanitizeFrequencyValue(
     state.settings.mountainFrequency,
     defaultMountainFrequency
@@ -4004,7 +4008,7 @@ function createWorld(seedString) {
     state.settings.woodElfSettlementFrequency,
     50
   );
-  const forestBias = forestFrequencySetting / 50 - 1;
+  const forestBias = (forestFrequencySetting - defaultForestFrequency) / 50;
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
   const riverFrequencyNormalized = clamp(riverFrequencySetting / 100, 0, 1);
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
@@ -6105,7 +6109,10 @@ function syncInputsWithSettings() {
   }
   updateWorldInfoSeedDisplay(state.settings.seedString);
   if (elements.forestFrequencyInput) {
-    const value = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+    const value = sanitizeFrequencyValue(
+      state.settings.forestFrequency,
+      defaultForestFrequency
+    );
     elements.forestFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.forestFrequencyValue, value);
   }
