@@ -52,6 +52,7 @@ const baseTileCoords = {
   MOUNTAIN: { row: 0, col: 3 },
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 5 },
+  GREAT_DWARFHOLD: { row: 0, col: 6 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
@@ -760,8 +761,12 @@ function generateDwarfholdDetails(name, random) {
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
 
+  const classification = population >= 3000 ? 'greatDwarfhold' : 'dwarfhold';
+  const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
+
   return {
-    type: 'dwarfhold',
+    type: classification,
+    classification: classificationLabel,
     name,
     population,
     ruler: {
@@ -2615,11 +2620,17 @@ function buildStructureTooltipContent(tile) {
   }
 
   const details = tile.structureDetails;
-  if (details && details.type === 'dwarfhold') {
+  const isDwarfhold =
+    details && (details.type === 'dwarfhold' || details.type === 'greatDwarfhold');
+  if (isDwarfhold) {
     const sections = [];
     const entries = [];
     const resolvedName = details.name || tile.structureName;
     sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+
+    if (details.classification) {
+      entries.push({ label: 'Classification', value: details.classification });
+    }
 
     if (Number.isFinite(details.population)) {
       const populationValue = Math.max(0, Math.round(details.population));
@@ -4767,6 +4778,7 @@ function createWorld(seedString) {
     }
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
+    const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     if (dwarfholdKey) {
       const fallbackMountainScoreThreshold =
         mountainScores && mountainCandidateThreshold !== null
@@ -4847,7 +4859,11 @@ function createWorld(seedString) {
           }
           const name = generateDwarfholdName(rng);
           const details = generateDwarfholdDetails(name, rng);
-          tile.structure = dwarfholdKey;
+          const structureKey =
+            details.type === 'greatDwarfhold' && greatDwarfholdKey
+              ? greatDwarfholdKey
+              : dwarfholdKey;
+          tile.structure = structureKey;
           tile.structureName = name;
           tile.structureDetails = details;
           placed.push(candidate);
@@ -4880,7 +4896,11 @@ function createWorld(seedString) {
             const tile = tiles[fallbackCandidate.y][fallbackCandidate.x];
             const name = generateDwarfholdName(rng);
             const details = generateDwarfholdDetails(name, rng);
-            tile.structure = dwarfholdKey;
+            const structureKey =
+              details.type === 'greatDwarfhold' && greatDwarfholdKey
+                ? greatDwarfholdKey
+                : dwarfholdKey;
+            tile.structure = structureKey;
             tile.structureName = name;
             tile.structureDetails = details;
             placed.push(fallbackCandidate);
