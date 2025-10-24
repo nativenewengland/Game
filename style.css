@@ -1176,6 +1176,53 @@ button:hover:not(:disabled) {
   opacity: 1;
 }
 
+.map-tooltip .tooltip-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.map-tooltip .tooltip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.map-tooltip .tooltip-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 0.92rem;
+}
+
+.map-tooltip .tooltip-term {
+  color: rgba(245, 247, 255, 0.75);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+}
+
+.map-tooltip .tooltip-value {
+  color: #ffffff;
+  font-weight: 500;
+  text-align: right;
+  flex: 1;
+}
+
+.map-tooltip .tooltip-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.78);
+  font-style: italic;
+}
+
 canvas {
   position: absolute;
   top: 0;
