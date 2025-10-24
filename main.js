@@ -919,9 +919,7 @@ const state = {
     riverFrequency: 50,
     humanSettlementFrequency: 50,
     dwarfSettlementFrequency: 50,
-    woodElfSettlementFrequency: 50,
-    towerFrequency: 50,
-    evilWizardTowerFrequency: 50
+    woodElfSettlementFrequency: 50
   },
   tileSheets,
   landMask: null,
@@ -1250,10 +1248,6 @@ const elements = {
   dwarfSettlementFrequencyValue: document.getElementById('dwarf-settlement-frequency-value'),
   woodElfSettlementFrequencyInput: document.getElementById('wood-elf-settlement-frequency'),
   woodElfSettlementFrequencyValue: document.getElementById('wood-elf-settlement-frequency-value'),
-  towerFrequencyInput: document.getElementById('tower-frequency'),
-  towerFrequencyValue: document.getElementById('tower-frequency-value'),
-  evilWizardTowerFrequencyInput: document.getElementById('evil-wizard-tower-frequency'),
-  evilWizardTowerFrequencyValue: document.getElementById('evil-wizard-tower-frequency-value'),
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
   musicNowPlaying: document.getElementById('music-now-playing'),
@@ -1475,12 +1469,6 @@ function applyFormSettings() {
   const woodElfSettlementFrequencyRaw = elements.woodElfSettlementFrequencyInput
     ? Number.parseInt(elements.woodElfSettlementFrequencyInput.value, 10)
     : state.settings.woodElfSettlementFrequency;
-  const towerFrequencyRaw = elements.towerFrequencyInput
-    ? Number.parseInt(elements.towerFrequencyInput.value, 10)
-    : state.settings.towerFrequency;
-  const evilWizardTowerFrequencyRaw = elements.evilWizardTowerFrequencyInput
-    ? Number.parseInt(elements.evilWizardTowerFrequencyInput.value, 10)
-    : state.settings.evilWizardTowerFrequency;
 
   state.settings.mapSize = preset.key;
   state.settings.width = preset.width;
@@ -1515,16 +1503,6 @@ function applyFormSettings() {
       ? state.settings.woodElfSettlementFrequency
       : woodElfSettlementFrequencyRaw,
     state.settings.woodElfSettlementFrequency
-  );
-  state.settings.towerFrequency = sanitizeFrequencyValue(
-    Number.isNaN(towerFrequencyRaw) ? state.settings.towerFrequency : towerFrequencyRaw,
-    state.settings.towerFrequency
-  );
-  state.settings.evilWizardTowerFrequency = sanitizeFrequencyValue(
-    Number.isNaN(evilWizardTowerFrequencyRaw)
-      ? state.settings.evilWizardTowerFrequency
-      : evilWizardTowerFrequencyRaw,
-    state.settings.evilWizardTowerFrequency
   );
 }
 
@@ -3908,28 +3886,15 @@ function createWorld(seedString) {
     state.settings.woodElfSettlementFrequency,
     50
   );
-  const towerFrequencySetting = sanitizeFrequencyValue(state.settings.towerFrequency, 50);
-  const evilWizardTowerFrequencySetting = sanitizeFrequencyValue(
-    state.settings.evilWizardTowerFrequency,
-    50
-  );
   const forestBias = forestFrequencySetting / 50 - 1;
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
   const riverFrequencyNormalized = clamp(riverFrequencySetting / 100, 0, 1);
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
   const dwarfSettlementFrequencyNormalized = clamp(dwarfSettlementFrequencySetting / 100, 0, 1);
   const woodElfSettlementFrequencyNormalized = clamp(woodElfSettlementFrequencySetting / 100, 0, 1);
-  const towerFrequencyNormalized = clamp(towerFrequencySetting / 100, 0, 1);
-  const evilWizardTowerFrequencyNormalized = clamp(evilWizardTowerFrequencySetting / 100, 0, 1);
   const humanSettlementMultiplier = computeFrequencyMultiplier(humanSettlementFrequencySetting);
   const dwarfSettlementMultiplier = computeFrequencyMultiplier(dwarfSettlementFrequencySetting);
   const woodElfSettlementMultiplier = computeFrequencyMultiplier(woodElfSettlementFrequencySetting);
-  const towerMultiplier = computeFrequencyMultiplier(towerFrequencySetting, 0, 2);
-  const evilWizardTowerMultiplier = computeFrequencyMultiplier(
-    evilWizardTowerFrequencySetting,
-    0,
-    2
-  );
   const mountainBiasLinear = mountainFrequencyNormalized * 2 - 1;
   const mountainBias =
     mountainBiasLinear === 0
@@ -5360,183 +5325,6 @@ function createWorld(seedString) {
     }
   }
 
-  const computeNearestDistanceSquared = (x, y, locations) => {
-    if (!Array.isArray(locations) || locations.length === 0) {
-      return Infinity;
-    }
-    let nearest = Infinity;
-    for (let i = 0; i < locations.length; i += 1) {
-      const location = locations[i];
-      if (!location) {
-        continue;
-      }
-      const dx = x - location.x;
-      const dy = y - location.y;
-      const distSq = dx * dx + dy * dy;
-      if (distSq < nearest) {
-        nearest = distSq;
-      }
-    }
-    return nearest;
-  };
-
-  const computeProximityScore = (x, y, locations, radius, fallback = 0.25) => {
-    if (!Array.isArray(locations) || locations.length === 0) {
-      return fallback;
-    }
-    const nearestSq = computeNearestDistanceSquared(x, y, locations);
-    if (!Number.isFinite(nearestSq)) {
-      return fallback;
-    }
-    const distance = Math.sqrt(nearestSq);
-    const safeRadius = Math.max(1, radius);
-    return 1 - clamp(distance / safeRadius, 0, 1);
-  };
-
-  const computeRemotenessScore = (x, y, locations, radius, fallback = 1) => {
-    if (!Array.isArray(locations) || locations.length === 0) {
-      return fallback;
-    }
-    const nearestSq = computeNearestDistanceSquared(x, y, locations);
-    if (!Number.isFinite(nearestSq)) {
-      return fallback;
-    }
-    const distance = Math.sqrt(nearestSq);
-    const safeRadius = Math.max(1, radius);
-    return clamp(distance / safeRadius, 0, 1);
-  };
-
-  const countMountainNeighbors = (x, y) => {
-    if (!mountainMask) {
-      return 0;
-    }
-    let count = 0;
-    for (let i = 0; i < neighborOffsets8.length; i += 1) {
-      const nx = x + neighborOffsets8[i][0];
-      const ny = y + neighborOffsets8[i][1];
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-        continue;
-      }
-      if (mountainMask[ny * width + nx]) {
-        count += 1;
-      }
-    }
-    return count;
-  };
-
-  const towerKey = tileLookup.has('TOWER') ? 'TOWER' : null;
-  if (towerKey && towerMultiplier > 0) {
-    const settlementCandidates = [...towns, ...dwarfholds];
-    const towerCandidates = [];
-    const proximityRadius = Math.max(6, Math.min(width, height) / 3);
-    const edgeRadius = Math.max(4, Math.min(width, height) / 2);
-
-    for (let y = 0; y < height; y += 1) {
-      for (let x = 0; x < width; x += 1) {
-        const idx = y * width + x;
-        if (waterMask[idx]) {
-          continue;
-        }
-        const tile = tiles[y][x];
-        if (!tile || tile.structure || tile.river) {
-          continue;
-        }
-        const overlayKey = tile.overlay;
-        if (overlayKey && overlayKey !== hillKey && !mountainOverlayKeys.has(overlayKey)) {
-          continue;
-        }
-        const elevationValue = elevationField[idx];
-        const normalizedElevation = clamp((elevationValue - seaLevel) * 2.6, 0, 1);
-        const rainfallValue = rainfallField[idx];
-        const dryness = clamp(1 - rainfallValue, 0, 1);
-        const mountainNeighborRatio =
-          mountainMask && mountainMask[idx]
-            ? 0.6
-            : countMountainNeighbors(x, y) / neighborOffsets8.length;
-        const settlementProximity = computeProximityScore(
-          x,
-          y,
-          settlementCandidates,
-          proximityRadius,
-          0.18
-        );
-        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
-        const edgeScore = clamp(edgeDistance / edgeRadius, 0, 1);
-        const score =
-          normalizedElevation * 0.45 +
-          settlementProximity * 0.3 +
-          mountainNeighborRatio * 0.15 +
-          dryness * 0.05 +
-          edgeScore * 0.05 +
-          rng() * 0.1;
-        if (score > 0.18) {
-          towerCandidates.push({
-            x,
-            y,
-            score,
-            settlementProximity
-          });
-        }
-      }
-    }
-
-    if (towerCandidates.length > 0) {
-      towerCandidates.sort((a, b) => b.score - a.score);
-      const area = width * height;
-      const baseTarget = Math.max(0, Math.round(area / 9000));
-      let maxTowers = Math.round(baseTarget * towerMultiplier);
-      const hardLimit = Math.max(0, Math.round(16 * (0.5 + towerMultiplier)));
-      maxTowers = clamp(maxTowers, 0, hardLimit);
-      if (maxTowers === 0 && towerMultiplier > 0.65 && towerCandidates.length > 0) {
-        maxTowers = 1;
-      }
-
-      if (maxTowers > 0) {
-        const minDistanceBase = 7;
-        const minDistance = adjustMinDistance(minDistanceBase, towerFrequencyNormalized);
-        const minDistanceSq = minDistance * minDistance;
-        const placed = [];
-
-        for (let i = 0; i < towerCandidates.length; i += 1) {
-          if (placed.length >= maxTowers) {
-            break;
-          }
-          const candidate = towerCandidates[i];
-          if (settlementCandidates.length > 0 && candidate.settlementProximity < 0.08) {
-            continue;
-          }
-          let tooClose = false;
-          for (let j = 0; j < placed.length; j += 1) {
-            const other = placed[j];
-            const dx = candidate.x - other.x;
-            const dy = candidate.y - other.y;
-            if (dx * dx + dy * dy < minDistanceSq) {
-              tooClose = true;
-              break;
-            }
-          }
-          if (tooClose) {
-            continue;
-          }
-          const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.structure || tile.river) {
-            continue;
-          }
-          const overlayKey = tile.overlay;
-          if (overlayKey && overlayKey !== hillKey && !mountainOverlayKeys.has(overlayKey)) {
-            continue;
-          }
-          const name = generateTowerName(rng);
-          tile.structure = towerKey;
-          tile.structureName = name;
-          tile.structureDetails = { type: 'tower' };
-          towers.push({ x: candidate.x, y: candidate.y, name });
-          placed.push({ x: candidate.x, y: candidate.y });
-        }
-      }
-    }
-  }
-
   const hasTreeTile = tileLookup.has('TREE');
   if (hasTreeTile) {
     const treeOverlayKey = 'TREE';
@@ -5797,112 +5585,6 @@ function createWorld(seedString) {
     }
   }
 
-  const evilWizardTowerKey = tileLookup.has('EVIL_WIZARDS_TOWER') ? 'EVIL_WIZARDS_TOWER' : null;
-  if (evilWizardTowerKey && evilWizardTowerMultiplier > 0) {
-    const avoidSettlements = [...towns, ...dwarfholds, ...woodElfGroves, ...towers];
-    const wizardCandidates = [];
-    const remotenessRadius = Math.max(width, height) * 0.6;
-    const settlementBuffer = Math.max(8, Math.min(width, height) / 3);
-    const settlementBufferSq = settlementBuffer * settlementBuffer;
-
-    for (let y = 0; y < height; y += 1) {
-      for (let x = 0; x < width; x += 1) {
-        const idx = y * width + x;
-        if (waterMask[idx]) {
-          continue;
-        }
-        const tile = tiles[y][x];
-        if (!tile || tile.structure || tile.river) {
-          continue;
-        }
-        const rainfallValue = rainfallField[idx];
-        const drainageValue = drainageField[idx];
-        const elevationValue = elevationField[idx];
-        const tectonicValue = clamp(tectonicActivityField[idx], 0, 1);
-        const dryness = clamp(1 - rainfallValue, 0, 1);
-        const desolation = clamp(dryness * 0.55 + (1 - drainageValue) * 0.45, 0, 1);
-        const remoteness = computeRemotenessScore(x, y, avoidSettlements, remotenessRadius, 1);
-        const elevationScore = clamp((elevationValue - seaLevel) * 2.2, 0, 1);
-        const mountainInfluence =
-          mountainMask && mountainMask[idx]
-            ? 0.6
-            : countMountainNeighbors(x, y) / neighborOffsets8.length;
-        const strangeness = clamp(tectonicValue * 0.5 + elevationScore * 0.3 + mountainInfluence * 0.2, 0, 1);
-        const score = remoteness * 0.4 + desolation * 0.25 + strangeness * 0.25 + rng() * 0.1;
-        if (score > 0.24) {
-          wizardCandidates.push({
-            x,
-            y,
-            score,
-            remoteness,
-            desolation
-          });
-        }
-      }
-    }
-
-    if (wizardCandidates.length > 0) {
-      wizardCandidates.sort((a, b) => b.score - a.score);
-      const area = width * height;
-      const baseTarget = Math.max(0, Math.round(area / 14000));
-      let maxWizardTowers = Math.round(baseTarget * evilWizardTowerMultiplier);
-      const hardLimit = Math.max(0, Math.round(8 * (0.7 + evilWizardTowerMultiplier)));
-      maxWizardTowers = clamp(maxWizardTowers, 0, hardLimit);
-      if (maxWizardTowers === 0 && evilWizardTowerMultiplier > 0.7 && wizardCandidates.length > 0) {
-        maxWizardTowers = 1;
-      }
-
-      if (maxWizardTowers > 0) {
-        const minDistanceBase = 12;
-        const minDistance = adjustMinDistance(minDistanceBase, evilWizardTowerFrequencyNormalized);
-        const minDistanceSq = minDistance * minDistance;
-        const placed = [];
-
-        for (let i = 0; i < wizardCandidates.length; i += 1) {
-          if (placed.length >= maxWizardTowers) {
-            break;
-          }
-          const candidate = wizardCandidates[i];
-          if (candidate.remoteness < 0.35 || candidate.desolation < 0.2) {
-            continue;
-          }
-          const settlementDistanceSq = computeNearestDistanceSquared(
-            candidate.x,
-            candidate.y,
-            avoidSettlements
-          );
-          if (Number.isFinite(settlementDistanceSq) && settlementDistanceSq < settlementBufferSq) {
-            continue;
-          }
-          let tooClose = false;
-          for (let j = 0; j < placed.length; j += 1) {
-            const other = placed[j];
-            const dx = candidate.x - other.x;
-            const dy = candidate.y - other.y;
-            if (dx * dx + dy * dy < minDistanceSq) {
-              tooClose = true;
-              break;
-            }
-          }
-          if (tooClose) {
-            continue;
-          }
-          const tile = tiles[candidate.y][candidate.x];
-          if (!tile || tile.structure || tile.river) {
-            continue;
-          }
-          const name = generateEvilWizardTowerName(rng);
-          tile.structure = evilWizardTowerKey;
-          tile.structureName = name;
-          tile.structureDetails = { type: 'evilWizardTower' };
-          evilWizardTowers.push({ x: candidate.x, y: candidate.y, name });
-          placed.push({ x: candidate.x, y: candidate.y });
-          avoidSettlements.push({ x: candidate.x, y: candidate.y });
-        }
-      }
-    }
-  }
-
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
   return { tiles, seedString: finalSeed, dwarfholds, towns, woodElfGroves, towers, evilWizardTowers };
 }
@@ -6103,16 +5785,6 @@ function syncInputsWithSettings() {
     elements.woodElfSettlementFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.woodElfSettlementFrequencyValue, value);
   }
-  if (elements.towerFrequencyInput) {
-    const value = sanitizeFrequencyValue(state.settings.towerFrequency, 50);
-    elements.towerFrequencyInput.value = value.toString();
-    updateFrequencyDisplay(elements.towerFrequencyValue, value);
-  }
-  if (elements.evilWizardTowerFrequencyInput) {
-    const value = sanitizeFrequencyValue(state.settings.evilWizardTowerFrequency, 50);
-    elements.evilWizardTowerFrequencyInput.value = value.toString();
-    updateFrequencyDisplay(elements.evilWizardTowerFrequencyValue, value);
-  }
 }
 
 function attachEvents() {
@@ -6176,23 +5848,6 @@ function attachEvents() {
         state.settings.woodElfSettlementFrequency
       );
       updateFrequencyDisplay(elements.woodElfSettlementFrequencyValue, value);
-    });
-  }
-
-  if (elements.towerFrequencyInput) {
-    elements.towerFrequencyInput.addEventListener('input', (event) => {
-      const value = sanitizeFrequencyValue(event.target.value, state.settings.towerFrequency);
-      updateFrequencyDisplay(elements.towerFrequencyValue, value);
-    });
-  }
-
-  if (elements.evilWizardTowerFrequencyInput) {
-    elements.evilWizardTowerFrequencyInput.addEventListener('input', (event) => {
-      const value = sanitizeFrequencyValue(
-        event.target.value,
-        state.settings.evilWizardTowerFrequency
-      );
-      updateFrequencyDisplay(elements.evilWizardTowerFrequencyValue, value);
     });
   }
 
