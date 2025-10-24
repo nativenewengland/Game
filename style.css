@@ -379,6 +379,35 @@ button:hover:not(:disabled) {
   align-items: stretch;
 }
 
+#dwarf-customizer-form {
+  --customizer-frame-top: 17px;
+  --customizer-frame-right: 20px;
+  --customizer-frame-bottom: 17px;
+  --customizer-frame-left: 17px;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  position: relative;
+}
+
+#dwarf-customizer-form::before {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--customizer-frame-top));
+  right: calc(-1 * var(--customizer-frame-right));
+  bottom: calc(-1 * var(--customizer-frame-bottom));
+  left: calc(-1 * var(--customizer-frame-left));
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: var(--customizer-frame-top) var(--customizer-frame-right)
+    var(--customizer-frame-bottom) var(--customizer-frame-left);
+  border-image-source: url('tilesheet/frame.png');
+  border-image-slice: 17 20 17 17;
+  border-image-width: 1;
+  border-image-repeat: round;
+  pointer-events: none;
+}
+
 .roster-column {
   display: flex;
   flex-direction: column;

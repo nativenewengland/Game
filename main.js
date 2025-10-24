@@ -41,7 +41,9 @@ const baseTileCoords = {
   TREE: { row: 1, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
+  STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 3 },
+  WOOD_ELF_GROVES: { row: 1, col: 4 },
   TOWN: { row: 2, col: 1 }
 };
 
@@ -367,6 +369,50 @@ const townNameDescriptors = [
   'Hollow'
 ];
 
+const woodElfGrovePrefixes = [
+  'Sylvan',
+  'Moon',
+  'Star',
+  'Silver',
+  'Verdant',
+  'Thorn',
+  'Whisper',
+  'Autumn',
+  'Lark',
+  'Eversong',
+  'Glimmer',
+  'Sun',
+  'Briar',
+  'Moss',
+  'Willow'
+];
+
+const woodElfGroveSuffixes = [
+  'Grove',
+  'Glade',
+  'Haven',
+  'Refuge',
+  'Circle',
+  'Hollow',
+  'Sanctum',
+  'Enclave',
+  'Retreat',
+  'Thicket'
+];
+
+const woodElfGroveDescriptors = [
+  'of the Dawn Chorus',
+  'of Whispering Leaves',
+  'of Starlit Boughs',
+  'of the Emerald Court',
+  'of the Eternal Spring',
+  'of the Moonlit Vale',
+  'of the Verdant Watch',
+  'of the First Trees',
+  'of Glimmering Dew',
+  'of the Silver Song'
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -411,6 +457,18 @@ function generateTownName(random) {
     return baseName;
   }
   return `Town of ${baseName}`;
+}
+
+function generateWoodElfGroveName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(woodElfGrovePrefixes, randomFn) || 'Sylvan';
+  const suffix = pickRandomFrom(woodElfGroveSuffixes, randomFn) || 'Grove';
+  const baseName = `${prefix} ${suffix}`;
+  const descriptor = pickRandomFrom(woodElfGroveDescriptors, randomFn);
+  if (descriptor && randomFn() < 0.65) {
+    return `${baseName} ${descriptor}`;
+  }
+  return baseName;
 }
 
 function resolveTileName(baseKey) {
@@ -1614,13 +1672,12 @@ function randomYear() {
   if (upper <= lower) {
     return lower;
   }
-  const range = upper - lower;
+  if (!Number.isFinite(exponent) || exponent <= 0) {
+    return randomInt(lower, upper);
+  }
   const clampedWeight = clamp(biasWeight, 0, 1);
-  const biasedSample = Math.pow(Math.random(), Math.max(exponent, 1));
-  const uniformSample = Math.random();
-  const blended = clampedWeight * biasedSample + (1 - clampedWeight) * uniformSample;
-  const value = lower + Math.round(blended * range);
-  return clamp(value, lower, upper);
+  const effectiveExponent = 1 + clampedWeight * (exponent - 1);
+  return biasedRandomInt(lower, upper, effectiveExponent);
 }
 
 function generateRandomChronology() {
@@ -2820,7 +2877,14 @@ function createWorld(seedString) {
   const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
   const mountainFrequencySetting = sanitizeFrequencyValue(state.settings.mountainFrequency, 50);
   const forestBias = forestFrequencySetting / 50 - 1;
-  const mountainBias = mountainFrequencySetting / 50 - 1;
+  const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
+  const mountainBiasLinear = mountainFrequencyNormalized * 2 - 1;
+  const mountainBias =
+    mountainBiasLinear === 0
+      ? 0
+      : Math.sign(mountainBiasLinear) * Math.pow(Math.abs(mountainBiasLinear), 0.8);
+  const mountainScarcity = 1 - mountainFrequencyNormalized;
+  const mountainGrowthFactor = 0.55 + mountainFrequencyNormalized * 0.9;
 
   const continentalPlates = generateContinentalPlates(rng);
   const elevationField = new Float32Array(width * height);
@@ -2909,6 +2973,7 @@ function createWorld(seedString) {
   const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
   const grassTileKey = resolveTileName('GRASS');
   const waterTileKey = resolveTileName('WATER');
+  const stoneTileKey = tileLookup.has('STONE') ? 'STONE' : grassTileKey;
   const tiles = Array.from(
     { length: height },
     () =>
@@ -2921,6 +2986,7 @@ function createWorld(seedString) {
   );
   const dwarfholds = [];
   const towns = [];
+  const woodElfGroves = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
@@ -2928,12 +2994,15 @@ function createWorld(seedString) {
   let mountainFullThreshold = hasMountainTile ? Math.min(0.98, mountainBaseThreshold + 0.35) : 1;
   let mountainRange = hasMountainTile ? Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001) : 1;
   if (hasMountainTile) {
-    const thresholdShift = mountainBias * 0.1;
-    const minBaseThreshold = Math.min(Math.max(seaLevel + 0.05, 0.5), 0.9);
-    mountainBaseThreshold = clamp(mountainBaseThreshold - thresholdShift, minBaseThreshold, 0.9);
+    const thresholdShift = mountainBias * 0.18;
+    const minBaseThreshold = Math.min(
+      Math.max(seaLevel + 0.08 + mountainScarcity * 0.05, 0.5),
+      0.92
+    );
+    mountainBaseThreshold = clamp(mountainBaseThreshold - thresholdShift, minBaseThreshold, 0.92);
     mountainFullThreshold = clamp(
-      mountainFullThreshold - thresholdShift * 1.2,
-      mountainBaseThreshold + 0.1,
+      mountainFullThreshold - thresholdShift * 1.3,
+      mountainBaseThreshold + 0.12,
       0.99
     );
     mountainRange = Math.max(mountainFullThreshold - mountainBaseThreshold, 0.0001);
@@ -2983,18 +3052,18 @@ function createWorld(seedString) {
     const baseMountainCandidateThreshold = 0.46;
     const baseMountainPruneThreshold = 0.88;
     const mountainSeedThreshold = clamp(
-      baseMountainSeedThreshold - mountainBias * 0.18,
-      0.55,
-      0.96
+      baseMountainSeedThreshold - mountainBias * 0.32,
+      0.52,
+      0.97
     );
     const mountainCandidateThreshold = clamp(
-      baseMountainCandidateThreshold - mountainBias * 0.18,
-      0.22,
-      0.7
+      baseMountainCandidateThreshold - mountainBias * 0.28,
+      0.2,
+      0.78
     );
     const mountainPruneThreshold = clamp(
-      baseMountainPruneThreshold - mountainBias * 0.14,
-      0.65,
+      baseMountainPruneThreshold - mountainBias * 0.2,
+      0.62,
       0.97
     );
 
@@ -3236,7 +3305,8 @@ function createWorld(seedString) {
         }
       }
       fallbackCandidates.sort((a, b) => mountainScores[b] - mountainScores[a]);
-      const limit = Math.min(6, fallbackCandidates.length);
+      const maxFallbackSeeds = Math.round(6 * mountainFrequencyNormalized);
+      const limit = Math.min(maxFallbackSeeds, fallbackCandidates.length);
       for (let i = 0; i < limit; i += 1) {
         const idx = fallbackCandidates[i];
         const x = idx % width;
@@ -3339,8 +3409,15 @@ function createWorld(seedString) {
           } else if (orientationStrength > 0.55) {
             minNeighbors = 2;
           }
-          const probability = Math.min(0.95, 0.18 + score * 0.75 + orientationStrength * 0.2);
-          if (mountainNeighbors >= minNeighbors && (score > 0.75 || rng() < probability)) {
+          const probability = Math.min(
+            0.95,
+            (0.18 + score * 0.75 + orientationStrength * 0.2) * mountainGrowthFactor
+          );
+          const highScoreThreshold = 0.75 + mountainScarcity * 0.12;
+          if (
+            mountainNeighbors >= minNeighbors &&
+            (score > highScoreThreshold || rng() < probability)
+          ) {
             mountainMask[idx] = 1;
           }
         }
@@ -3369,7 +3446,9 @@ function createWorld(seedString) {
           }
         }
         const orientationStrength = ridgeDirectionStrength[idx];
-        const requiredNeighbors = orientationStrength > 0.6 ? 2 : orientationStrength > 0.35 ? 3 : 4;
+        const baseRequiredNeighbors = orientationStrength > 0.6 ? 2 : orientationStrength > 0.35 ? 3 : 4;
+        const scarcityNeighborPenalty = mountainScarcity > 0.6 ? 2 : mountainScarcity > 0.35 ? 1 : 0;
+        const requiredNeighbors = Math.min(7, baseRequiredNeighbors + scarcityNeighborPenalty);
         if (mountainNeighbors >= requiredNeighbors) {
           mountainMask[idx] = 1;
         }
@@ -3396,7 +3475,9 @@ function createWorld(seedString) {
         }
         const orientationStrength = ridgeDirectionStrength[idx];
         const minSupport = orientationStrength > 0.65 ? 0 : 1;
-        const effectiveThreshold = mountainPruneThreshold * (1 - orientationStrength * 0.25);
+        const pruneBoost = lerp(1.18, 0.85, mountainFrequencyNormalized);
+        const effectiveThreshold =
+          mountainPruneThreshold * pruneBoost * (1 - orientationStrength * 0.25);
         if (mountainNeighbors <= minSupport && score < effectiveThreshold) {
           mountainMask[idx] = 0;
         }
@@ -3407,7 +3488,11 @@ function createWorld(seedString) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
         if (mountainMask[idx]) {
-          tiles[y][x].overlay = mountainOverlayKey;
+          const tile = tiles[y][x];
+          tile.overlay = mountainOverlayKey;
+          if (tile.base === grassTileKey) {
+            tile.base = stoneTileKey;
+          }
         }
       }
     }
@@ -3720,10 +3805,67 @@ function createWorld(seedString) {
         tile.overlay = treeOverlayKey;
       }
     }
+
+    const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
+    if (woodElfGroveKey) {
+      const groveCandidates = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+            continue;
+          }
+          const score = treeDensityField ? treeDensityField[idx] : 0;
+          groveCandidates.push({ x, y, score });
+        }
+      }
+
+      if (groveCandidates.length > 0) {
+        groveCandidates.sort((a, b) => b.score - a.score);
+        const desiredCount = Math.max(1, Math.round(groveCandidates.length / 450));
+        const maxGroves = Math.min(desiredCount, 28);
+        const minDistance = 6;
+        const minDistanceSq = minDistance * minDistance;
+        const placed = [];
+
+        for (let i = 0; i < groveCandidates.length; i += 1) {
+          if (placed.length >= maxGroves) {
+            break;
+          }
+          const candidate = groveCandidates[i];
+          if (candidate.score < 0.28) {
+            continue;
+          }
+          let tooClose = false;
+          for (let j = 0; j < placed.length; j += 1) {
+            const other = placed[j];
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose) {
+            continue;
+          }
+          const tile = tiles[candidate.y][candidate.x];
+          if (!tile || tile.overlay !== treeOverlayKey || tile.structure) {
+            continue;
+          }
+          const name = generateWoodElfGroveName(rng);
+          tile.structure = woodElfGroveKey;
+          tile.structureName = name;
+          placed.push(candidate);
+          woodElfGroves.push({ x: candidate.x, y: candidate.y, name });
+        }
+      }
+    }
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds, towns };
+  return { tiles, seedString: finalSeed, dwarfholds, towns, woodElfGroves };
 }
 
 function generateSeedString(seedNumber) {
