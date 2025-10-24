@@ -255,35 +255,70 @@ button {
 }
 
 .randomise-button {
+  position: relative;
   width: 150px;
   height: 136px;
-  padding: 0;
-  border: none;
-  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
-  background-image: url('tilesheet/randombutton.png');
+  background-image: url('tilesheet/randombase.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   image-rendering: pixelated;
   box-shadow: 0 0.85rem 1.6rem rgba(0, 0, 0, 0.45);
   transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+  cursor: default;
 }
 
-.randomise-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 1.2rem 1.8rem rgba(0, 0, 0, 0.5);
-}
-
-.randomise-button:active {
-  transform: translateY(0);
-  box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.45);
-}
-
-.randomise-button:focus-visible {
+.randomise-button:focus-within {
   outline: 3px solid rgba(240, 198, 116, 0.9);
   outline-offset: 4px;
   box-shadow: 0 1.2rem 2rem rgba(0, 0, 0, 0.55);
+}
+
+@supports selector(:has(*)) {
+  .randomise-button:has(.randomise-button__dice:hover:not(:disabled)) {
+    transform: translateY(-2px);
+    box-shadow: 0 1.2rem 1.8rem rgba(0, 0, 0, 0.5);
+  }
+
+  .randomise-button:has(.randomise-button__dice:active:not(:disabled)) {
+    transform: translateY(0);
+    box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.45);
+  }
+}
+
+.randomise-button__dice {
+  display: block;
+  width: 96px;
+  aspect-ratio: 704 / 469;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: url('tilesheet/dice.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
+  cursor: var(--cursor-wand-pointer);
+  transition: transform 140ms ease, filter 140ms ease;
+}
+
+.randomise-button__dice:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.randomise-button__dice:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.92);
+}
+
+.randomise-button__dice:focus-visible {
+  outline: none;
 }
 
 button.primary {
@@ -661,12 +696,12 @@ button:hover:not(:disabled) {
   justify-content: flex-end;
 }
 
-.customizer-inline-actions button:not(.randomise-button) {
+.customizer-inline-actions button:not(.randomise-button__dice) {
   padding-inline: 1.5rem;
 }
 
 .customizer-inline-actions .randomise-button {
-  padding: 0;
+  flex-shrink: 0;
 }
 
 .customizer-actions {
