@@ -1765,7 +1765,8 @@ function getBeardFrame(dwarf, hairOption) {
     return null;
   }
   const beardValue = dwarf.beard || 'clean';
-  const row = dwarfBeardRows[beardValue] ?? dwarfBeardRows.default;
+  const hasBeardConfig = Object.prototype.hasOwnProperty.call(dwarfBeardRows, beardValue);
+  const row = hasBeardConfig ? dwarfBeardRows[beardValue] : dwarfBeardRows.default;
   if (row === null || row === undefined) {
     return null;
   }
