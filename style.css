@@ -631,50 +631,6 @@ button:hover:not(:disabled) {
   z-index: -1;
 }
 
-.pixel-panel,
-.pixel-subpanel {
-  position: relative;
-  border-radius: 18px;
-  overflow: visible;
-  z-index: 0;
-}
-
-.pixel-panel {
-  --frame-top: 17px;
-  --frame-right: 20px;
-  --frame-bottom: 17px;
-  --frame-left: 17px;
-  padding: clamp(1.25rem, 3vw, 1.75rem);
-  box-shadow: 0 1.4rem 2.4rem rgba(0, 0, 0, 0.5);
-}
-
-.pixel-subpanel {
-  --frame-top: 12px;
-  --frame-right: 15px;
-  --frame-bottom: 12px;
-  --frame-left: 15px;
-  padding: clamp(0.85rem, 2vw, 1.3rem);
-  border-radius: 16px;
-  box-shadow: 0 0.9rem 1.8rem rgba(0, 0, 0, 0.45);
-}
-
-.pixel-panel::before,
-.pixel-subpanel::before {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--frame-top));
-  right: calc(-1 * var(--frame-right));
-  bottom: calc(-1 * var(--frame-bottom));
-  left: calc(-1 * var(--frame-left));
-  border-style: solid;
-  border-width: var(--frame-top) var(--frame-right) var(--frame-bottom) var(--frame-left);
-  border-image-source: url('tilesheet/frame.png');
-  border-image-slice: 17 20 17 17;
-  border-image-width: 1;
-  border-image-repeat: round;
-  pointer-events: none;
-  z-index: -1;
-}
 
 .pixel-panel::after,
 .pixel-subpanel::after {
@@ -686,6 +642,20 @@ button:hover:not(:disabled) {
   border-radius: inherit;
   pointer-events: none;
   z-index: -2;
+}
+
+#dwarf-customizer .pixel-panel,
+#dwarf-customizer .pixel-subpanel {
+  background: rgba(12, 15, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.35);
+}
+
+#dwarf-customizer .pixel-panel::before,
+#dwarf-customizer .pixel-panel::after,
+#dwarf-customizer .pixel-subpanel::before,
+#dwarf-customizer .pixel-subpanel::after {
+  content: none;
 }
 
 .pixel-panel,
