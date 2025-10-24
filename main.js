@@ -449,6 +449,83 @@ const dwarfholdPopulationRaceOptions = [
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
+const evilWizardTitles = {
+  female: [
+    'Archwitch',
+    'Voidcaller',
+    'Shadow Matriarch',
+    'Dread Sorceress',
+    'Grand Hexmistress'
+  ],
+  male: [
+    'Archmage',
+    'Voidbinder',
+    'Shadow Lord',
+    'Dread Sorcerer',
+    'Grand Warlock'
+  ],
+  neutral: ['Archmagus', 'Void Savant', 'Umbral Seer', 'Dread Thaumaturge']
+};
+
+const evilWizardGivenNames = {
+  female: [
+    'Azura',
+    'Maelira',
+    'Serathis',
+    'Velka',
+    'Nyxara',
+    'Thessia'
+  ],
+  male: ['Zarok', 'Malachar', 'Vorlun', 'Thamior', 'Kaelus', 'Ithryn'],
+  neutral: ['Ophir', 'Calyx', 'Vorla', 'Zephiron', 'Nalthis', 'Umbrax']
+};
+
+const evilWizardFamilyNames = [
+  'Nightweaver',
+  'Grimmantle',
+  'Umberfall',
+  'Stormglyph',
+  'Blackspire',
+  'Duskbrand'
+];
+
+const evilWizardEpithets = [
+  'Unknowable',
+  'Soulrender',
+  'Everburning',
+  'Boundless',
+  'Twilight',
+  'the Ninth Sigil'
+];
+
+const evilWizardTowerHallmarks = [
+  'Surrounded by a moat of crackling aetheric fire.',
+  'Its beacon summons storms that never quite touch the ground.',
+  'Guarded by silent bronze automatons that patrol without rest.',
+  'Whispers claim every stair is carved from bones of rival mages.',
+  'A library of chained grimoires radiates a cold, violet light.',
+  'Spectral ravens circle the spire, carrying tidings of doom.',
+  'An obelisk channels leyline power into the tower\'s heart.',
+  'Reality flickers near its base, revealing glimpses of other realms.'
+];
+
+const evilWizardTowerClassifications = [
+  { key: 'hiddenSanctum', label: 'Hidden Sanctum', minPopulation: 30 },
+  { key: 'shadowTower', label: "Evil Wizard's Tower", minPopulation: 80 },
+  { key: 'dreadCitadel', label: 'Dread Citadel', minPopulation: 140 },
+  { key: 'arcaneDominion', label: 'Arcane Dominion', minPopulation: 220 }
+];
+
+const evilWizardTowerPopulationOptions = [
+  { key: 'wizard', label: 'Evil Wizard', color: '#a855f7' },
+  { key: 'apprentices', label: 'Apprentices', color: '#c084fc' },
+  { key: 'cultists', label: 'Cultists', color: '#fb923c' },
+  { key: 'undead', label: 'Undead Thralls', color: '#6b7280' },
+  { key: 'summoned', label: 'Summoned Horrors', color: '#ef4444' },
+  { key: 'constructs', label: 'Construct Servitors', color: '#38bdf8' },
+  { key: 'captives', label: 'Enslaved Captives', color: '#facc15' }
+];
+
 const townNamePrefixes = [
   'Oak',
   'River',
@@ -651,41 +728,32 @@ function pickUniqueFrom(array, count, random) {
   return picks;
 }
 
-function generateDwarfholdPopulationBreakdown(population, random) {
-  if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
+function normalizePopulationBreakdown(shares, population) {
+  if (!Array.isArray(shares) || shares.length === 0) {
     return [];
   }
 
-  const randomFn = typeof random === 'function' ? random : Math.random;
-  const races = dwarfholdPopulationRaceOptions.slice();
-  const dwarfConfig = races[0];
-  const shares = [];
-  // Ensure dwarves make up the overwhelming majority of a dwarfhold's population.
-  // The range gives a 90-100% share so only a small remainder is left for other races.
-  const dwarfShare = clamp(0.9 + randomFn() * 0.1, 0, 1);
-  shares.push({ config: dwarfConfig, share: dwarfShare });
+  const sanitizedShares = shares
+    .map((entry) => ({
+      config: entry?.config || null,
+      share: Number.isFinite(entry?.share) ? Math.max(0, entry.share) : 0
+    }))
+    .filter((entry) => entry.config && entry.share > 0);
 
-  const remainingConfigs = races.slice(1);
-  if (remainingConfigs.length > 0) {
-    const remainingShare = Math.max(0, 1 - dwarfShare);
-    const weights = remainingConfigs.map(() => 0.25 + randomFn());
-    const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
-    remainingConfigs.forEach((config, index) => {
-      const portion = weights[index] / weightSum;
-      shares.push({ config, share: remainingShare * portion });
-    });
+  if (sanitizedShares.length === 0) {
+    return [];
   }
 
-  let totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
-  if (shares.length > 0 && Number.isFinite(totalShare) && totalShare !== 1) {
-    const lastEntry = shares[shares.length - 1];
+  let totalShare = sanitizedShares.reduce((sum, entry) => sum + entry.share, 0);
+  if (Number.isFinite(totalShare) && totalShare !== 1) {
+    const lastEntry = sanitizedShares[sanitizedShares.length - 1];
     const adjustment = clamp(1 - totalShare, -1, 1);
     lastEntry.share = clamp(lastEntry.share + adjustment, 0, 1);
-    totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+    totalShare = sanitizedShares.reduce((sum, entry) => sum + entry.share, 0);
   }
 
   const safeTotalShare = totalShare > 0 ? totalShare : 1;
-  const normalizedShares = shares.map((entry) => ({
+  const normalizedShares = sanitizedShares.map((entry) => ({
     config: entry.config,
     share: clamp(entry.share / safeTotalShare, 0, 1)
   }));
@@ -759,6 +827,36 @@ function generateDwarfholdPopulationBreakdown(population, random) {
   });
 }
 
+function generateDwarfholdPopulationBreakdown(population, random) {
+  if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
+    return [];
+  }
+
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const races = dwarfholdPopulationRaceOptions.slice();
+  const shares = [];
+  const dwarfConfig = races[0];
+  if (dwarfConfig) {
+    // Ensure dwarves make up the overwhelming majority of a dwarfhold's population.
+    // The range gives a 90-100% share so only a small remainder is left for other races.
+    const dwarfShare = clamp(0.9 + randomFn() * 0.1, 0, 1);
+    shares.push({ config: dwarfConfig, share: dwarfShare });
+  }
+
+  const remainingConfigs = dwarfConfig ? races.slice(1) : races.slice();
+  if (remainingConfigs.length > 0) {
+    const allocatedShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+    const remainingShare = Math.max(0, 1 - allocatedShare);
+    const weights = remainingConfigs.map(() => 0.25 + randomFn());
+    const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
+    remainingConfigs.forEach((config, index) => {
+      const portion = weights[index] / weightSum;
+      shares.push({ config, share: remainingShare * portion });
+    });
+  }
+  return normalizePopulationBreakdown(shares, population);
+}
+
 function generateDwarfholdName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
@@ -819,6 +917,7 @@ function generateDwarfholdDetails(name, random) {
     classification: classificationLabel,
     name,
     population,
+    populationLabel: 'dwarves',
     ruler: {
       title: rulerTitle,
       name: `${firstName} ${clanName}`
@@ -828,6 +927,101 @@ function generateDwarfholdDetails(name, random) {
     hallmark,
     majorGuilds,
     majorExports,
+    populationBreakdown
+  };
+}
+
+function generateEvilWizardTowerPopulationBreakdown(population, random) {
+  if (!Array.isArray(evilWizardTowerPopulationOptions) || evilWizardTowerPopulationOptions.length === 0) {
+    return [];
+  }
+
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const options = evilWizardTowerPopulationOptions.slice();
+  const shares = [];
+  const wizardConfig = options.find((option) => option.key === 'wizard') || options[0];
+
+  if (wizardConfig) {
+    const wizardShare = clamp(0.015 + randomFn() * 0.035, 0.01, 0.08);
+    shares.push({ config: wizardConfig, share: wizardShare });
+  }
+
+  const remainingConfigs = options.filter((option) => option !== wizardConfig);
+  if (remainingConfigs.length > 0) {
+    const baseShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+    const remainingShare = Math.max(0, 1 - baseShare);
+    if (remainingShare > 0) {
+      const minSelections = Math.min(remainingConfigs.length, 3);
+      const targetSelectionCount = clamp(
+        Math.floor(minSelections + randomFn() * (remainingConfigs.length - minSelections + 1)),
+        minSelections,
+        remainingConfigs.length
+      );
+      const selectedConfigs = pickUniqueFrom(remainingConfigs, targetSelectionCount, randomFn);
+      const fallbackConfigs = selectedConfigs.length > 0 ? selectedConfigs : remainingConfigs;
+      const weights = fallbackConfigs.map(() => 0.35 + randomFn() * 1.25);
+      const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
+      fallbackConfigs.forEach((config, index) => {
+        const weight = weights[index] / weightSum;
+        shares.push({ config, share: remainingShare * weight });
+      });
+    }
+  }
+
+  return normalizePopulationBreakdown(shares, population);
+}
+
+function generateEvilWizardTowerDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(30, Math.floor(60 + randomFn() * 360));
+  const sortedClassifications = evilWizardTowerClassifications
+    .slice()
+    .sort((a, b) => b.minPopulation - a.minPopulation);
+  const classificationEntry = sortedClassifications.find((entry) => population >= entry.minPopulation);
+  const classificationLabel = classificationEntry?.label || "Evil Wizard's Tower";
+  const classificationKey = classificationEntry?.key || 'shadowTower';
+
+  const genderRoll = randomFn();
+  let gender = 'neutral';
+  if (genderRoll < 0.45) {
+    gender = 'female';
+  } else if (genderRoll < 0.9) {
+    gender = 'male';
+  }
+
+  const namePool = evilWizardGivenNames[gender] || evilWizardGivenNames.neutral;
+  const familyName = pickRandomFrom(evilWizardFamilyNames, randomFn) || '';
+  const epithet = randomFn() < 0.6 ? pickRandomFrom(evilWizardEpithets, randomFn) : '';
+  const firstName = pickRandomFrom(namePool, randomFn) || 'Zarok';
+  const titlePool = evilWizardTitles[gender] || evilWizardTitles.neutral;
+  const rulerTitle = pickRandomFrom(titlePool, randomFn) || 'Archmage';
+  const rulerNameParts = [firstName];
+  if (familyName) {
+    rulerNameParts.push(familyName);
+  }
+  let rulerName = rulerNameParts.join(' ');
+  if (epithet) {
+    rulerName = `${rulerName} the ${epithet}`;
+  }
+
+  const foundedYearsAgo = Math.max(5, Math.floor(10 + randomFn() * 190));
+  const hallmark = pickRandomFrom(evilWizardTowerHallmarks, randomFn) ||
+    'Whispers of forbidden experiments seep from its walls.';
+  const populationBreakdown = generateEvilWizardTowerPopulationBreakdown(population, randomFn);
+
+  return {
+    type: 'evilWizardTower',
+    classification: classificationLabel,
+    classificationKey,
+    name,
+    population,
+    populationLabel: 'denizens',
+    ruler: {
+      title: rulerTitle,
+      name: rulerName
+    },
+    foundedYearsAgo,
+    hallmark,
     populationBreakdown
   };
 }
@@ -3066,89 +3260,105 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
   `;
 }
 
+function buildDetailedStructureTooltipContent(details, fallbackName) {
+  const sections = [];
+  const entries = [];
+  const resolvedName = details.name || fallbackName || '';
+  if (resolvedName) {
+    sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+  }
+
+  if (details.classification) {
+    entries.push({ label: 'Classification', value: details.classification });
+  }
+
+  if (Number.isFinite(details.population)) {
+    const populationValue = Math.max(0, Math.round(details.population));
+    const populationLabel =
+      typeof details.populationLabel === 'string' && details.populationLabel.trim()
+        ? details.populationLabel.trim()
+        : 'inhabitants';
+    const formattedPopulation = populationValue.toLocaleString('en-US');
+    entries.push({ label: 'Population', value: `${formattedPopulation} ${populationLabel}` });
+  }
+
+  if (details.ruler) {
+    const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
+    const rulerName = details.ruler.name || '';
+    const combined = `${rulerTitle}${rulerName}`.trim();
+    if (combined) {
+      entries.push({ label: 'Ruler', value: combined });
+    }
+  }
+
+  if (Number.isFinite(details.foundedYearsAgo)) {
+    const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
+    entries.push({ label: 'Founded', value: `${foundedValue} years ago` });
+  }
+
+  if (details.prominentClan) {
+    entries.push({ label: 'Prominent Clan', value: details.prominentClan });
+  }
+
+  if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
+    const uniqueGuilds = Array.from(
+      new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
+    );
+    if (uniqueGuilds.length > 0) {
+      entries.push({ label: 'Major Guilds', value: uniqueGuilds.join(', ') });
+    }
+  }
+
+  if (Array.isArray(details.majorExports) && details.majorExports.length > 0) {
+    const uniqueExports = Array.from(
+      new Set(details.majorExports.filter((item) => typeof item === 'string' && item.trim()))
+    );
+    if (uniqueExports.length > 0) {
+      entries.push({ label: 'Major Exports', value: uniqueExports.join(', ') });
+    }
+  }
+
+  if (entries.length > 0) {
+    const listItems = entries
+      .map(
+        ({ label, value }) =>
+          `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+            value
+          )}</span></li>`
+      )
+      .join('');
+    sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+  }
+
+  const breakdownSection = buildPopulationBreakdownSection(resolvedName, details.populationBreakdown);
+
+  if (breakdownSection) {
+    sections.push(breakdownSection);
+  }
+
+  if (details.hallmark) {
+    sections.push(`<p class="tooltip-note">${escapeHtml(details.hallmark)}</p>`);
+  }
+
+  return sections.join('');
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile || !tile.structureName) {
     return null;
   }
 
   const details = tile.structureDetails;
-  const isDwarfhold =
-    details && (details.type === 'dwarfhold' || details.type === 'greatDwarfhold');
-  if (isDwarfhold) {
-    const sections = [];
-    const entries = [];
-    const resolvedName = details.name || tile.structureName;
-    sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
-
-    if (details.classification) {
-      entries.push({ label: 'Classification', value: details.classification });
-    }
-
-    if (Number.isFinite(details.population)) {
-      const populationValue = Math.max(0, Math.round(details.population));
-      const formattedPopulation = populationValue.toLocaleString('en-US');
-      entries.push({ label: 'Population', value: `${formattedPopulation} dwarves` });
-    }
-
-    if (details.ruler) {
-      const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
-      const rulerName = details.ruler.name || '';
-      const combined = `${rulerTitle}${rulerName}`.trim();
-      if (combined) {
-        entries.push({ label: 'Ruler', value: combined });
-      }
-    }
-
-    if (Number.isFinite(details.foundedYearsAgo)) {
-      const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
-      entries.push({ label: 'Founded', value: `${foundedValue} years ago` });
-    }
-
-    if (details.prominentClan) {
-      entries.push({ label: 'Prominent Clan', value: details.prominentClan });
-    }
-
-    if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
-      const uniqueGuilds = Array.from(
-        new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
-      );
-      if (uniqueGuilds.length > 0) {
-        entries.push({ label: 'Major Guilds', value: uniqueGuilds.join(', ') });
-      }
-    }
-
-    if (Array.isArray(details.majorExports) && details.majorExports.length > 0) {
-      const uniqueExports = Array.from(
-        new Set(details.majorExports.filter((item) => typeof item === 'string' && item.trim()))
-      );
-      if (uniqueExports.length > 0) {
-        entries.push({ label: 'Major Exports', value: uniqueExports.join(', ') });
-      }
-    }
-
-    if (entries.length > 0) {
-      const listItems = entries
-        .map(
-          ({ label, value }) =>
-            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
-              value
-            )}</span></li>`
-        )
-        .join('');
-      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
-    }
-
-    const breakdownSection = buildPopulationBreakdownSection(resolvedName, details.populationBreakdown);
-
-    if (breakdownSection) {
-      sections.push(breakdownSection);
-    }
-
-    if (details.hallmark) {
-      sections.push(`<p class="tooltip-note">${escapeHtml(details.hallmark)}</p>`);
-    }
-
-    return sections.join('');
+  const hasDetailedInfo =
+    details &&
+    (details.type === 'dwarfhold' ||
+      details.type === 'greatDwarfhold' ||
+      details.type === 'evilWizardTower' ||
+      details.populationBreakdown ||
+      details.classification ||
+      details.hallmark);
+  if (hasDetailedInfo) {
+    return buildDetailedStructureTooltipContent(details, tile.structureName);
   }
 
   return `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
@@ -6115,9 +6325,10 @@ function createWorld(seedString) {
         const name = `Evil Wizard's ${generateTowerName(rng)}`;
         tile.structure = evilWizardTowerKey;
         tile.structureName = name;
-        tile.structureDetails = null;
+        const details = generateEvilWizardTowerDetails(name, rng);
+        tile.structureDetails = details;
         placed.push(candidate);
-        evilWizardTowers.push({ x: candidate.x, y: candidate.y, name });
+        evilWizardTowers.push({ x: candidate.x, y: candidate.y, name, details });
       }
     }
   }
