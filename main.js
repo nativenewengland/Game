@@ -357,8 +357,7 @@ const dwarfholdRulerTitles = {
     'King Under The Mountain',
     'Prince',
     'High Runesmith'
-  ],
-  neutral: ['High Thane', 'Forge Thane']
+  ]
 };
 
 const dwarfholdHallmarks = [
@@ -661,15 +660,19 @@ function generateDwarfholdDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
   const genderRoll = randomFn();
-  const gender = genderRoll < 0.45 ? 'female' : genderRoll > 0.9 ? 'neutral' : 'male';
-  const namePool = dwarfNamePools[gender === 'neutral' ? 'male' : gender] || dwarfNamePools.male;
+  const gender = genderRoll < 0.9 ? 'male' : 'female';
+  const namePool = dwarfNamePools[gender] || dwarfNamePools.male;
   const firstName = pickRandomFrom(namePool, randomFn) || 'Urist';
   const clanOption = pickRandomFrom(dwarfOptions.clan, randomFn) || dwarfOptions.clan?.[0];
   const clanName = clanOption?.label || 'Stonebeard';
-  const titlePool =
-    dwarfholdRulerTitles[gender === 'neutral' ? 'neutral' : gender] || dwarfholdRulerTitles.neutral;
-  const titleFallback = dwarfholdRulerTitles.neutral?.[0] || 'High Thane';
-  const rulerTitle = pickRandomFrom(titlePool, randomFn) || titleFallback;
+  const titlePool = dwarfholdRulerTitles[gender] || dwarfholdRulerTitles.male;
+  const titleFallback = 'Thane';
+  const thaneBiasRoll = randomFn();
+  const nonThaneTitles = titlePool.filter((title) => title !== 'Thane');
+  const rulerTitle =
+    thaneBiasRoll < 0.65 || nonThaneTitles.length === 0
+      ? 'Thane'
+      : pickRandomFrom(nonThaneTitles, randomFn) || titleFallback;
   const hallmark = pickRandomFrom(dwarfholdHallmarks, randomFn) ||
     'Renowned for stout walls and heartier spirits.';
   const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
