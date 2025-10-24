@@ -90,6 +90,10 @@ select,
   backdrop-filter: blur(18px);
 }
 
+#dwarf-customizer .embark-panel {
+  max-width: min(1320px, 96vw);
+}
+
 .embark-header {
   display: grid;
   gap: 0.5rem;
@@ -565,7 +569,7 @@ button:hover:not(:disabled) {
 
 .customizer-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
   gap: clamp(1.25rem, 3vw, 2.5rem);
   align-items: stretch;
 }
@@ -607,9 +611,7 @@ button:hover:not(:disabled) {
   right: var(--customizer-frame-right);
   bottom: var(--customizer-frame-bottom);
   left: var(--customizer-frame-left);
-  background:
-    linear-gradient(135deg, rgba(8, 9, 15, 0.9), rgba(8, 9, 15, 0.7)),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+  background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   border-radius: 18px;
   pointer-events: none;
@@ -666,9 +668,7 @@ button:hover:not(:disabled) {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(145deg, rgba(8, 9, 15, 0.94), rgba(8, 9, 15, 0.7)),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+  background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   border-radius: inherit;
   pointer-events: none;
@@ -718,20 +718,6 @@ button:hover:not(:disabled) {
   border-image-repeat: round;
   pointer-events: none;
   z-index: -1;
-}
-
-.pixel-panel::after,
-.pixel-subpanel::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(145deg, rgba(8, 9, 15, 0.94), rgba(8, 9, 15, 0.7)),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
-  image-rendering: pixelated;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -2;
 }
 
 .roster-column {
@@ -763,9 +749,7 @@ button:hover:not(:disabled) {
   padding: 0.75rem 0.95rem;
   border-radius: 14px;
   border: 3px solid rgba(48, 36, 60, 0.95);
-  background:
-    linear-gradient(150deg, rgba(18, 14, 28, 0.95), rgba(14, 12, 24, 0.78)),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+  background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   display: grid;
   gap: 0.35rem;
@@ -865,9 +849,7 @@ button:hover:not(:disabled) {
   padding: 0.65rem 0.9rem;
   border-radius: 12px;
   border: 3px solid rgba(48, 36, 60, 0.95);
-  background:
-    linear-gradient(160deg, rgba(20, 16, 30, 0.96), rgba(16, 13, 26, 0.78)),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+  background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   color: #f4ecdd;
   font-size: 1rem;
@@ -878,12 +860,11 @@ button:hover:not(:disabled) {
   appearance: none;
   padding-right: 2.75rem;
   background-image:
-    linear-gradient(160deg, rgba(20, 16, 30, 0.96), rgba(16, 13, 26, 0.78)),
     url('tilesheet/backgroundmenu.png'),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f0c674' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-size: cover, cover, 12px 8px;
-  background-position: center, center, right 0.9rem center;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, 12px 8px;
+  background-position: center, right 0.9rem center;
 }
 
 .field-control option {
@@ -938,9 +919,7 @@ button:hover:not(:disabled) {
   aspect-ratio: 3 / 4;
   border-radius: 18px;
   border: 4px solid rgba(48, 36, 60, 0.95);
-  background:
-    linear-gradient(155deg, rgba(20, 16, 30, 0.95), rgba(16, 12, 28, 0.78)),
-    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+  background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.2), 0 1.2rem 2.6rem rgba(0, 0, 0, 0.5);
   display: flex;
