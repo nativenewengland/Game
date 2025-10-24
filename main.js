@@ -1180,6 +1180,12 @@ const dwarfProfessionOptions = [
 ];
 
 const dwarfHairStyles = {
+  bald: {
+    label: 'Bald',
+    description: 'bald',
+    rows: { default: null },
+    hideHairColorDescription: true
+  },
   straight_shoulder: {
     label: 'Straight — Shoulder Length',
     description: 'shoulder-length straight',
@@ -1452,6 +1458,25 @@ function getHairStyleConfig(value) {
 function getHairStyleDescription(value) {
   const config = getHairStyleConfig(value);
   return config?.description || getOptionLabel('hairStyle', value);
+}
+
+function getHairSummaryPhrase(dwarf) {
+  const styleConfig = getHairStyleConfig(dwarf?.hairStyle);
+  const hairStyleDescription = (getHairStyleDescription(dwarf?.hairStyle) || '').toLowerCase();
+  if (styleConfig?.hideHairColorDescription) {
+    return hairStyleDescription || 'bald';
+  }
+  const hairLabel = (getOptionLabel('hair', dwarf?.hair) || '').toLowerCase();
+  if (hairStyleDescription && hairLabel) {
+    return `${hairStyleDescription} ${hairLabel} hair`;
+  }
+  if (hairStyleDescription) {
+    return `${hairStyleDescription} hair`;
+  }
+  if (hairLabel) {
+    return `${hairLabel} hair`;
+  }
+  return 'hair';
 }
 
 const dwarfBeardRows = {
@@ -2296,11 +2321,7 @@ function updateDwarfPortrait(dwarf) {
   const beardValue = dwarf.beard || 'clean';
   const genderLabel = getOptionLabel('gender', dwarf.gender);
   const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
-  const hairLabel = getOptionLabel('hair', dwarf.hair).toLowerCase();
-  const hairStyleDescription = getHairStyleDescription(dwarf.hairStyle).toLowerCase();
-  const hairPhrase = hairStyleDescription
-    ? `${hairStyleDescription} ${hairLabel} hair`
-    : `${hairLabel} hair`;
+  const hairPhrase = getHairSummaryPhrase(dwarf);
   const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
   const beardLabel = getOptionLabel('beard', beardValue).toLowerCase();
   const headLabel = getOptionLabel('head', dwarf.head).toLowerCase();
@@ -2333,11 +2354,7 @@ function buildDwarfSummary(dwarf) {
   const genderLabel = getOptionLabel('gender', dwarf.gender);
   const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
   const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
-  const hairLabel = getOptionLabel('hair', dwarf.hair).toLowerCase();
-  const hairStyleDescription = getHairStyleDescription(dwarf.hairStyle).toLowerCase();
-  const hairPhrase = hairStyleDescription
-    ? `${hairStyleDescription} ${hairLabel} hair`
-    : `${hairLabel} hair`;
+  const hairPhrase = getHairSummaryPhrase(dwarf);
   const beardLabel = getOptionLabel('beard', dwarf.beard).toLowerCase();
   const headLabel = getOptionLabel('head', dwarf.head).toLowerCase();
   const clanLabel = getOptionLabel('clan', dwarf.clan);
