@@ -69,6 +69,11 @@ select,
   transform: scale(1.05);
 }
 
+#dwarf-customizer .embark-backdrop {
+  background: linear-gradient(135deg, rgba(8, 9, 15, 0.85), rgba(8, 9, 15, 0.6)),
+    url('tilesheet/backgroundmenu.png') center/cover no-repeat;
+}
+
 .embark-panel {
   position: relative;
   display: flex;
