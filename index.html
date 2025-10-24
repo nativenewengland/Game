@@ -10,7 +10,7 @@
     <div id="title-screen" class="screen">
       <div class="title-background" aria-hidden="true"></div>
       <div class="title-overlay">
-        <h1 class="game-title">Dwarfhold</h1>
+        <h1 class="game-title">DWARFHOLD</h1>
         <p class="tagline">Procedural realms carved from stone and soil.</p>
         <div class="title-buttons">
           <button id="start-button" class="primary">Start Game</button>
@@ -212,6 +212,27 @@
               </label>
               <button type="button" id="world-chronology-random" class="secondary">Randomise</button>
             </div>
+            <label class="world-map-size-label" for="world-map-size-select">Map size</label>
+            <div class="world-map-size-input">
+              <select id="world-map-size-select" name="worldMapSize">
+                <option value="mini">Mini — 120 × 90</option>
+                <option value="small">Small — 160 × 120</option>
+                <option value="normal">Normal — 200 × 150</option>
+                <option value="large">Large — 260 × 195</option>
+                <option value="extra-large">Extra Large — 320 × 240</option>
+              </select>
+            </div>
+            <label class="world-seed-label" for="world-seed-input">World seed</label>
+            <div class="world-seed-input">
+              <input
+                type="text"
+                id="world-seed-input"
+                name="worldSeed"
+                maxlength="32"
+                placeholder="Random"
+                autocomplete="off"
+              />
+            </div>
             <label class="world-name-label" for="world-name-input">World name</label>
             <div class="world-name-input">
               <input type="text" id="world-name-input" name="worldName" maxlength="60" autocomplete="off" required />
@@ -236,12 +257,12 @@
     >
       <div class="embark-backdrop" aria-hidden="true"></div>
       <form id="dwarf-customizer-form" class="embark-panel">
-        <header class="embark-header">
-          <p class="embark-eyebrow">Founding Dwarf</p>
-          <h2>Design Your Founder</h2>
-          <p class="embark-description">
-            Tune the look of your dwarf before striking the earth.
-          </p>
+        <header class="embark-header embark-header--founder">
+          <img
+            src="tilesheet/charactercreationtitle.png"
+            alt="Character creation title"
+            class="founder-title-image"
+          />
         </header>
         <div class="customizer-layout">
           <aside class="roster-column pixel-panel" aria-label="Founder overview">

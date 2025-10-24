@@ -52,6 +52,9 @@ const baseTileCoords = {
   MOUNTAIN: { row: 0, col: 3 },
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 5 },
+  GREAT_DWARFHOLD: { row: 0, col: 6 },
+  TOWER: { row: 1, col: 6 },
+  EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   TOWN: { row: 2, col: 1 }
 };
@@ -116,6 +119,16 @@ function registerTiles(sheetKey, coordMap) {
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 
+// The evil wizard tower sprite only shows up on some tilesheets. If the
+// currently loaded set does not define it, fall back to the generic tower so
+// the generator can still place the structures.
+if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
+  const fallbackTower = tileLookup.get('TOWER');
+  if (fallbackTower) {
+    tileLookup.set('EVIL_WIZARDS_TOWER', { ...fallbackTower });
+  }
+}
+
 const mapSizePresets = [
   { key: 'mini', label: 'Mini', width: 120, height: 90 },
   { key: 'small', label: 'Small', width: 160, height: 120 },
@@ -131,6 +144,25 @@ const mapSizeByKey = mapSizePresets.reduce((acc, preset) => {
 
 function getMapSizePreset(key) {
   return mapSizeByKey[key] || mapSizeByKey.normal;
+}
+
+function applyMapSizePresetToState(preset) {
+  if (!preset) {
+    return;
+  }
+  state.settings.mapSize = preset.key;
+  state.settings.width = preset.width;
+  state.settings.height = preset.height;
+}
+
+function getMapSizeLabel(preset, width, height) {
+  if (preset) {
+    return `${preset.label} — ${preset.width} × ${preset.height} tiles`;
+  }
+  if (typeof width === 'number' && typeof height === 'number') {
+    return `${width} × ${height} tiles`;
+  }
+  return '—';
 }
 
 const defaultMapSize = getMapSizePreset('normal');
@@ -481,6 +513,50 @@ const townNameDescriptors = [
   'Hollow'
 ];
 
+const towerNamePrefixes = [
+  'Obsidian',
+  'Gilded',
+  'Runed',
+  'Frost',
+  'Storm',
+  'Ivory',
+  'Crimson',
+  'Verdant',
+  'Azure',
+  'Shadow',
+  'Sunset',
+  'Moonrise',
+  'Starfall',
+  'Ember',
+  'Sapphire'
+];
+
+const towerNameNouns = [
+  'Tower',
+  'Spire',
+  'Watch',
+  'Keep',
+  'Pinnacle',
+  'Bastion',
+  'Citadel',
+  'Lantern'
+];
+
+const towerNameQualifiers = [
+  'of Dawn',
+  'of Twilight',
+  'of Storms',
+  'of Secrets',
+  'of Embers',
+  'of Whispers',
+  'of the North',
+  'of the Veil',
+  'of Echoes',
+  'of the First Light',
+  'of the Last Watch',
+  'of the Silent Choir'
+];
+
 const woodElfGrovePrefixes = [
   'Sylvan',
   'Moon',
@@ -714,8 +790,12 @@ function generateDwarfholdDetails(name, random) {
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
 
+  const classification = population >= 3000 ? 'greatDwarfhold' : 'dwarfhold';
+  const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
+
   return {
-    type: 'dwarfhold',
+    type: classification,
+    classification: classificationLabel,
     name,
     population,
     ruler: {
@@ -745,6 +825,24 @@ function generateTownName(random) {
     return baseName;
   }
   return `Town of ${baseName}`;
+}
+
+function generateTowerName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(towerNamePrefixes, randomFn) || 'Obsidian';
+  const noun = pickRandomFrom(towerNameNouns, randomFn) || 'Tower';
+  const qualifier = pickRandomFrom(towerNameQualifiers, randomFn);
+  const styleRoll = randomFn();
+  if (styleRoll < 0.35 && qualifier) {
+    return `${prefix} ${noun} ${qualifier}`;
+  }
+  if (styleRoll < 0.65) {
+    return `${prefix} ${noun}`;
+  }
+  if (qualifier) {
+    return `Tower ${qualifier}`;
+  }
+  return `${prefix} ${noun}`;
 }
 
 function generateWoodElfGroveName(random) {
@@ -1092,6 +1190,8 @@ const elements = {
   seedDisplay: document.querySelector('.seed-display'),
   mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
+  worldMapSizeSelect: document.getElementById('world-map-size-select'),
+  worldSeedInput: document.getElementById('world-seed-input'),
   forestFrequencyInput: document.getElementById('forest-frequency'),
   forestFrequencyValue: document.getElementById('forest-frequency-value'),
   mountainFrequencyInput: document.getElementById('mountain-frequency'),
@@ -1326,10 +1426,11 @@ function applyFormSettings() {
     ? Number.parseInt(elements.woodElfSettlementFrequencyInput.value, 10)
     : state.settings.woodElfSettlementFrequency;
 
-  state.settings.mapSize = preset.key;
-  state.settings.width = preset.width;
-  state.settings.height = preset.height;
+  applyMapSizePresetToState(preset);
   state.settings.seedString = seedString;
+  if (seedString) {
+    state.settings.lastSeedString = seedString;
+  }
   state.settings.forestFrequency = sanitizeFrequencyValue(
     Number.isNaN(forestFrequencyRaw) ? state.settings.forestFrequency : forestFrequencyRaw,
     state.settings.forestFrequency
@@ -1360,6 +1461,16 @@ function applyFormSettings() {
       : woodElfSettlementFrequencyRaw,
     state.settings.woodElfSettlementFrequency
   );
+
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
+
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = state.settings.seedString;
+  }
+  updateWorldInfoSeedDisplay(state.settings.seedString);
 }
 
 function clamp(value, min, max) {
@@ -2287,6 +2398,26 @@ function updateChronologyDisplay() {
   elements.worldInfoChronology.textContent = '—';
 }
 
+function updateWorldInfoSizeDisplay() {
+  if (!elements.worldInfoSize) {
+    return;
+  }
+  const preset = getMapSizePreset(state.settings.mapSize);
+  elements.worldInfoSize.textContent = getMapSizeLabel(
+    preset,
+    state.settings.width,
+    state.settings.height
+  );
+}
+
+function updateWorldInfoSeedDisplay(seedValue) {
+  if (!elements.worldInfoSeed) {
+    return;
+  }
+  const trimmed = typeof seedValue === 'string' ? seedValue.trim() : '';
+  elements.worldInfoSeed.textContent = trimmed || 'Random';
+}
+
 function getRandomWorldName(excludeName) {
   if (worldNames.length === 0) {
     return 'Unnamed World';
@@ -2331,17 +2462,25 @@ function openWorldInfoModal() {
     ensureMusicStarted();
     return;
   }
-  const width = state.settings.width;
-  const height = state.settings.height;
   const sizePreset = getMapSizePreset(state.settings.mapSize);
-  const sizeLabel = sizePreset ? `${sizePreset.label} — ${sizePreset.width} × ${sizePreset.height} tiles` : `${width} × ${height} tiles`;
-  elements.worldInfoSize.textContent = sizeLabel;
+  applyMapSizePresetToState(sizePreset);
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  if (elements.mapSizeSelect) {
+    elements.mapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
 
   const seed = ensureSeedString();
-  elements.worldInfoSeed.textContent = seed;
+  state.settings.lastSeedString = seed;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = seed;
+  }
   if (elements.seedInput) {
     elements.seedInput.value = seed;
   }
+  updateWorldInfoSeedDisplay(seed);
 
   const chronology = ensureChronology();
   if (elements.worldYearInput) {
@@ -2361,6 +2500,7 @@ function openWorldInfoModal() {
     elements.titleScreen.classList.add('hidden');
   }
   elements.worldInfoModal.classList.remove('hidden');
+  ensureMusicStarted();
   const focusInput = () => {
     if (!elements.worldNameInput) {
       return;
@@ -2551,11 +2691,17 @@ function buildStructureTooltipContent(tile) {
   }
 
   const details = tile.structureDetails;
-  if (details && details.type === 'dwarfhold') {
+  const isDwarfhold =
+    details && (details.type === 'dwarfhold' || details.type === 'greatDwarfhold');
+  if (isDwarfhold) {
     const sections = [];
     const entries = [];
     const resolvedName = details.name || tile.structureName;
     sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+
+    if (details.classification) {
+      entries.push({ label: 'Classification', value: details.classification });
+    }
 
     if (Number.isFinite(details.population)) {
       const populationValue = Math.max(0, Math.round(details.population));
@@ -3740,9 +3886,13 @@ function createWorld(seedString) {
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
   const dwarfSettlementFrequencyNormalized = clamp(dwarfSettlementFrequencySetting / 100, 0, 1);
   const woodElfSettlementFrequencyNormalized = clamp(woodElfSettlementFrequencySetting / 100, 0, 1);
+  const towerSettlementFrequencySetting =
+    (humanSettlementFrequencySetting + dwarfSettlementFrequencySetting) / 2;
+  const towerSettlementFrequencyNormalized = clamp(towerSettlementFrequencySetting / 100, 0, 1);
   const humanSettlementMultiplier = computeFrequencyMultiplier(humanSettlementFrequencySetting);
   const dwarfSettlementMultiplier = computeFrequencyMultiplier(dwarfSettlementFrequencySetting);
   const woodElfSettlementMultiplier = computeFrequencyMultiplier(woodElfSettlementFrequencySetting);
+  const towerSettlementMultiplier = computeFrequencyMultiplier(towerSettlementFrequencySetting);
   const mountainBiasLinear = mountainFrequencyNormalized * 2 - 1;
   const mountainBias =
     mountainBiasLinear === 0
@@ -3990,6 +4140,8 @@ function createWorld(seedString) {
   const desertVariationOffsetX = hasSandTile ? rng() * 4096 : 0;
   const desertVariationOffsetY = hasSandTile ? rng() * 4096 : 0;
   const desertVariationStrength = hasSandTile ? 0.08 + rng() * 0.07 : 0;
+  const desertSuitabilityField = hasSandTile ? new Float32Array(width * height) : null;
+  const desertMask = hasSandTile ? new Uint8Array(width * height) : null;
 
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
@@ -3998,6 +4150,12 @@ function createWorld(seedString) {
     let warpedLatitude = latitude;
     let warpX = 0;
     let warpY = 0;
+    const idx = y * width + x;
+
+    if (hasSandTile) {
+      desertSuitabilityField[idx] = 0;
+      desertMask[idx] = 0;
+    }
 
     if (hasSandTile && desertWarpStrength > 0) {
       const warpSampleX = octaveNoise(
@@ -4044,7 +4202,6 @@ function createWorld(seedString) {
     }
 
     if (hasSandTile) {
-      const idx = y * width + x;
       const rainfallValue = rainfallField[idx];
       const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
       let equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
@@ -4111,6 +4268,8 @@ function createWorld(seedString) {
           1
         );
       }
+      desertSuitabilityField[idx] = suitability;
+      desertMask[idx] = 0;
       if (suitability > 0.52) {
         const desertNoise = octaveNoise(
           (normalizedX + warpX + desertNoiseOffsetX) * desertNoiseScale,
@@ -4140,6 +4299,7 @@ function createWorld(seedString) {
           );
         }
         if (desertNoise < suitability && suitability > latitudeThreshold) {
+          desertMask[idx] = 1;
           return sandTileKey;
         }
       }
@@ -4163,6 +4323,8 @@ function createWorld(seedString) {
   );
   const dwarfholds = [];
   const towns = [];
+  const towers = [];
+  const evilWizardTowers = [];
   const woodElfGroves = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
@@ -4216,6 +4378,163 @@ function createWorld(seedString) {
       tile.structureName = null;
       tile.structureDetails = null;
       tile.river = null;
+    }
+  }
+
+  if (hasSandTile) {
+    const blurIterations = 2;
+    const blurRadius = 2;
+    const smoothingSamples = [];
+    for (let dy = -blurRadius; dy <= blurRadius; dy += 1) {
+      for (let dx = -blurRadius; dx <= blurRadius; dx += 1) {
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const weight = distance === 0 ? 1.25 : 1 / (1 + distance);
+        smoothingSamples.push({ dx, dy, weight });
+      }
+    }
+    let blurFieldCurrent = new Float32Array(width * height);
+    let blurFieldBuffer = new Float32Array(width * height);
+    blurFieldCurrent.set(desertSuitabilityField);
+
+    for (let iteration = 0; iteration < blurIterations; iteration += 1) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            blurFieldBuffer[idx] = 0;
+            continue;
+          }
+          const baseTile = tiles[y][x].base;
+          if (baseTile === snowTileKey) {
+            blurFieldBuffer[idx] = 0;
+            continue;
+          }
+          let weightSum = 0;
+          let sampleSum = 0;
+          for (let i = 0; i < smoothingSamples.length; i += 1) {
+            const { dx, dy, weight } = smoothingSamples[i];
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx].base;
+            if (neighborTile === snowTileKey) {
+              continue;
+            }
+            sampleSum += blurFieldCurrent[nIdx] * weight;
+            weightSum += weight;
+          }
+          if (weightSum > 0) {
+            blurFieldBuffer[idx] = sampleSum / weightSum;
+          } else {
+            blurFieldBuffer[idx] = blurFieldCurrent[idx];
+          }
+        }
+      }
+      const swap = blurFieldCurrent;
+      blurFieldCurrent = blurFieldBuffer;
+      blurFieldBuffer = swap;
+    }
+
+    const updatedMask = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          updatedMask[idx] = 0;
+          continue;
+        }
+        const baseTile = tiles[y][x].base;
+        if (baseTile === snowTileKey) {
+          updatedMask[idx] = 0;
+          continue;
+        }
+        const baseSuitability = desertSuitabilityField[idx];
+        const clusteredSuitability = blurFieldCurrent[idx];
+        let neighborDesert = 0;
+        let neighborCount = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx].base;
+          if (neighborTile === snowTileKey) {
+            continue;
+          }
+          neighborDesert += desertMask[nIdx];
+          neighborCount += 1;
+        }
+        const localDensity = neighborCount > 0 ? neighborDesert / neighborCount : desertMask[idx];
+        const combinedScore = baseSuitability * 0.55 + clusteredSuitability * 0.45 + localDensity * 0.15;
+        if (combinedScore > 0.62 && baseSuitability > 0.48) {
+          updatedMask[idx] = 1;
+        } else if (combinedScore < 0.5 || baseSuitability < 0.45) {
+          updatedMask[idx] = 0;
+        } else {
+          updatedMask[idx] = desertMask[idx];
+        }
+      }
+    }
+
+    desertMask.set(updatedMask);
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        if (desertMask[idx]) {
+          tiles[y][x].base = sandTileKey;
+        } else if (tiles[y][x].base === sandTileKey) {
+          tiles[y][x].base = grassTileKey;
+        }
+      }
+    }
+
+    if (hasSnowTile) {
+      const snowClearRadius = 2;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (tiles[y][x].base !== sandTileKey) {
+            continue;
+          }
+          let nearSnow = false;
+          for (let dy = -snowClearRadius; dy <= snowClearRadius && !nearSnow; dy += 1) {
+            for (let dx = -snowClearRadius; dx <= snowClearRadius; dx += 1) {
+              if (dx === 0 && dy === 0) {
+                continue;
+              }
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              const neighborTile = tiles[ny][nx].base;
+              if (neighborTile === snowTileKey) {
+                nearSnow = true;
+                break;
+              }
+            }
+          }
+          if (nearSnow) {
+            tiles[y][x].base = grassTileKey;
+            desertMask[idx] = 0;
+          }
+        }
+      }
     }
   }
 
@@ -4697,6 +5016,7 @@ function createWorld(seedString) {
     }
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
+    const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     if (dwarfholdKey) {
       const fallbackMountainScoreThreshold =
         mountainScores && mountainCandidateThreshold !== null
@@ -4777,7 +5097,11 @@ function createWorld(seedString) {
           }
           const name = generateDwarfholdName(rng);
           const details = generateDwarfholdDetails(name, rng);
-          tile.structure = dwarfholdKey;
+          const structureKey =
+            details.type === 'greatDwarfhold' && greatDwarfholdKey
+              ? greatDwarfholdKey
+              : dwarfholdKey;
+          tile.structure = structureKey;
           tile.structureName = name;
           tile.structureDetails = details;
           placed.push(candidate);
@@ -4810,7 +5134,11 @@ function createWorld(seedString) {
             const tile = tiles[fallbackCandidate.y][fallbackCandidate.x];
             const name = generateDwarfholdName(rng);
             const details = generateDwarfholdDetails(name, rng);
-            tile.structure = dwarfholdKey;
+            const structureKey =
+              details.type === 'greatDwarfhold' && greatDwarfholdKey
+                ? greatDwarfholdKey
+                : dwarfholdKey;
+            tile.structure = structureKey;
             tile.structureName = name;
             tile.structureDetails = details;
             placed.push(fallbackCandidate);
@@ -4967,9 +5295,9 @@ function createWorld(seedString) {
   }
 
   const hasTreeTile = tileLookup.has('TREE');
+  const treeOverlayKey = hasTreeTile ? 'TREE' : null;
+  const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
   if (hasTreeTile) {
-    const treeOverlayKey = 'TREE';
-    const treeSnowOverlayKey = tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
     const treeBaseScale = 2.4 + rng() * 1.6;
@@ -5213,8 +5541,192 @@ function createWorld(seedString) {
     }
   }
 
+  const evilWizardTowerKey = tileLookup.has('EVIL_WIZARDS_TOWER') ? 'EVIL_WIZARDS_TOWER' : null;
+  if (evilWizardTowerKey) {
+    const towerCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && tile.overlay === mountainOverlayKey) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const overlayIsTree =
+          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        const heightValue = elevationField[idx];
+        const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
+        const rainfallValue = rainfallField[idx];
+        const drynessScore = clamp(1 - rainfallValue, 0, 1);
+        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        if (baseIsSnow) {
+          terrainBonus += 0.18;
+        } else if (baseIsGrass) {
+          terrainBonus += 0.12;
+        }
+        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2.2);
+        const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
+        const score =
+          elevationScore * 0.35 + drynessScore * 0.2 + terrainBonus + edgeScore * 0.15 + rng() * 0.3;
+        towerCandidates.push({ x, y, score });
+      }
+    }
+
+    if (towerCandidates.length > 0) {
+      towerCandidates.sort((a, b) => b.score - a.score);
+      const area = width * height;
+      const baseTarget = Math.max(1, Math.round(area / 7200));
+      const maxTowers = computeStructurePlacementLimit(baseTarget, 30, towerSettlementMultiplier);
+      const baseMinDistance = Math.max(5, Math.round(Math.min(width, height) / 14));
+      const minDistance = adjustMinDistance(baseMinDistance, towerSettlementFrequencyNormalized);
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < towerCandidates.length; i += 1) {
+        if (placed.length >= maxTowers) {
+          break;
+        }
+        const candidate = towerCandidates[i];
+        if (candidate.score < 0.22) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && tile.overlay === mountainOverlayKey) {
+          continue;
+        }
+        const name = `Evil Wizard's ${generateTowerName(rng)}`;
+        tile.structure = evilWizardTowerKey;
+        tile.structureName = name;
+        tile.structureDetails = null;
+        placed.push(candidate);
+        evilWizardTowers.push({ x: candidate.x, y: candidate.y, name });
+      }
+    }
+  }
+
+  const towerKey = tileLookup.has('TOWER') ? 'TOWER' : null;
+  if (towerKey) {
+    const towerCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const overlayIsTree =
+          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+          continue;
+        }
+        const heightValue = elevationField[idx];
+        const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
+        const rainfallValue = rainfallField[idx];
+        const drynessScore = clamp(1 - rainfallValue, 0, 1);
+        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        if (baseIsSnow) {
+          terrainBonus += 0.18;
+        } else if (baseIsGrass) {
+          terrainBonus += 0.12;
+        }
+        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2.2);
+        const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
+        const score =
+          elevationScore * 0.35 + drynessScore * 0.2 + terrainBonus + edgeScore * 0.15 + rng() * 0.3;
+        towerCandidates.push({ x, y, score });
+      }
+    }
+
+    if (towerCandidates.length > 0) {
+      towerCandidates.sort((a, b) => b.score - a.score);
+      const area = width * height;
+      const baseTarget = Math.max(1, Math.round(area / 7200));
+      const maxTowers = computeStructurePlacementLimit(baseTarget, 30, towerSettlementMultiplier);
+      const baseMinDistance = Math.max(5, Math.round(Math.min(width, height) / 14));
+      const minDistance = adjustMinDistance(baseMinDistance, towerSettlementFrequencyNormalized);
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < towerCandidates.length; i += 1) {
+        if (placed.length >= maxTowers) {
+          break;
+        }
+        const candidate = towerCandidates[i];
+        if (candidate.score < 0.22) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const overlayIsTree =
+          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+          continue;
+        }
+        const name = generateTowerName(rng);
+        tile.structure = towerKey;
+        tile.structureName = name;
+        tile.structureDetails = null;
+        placed.push(candidate);
+        towers.push({ x: candidate.x, y: candidate.y, name });
+      }
+    }
+  }
+
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds, towns, woodElfGroves };
+  return { tiles, seedString: finalSeed, dwarfholds, towns, towers, evilWizardTowers, woodElfGroves };
 }
 
 function generateSeedString(seedNumber) {
@@ -5338,6 +5850,14 @@ function drawWorld(world) {
 
   state.settings.lastSeedString = seedString;
   state.settings.seedString = seedString;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = seedString;
+  }
+  updateWorldInfoSeedDisplay(seedString);
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
   const worldLabel = state.worldName ? `World: ${state.worldName} | ` : '';
   const chronologyLabel = isChronologyValid(state.worldChronology)
     ? `${formatChronology(state.worldChronology.year, state.worldChronology.age)} | `
@@ -5363,6 +5883,10 @@ function generateAndRender(seedOverride) {
   state.currentWorld = world;
   drawWorld(world);
   elements.seedInput.value = world.seedString;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = world.seedString;
+  }
+  updateWorldInfoSeedDisplay(world.seedString);
 }
 
 function randomSeedString() {
@@ -5373,6 +5897,10 @@ function handleRegenerate() {
   const randomSeed = randomSeedString();
   state.settings.seedString = randomSeed;
   elements.seedInput.value = randomSeed;
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = randomSeed;
+  }
+  updateWorldInfoSeedDisplay(randomSeed);
   generateAndRender(randomSeed);
 }
 
@@ -5380,9 +5908,17 @@ function syncInputsWithSettings() {
   if (elements.mapSizeSelect) {
     elements.mapSizeSelect.value = state.settings.mapSize;
   }
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
   if (elements.seedInput) {
     elements.seedInput.value = state.settings.seedString;
   }
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = state.settings.seedString;
+  }
+  updateWorldInfoSeedDisplay(state.settings.seedString);
   if (elements.forestFrequencyInput) {
     const value = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
     elements.forestFrequencyInput.value = value.toString();
@@ -5499,6 +6035,35 @@ function attachEvents() {
   if (elements.worldInfoForm) {
     elements.worldInfoForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      const selectedMapSizeKey = elements.worldMapSizeSelect
+        ? elements.worldMapSizeSelect.value
+        : state.settings.mapSize;
+      const selectedPreset = getMapSizePreset(selectedMapSizeKey);
+      applyMapSizePresetToState(selectedPreset);
+      if (elements.worldMapSizeSelect) {
+        elements.worldMapSizeSelect.value = state.settings.mapSize;
+      }
+      if (elements.mapSizeSelect) {
+        elements.mapSizeSelect.value = state.settings.mapSize;
+      }
+      updateWorldInfoSizeDisplay();
+
+      if (elements.worldSeedInput) {
+        state.settings.seedString = elements.worldSeedInput.value.trim();
+      }
+      let finalSeed = state.settings.seedString;
+      if (!finalSeed) {
+        finalSeed = ensureSeedString();
+        if (elements.worldSeedInput) {
+          elements.worldSeedInput.value = finalSeed;
+        }
+      }
+      state.settings.lastSeedString = finalSeed;
+      if (elements.seedInput) {
+        elements.seedInput.value = finalSeed;
+      }
+      updateWorldInfoSeedDisplay(finalSeed);
+
       const submittedName = elements.worldNameInput ? elements.worldNameInput.value.trim() : '';
       state.worldName = submittedName || getRandomWorldName(state.worldName);
       const submittedChronology = getSanitisedChronologyFromInputs();
@@ -5556,6 +6121,28 @@ function attachEvents() {
         elements.worldNameInput.value = newName;
         elements.worldNameInput.focus();
         elements.worldNameInput.select();
+      }
+    });
+  }
+
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.addEventListener('change', (event) => {
+      const preset = getMapSizePreset(event.target.value);
+      applyMapSizePresetToState(preset);
+      if (elements.mapSizeSelect) {
+        elements.mapSizeSelect.value = state.settings.mapSize;
+      }
+      updateWorldInfoSizeDisplay();
+    });
+  }
+
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.addEventListener('input', (event) => {
+      const newValue = event.target.value;
+      state.settings.seedString = newValue.trim();
+      updateWorldInfoSeedDisplay(newValue);
+      if (elements.seedInput && elements.seedInput !== event.target) {
+        elements.seedInput.value = newValue;
       }
     });
   }
