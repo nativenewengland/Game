@@ -808,6 +808,31 @@ button:hover:not(:disabled) {
   min-width: 3rem;
 }
 
+.customizer-top-bar .dwarf-nav-button {
+  width: 3rem;
+  height: 3rem;
+  padding: 0.35rem;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+}
+
+
+.dwarf-nav-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  display: block;
+  background-image: url("tilesheet/arrow.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+.dwarf-nav-button--prev .dwarf-nav-icon {
+  transform: scaleX(-1);
+}
+
 .dwarf-slot-info {
   flex: 1;
   display: grid;
@@ -904,13 +929,14 @@ button:hover:not(:disabled) {
 
 .trait-slider-input::-webkit-slider-thumb {
   appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff9e0 0%, #f0c674 45%, #c49b3f 100%);
-  border: 2px solid rgba(48, 36, 60, 0.95);
-  box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.6);
-  margin-top: -8px;
+  width: 19px;
+  height: 58px;
+  background: url('tilesheet/slider.png') center/contain no-repeat;
+  image-rendering: pixelated;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin-top: calc((58px - 0.55rem) / -2);
 }
 
 .trait-slider-input::-moz-range-track {
@@ -922,12 +948,13 @@ button:hover:not(:disabled) {
 }
 
 .trait-slider-input::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff9e0 0%, #f0c674 45%, #c49b3f 100%);
-  border: 2px solid rgba(48, 36, 60, 0.95);
-  box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.6);
+  width: 19px;
+  height: 58px;
+  background: url('tilesheet/slider.png') center/contain no-repeat;
+  image-rendering: pixelated;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .trait-slider-input::-ms-track {
@@ -947,12 +974,13 @@ button:hover:not(:disabled) {
 }
 
 .trait-slider-input::-ms-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff9e0 0%, #f0c674 45%, #c49b3f 100%);
-  border: 2px solid rgba(48, 36, 60, 0.95);
-  box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.6);
+  width: 19px;
+  height: 58px;
+  background: url('tilesheet/slider.png') center/contain no-repeat;
+  image-rendering: pixelated;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .trait-slider-input:focus-visible::-webkit-slider-thumb {
