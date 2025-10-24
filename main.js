@@ -366,6 +366,27 @@ const dwarfholdHallmarks = [
   'Tunnel gardens yield luminous mushrooms for distant markets.'
 ];
 
+const dwarfholdExportOptions = [
+  'Cut gemstones and faceted crystals',
+  'Masterwork steel arms and armor',
+  'Runic circuitry and precision mechanisms',
+  'Barrels of triple-aged stout and spirits',
+  'Thunderpowder and blasting charges',
+  'Refined mithril ingots and alloys',
+  'Architectural plans and rune-etched stonework',
+  'Highland woolens and leatherwork',
+  'Engraved jewelry and heirloom trinkets'
+];
+
+const dwarfholdPopulationRaceOptions = [
+  { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
+  { key: 'humans', label: 'Humans', color: '#9bb6d8' },
+  { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
+  { key: 'elves', label: 'Elves', color: '#6ecf85' },
+  { key: 'halflings', label: 'Halflings', color: '#f7a072' },
+  { key: 'others', label: 'Others', color: '#9e9e9e' }
+];
+
 const townNamePrefixes = [
   'Oak',
   'River',
@@ -505,6 +526,107 @@ function pickRandomFrom(array, random) {
   return array[clampedIndex];
 }
 
+function pickUniqueFrom(array, count, random) {
+  if (!Array.isArray(array) || array.length === 0 || count <= 0) {
+    return [];
+  }
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const pool = array.slice();
+  const picks = [];
+  const maxCount = Math.min(Math.max(count, 0), pool.length);
+  for (let i = 0; i < maxCount; i += 1) {
+    const index = Math.floor(randomFn() * pool.length);
+    const clampedIndex = Math.max(0, Math.min(pool.length - 1, index));
+    const [choice] = pool.splice(clampedIndex, 1);
+    if (choice !== undefined) {
+      picks.push(choice);
+    }
+  }
+  return picks;
+}
+
+function generateDwarfholdPopulationBreakdown(population, random) {
+  if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
+    return [];
+  }
+
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const races = dwarfholdPopulationRaceOptions.slice();
+  const dwarfConfig = races[0];
+  const shares = [];
+  const dwarfShare = clamp(0.62 + randomFn() * 0.2, 0, 1);
+  shares.push({ config: dwarfConfig, share: dwarfShare });
+
+  const remainingConfigs = races.slice(1);
+  if (remainingConfigs.length > 0) {
+    const remainingShare = Math.max(0, 1 - dwarfShare);
+    const weights = remainingConfigs.map(() => 0.25 + randomFn());
+    const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
+    remainingConfigs.forEach((config, index) => {
+      const portion = weights[index] / weightSum;
+      shares.push({ config, share: remainingShare * portion });
+    });
+  }
+
+  let totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+  if (shares.length > 0 && Number.isFinite(totalShare) && totalShare !== 1) {
+    const lastEntry = shares[shares.length - 1];
+    const adjustment = clamp(1 - totalShare, -1, 1);
+    lastEntry.share = clamp(lastEntry.share + adjustment, 0, 1);
+    totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+  }
+
+  const safeTotalShare = totalShare > 0 ? totalShare : 1;
+  const normalizedShares = shares.map((entry) => ({
+    config: entry.config,
+    share: clamp(entry.share / safeTotalShare, 0, 1)
+  }));
+
+  const rawPercentages = normalizedShares.map(({ config, share }) => ({
+    config,
+    raw: clamp(share, 0, 1) * 100
+  }));
+
+  const basePercentages = rawPercentages.map((entry) => Math.floor(entry.raw));
+  let baseTotal = basePercentages.reduce((sum, value) => sum + value, 0);
+  let remainder = 100 - baseTotal;
+  const fractionalOrder = rawPercentages
+    .map((entry, index) => ({ index, fraction: entry.raw - basePercentages[index] }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  for (let i = 0; remainder > 0 && i < fractionalOrder.length; i += 1) {
+    basePercentages[fractionalOrder[i].index] += 1;
+    remainder -= 1;
+  }
+
+  if (remainder < 0) {
+    const ascending = fractionalOrder.slice().reverse();
+    for (let i = 0; remainder < 0 && i < ascending.length; i += 1) {
+      if (basePercentages[ascending[i].index] > 0) {
+        basePercentages[ascending[i].index] -= 1;
+        remainder += 1;
+      }
+    }
+  }
+
+  const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+
+  return rawPercentages.map(({ config }, index) => {
+    const percentage = clamp(basePercentages[index], 0, 100);
+    const count =
+      resolvedPopulation === null
+        ? null
+        : Math.max(0, Math.round((resolvedPopulation * percentage) / 100));
+    return {
+      key: config.key,
+      label: config.label,
+      color: config.color,
+      percentage,
+      population: count
+    };
+  });
+}
+
 function generateDwarfholdName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
@@ -543,6 +665,15 @@ function generateDwarfholdDetails(name, random) {
   const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
   const prominentClanOption = randomFn() < 0.35 ? pickRandomFrom(dwarfOptions.clan, randomFn) : clanOption;
   const prominentClan = prominentClanOption?.label || clanName;
+  const majorGuildCount = clamp(Math.floor(2 + randomFn() * 3), 1, dwarfGuildOptions.length);
+  const majorGuilds = pickUniqueFrom(
+    dwarfGuildOptions.map((option) => option.label),
+    majorGuildCount,
+    randomFn
+  );
+  const majorExportCount = clamp(Math.floor(2 + randomFn() * 2), 1, dwarfholdExportOptions.length);
+  const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
+  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
 
   return {
     type: 'dwarfhold',
@@ -554,7 +685,10 @@ function generateDwarfholdDetails(name, random) {
     },
     foundedYearsAgo,
     prominentClan,
-    hallmark
+    hallmark,
+    majorGuilds,
+    majorExports,
+    populationBreakdown
   };
 }
 
@@ -2245,6 +2379,76 @@ function hideMapTooltip() {
   elements.mapTooltip.setAttribute('aria-hidden', 'true');
 }
 
+function buildPopulationBreakdownSection(resolvedName, breakdown) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) {
+    return '';
+  }
+
+  const resolvedEntries = breakdown
+    .filter((entry) => Number.isFinite(entry?.percentage) && entry.percentage > 0)
+    .map((entry) => ({
+      label: entry.label || entry.key || 'Unknown',
+      percentage: Math.max(0, Math.round(entry.percentage)),
+      color: entry.color || '#999999',
+      population:
+        Number.isFinite(entry.population) && entry.population > 0
+          ? Math.max(0, Math.round(entry.population))
+          : null
+    }));
+
+  if (resolvedEntries.length === 0) {
+    return '';
+  }
+
+  let cumulative = 0;
+  const stops = resolvedEntries.map((entry, index) => {
+    const start = Math.min(100, Math.max(0, cumulative));
+    cumulative += entry.percentage;
+    const end = index === resolvedEntries.length - 1 ? 100 : Math.min(100, Math.max(0, cumulative));
+    return `${entry.color} ${start}% ${end}%`;
+  });
+
+  if (stops.length === 0) {
+    return '';
+  }
+
+  const pieStyle = `background: conic-gradient(${stops.join(', ')});`;
+  const ariaLabelParts = ['Population breakdown'];
+  if (resolvedName) {
+    ariaLabelParts.push(`for ${resolvedName}`);
+  }
+  const ariaLabel = ariaLabelParts.join(' ');
+
+  const legendItems = resolvedEntries
+    .map((entry) => {
+      const valueParts = [`${entry.percentage}%`];
+      if (entry.population !== null) {
+        valueParts.push(`(${entry.population.toLocaleString('en-US')})`);
+      }
+      return `
+        <li>
+          <span class="legend-swatch" style="background:${escapeHtml(entry.color)}"></span>
+          <span class="legend-label">${escapeHtml(entry.label)}</span>
+          <span class="legend-value">${escapeHtml(valueParts.join(' '))}</span>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <div class="tooltip-subtitle">Population Breakdown</div>
+    <div class="tooltip-chart">
+      <div
+        class="tooltip-chart-pie"
+        role="img"
+        aria-label="${escapeHtml(ariaLabel)}"
+        style="${escapeHtml(pieStyle)}"
+      ></div>
+      <ul class="tooltip-chart-legend">${legendItems}</ul>
+    </div>
+  `;
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile || !tile.structureName) {
     return null;
@@ -2281,6 +2485,24 @@ function buildStructureTooltipContent(tile) {
       entries.push({ label: 'Prominent Clan', value: details.prominentClan });
     }
 
+    if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
+      const uniqueGuilds = Array.from(
+        new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
+      );
+      if (uniqueGuilds.length > 0) {
+        entries.push({ label: 'Major Guilds', value: uniqueGuilds.join(', ') });
+      }
+    }
+
+    if (Array.isArray(details.majorExports) && details.majorExports.length > 0) {
+      const uniqueExports = Array.from(
+        new Set(details.majorExports.filter((item) => typeof item === 'string' && item.trim()))
+      );
+      if (uniqueExports.length > 0) {
+        entries.push({ label: 'Major Exports', value: uniqueExports.join(', ') });
+      }
+    }
+
     if (entries.length > 0) {
       const listItems = entries
         .map(
@@ -2291,6 +2513,12 @@ function buildStructureTooltipContent(tile) {
         )
         .join('');
       sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+
+    const breakdownSection = buildPopulationBreakdownSection(resolvedName, details.populationBreakdown);
+
+    if (breakdownSection) {
+      sections.push(breakdownSection);
     }
 
     if (details.hallmark) {
