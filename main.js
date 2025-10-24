@@ -1231,10 +1231,13 @@ const elements = {
   dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
   dwarfSkinSelect: document.getElementById('dwarf-skin-select'),
-  dwarfEyeSelect: document.getElementById('dwarf-eye-select'),
+  dwarfEyeSlider: document.getElementById('dwarf-eye-slider'),
+  dwarfEyeSliderValue: document.getElementById('dwarf-eye-slider-value'),
   dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
-  dwarfHairSelect: document.getElementById('dwarf-hair-select'),
-  dwarfBeardSelect: document.getElementById('dwarf-beard-select'),
+  dwarfHairSlider: document.getElementById('dwarf-hair-slider'),
+  dwarfHairSliderValue: document.getElementById('dwarf-hair-slider-value'),
+  dwarfBeardSlider: document.getElementById('dwarf-beard-slider'),
+  dwarfBeardSliderValue: document.getElementById('dwarf-beard-slider-value'),
   dwarfBeardFieldGroup: document.getElementById('dwarf-beard-field-group'),
   dwarfRandomise: document.getElementById('dwarf-randomise'),
   dwarfBack: document.getElementById('dwarf-back'),
@@ -1994,6 +1997,104 @@ function ensureSelectValue(selectElement, value, fallback) {
   }
 }
 
+function getTraitOptions(trait) {
+  const options = dwarfOptions[trait];
+  return Array.isArray(options) ? options : [];
+}
+
+function updateTraitSliderDisplay(trait, sliderElement, valueElement, indexOverride) {
+  if (!sliderElement) {
+    return;
+  }
+  const options = getTraitOptions(trait);
+  const maxIndex = Math.max(0, options.length - 1);
+  const rawIndex =
+    typeof indexOverride === 'number' && Number.isFinite(indexOverride)
+      ? indexOverride
+      : Math.round(Number(sliderElement.value) || 0);
+  const index = clamp(rawIndex, 0, maxIndex);
+  const option = options[index];
+
+  sliderElement.setAttribute('aria-valuemin', '0');
+  sliderElement.setAttribute('aria-valuemax', String(maxIndex));
+  sliderElement.setAttribute('aria-valuenow', String(index));
+  sliderElement.setAttribute('aria-valuetext', option ? option.label : '');
+
+  if (valueElement) {
+    if (option) {
+      valueElement.textContent = option.label;
+      if (option.color) {
+        valueElement.style.setProperty('--trait-color', option.color);
+        valueElement.classList.add('has-color');
+      } else {
+        valueElement.style.removeProperty('--trait-color');
+        valueElement.classList.remove('has-color');
+      }
+      valueElement.dataset.traitValue = option.value;
+    } else {
+      valueElement.textContent = '—';
+      valueElement.style.removeProperty('--trait-color');
+      valueElement.classList.remove('has-color');
+      delete valueElement.dataset.traitValue;
+    }
+  }
+}
+
+function ensureTraitSliderValue(trait, sliderElement, valueElement, value, fallback) {
+  if (!sliderElement) {
+    return;
+  }
+  const options = getTraitOptions(trait);
+  const fallbackValue = fallback ?? options[0]?.value ?? null;
+  let targetIndex = options.findIndex((option) => option.value === value);
+  if (targetIndex === -1 && fallbackValue) {
+    targetIndex = options.findIndex((option) => option.value === fallbackValue);
+  }
+  if (targetIndex === -1) {
+    targetIndex = 0;
+  }
+  targetIndex = clamp(targetIndex, 0, Math.max(0, options.length - 1));
+  sliderElement.max = String(Math.max(0, options.length - 1));
+  sliderElement.value = String(targetIndex);
+  updateTraitSliderDisplay(trait, sliderElement, valueElement, targetIndex);
+}
+
+function setupTraitSliderControl(trait, sliderElement, valueElement) {
+  if (!sliderElement) {
+    return;
+  }
+  const options = getTraitOptions(trait);
+  const maxIndex = Math.max(0, options.length - 1);
+  sliderElement.min = '0';
+  sliderElement.max = String(maxIndex);
+  sliderElement.step = '1';
+  sliderElement.value = clamp(Number(sliderElement.value) || 0, 0, maxIndex).toString();
+  sliderElement.dataset.trait = trait;
+  sliderElement.disabled = options.length === 0;
+
+  const updateDisplay = (index) => {
+    updateTraitSliderDisplay(trait, sliderElement, valueElement, index);
+  };
+
+  sliderElement.addEventListener('input', () => {
+    const currentIndex = clamp(Math.round(Number(sliderElement.value)), 0, maxIndex);
+    sliderElement.value = String(currentIndex);
+    updateDisplay(currentIndex);
+    const option = options[currentIndex];
+    if (option) {
+      updateDwarfTrait(trait, option.value);
+    }
+  });
+
+  sliderElement.addEventListener('change', () => {
+    const currentIndex = clamp(Math.round(Number(sliderElement.value)), 0, maxIndex);
+    sliderElement.value = String(currentIndex);
+    updateDisplay(currentIndex);
+  });
+
+  updateDisplay();
+}
+
 function updateGenderButtonsUI(selectedValue) {
   const container = elements.dwarfGenderButtons;
   if (!container) {
@@ -2018,18 +2119,18 @@ function updateGenderButtonsUI(selectedValue) {
 
 function updateBeardFieldState(dwarf) {
   const fieldGroup = elements.dwarfBeardFieldGroup;
-  const beardSelect = elements.dwarfBeardSelect;
-  if (!fieldGroup || !beardSelect) {
+  const beardSlider = elements.dwarfBeardSlider;
+  if (!fieldGroup || !beardSlider) {
     return;
   }
   const isFemale = dwarf?.gender === 'female';
   fieldGroup.classList.toggle('hidden', isFemale);
   fieldGroup.setAttribute('aria-hidden', isFemale ? 'true' : 'false');
-  beardSelect.disabled = isFemale;
+  beardSlider.disabled = isFemale;
   if (isFemale) {
-    beardSelect.setAttribute('tabindex', '-1');
+    beardSlider.setAttribute('tabindex', '-1');
   } else {
-    beardSelect.removeAttribute('tabindex');
+    beardSlider.removeAttribute('tabindex');
   }
 }
 
@@ -2072,8 +2173,10 @@ function updateCustomizerUI() {
     dwarf.skin,
     dwarfOptions.skin[0].value
   );
-  ensureSelectValue(
-    elements.dwarfEyeSelect,
+  ensureTraitSliderValue(
+    'eyes',
+    elements.dwarfEyeSlider,
+    elements.dwarfEyeSliderValue,
     dwarf.eyes,
     dwarfOptions.eyes[0].value
   );
@@ -2082,16 +2185,20 @@ function updateCustomizerUI() {
     resolveHairStyleValue(dwarf.hairStyle),
     defaultHairStyleValue
   );
-  ensureSelectValue(
-    elements.dwarfHairSelect,
+  ensureTraitSliderValue(
+    'hair',
+    elements.dwarfHairSlider,
+    elements.dwarfHairSliderValue,
     dwarf.hair,
     dwarfOptions.hair[0].value
   );
   if (dwarf.gender === 'female' && dwarf.beard !== 'clean') {
     dwarf.beard = 'clean';
   }
-  ensureSelectValue(
-    elements.dwarfBeardSelect,
+  ensureTraitSliderValue(
+    'beard',
+    elements.dwarfBeardSlider,
+    elements.dwarfBeardSliderValue,
     dwarf.beard,
     dwarfOptions.beard[0].value
   );
@@ -6258,11 +6365,7 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfEyeSelect) {
-    elements.dwarfEyeSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('eyes', event.target.value);
-    });
-  }
+  setupTraitSliderControl('eyes', elements.dwarfEyeSlider, elements.dwarfEyeSliderValue);
 
   if (elements.dwarfHairStyleSelect) {
     elements.dwarfHairStyleSelect.addEventListener('change', (event) => {
@@ -6270,17 +6373,9 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfHairSelect) {
-    elements.dwarfHairSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('hair', event.target.value);
-    });
-  }
+  setupTraitSliderControl('hair', elements.dwarfHairSlider, elements.dwarfHairSliderValue);
 
-  if (elements.dwarfBeardSelect) {
-    elements.dwarfBeardSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('beard', event.target.value);
-    });
-  }
+  setupTraitSliderControl('beard', elements.dwarfBeardSlider, elements.dwarfBeardSliderValue);
 
   document.addEventListener('keydown', (event) => {
     const activeElement = document.activeElement;
