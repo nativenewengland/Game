@@ -1929,7 +1929,26 @@ function randomYear() {
   }
   const clampedWeight = clamp(biasWeight, 0, 1);
   const effectiveExponent = 1 + clampedWeight * (exponent - 1);
-  return biasedRandomInt(lower, upper, effectiveExponent);
+  const quadrupleDigitThreshold = 1000;
+  const maxRetries = 4;
+  const highYearPenalty = 0.85;
+
+  let year = biasedRandomInt(lower, upper, effectiveExponent);
+
+  if (year >= quadrupleDigitThreshold) {
+    let retries = 0;
+    const amplifiedExponent = effectiveExponent * 1.5;
+    while (
+      year >= quadrupleDigitThreshold &&
+      retries < maxRetries &&
+      Math.random() < highYearPenalty
+    ) {
+      year = biasedRandomInt(lower, upper, amplifiedExponent);
+      retries += 1;
+    }
+  }
+
+  return year;
 }
 
 function generateRandomChronology() {
