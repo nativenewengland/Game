@@ -254,6 +254,38 @@ button {
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
+.randomise-button {
+  width: 150px;
+  height: 136px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  background-image: url('tilesheet/randombutton.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
+  box-shadow: 0 0.85rem 1.6rem rgba(0, 0, 0, 0.45);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.randomise-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 1.2rem 1.8rem rgba(0, 0, 0, 0.5);
+}
+
+.randomise-button:active {
+  transform: translateY(0);
+  box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.45);
+}
+
+.randomise-button:focus-visible {
+  outline: 3px solid rgba(240, 198, 116, 0.9);
+  outline-offset: 4px;
+  box-shadow: 0 1.2rem 2rem rgba(0, 0, 0, 0.55);
+}
+
 button.primary {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
   color: #1a1205;
@@ -629,8 +661,12 @@ button:hover:not(:disabled) {
   justify-content: flex-end;
 }
 
-.customizer-inline-actions button {
+.customizer-inline-actions button:not(.randomise-button) {
   padding-inline: 1.5rem;
+}
+
+.customizer-inline-actions .randomise-button {
+  padding: 0;
 }
 
 .customizer-actions {

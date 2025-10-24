@@ -755,6 +755,12 @@ const audioState = {
   initialised: false
 };
 
+const soundEffects = {
+  randomiseClick: createSoundEffect('sound/sounds/single-mouse-click-sound.mp3', {
+    volume: 0.6
+  })
+};
+
 const elements = {
   startButton: document.getElementById('start-button'),
   titleScreen: document.getElementById('title-screen'),
@@ -813,6 +819,31 @@ const elements = {
   dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary')
 };
+
+function createSoundEffect(src, options = {}) {
+  const audio = new Audio(src);
+  audio.preload = options.preload ?? 'auto';
+  if (typeof options.volume === 'number') {
+    const clampedVolume = Math.max(0, Math.min(1, options.volume));
+    audio.volume = clampedVolume;
+  }
+  return audio;
+}
+
+function playSoundEffect(audio) {
+  if (!audio) {
+    return;
+  }
+  try {
+    audio.currentTime = 0;
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {
+    /* ignore playback errors triggered by browser policies */
+  }
+}
 
 function createLandMask(image) {
   const canvas = document.createElement('canvas');
@@ -4138,6 +4169,7 @@ function attachEvents() {
   if (elements.dwarfRandomise) {
     elements.dwarfRandomise.addEventListener('click', () => {
       randomiseActiveDwarf();
+      playSoundEffect(soundEffects.randomiseClick);
     });
   }
 
