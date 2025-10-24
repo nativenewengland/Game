@@ -1186,23 +1186,7 @@ const dwarfPortraitConfig = {
   eyeSize: 2
 };
 
-const dwarfFullPreviewConfig = {
-  tileSize: dwarfPortraitConfig.tileSize,
-  scale: 3,
-  baseFrame: { ...dwarfPortraitConfig.baseFrame },
-  headFrame: { ...dwarfPortraitConfig.headFrame },
-  hairOffsetY: dwarfPortraitConfig.hairOffsetY,
-  beardOffsetY: dwarfPortraitConfig.beardOffsetY,
-  eyePositions: dwarfPortraitConfig.eyePositions,
-  eyeSize: dwarfPortraitConfig.eyeSize
-};
-
 const dwarfPortraitState = {
-  canvas: null,
-  ctx: null
-};
-
-const dwarfFullPreviewState = {
   canvas: null,
   ctx: null
 };
@@ -1293,42 +1277,21 @@ const elements = {
   dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
   dwarfNameInput: document.getElementById('dwarf-name-input'),
   dwarfGenderButtons: document.getElementById('dwarf-gender-buttons'),
-  dwarfTraitControls: document.getElementById('dwarf-trait-controls'),
+  dwarfClanSelect: document.getElementById('dwarf-clan-select'),
+  dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
+  dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
+  dwarfSkinSelect: document.getElementById('dwarf-skin-select'),
+  dwarfEyeSelect: document.getElementById('dwarf-eye-select'),
+  dwarfHairStyleSelect: document.getElementById('dwarf-hair-style-select'),
+  dwarfHairSelect: document.getElementById('dwarf-hair-select'),
+  dwarfBeardSelect: document.getElementById('dwarf-beard-select'),
   dwarfBeardFieldGroup: document.getElementById('dwarf-beard-field-group'),
   dwarfRandomise: document.getElementById('dwarf-randomise'),
   dwarfBack: document.getElementById('dwarf-back'),
   dwarfPortrait: document.getElementById('dwarf-portrait'),
   dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
-  dwarfFullPreviewCanvas: document.getElementById('dwarf-full-preview-canvas'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary')
 };
-
-const traitControlElements = new Map();
-
-function initialiseTraitControlElements() {
-  traitControlElements.clear();
-  if (!elements.dwarfTraitControls) {
-    return;
-  }
-  const controls = elements.dwarfTraitControls.querySelectorAll('[data-trait-control]');
-  controls.forEach((control) => {
-    const trait = control.dataset.traitControl;
-    if (!trait) {
-      return;
-    }
-    const displayEl = control.querySelector('[data-trait-value]');
-    const labelEl = control.querySelector('[data-trait-label]') || displayEl;
-    const swatchEl = control.querySelector('[data-trait-swatch]');
-    traitControlElements.set(trait, {
-      control,
-      displayEl,
-      labelEl,
-      swatchEl
-    });
-  });
-}
-
-initialiseTraitControlElements();
 
 function createSoundEffect(src, options = {}) {
   const audio = new Audio(src);
@@ -1766,24 +1729,25 @@ function getActiveDwarf() {
   return state.dwarfParty.dwarves[state.dwarfParty.activeIndex] || null;
 }
 
-function ensurePreviewContext(state, canvasElement) {
-  if (!canvasElement) {
-    state.canvas = null;
-    state.ctx = null;
+function ensurePortraitContext() {
+  const canvas = elements.dwarfPortraitCanvas || null;
+  if (!canvas) {
+    dwarfPortraitState.canvas = null;
+    dwarfPortraitState.ctx = null;
     return null;
   }
-  if (canvasElement !== state.canvas) {
-    const context = canvasElement.getContext('2d');
+  if (canvas !== dwarfPortraitState.canvas) {
+    const context = canvas.getContext('2d');
     if (!context) {
-      state.canvas = null;
-      state.ctx = null;
+      dwarfPortraitState.canvas = null;
+      dwarfPortraitState.ctx = null;
       return null;
     }
     context.imageSmoothingEnabled = false;
-    state.canvas = canvasElement;
-    state.ctx = context;
+    dwarfPortraitState.canvas = canvas;
+    dwarfPortraitState.ctx = context;
   }
-  return state.ctx;
+  return dwarfPortraitState.ctx;
 }
 
 function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
@@ -1821,7 +1785,7 @@ function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
   ctx.drawImage(offscreen, 0, 0, sw, sh, destX, destY, destW, destH);
 }
 
-function getHairFrame(dwarf, hairOption, hairStyleValue, previewConfig = dwarfPortraitConfig) {
+function getHairFrame(dwarf, hairOption, hairStyleValue) {
   const styleConfig = getHairStyleConfig(hairStyleValue ?? dwarf?.hairStyle);
   const rows = styleConfig?.rows || {};
   const genderRow = rows[dwarf?.gender];
@@ -1835,11 +1799,11 @@ function getHairFrame(dwarf, hairOption, hairStyleValue, previewConfig = dwarfPo
     col: mapping.column,
     row,
     tint: mapping.tint || null,
-    offsetY: styleConfig?.offsetY ?? previewConfig.hairOffsetY
+    offsetY: styleConfig?.offsetY ?? dwarfPortraitConfig.hairOffsetY
   };
 }
 
-function getBeardFrame(dwarf, hairOption, previewConfig = dwarfPortraitConfig) {
+function getBeardFrame(dwarf, hairOption) {
   if (!dwarf || dwarf.gender === 'female') {
     return null;
   }
@@ -1857,29 +1821,20 @@ function getBeardFrame(dwarf, hairOption, previewConfig = dwarfPortraitConfig) {
     col: mapping.column,
     row,
     tint: mapping.tint || null,
-    offsetY: previewConfig.beardOffsetY
+    offsetY: dwarfPortraitConfig.beardOffsetY
   };
 }
 
-function renderDwarfPreviewToCanvas(
-  state,
-  canvasElement,
-  config,
-  dwarf,
-  skinOption,
-  hairOption,
-  eyeOption,
-  hairStyleOption
-) {
-  if (!dwarf) {
+function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption) {
+  const ctx = ensurePortraitContext();
+  if (!ctx) {
     return;
   }
-  const ctx = ensurePreviewContext(state, canvasElement || null);
-  if (!ctx || !state.canvas) {
+  const canvas = dwarfPortraitState.canvas;
+  if (!canvas) {
     return;
   }
-  const canvas = state.canvas;
-  const { tileSize, scale, baseFrame, headFrame, eyePositions, eyeSize } = config;
+  const { tileSize, scale, baseFrame, headFrame, eyePositions, eyeSize } = dwarfPortraitConfig;
   const destSize = tileSize * scale;
   const baseX = Math.floor((canvas.width - destSize) / 2);
   const baseY = Math.floor((canvas.height - destSize) / 2);
@@ -1896,12 +1851,12 @@ function renderDwarfPreviewToCanvas(
   }
 
   const hairStyleValue = resolveHairStyleValue(hairStyleOption?.value ?? dwarf?.hairStyle);
-  const hairFrame = getHairFrame(dwarf, hairOption, hairStyleValue, config);
+  const hairFrame = getHairFrame(dwarf, hairOption, hairStyleValue);
   if (hairFrame) {
     drawTintedSprite(ctx, hairFrame.sheet, hairFrame, baseX, baseY, scale, hairFrame.tint);
   }
 
-  const beardFrame = getBeardFrame(dwarf, hairOption, config);
+  const beardFrame = getBeardFrame(dwarf, hairOption);
   if (beardFrame) {
     drawTintedSprite(ctx, beardFrame.sheet, beardFrame, baseX, baseY, scale, beardFrame.tint);
   }
@@ -1922,30 +1877,6 @@ function renderDwarfPreviewToCanvas(
       highlightSize
     );
   });
-}
-
-function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption) {
-  renderDwarfPreviewToCanvas(
-    dwarfPortraitState,
-    elements.dwarfPortraitCanvas,
-    dwarfPortraitConfig,
-    dwarf,
-    skinOption,
-    hairOption,
-    eyeOption,
-    hairStyleOption
-  );
-
-  renderDwarfPreviewToCanvas(
-    dwarfFullPreviewState,
-    elements.dwarfFullPreviewCanvas,
-    dwarfFullPreviewConfig,
-    dwarf,
-    skinOption,
-    hairOption,
-    eyeOption,
-    hairStyleOption
-  );
 }
 
 function updateDwarfPortrait(dwarf) {
@@ -2108,6 +2039,16 @@ function updateRosterList() {
   elements.dwarfRosterList.replaceChildren(fragment);
 }
 
+function ensureSelectValue(selectElement, value, fallback) {
+  if (!selectElement) {
+    return;
+  }
+  selectElement.value = value;
+  if (selectElement.value !== value) {
+    selectElement.value = fallback;
+  }
+}
+
 function updateGenderButtonsUI(selectedValue) {
   const container = elements.dwarfGenderButtons;
   if (!container) {
@@ -2130,127 +2071,20 @@ function updateGenderButtonsUI(selectedValue) {
   });
 }
 
-function getTraitOptions(trait) {
-  const options = dwarfOptions[trait];
-  return Array.isArray(options) ? options : [];
-}
-
-function getTraitFallbackValue(trait) {
-  if (trait === 'hairStyle') {
-    return resolveHairStyleValue(defaultHairStyleValue);
-  }
-  const options = getTraitOptions(trait);
-  return options[0]?.value ?? '';
-}
-
-function updateTraitControlUI(trait, value) {
-  const options = getTraitOptions(trait);
-  if (options.length === 0) {
-    return value;
-  }
-  const resolvedValue = trait === 'hairStyle' ? resolveHairStyleValue(value) : value;
-  let option = options.find((item) => item.value === resolvedValue);
-  if (!option) {
-    const fallbackValue = getTraitFallbackValue(trait);
-    option = options.find((item) => item.value === fallbackValue) || options[0];
-  }
-  if (!option) {
-    return value;
-  }
-
-  const controls = traitControlElements.get(trait);
-  if (controls) {
-    const { control, displayEl, labelEl, swatchEl } = controls;
-    if (control) {
-      control.setAttribute('data-current-value', option.value);
-    }
-    const targetLabel = option.label;
-    if (labelEl && labelEl !== displayEl) {
-      labelEl.textContent = targetLabel;
-    }
-    if (displayEl) {
-      if (!labelEl || labelEl === displayEl) {
-        displayEl.textContent = targetLabel;
-      }
-      displayEl.dataset.optionValue = option.value;
-      displayEl.setAttribute('aria-label', targetLabel);
-      displayEl.classList.toggle('has-swatch', Boolean(option.color));
-    }
-    if (swatchEl) {
-      if (option.color) {
-        swatchEl.style.setProperty('--cc-swatch-color', option.color);
-        swatchEl.hidden = false;
-      } else {
-        swatchEl.style.removeProperty('--cc-swatch-color');
-        swatchEl.hidden = true;
-      }
-    }
-  }
-
-  return option.value;
-}
-
-function rotateTraitOption(trait, direction) {
-  const dwarf = getActiveDwarf();
-  if (!dwarf) {
-    return;
-  }
-  if (trait === 'beard' && dwarf.gender === 'female') {
-    return;
-  }
-  const options = getTraitOptions(trait);
-  if (options.length === 0) {
-    return;
-  }
-  let step = 1;
-  if (typeof direction === 'string') {
-    step = direction === 'prev' || direction === 'previous' ? -1 : 1;
-  } else if (typeof direction === 'number' && Number.isFinite(direction)) {
-    if (direction === 0) {
-      return;
-    }
-    step = direction > 0 ? 1 : -1;
-  }
-  let currentValue = dwarf[trait];
-  if (trait === 'hairStyle') {
-    currentValue = resolveHairStyleValue(currentValue);
-  }
-  let currentIndex = options.findIndex((option) => option.value === currentValue);
-  if (currentIndex === -1) {
-    currentIndex = 0;
-  }
-  const nextIndex = (currentIndex + step + options.length) % options.length;
-  const nextOption = options[nextIndex];
-  if (!nextOption) {
-    return;
-  }
-  updateDwarfTrait(trait, nextOption.value);
-}
-
 function updateBeardFieldState(dwarf) {
   const fieldGroup = elements.dwarfBeardFieldGroup;
-  if (!fieldGroup) {
+  const beardSelect = elements.dwarfBeardSelect;
+  if (!fieldGroup || !beardSelect) {
     return;
   }
   const isFemale = dwarf?.gender === 'female';
   fieldGroup.classList.toggle('hidden', isFemale);
   fieldGroup.setAttribute('aria-hidden', isFemale ? 'true' : 'false');
-  const control = traitControlElements.get('beard');
-  const buttons = fieldGroup.querySelectorAll('[data-direction]');
-  buttons.forEach((button) => {
-    button.disabled = isFemale;
-    if (isFemale) {
-      button.setAttribute('aria-disabled', 'true');
-    } else {
-      button.removeAttribute('aria-disabled');
-    }
-  });
-  if (control?.displayEl) {
-    if (isFemale) {
-      control.displayEl.setAttribute('aria-hidden', 'true');
-    } else {
-      control.displayEl.removeAttribute('aria-hidden');
-    }
+  beardSelect.disabled = isFemale;
+  if (isFemale) {
+    beardSelect.setAttribute('tabindex', '-1');
+  } else {
+    beardSelect.removeAttribute('tabindex');
   }
 }
 
@@ -2273,17 +2107,49 @@ function updateCustomizerUI() {
   }
 
   updateGenderButtonsUI(dwarf.gender);
-  dwarf.clan = updateTraitControlUI('clan', dwarf.clan);
-  dwarf.guild = updateTraitControlUI('guild', dwarf.guild);
-  dwarf.profession = updateTraitControlUI('profession', dwarf.profession);
-  dwarf.skin = updateTraitControlUI('skin', dwarf.skin);
-  dwarf.eyes = updateTraitControlUI('eyes', dwarf.eyes);
-  dwarf.hairStyle = updateTraitControlUI('hairStyle', dwarf.hairStyle);
-  dwarf.hair = updateTraitControlUI('hair', dwarf.hair);
+  ensureSelectValue(
+    elements.dwarfClanSelect,
+    dwarf.clan,
+    dwarfOptions.clan[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfGuildSelect,
+    dwarf.guild,
+    dwarfOptions.guild[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfProfessionSelect,
+    dwarf.profession,
+    dwarfOptions.profession[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfSkinSelect,
+    dwarf.skin,
+    dwarfOptions.skin[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfEyeSelect,
+    dwarf.eyes,
+    dwarfOptions.eyes[0].value
+  );
+  ensureSelectValue(
+    elements.dwarfHairStyleSelect,
+    resolveHairStyleValue(dwarf.hairStyle),
+    defaultHairStyleValue
+  );
+  ensureSelectValue(
+    elements.dwarfHairSelect,
+    dwarf.hair,
+    dwarfOptions.hair[0].value
+  );
   if (dwarf.gender === 'female' && dwarf.beard !== 'clean') {
     dwarf.beard = 'clean';
   }
-  dwarf.beard = updateTraitControlUI('beard', dwarf.beard);
+  ensureSelectValue(
+    elements.dwarfBeardSelect,
+    dwarf.beard,
+    dwarfOptions.beard[0].value
+  );
 
   updateBeardFieldState(dwarf);
 
@@ -6498,54 +6364,58 @@ function attachEvents() {
     });
   }
 
-  if (elements.dwarfTraitControls) {
-    elements.dwarfTraitControls.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-direction]');
-      if (!button || !elements.dwarfTraitControls.contains(button)) {
-        return;
-      }
-      if (button.disabled || button.getAttribute('aria-disabled') === 'true') {
-        return;
-      }
-      const control = button.closest('[data-trait-control]');
-      const trait = control?.dataset.traitControl;
-      if (!trait) {
-        return;
-      }
-      const { direction } = button.dataset;
-      rotateTraitOption(trait, direction || 'next');
+  if (elements.dwarfClanSelect) {
+    elements.dwarfClanSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('clan', event.target.value);
     });
+  }
 
-    elements.dwarfTraitControls.addEventListener('keydown', (event) => {
-      const targetControl = event.target.closest('[data-trait-control]');
-      if (!targetControl || !elements.dwarfTraitControls.contains(targetControl)) {
-        return;
-      }
-      const trait = targetControl.dataset.traitControl;
-      if (!trait) {
-        return;
-      }
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        event.preventDefault();
-        event.stopPropagation();
-        rotateTraitOption(trait, event.key === 'ArrowLeft' ? -1 : 1);
-      }
+  if (elements.dwarfGuildSelect) {
+    elements.dwarfGuildSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('guild', event.target.value);
+    });
+  }
+
+  if (elements.dwarfProfessionSelect) {
+    elements.dwarfProfessionSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('profession', event.target.value);
+    });
+  }
+
+  if (elements.dwarfSkinSelect) {
+    elements.dwarfSkinSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('skin', event.target.value);
+    });
+  }
+
+  if (elements.dwarfEyeSelect) {
+    elements.dwarfEyeSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('eyes', event.target.value);
+    });
+  }
+
+  if (elements.dwarfHairStyleSelect) {
+    elements.dwarfHairStyleSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('hairStyle', event.target.value);
+    });
+  }
+
+  if (elements.dwarfHairSelect) {
+    elements.dwarfHairSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('hair', event.target.value);
+    });
+  }
+
+  if (elements.dwarfBeardSelect) {
+    elements.dwarfBeardSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('beard', event.target.value);
     });
   }
 
   document.addEventListener('keydown', (event) => {
     const activeElement = document.activeElement;
-    const tagName = activeElement?.tagName;
-    const inTraitControl =
-      typeof activeElement?.closest === 'function'
-        ? activeElement.closest('[data-trait-control]')
-        : null;
     const isFormControl =
-      !!activeElement &&
-      (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(tagName) ||
-        activeElement.getAttribute('role') === 'button' ||
-        activeElement.hasAttribute('contenteditable') ||
-        Boolean(inTraitControl));
+      activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
     if (isDwarfCustomizerVisible() && !isFormControl) {
       if (event.key === 'ArrowLeft') {
