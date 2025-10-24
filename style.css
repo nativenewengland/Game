@@ -95,6 +95,16 @@ select,
   gap: 0.5rem;
 }
 
+.embark-header--founder {
+  justify-items: center;
+}
+
+.founder-title-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .embark-eyebrow {
   margin: 0;
   font-size: 0.9rem;
