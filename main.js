@@ -5703,15 +5703,19 @@ function createWorld(seedString) {
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
           continue;
         }
+        if (tile.overlay) {
+          continue;
+        }
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = tile.base === snowTileKey;
-        const overlayIsTree =
-          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
         const heightValue = elevationField[idx];
         const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
         const rainfallValue = rainfallField[idx];
         const drynessScore = clamp(1 - rainfallValue, 0, 1);
-        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        let terrainBonus = 0;
         if (baseIsSnow) {
           terrainBonus += 0.18;
         } else if (baseIsGrass) {
@@ -5770,6 +5774,14 @@ function createWorld(seedString) {
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
           continue;
         }
+        if (tile.overlay) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
         const name = `Evil Wizard's ${generateTowerName(rng)}`;
         tile.structure = evilWizardTowerKey;
         tile.structureName = name;
@@ -5799,21 +5811,19 @@ function createWorld(seedString) {
         ) {
           continue;
         }
-        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+        if (tile.overlay) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = tile.base === snowTileKey;
-        const overlayIsTree =
-          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
-        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+        if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
         const heightValue = elevationField[idx];
         const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
         const rainfallValue = rainfallField[idx];
         const drynessScore = clamp(1 - rainfallValue, 0, 1);
-        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        let terrainBonus = 0;
         if (baseIsSnow) {
           terrainBonus += 0.18;
         } else if (baseIsGrass) {
@@ -5869,14 +5879,12 @@ function createWorld(seedString) {
         ) {
           continue;
         }
-        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+        if (tile.overlay) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = tile.base === snowTileKey;
-        const overlayIsTree =
-          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
-        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+        if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
         const name = generateTowerName(rng);
