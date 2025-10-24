@@ -44,6 +44,7 @@ const dwarfSpriteSheets = {
 
 const baseTileCoords = {
   GRASS: { row: 0, col: 1 },
+  SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
@@ -3519,6 +3520,47 @@ function createWorld(seedString) {
   normalizeField(drainageField);
   const grassTileKey = resolveTileName('GRASS');
   const waterTileKey = resolveTileName('WATER');
+  const hasSnowTile = tileLookup.has('SNOW');
+  const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
+  const landBaseKeys = new Set([grassTileKey]);
+  if (hasSnowTile) {
+    landBaseKeys.add(snowTileKey);
+  }
+  const snowLatitudeStart = 0.7;
+  const snowLatitudeFull = 0.86;
+  const snowLatitudeRange = Math.max(snowLatitudeFull - snowLatitudeStart, 0.0001);
+  const snowNoiseSeed = (seedNumber + 0x27d4eb2d) >>> 0;
+  const snowNoiseScale = 5.3 + rng() * 3.2;
+  const snowNoiseOffsetX = rng() * 4096;
+  const snowNoiseOffsetY = rng() * 4096;
+
+  const determineLandBaseTile = hasSnowTile
+    ? (x, y, heightValue) => {
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const latitude = 1 - normalizedY;
+        if (latitude >= snowLatitudeFull) {
+          return snowTileKey;
+        }
+        if (latitude <= snowLatitudeStart) {
+          return grassTileKey;
+        }
+        const snowBandFactor = clamp((latitude - snowLatitudeStart) / snowLatitudeRange, 0, 1);
+        const elevationFactor = clamp((heightValue - seaLevel) * 3.8, 0, 1);
+        const coverage = clamp(snowBandFactor * 0.7 + elevationFactor * 0.3, 0, 1);
+        const snowNoise = octaveNoise(
+          (normalizedX + snowNoiseOffsetX) * snowNoiseScale,
+          (normalizedY + snowNoiseOffsetY) * snowNoiseScale,
+          snowNoiseSeed,
+          3,
+          0.55,
+          2.2
+        );
+        return snowNoise < coverage ? snowTileKey : grassTileKey;
+      }
+    : () => grassTileKey;
+
+  const isLandBaseTile = (baseKey) => landBaseKeys.has(baseKey);
   const tiles = Array.from(
     { length: height },
     () =>
@@ -3579,7 +3621,7 @@ function createWorld(seedString) {
       const isWater = heightValue <= seaLevel;
       waterMask[idx] = isWater ? 1 : 0;
       const tile = tiles[y][x];
-      tile.base = isWater ? waterTileKey : grassTileKey;
+      tile.base = isWater ? waterTileKey : determineLandBaseTile(x, y, heightValue);
       tile.overlay = null;
       tile.structure = null;
       tile.structureName = null;
@@ -4144,7 +4186,8 @@ function createWorld(seedString) {
       if (landNeighbors >= 6) {
         waterMask[idx] = 0;
         const tile = tiles[y][x];
-        tile.base = grassTileKey;
+        const heightValue = elevationField[idx];
+        tile.base = determineLandBaseTile(x, y, heightValue);
         tile.overlay = null;
         tile.structure = null;
         tile.structureName = null;
@@ -4184,7 +4227,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure || tile.river) {
+        if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
         const elevationValue = elevationField[idx];
@@ -4258,7 +4301,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[candidate.y][candidate.x];
-        if (!tile || tile.base !== grassTileKey || tile.overlay || tile.structure || tile.river) {
+        if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
         const name = generateTownName(rng);
@@ -4350,7 +4393,7 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
+        if (tile.overlay || !isLandBaseTile(tile.base) || tile.structure || tile.river) {
           continue;
         }
         const density = treeDensityField[idx];
@@ -4374,7 +4417,7 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
-          if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
+          if (tile.overlay || !isLandBaseTile(tile.base) || tile.structure || tile.river) {
             continue;
           }
           let neighborTrees = 0;
@@ -4419,7 +4462,7 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
-        if (tile.overlay || tile.base !== grassTileKey || tile.structure || tile.river) {
+        if (tile.overlay || !isLandBaseTile(tile.base) || tile.structure || tile.river) {
           continue;
         }
         treeMask[idx] = 1;
