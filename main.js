@@ -3704,23 +3704,29 @@ function createWorld(seedString) {
           continue;
         }
         const elevationValue = elevationField[idx];
-        const elevationScore = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.08)) * 2.6, 0, 1);
-        let waterNeighbors = 0;
+        const preferredElevation = seaLevel + 0.18;
+        const elevationScore = clamp(1 - Math.abs(elevationValue - preferredElevation) * 2.1, 0, 1);
+        let roughness = 0;
+        let neighborCount = 0;
         for (let i = 0; i < neighborOffsets8.length; i += 1) {
           const nx = x + neighborOffsets8[i][0];
           const ny = y + neighborOffsets8[i][1];
           if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
             continue;
           }
-          if (waterMask[ny * width + nx]) {
-            waterNeighbors += 1;
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
           }
+          roughness += Math.abs(elevationValue - elevationField[nIdx]);
+          neighborCount += 1;
         }
-        const waterScore = waterNeighbors / neighborOffsets8.length;
+        const averageRoughness = neighborCount > 0 ? roughness / neighborCount : 0;
+        const slopeScore = clamp(1 - averageRoughness * 12, 0, 1);
         const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
         const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2);
         const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
-        const score = elevationScore * 0.55 + waterScore * 0.25 + edgeScore * 0.15 + rng() * 0.2;
+        const score = elevationScore * 0.45 + slopeScore * 0.25 + edgeScore * 0.15 + rng() * 0.25;
         townCandidates.push({ x, y, score });
       }
     }
