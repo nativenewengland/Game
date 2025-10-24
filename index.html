@@ -268,49 +268,49 @@
 
     <section
       id="dwarf-customizer"
-      class="screen hidden embark-screen"
+      class="screen hidden character-creation-screen"
       aria-label="Founder customiser"
     >
       <div class="embark-backdrop" aria-hidden="true"></div>
-      <form id="dwarf-customizer-form" class="embark-panel">
-        <header class="embark-header">
-          <p class="embark-eyebrow">Founding Dwarf</p>
-          <h2>Design Your Founder</h2>
-          <p class="embark-description">
+      <form id="dwarf-customizer-form" class="character-creation-panel">
+        <header class="cc-header">
+          <p class="cc-eyebrow">Founding Dwarf</p>
+          <h2 class="cc-title">Design Your Founder</h2>
+          <p class="cc-description">
             Tune the look of your dwarf before striking the earth.
           </p>
         </header>
-        <div class="customizer-layout">
-          <aside class="roster-column pixel-panel" aria-label="Founder overview">
-            <h3>Founding Dwarf</h3>
-            <ul id="dwarf-roster-list" class="dwarf-roster-list" role="list"></ul>
+        <div class="character-creation-layout">
+          <aside class="cc-roster cc-panel" aria-label="Founder overview">
+            <h3 class="cc-roster-title">Founding Dwarf</h3>
+            <ul id="dwarf-roster-list" class="cc-roster-list" role="list"></ul>
           </aside>
-          <section class="customizer-main" aria-live="polite">
-            <div class="customizer-main-card pixel-panel">
-              <div class="customizer-top-bar pixel-subpanel pixel-bar">
-                <button type="button" id="dwarf-prev" class="secondary" aria-label="Previous dwarf">
+          <section class="cc-main" aria-live="polite">
+            <div class="cc-main-card cc-panel">
+              <div class="cc-top-bar cc-subpanel">
+                <button type="button" id="dwarf-prev" class="cc-arrow-button" aria-label="Previous dwarf">
                   ◀
                 </button>
-                <div class="dwarf-slot-info">
-                  <p id="dwarf-slot-label" class="slot-label">Founding Dwarf</p>
-                  <label class="field-label" for="dwarf-name-input">Name</label>
+                <div class="cc-slot-info">
+                  <p id="dwarf-slot-label" class="cc-slot-label">Founding Dwarf</p>
+                  <label class="cc-field-label" for="dwarf-name-input">Name</label>
                   <input
                     type="text"
                     id="dwarf-name-input"
-                    class="dwarf-name-input"
+                    class="cc-name-input"
                     maxlength="40"
                     autocomplete="off"
                     required
                   />
                 </div>
-                <button type="button" id="dwarf-next" class="secondary" aria-label="Next dwarf">
+                <button type="button" id="dwarf-next" class="cc-arrow-button" aria-label="Next dwarf">
                   ▶
                 </button>
               </div>
-              <div class="customizer-body">
-                <div class="customizer-visuals">
-                  <div class="customizer-preview pixel-subpanel" role="group" aria-label="Appearance preview">
-                    <h3 class="subpanel-title">Appearance</h3>
+              <div class="cc-body">
+                <div class="cc-visuals">
+                  <div class="cc-preview cc-subpanel" role="group" aria-label="Appearance preview">
+                    <h3 class="cc-panel-title">Appearance</h3>
                     <div class="dwarf-preview-stack">
                       <div
                         id="dwarf-portrait"
@@ -336,25 +336,25 @@
                         ></canvas>
                       </div>
                     </div>
-                    <p id="dwarf-trait-summary" class="trait-summary"></p>
+                    <p id="dwarf-trait-summary" class="cc-trait-summary"></p>
                   </div>
-                  <div class="customizer-inline-actions pixel-subpanel">
-                    <h3 class="subpanel-title">Legendary Luck</h3>
-                    <p class="subpanel-description">Spin the dice for a fresh face.</p>
-                    <div class="randomise-button">
+                  <div class="cc-inline-actions cc-subpanel">
+                    <h3 class="cc-panel-title">Legendary Luck</h3>
+                    <p class="cc-panel-description">Spin the dice for a fresh face.</p>
+                    <div class="cc-randomizer">
                       <button
                         type="button"
                         id="dwarf-randomise"
-                        class="secondary randomise-button__dice"
+                        class="cc-random-button"
                         aria-label="Randomise dwarf"
                       ></button>
                     </div>
                   </div>
                 </div>
-                <div class="customizer-fields pixel-subpanel">
-                  <div class="field-grid" id="dwarf-trait-controls">
-                    <div class="field-group field-group--gender">
-                      <p id="dwarf-gender-label" class="field-label">Gender</p>
+                <div class="cc-fields cc-subpanel">
+                  <div class="cc-field-grid" id="dwarf-trait-controls">
+                    <div class="cc-field-group cc-field-group--gender">
+                      <p id="dwarf-gender-label" class="cc-field-label">Gender</p>
                       <div
                         id="dwarf-gender-buttons"
                         class="gender-toggle"
@@ -396,8 +396,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="clan">
-                      <p id="dwarf-clan-label" class="field-label">Clan</p>
+                    <div class="cc-field-group cc-control" data-trait-control="clan">
+                      <p id="dwarf-clan-label" class="cc-field-label">Clan</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-clan-label">
                         <button
                           type="button"
@@ -422,8 +422,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="guild">
-                      <p id="dwarf-guild-label" class="field-label">Guild</p>
+                    <div class="cc-field-group cc-control" data-trait-control="guild">
+                      <p id="dwarf-guild-label" class="cc-field-label">Guild</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-guild-label">
                         <button
                           type="button"
@@ -448,8 +448,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="profession">
-                      <p id="dwarf-profession-label" class="field-label">Profession</p>
+                    <div class="cc-field-group cc-control" data-trait-control="profession">
+                      <p id="dwarf-profession-label" class="cc-field-label">Profession</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-profession-label">
                         <button
                           type="button"
@@ -474,8 +474,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="skin">
-                      <p id="dwarf-skin-label" class="field-label">Skin tone</p>
+                    <div class="cc-field-group cc-control" data-trait-control="skin">
+                      <p id="dwarf-skin-label" class="cc-field-label">Skin tone</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-skin-label">
                         <button
                           type="button"
@@ -500,8 +500,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="eyes">
-                      <p id="dwarf-eye-label" class="field-label">Eye colour</p>
+                    <div class="cc-field-group cc-control" data-trait-control="eyes">
+                      <p id="dwarf-eye-label" class="cc-field-label">Eye colour</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-eye-label">
                         <button
                           type="button"
@@ -526,8 +526,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="hairStyle">
-                      <p id="dwarf-hair-style-label" class="field-label">Hair style</p>
+                    <div class="cc-field-group cc-control" data-trait-control="hairStyle">
+                      <p id="dwarf-hair-style-label" class="cc-field-label">Hair style</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-hair-style-label">
                         <button
                           type="button"
@@ -552,8 +552,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" data-trait-control="hair">
-                      <p id="dwarf-hair-label" class="field-label">Hair colour</p>
+                    <div class="cc-field-group cc-control" data-trait-control="hair">
+                      <p id="dwarf-hair-label" class="cc-field-label">Hair colour</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-hair-label">
                         <button
                           type="button"
@@ -578,8 +578,8 @@
                       </div>
                     </div>
 
-                    <div class="field-group cc-control" id="dwarf-beard-field-group" data-trait-control="beard">
-                      <p id="dwarf-beard-label" class="field-label">Beard style</p>
+                    <div class="cc-field-group cc-control" id="dwarf-beard-field-group" data-trait-control="beard">
+                      <p id="dwarf-beard-label" class="cc-field-label">Beard style</p>
                       <div class="cc-control-row" role="group" aria-labelledby="dwarf-beard-label">
                         <button
                           type="button"
@@ -609,9 +609,9 @@
             </div>
           </section>
         </div>
-        <footer class="embark-actions customizer-actions">
-          <button type="button" id="dwarf-back" class="secondary">Back</button>
-          <button type="submit" class="primary">Begin Expedition</button>
+        <footer class="cc-footer">
+          <button type="button" id="dwarf-back" class="cc-back-button">Back</button>
+          <button type="submit" class="cc-create-button">Create</button>
         </footer>
       </form>
     </section>
