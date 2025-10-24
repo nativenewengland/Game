@@ -761,8 +761,8 @@ const dwarfPortraitConfig = {
   hairOffsetY: -2,
   beardOffsetY: 2,
   eyePositions: [
-    { x: 13, y: 15 },
-    { x: 18, y: 15 }
+    { x: 13, y: 11 },
+    { x: 18, y: 11 }
   ],
   eyeSize: 2
 };
@@ -847,7 +847,6 @@ const elements = {
   dwarfCustomizer: document.getElementById('dwarf-customizer'),
   dwarfCustomizerForm: document.getElementById('dwarf-customizer-form'),
   dwarfRosterList: document.getElementById('dwarf-roster-list'),
-  dwarfRollNew: document.getElementById('dwarf-roll-new'),
   dwarfPrev: document.getElementById('dwarf-prev'),
   dwarfNext: document.getElementById('dwarf-next'),
   dwarfSlotLabel: document.getElementById('dwarf-slot-label'),
@@ -1705,11 +1704,6 @@ function randomiseActiveDwarf() {
   }
   dwarves[activeIndex] = createRandomDwarf();
   setActiveDwarf(activeIndex);
-}
-
-function rollNewDwarfProfile() {
-  initialiseDwarfParty();
-  updateCustomizerUI();
 }
 
 function isDwarfCustomizerVisible() {
@@ -4656,12 +4650,6 @@ function attachEvents() {
     elements.dwarfRandomise.addEventListener('click', () => {
       randomiseActiveDwarf();
       playSoundEffect(soundEffects.randomiseClick);
-    });
-  }
-
-  if (elements.dwarfRollNew) {
-    elements.dwarfRollNew.addEventListener('click', () => {
-      rollNewDwarfProfile();
     });
   }
 
