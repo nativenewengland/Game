@@ -339,16 +339,22 @@ const dwarfholdRulerTitles = {
   female: [
     'High Thane',
     'Forge Matron',
-    'Runesmith Queen',
     'Hearthmother',
-    'Deepwarden'
+    'Deepwarden',
+    'Queen',
+    'Thane',
+    'High Queen'
   ],
   male: [
     'High Thane',
     'Forge Lord',
-    'Runesmith Prince',
     'Mountain King',
-    'Deepwarden'
+    'Deepwarden',
+    'Thane',
+    'King',
+    'King Under The Mountain',
+    'Prince',
+    'High Runesmith'
   ],
   neutral: ['High Thane', 'Forge Thane']
 };
