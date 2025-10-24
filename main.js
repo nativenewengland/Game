@@ -12,6 +12,12 @@ const tileSheets = {
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
     tileSize: 16,
     image: null
+  },
+  worldEdgeGlacier: {
+    key: 'worldEdgeGlacier',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_edge_glacier.png',
+    tileSize: 16,
+    image: null
   }
 };
 
@@ -106,6 +112,14 @@ const riverTileCoords = {
   RIVER_MAJOR_MOUTH_NARROW_E: { row: 8, col: 15 }
 };
 
+const icebergTileCoords = {
+  ICEBERG_SURROUND_1: { row: 10, col: 4 },
+  ICEBERG_SURROUND_2: { row: 11, col: 4 },
+  ICEBERG_SURROUND_3: { row: 12, col: 4 },
+  ICEBERG_SURROUND_4: { row: 13, col: 4 },
+  ICEBERG_SURROUND_5: { row: 14, col: 4 }
+};
+
 const tileLookup = new Map();
 
 function registerTiles(sheetKey, coordMap) {
@@ -122,6 +136,7 @@ function registerTiles(sheetKey, coordMap) {
 
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
+registerTiles('worldEdgeGlacier', icebergTileCoords);
 
 // The evil wizard tower sprite only shows up on some tilesheets. If the
 // currently loaded set does not define it, fall back to the generic tower so
@@ -134,11 +149,11 @@ if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
 }
 
 const mapSizePresets = [
-  { key: 'mini', label: 'Mini', width: 120, height: 90 },
-  { key: 'small', label: 'Small', width: 160, height: 120 },
-  { key: 'normal', label: 'Normal', width: 200, height: 150 },
-  { key: 'large', label: 'Large', width: 260, height: 195 },
-  { key: 'extra-large', label: 'Extra Large', width: 320, height: 240 }
+  { key: 'mini', label: 'Mini', width: 192, height: 144 },
+  { key: 'small', label: 'Small', width: 260, height: 195 },
+  { key: 'normal', label: 'Normal', width: 324, height: 243 },
+  { key: 'large', label: 'Large', width: 424, height: 318 },
+  { key: 'extra-large', label: 'Extra Large', width: 520, height: 390 }
 ];
 
 const mapSizeByKey = mapSizePresets.reduce((acc, preset) => {
@@ -170,6 +185,7 @@ function getMapSizeLabel(preset, width, height) {
 }
 
 const defaultMapSize = getMapSizePreset('normal');
+const defaultForestFrequency = 35;
 const defaultMountainFrequency = 35;
 
 const worldNames = [
@@ -795,7 +811,7 @@ function generateDwarfholdDetails(name, random) {
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
 
-  const classification = population >= 3000 ? 'greatDwarfhold' : 'dwarfhold';
+  const classification = population >= 4000 ? 'greatDwarfhold' : 'dwarfhold';
   const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
 
   return {
@@ -873,7 +889,7 @@ const state = {
     height: defaultMapSize.height,
     seedString: '',
     lastSeedString: '',
-    forestFrequency: 50,
+    forestFrequency: defaultForestFrequency,
     mountainFrequency: defaultMountainFrequency,
     riverFrequency: 50,
     humanSettlementFrequency: 50,
@@ -982,25 +998,116 @@ const dwarfHairStyles = {
     sheet: 'hair',
     rows: { default: 8 }
   },
-  curly_short: {
-    label: 'Curly — Close Curls',
-    description: 'close-cropped curly',
+  curly_stubble: {
+    label: 'Curly — Close Shave',
+    description: 'closely shorn curly',
+    sheet: 'hairCurly',
+    rows: { default: 0 }
+  },
+  curly_short_unkempt: {
+    label: 'Curly — Short & Tousled',
+    description: 'short unkempt curly',
+    sheet: 'hairCurly',
+    rows: { default: 1 }
+  },
+  curly_mid_unkempt: {
+    label: 'Curly — Mid-Length Tousled',
+    description: 'mid-length unkempt curly',
+    sheet: 'hairCurly',
+    rows: { default: 2 }
+  },
+  curly_long_unkempt: {
+    label: 'Curly — Long & Tousled',
+    description: 'long unkempt curly',
+    sheet: 'hairCurly',
+    rows: { default: 3 }
+  },
+  curly_short_combed: {
+    label: 'Curly — Short Combed',
+    description: 'short combed curly',
     sheet: 'hairCurly',
     rows: { default: 4 }
   },
-  curly_full: {
-    label: 'Curly — Full Curls',
-    description: 'full curly',
+  curly_mid_combed: {
+    label: 'Curly — Mid-Length Combed',
+    description: 'mid-length combed curly',
     sheet: 'hairCurly',
     rows: { default: 5 }
   },
-  curly_wild: {
-    label: 'Curly — Wild Mane',
-    description: 'wild curly',
+  curly_long_combed: {
+    label: 'Curly — Long Combed',
+    description: 'long combed curly',
     sheet: 'hairCurly',
     rows: { default: 6 }
+  },
+  curly_short_braided: {
+    label: 'Curly — Short Braids',
+    description: 'short braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 7 }
+  },
+  curly_mid_braided: {
+    label: 'Curly — Mid Braids',
+    description: 'mid-length braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 8 }
+  },
+  curly_long_braided: {
+    label: 'Curly — Long Braids',
+    description: 'long braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 9 }
+  },
+  curly_short_double_braids: {
+    label: 'Curly — Short Double Braids',
+    description: 'short double-braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 10 }
+  },
+  curly_mid_double_braids: {
+    label: 'Curly — Mid Double Braids',
+    description: 'mid-length double-braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 11 }
+  },
+  curly_long_double_braids: {
+    label: 'Curly — Long Double Braids',
+    description: 'long double-braided curly',
+    sheet: 'hairCurly',
+    rows: { default: 12 }
   }
 };
+
+const dwarfHairStyleAliases = {
+  curly_short: 'curly_short_combed',
+  curly_full: 'curly_mid_combed',
+  curly_wild: 'curly_long_combed'
+};
+
+const dwarfHeadTypes = {
+  type1: { label: 'Head Type I', column: 0 },
+  type2: { label: 'Head Type II', column: 1 },
+  type3: { label: 'Head Type III', column: 2 },
+  type4: { label: 'Head Type IV', column: 3 },
+  type5: { label: 'Head Type V', column: 4 },
+  type6: { label: 'Head Type VI', column: 5 },
+  type7: { label: 'Head Type VII', column: 6 },
+  type8: { label: 'Head Type VIII', column: 7 }
+};
+
+const dwarfHeadOptions = Object.entries(dwarfHeadTypes).map(([value, config]) => ({
+  value,
+  label: config.label
+}));
+
+const defaultHeadTypeValue = 'type5';
+
+function resolveHeadTypeValue(value) {
+  if (!value) {
+    return defaultHeadTypeValue;
+  }
+  return Object.prototype.hasOwnProperty.call(dwarfHeadTypes, value) ? value : defaultHeadTypeValue;
+}
 
 const dwarfOptions = {
   gender: [
@@ -1037,6 +1144,7 @@ const dwarfOptions = {
     { value: 'ashen', label: 'Ashen Silver', color: '#c0c6d1' },
     { value: 'white', label: 'Snow White', color: '#f1f2f4' }
   ],
+  head: dwarfHeadOptions,
   beard: [
     { value: 'clean', label: 'Clean-shaven' },
     { value: 'short', label: 'Short Beard' },
@@ -1054,6 +1162,7 @@ const editableDwarfTraits = new Set([
   'gender',
   'skin',
   'eyes',
+  'head',
   'hairStyle',
   'hair',
   'beard',
@@ -1108,7 +1217,12 @@ const dwarfHairColorToFrame = {
 };
 
 function resolveHairStyleValue(value) {
-  return value && dwarfHairStyles[value] ? value : defaultHairStyleValue;
+  if (!value) {
+    return defaultHairStyleValue;
+  }
+  const alias = dwarfHairStyleAliases[value];
+  const key = alias || value;
+  return dwarfHairStyles[key] ? key : defaultHairStyleValue;
 }
 
 function getHairStyleConfig(value) {
@@ -1135,7 +1249,7 @@ const dwarfPortraitConfig = {
   tileSize: 32,
   scale: 4,
   baseFrame: { sheet: 'body', col: 4, row: 8, tint: '#5b473c', offsetY: 4 },
-  headFrame: { sheet: 'eyes', col: 4, row: 0, offsetY: 0 },
+  head: { sheet: 'eyes', row: 0, offsetY: 0 },
   hairOffsetY: -2,
   beardOffsetY: 2,
   eyePositions: [
@@ -1239,6 +1353,8 @@ const elements = {
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
   dwarfSkinSlider: document.getElementById('dwarf-skin-slider'),
   dwarfSkinSliderValue: document.getElementById('dwarf-skin-slider-value'),
+  dwarfHeadSlider: document.getElementById('dwarf-head-slider'),
+  dwarfHeadSliderValue: document.getElementById('dwarf-head-slider-value'),
   dwarfEyeSlider: document.getElementById('dwarf-eye-slider'),
   dwarfEyeSliderValue: document.getElementById('dwarf-eye-slider-value'),
   dwarfHairStyleSlider: document.getElementById('dwarf-hair-style-slider'),
@@ -1588,7 +1704,13 @@ function getOptionByValue(category, value) {
   if (!bucket || bucket.length === 0) {
     return null;
   }
-  return bucket.find((option) => option.value === value) || bucket[0];
+  let resolvedValue = value;
+  if (category === 'hairStyle') {
+    resolvedValue = resolveHairStyleValue(value);
+  } else if (category === 'head') {
+    resolvedValue = resolveHeadTypeValue(value);
+  }
+  return bucket.find((option) => option.value === resolvedValue) || bucket[0];
 }
 
 function getOptionLabel(category, value) {
@@ -1635,6 +1757,7 @@ function createRandomDwarf(preferredGender) {
   const genderValue = genderOption ? genderOption.value : dwarfOptions.gender[0].value;
   const skinOption = randomChoice(dwarfOptions.skin) || dwarfOptions.skin[0];
   const eyeOption = randomChoice(dwarfOptions.eyes) || dwarfOptions.eyes[0];
+  const headOption = randomChoice(dwarfOptions.head) || dwarfOptions.head[0];
   const hairStyleOption = randomChoice(dwarfOptions.hairStyle) || dwarfOptions.hairStyle[0];
   const hairOption = randomChoice(dwarfOptions.hair) || dwarfOptions.hair[0];
   const beardOption =
@@ -1650,6 +1773,7 @@ function createRandomDwarf(preferredGender) {
     gender: genderValue,
     skin: skinOption.value,
     eyes: eyeOption.value,
+    head: resolveHeadTypeValue(headOption.value),
     hairStyle: resolveHairStyleValue(hairStyleOption.value),
     hair: hairOption.value,
     beard: genderValue === 'female' ? 'clean' : beardOption.value,
@@ -1742,6 +1866,21 @@ function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
   ctx.drawImage(offscreen, 0, 0, sw, sh, destX, destY, destW, destH);
 }
 
+function getHeadFrame(headValue) {
+  const headConfig = dwarfPortraitConfig.head;
+  const resolvedValue = resolveHeadTypeValue(headValue);
+  const headType = dwarfHeadTypes[resolvedValue];
+  if (!headConfig || !headType) {
+    return null;
+  }
+  return {
+    sheet: headConfig.sheet,
+    col: headType.column,
+    row: headConfig.row,
+    offsetY: headConfig.offsetY ?? 0
+  };
+}
+
 function getHairFrame(dwarf, hairOption, hairStyleValue) {
   const styleConfig = getHairStyleConfig(hairStyleValue ?? dwarf?.hairStyle);
   const rows = styleConfig?.rows || {};
@@ -1783,7 +1922,7 @@ function getBeardFrame(dwarf, hairOption) {
   };
 }
 
-function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption) {
+function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
   const ctx = ensurePortraitContext();
   if (!ctx) {
     return;
@@ -1792,7 +1931,7 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
   if (!canvas) {
     return;
   }
-  const { tileSize, scale, baseFrame, headFrame, eyePositions, eyeSize } = dwarfPortraitConfig;
+  const { tileSize, scale, baseFrame, head, eyePositions, eyeSize } = dwarfPortraitConfig;
   const destSize = tileSize * scale;
   const baseX = Math.floor((canvas.width - destSize) / 2);
   const baseY = Math.floor((canvas.height - destSize) / 2);
@@ -1803,9 +1942,12 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
     drawTintedSprite(ctx, baseFrame.sheet, baseFrame, baseX, baseY, scale, baseFrame.tint);
   }
 
-  if (headFrame) {
-    const skinColor = skinOption?.color || '#c59b7d';
-    drawTintedSprite(ctx, headFrame.sheet, headFrame, baseX, baseY, scale, skinColor);
+  if (head) {
+    const headFrame = getHeadFrame(headOption?.value ?? dwarf?.head);
+    if (headFrame) {
+      const skinColor = skinOption?.color || '#c59b7d';
+      drawTintedSprite(ctx, headFrame.sheet, headFrame, baseX, baseY, scale, skinColor);
+    }
   }
 
   const hairStyleValue = resolveHairStyleValue(hairStyleOption?.value ?? dwarf?.hairStyle);
@@ -1845,8 +1987,9 @@ function updateDwarfPortrait(dwarf) {
   const hairOption = getOptionByValue('hair', dwarf.hair);
   const eyeOption = getOptionByValue('eyes', dwarf.eyes);
   const hairStyleOption = getOptionByValue('hairStyle', dwarf.hairStyle);
+  const headOption = getOptionByValue('head', dwarf.head);
 
-  renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption);
+  renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
 
   const beardValue = dwarf.beard || 'clean';
   const genderLabel = getOptionLabel('gender', dwarf.gender);
@@ -1858,6 +2001,7 @@ function updateDwarfPortrait(dwarf) {
     : `${hairLabel} hair`;
   const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
   const beardLabel = getOptionLabel('beard', beardValue).toLowerCase();
+  const headLabel = getOptionLabel('head', dwarf.head).toLowerCase();
   const clanLabel = getOptionLabel('clan', dwarf.clan);
   const guildLabel = getOptionLabel('guild', dwarf.guild);
   const professionLabel = getOptionLabel('profession', dwarf.profession);
@@ -1872,7 +2016,7 @@ function updateDwarfPortrait(dwarf) {
   } else if (guildLabel) {
     affiliationParts.push(`of the ${guildLabel}`);
   }
-  let ariaDescription = `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
+  let ariaDescription = `${genderLabel} dwarf with ${headLabel} features, ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
   if (affiliationParts.length > 0) {
     ariaDescription += ` ${affiliationParts.join(', ')}.`;
   }
@@ -1893,10 +2037,11 @@ function buildDwarfSummary(dwarf) {
     ? `${hairStyleDescription} ${hairLabel} hair`
     : `${hairLabel} hair`;
   const beardLabel = getOptionLabel('beard', dwarf.beard).toLowerCase();
+  const headLabel = getOptionLabel('head', dwarf.head).toLowerCase();
   const clanLabel = getOptionLabel('clan', dwarf.clan);
   const guildLabel = getOptionLabel('guild', dwarf.guild);
   const professionLabel = getOptionLabel('profession', dwarf.profession);
-  let summary = `${genderLabel} dwarf with ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
+  let summary = `${genderLabel} dwarf with ${headLabel} features, ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
   const affiliationSentences = [];
   if (clanLabel) {
     affiliationSentences.push(`Member of the ${clanLabel} clan`);
@@ -1952,10 +2097,11 @@ function updateRosterList() {
     const traits = document.createElement('p');
     traits.className = 'dwarf-roster-traits';
     const genderLabel = getOptionLabel('gender', dwarf.gender);
+    const headLabel = getOptionLabel('head', dwarf.head);
     const hairStyleLabel = getOptionLabel('hairStyle', dwarf.hairStyle);
     const hairLabel = getOptionLabel('hair', dwarf.hair);
     const beardLabel = getOptionLabel('beard', dwarf.beard);
-    traits.textContent = `${genderLabel} • ${hairStyleLabel} • ${hairLabel} • ${beardLabel}`;
+    traits.textContent = `${genderLabel} • ${headLabel} • ${hairStyleLabel} • ${hairLabel} • ${beardLabel}`;
 
     const affiliations = document.createElement('p');
     affiliations.className = 'dwarf-roster-traits dwarf-roster-affiliations';
@@ -2150,6 +2296,7 @@ function updateCustomizerUI() {
   if (!dwarf) {
     return;
   }
+  dwarf.head = resolveHeadTypeValue(dwarf.head);
   const total = state.dwarfParty.dwarves.length;
   if (elements.dwarfSlotLabel) {
     if (total === 1) {
@@ -2184,6 +2331,13 @@ function updateCustomizerUI() {
     elements.dwarfSkinSliderValue,
     dwarf.skin,
     dwarfOptions.skin[0].value
+  );
+  ensureTraitSliderValue(
+    'head',
+    elements.dwarfHeadSlider,
+    elements.dwarfHeadSliderValue,
+    resolveHeadTypeValue(dwarf.head),
+    defaultHeadTypeValue
   );
   ensureTraitSliderValue(
     'eyes',
@@ -2291,6 +2445,8 @@ function updateDwarfTrait(trait, value) {
           dwarf.name = clanLabel ? `${newFirstName} ${clanLabel}` : newFirstName;
         }
       }
+    } else if (trait === 'head') {
+      dwarf.head = resolveHeadTypeValue(value);
     } else if (trait === 'hairStyle') {
       dwarf[trait] = resolveHairStyleValue(value);
     } else if (trait === 'beard' && dwarf.gender === 'female') {
@@ -3986,7 +4142,10 @@ function createWorld(seedString) {
   const rng = mulberry32(seedNumber || 1);
   const width = state.settings.width;
   const height = state.settings.height;
-  const forestFrequencySetting = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+  const forestFrequencySetting = sanitizeFrequencyValue(
+    state.settings.forestFrequency,
+    defaultForestFrequency
+  );
   const mountainFrequencySetting = sanitizeFrequencyValue(
     state.settings.mountainFrequency,
     defaultMountainFrequency
@@ -4004,7 +4163,7 @@ function createWorld(seedString) {
     state.settings.woodElfSettlementFrequency,
     50
   );
-  const forestBias = forestFrequencySetting / 50 - 1;
+  const forestBias = (forestFrequencySetting - defaultForestFrequency) / 50;
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
   const riverFrequencyNormalized = clamp(riverFrequencySetting / 100, 0, 1);
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
@@ -4213,7 +4372,9 @@ function createWorld(seedString) {
   const waterTileKey = resolveTileName('WATER');
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
-  const hasSandTile = tileLookup.has('SAND');
+  // Disable desert generation so no sand tiles are produced on the world map.
+  const sandGenerationEnabled = false;
+  const hasSandTile = sandGenerationEnabled && tileLookup.has('SAND');
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
   const landBaseKeys = new Set([grassTileKey]);
   if (hasSnowTile) {
@@ -4229,6 +4390,34 @@ function createWorld(seedString) {
   const snowNoiseScale = 5.3 + rng() * 3.2;
   const snowNoiseOffsetX = rng() * 4096;
   const snowNoiseOffsetY = rng() * 4096;
+
+  const computeSnowPresence = (normalizedX, normalizedY, heightValue) => {
+    const latitude = 1 - normalizedY;
+    if (latitude >= snowLatitudeFull) {
+      return true;
+    }
+    if (latitude > snowLatitudeStart) {
+      const snowBandFactor = clamp((latitude - snowLatitudeStart) / snowLatitudeRange, 0, 1);
+      const elevationFactor = clamp((heightValue - seaLevel) * 3.8, 0, 1);
+      const coverage = clamp(snowBandFactor * 0.7 + elevationFactor * 0.3, 0, 1);
+      const snowNoise = octaveNoise(
+        (normalizedX + snowNoiseOffsetX) * snowNoiseScale,
+        (normalizedY + snowNoiseOffsetY) * snowNoiseScale,
+        snowNoiseSeed,
+        3,
+        0.55,
+        2.2
+      );
+      return snowNoise < coverage;
+    }
+    return false;
+  };
+
+  const icebergOverlayKeys = Object.keys(icebergTileCoords).filter((key) => tileLookup.has(key));
+  const hasIcebergOverlay = icebergOverlayKeys.length > 0;
+  const needSnowPresenceField = hasSnowTile || hasIcebergOverlay;
+  const snowPresenceField = needSnowPresenceField ? new Uint8Array(width * height) : null;
+  const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
 
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
@@ -4303,26 +4492,8 @@ function createWorld(seedString) {
       warpedLatitude = clamp(latitude + warpY * 0.8, 0, 1);
     }
 
-    if (hasSnowTile) {
-      if (latitude >= snowLatitudeFull) {
-        return snowTileKey;
-      }
-      if (latitude > snowLatitudeStart) {
-        const snowBandFactor = clamp((latitude - snowLatitudeStart) / snowLatitudeRange, 0, 1);
-        const elevationFactor = clamp((heightValue - seaLevel) * 3.8, 0, 1);
-        const coverage = clamp(snowBandFactor * 0.7 + elevationFactor * 0.3, 0, 1);
-        const snowNoise = octaveNoise(
-          (normalizedX + snowNoiseOffsetX) * snowNoiseScale,
-          (normalizedY + snowNoiseOffsetY) * snowNoiseScale,
-          snowNoiseSeed,
-          3,
-          0.55,
-          2.2
-        );
-        if (snowNoise < coverage) {
-          return snowTileKey;
-        }
-      }
+    if (hasSnowTile && computeSnowPresence(normalizedX, normalizedY, heightValue)) {
+      return snowTileKey;
     }
 
     if (hasSandTile) {
@@ -5317,6 +5488,43 @@ function createWorld(seedString) {
     }
   }
 
+  if (snowPresenceField) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const heightValue = elevationField[idx];
+        snowPresenceField[idx] = computeSnowPresence(normalizedX, normalizedY, heightValue) ? 1 : 0;
+      }
+    }
+  }
+
+  if (hasIcebergOverlay && snowPresenceField) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!waterMask[idx]) {
+          continue;
+        }
+        if (!snowPresenceField[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.overlay) {
+          continue;
+        }
+        const variantNoise = hashCoords(x, y, icebergVariantSeed);
+        const variantIndex = Math.min(
+          icebergOverlayKeys.length - 1,
+          Math.floor(variantNoise * icebergOverlayKeys.length)
+        );
+        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        tile.overlay = overlayKey;
+      }
+    }
+  }
+
   const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel, {
     frequencyNormalized: riverFrequencyNormalized
   });
@@ -5694,18 +5902,28 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
+          continue;
+        }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        if (tile.overlay) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = tile.base === snowTileKey;
-        const overlayIsTree =
-          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
         const heightValue = elevationField[idx];
         const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
         const rainfallValue = rainfallField[idx];
         const drynessScore = clamp(1 - rainfallValue, 0, 1);
-        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        let terrainBonus = 0;
         if (baseIsSnow) {
           terrainBonus += 0.18;
         } else if (baseIsGrass) {
@@ -5755,7 +5973,21 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
+          continue;
+        }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        if (tile.overlay) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
         const name = `Evil Wizard's ${generateTowerName(rng)}`;
@@ -5781,21 +6013,25 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
+          continue;
+        }
+        if (tile.overlay) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = tile.base === snowTileKey;
-        const overlayIsTree =
-          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
-        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+        if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
         const heightValue = elevationField[idx];
         const elevationScore = clamp((heightValue - seaLevel) * 3.1, 0, 1);
         const rainfallValue = rainfallField[idx];
         const drynessScore = clamp(1 - rainfallValue, 0, 1);
-        let terrainBonus = overlayIsTree ? 0.25 : 0;
+        let terrainBonus = 0;
         if (baseIsSnow) {
           terrainBonus += 0.18;
         } else if (baseIsGrass) {
@@ -5845,14 +6081,18 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (tile.overlay && tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) {
+        if (
+          treeOverlayKey &&
+          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
+        ) {
+          continue;
+        }
+        if (tile.overlay) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = tile.base === snowTileKey;
-        const overlayIsTree =
-          treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
-        if (!baseIsGrass && !baseIsSnow && !overlayIsTree) {
+        if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
         const name = generateTowerName(rng);
@@ -6105,7 +6345,10 @@ function syncInputsWithSettings() {
   }
   updateWorldInfoSeedDisplay(state.settings.seedString);
   if (elements.forestFrequencyInput) {
-    const value = sanitizeFrequencyValue(state.settings.forestFrequency, 50);
+    const value = sanitizeFrequencyValue(
+      state.settings.forestFrequency,
+      defaultForestFrequency
+    );
     elements.forestFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.forestFrequencyValue, value);
   }
@@ -6442,6 +6685,7 @@ function attachEvents() {
   }
 
   setupTraitSliderControl('skin', elements.dwarfSkinSlider, elements.dwarfSkinSliderValue);
+  setupTraitSliderControl('head', elements.dwarfHeadSlider, elements.dwarfHeadSliderValue);
   setupTraitSliderControl('eyes', elements.dwarfEyeSlider, elements.dwarfEyeSliderValue);
   setupTraitSliderControl(
     'hairStyle',

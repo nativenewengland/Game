@@ -44,10 +44,10 @@
               min="0"
               max="100"
               step="1"
-              value="50"
+              value="35"
             />
             <span id="forest-frequency-value" class="slider-value" aria-live="polite"
-              >50% — Balanced</span
+              >35% — Low</span
             >
           </div>
         </label>
@@ -476,6 +476,30 @@
                     </div>
 
                     <div class="field-group">
+                      <label for="dwarf-head-slider" class="field-label">Head type</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-head-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-head-slider-value"
+                          class="trait-slider-value"
+                          aria-live="polite"
+                        >
+                          Head Type V
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="field-group">
                       <label for="dwarf-eye-slider" class="field-label">Eye colour</label>
                       <div class="trait-slider">
                         <div class="trait-slider-visual">
@@ -577,7 +601,9 @@
           </section>
         </div>
         <footer class="embark-actions customizer-actions">
-          <button type="button" id="dwarf-back" class="secondary">Back</button>
+          <button type="button" id="dwarf-back" class="return-button">
+            <span class="sr-only">Back</span>
+          </button>
           <button type="submit" class="create-button">
             <span class="sr-only">Begin Expedition</span>
           </button>
