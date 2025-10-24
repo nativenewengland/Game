@@ -1171,40 +1171,13 @@ const editableDwarfTraits = new Set([
   'profession'
 ]);
 
-function createSvgDataUri(svg) {
-  if (typeof svg !== 'string') {
-    return '';
-  }
-  return `data:image/svg+xml,${encodeURIComponent(svg.trim())}`;
-}
-
 const dwarfTraitAttributeDefinitions = [
   {
     key: 'beardless',
     label: 'Beardless',
     description:
       'You are the shame of your clan and the disgrace of your holdfast. Without a beard a dwarf is nothing, consider this path to be one that will lead to scorn and ridicule among your peers.',
-    icon: createSvgDataUri(`
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="28" fill="#2d1b13" stroke="#d6a35f" stroke-width="4" />
-        <path
-          d="M12 34c2.5-7 10-10 16-6 4 2.6 8 2.6 12 0 6-4 13.5-1 16 6-3.5 1.8-7 1.6-10.4-.5-1.9 4.5-6.3 7.5-11.6 7.5s-9.7-3-11.6-7.5C19 35.6 15.5 35.8 12 34Z"
-          fill="#f1d7b7"
-          stroke="#f8efe3"
-          stroke-width="1.5"
-          stroke-linejoin="round"
-        />
-        <path
-          d="M22 31c1 4 3.5 7 10 7s9-3 10-7"
-          stroke="#1b0d07"
-          stroke-width="3"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          fill="none"
-        />
-        <line x1="18" y1="46" x2="46" y2="18" stroke="#c3423f" stroke-width="6" stroke-linecap="round" />
-      </svg>
-    `),
+    icon: 'tilesheet/beardless.png',
     isActive: (dwarf) => dwarf?.gender === 'male' && dwarf?.beard === 'clean'
   },
   {
