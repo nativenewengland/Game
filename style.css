@@ -974,14 +974,14 @@ button:hover:not(:disabled) {
 
 .trait-slider-input::-webkit-slider-thumb {
   appearance: none;
-  width: 19px;
-  height: 58px;
+  width: 14px;
+  height: 42px;
   background: url('tilesheet/slider.png') center/contain no-repeat;
   image-rendering: pixelated;
   border: none;
   border-radius: 0;
   box-shadow: none;
-  margin-top: calc((58px - 0.55rem) / -2);
+  margin-top: calc((42px - 0.55rem) / -2);
 }
 
 .trait-slider-input::-moz-range-track {
@@ -993,8 +993,8 @@ button:hover:not(:disabled) {
 }
 
 .trait-slider-input::-moz-range-thumb {
-  width: 19px;
-  height: 58px;
+  width: 14px;
+  height: 42px;
   background: url('tilesheet/slider.png') center/contain no-repeat;
   image-rendering: pixelated;
   border: none;
@@ -1019,8 +1019,8 @@ button:hover:not(:disabled) {
 }
 
 .trait-slider-input::-ms-thumb {
-  width: 19px;
-  height: 58px;
+  width: 14px;
+  height: 42px;
   background: url('tilesheet/slider.png') center/contain no-repeat;
   image-rendering: pixelated;
   border: none;
