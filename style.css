@@ -1027,9 +1027,10 @@ button:hover:not(:disabled) {
 }
 
 .customizer-main-card {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: clamp(1rem, 2.5vw, 1.5rem);
+  align-items: start;
   width: 100%;
   flex: 1;
   min-height: 0;
@@ -1050,8 +1051,8 @@ button:hover:not(:disabled) {
 }
 
 .customizer-top-bar.pixel-bar {
-  justify-content: flex-end;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
 }
 
 .customizer-top-bar button {
@@ -1059,7 +1060,7 @@ button:hover:not(:disabled) {
   min-width: 3rem;
 }
 
-.customizer-top-bar .dwarf-nav-button {
+.dwarf-nav-button {
   position: relative;
   z-index: 1;
   width: clamp(2.4rem, 6vw, 2.9rem);
@@ -1075,6 +1076,12 @@ button:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
 }
 
+.dwarf-name-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.65rem, 1.8vw, 1rem);
+}
 
 .dwarf-nav-icon {
   width: 1.8rem;
@@ -1087,7 +1094,7 @@ button:hover:not(:disabled) {
   image-rendering: pixelated;
 }
 
-.customizer-top-bar .dwarf-nav-button:focus-visible {
+.dwarf-nav-button:focus-visible {
   outline: 3px solid rgba(240, 198, 116, 0.8);
   outline-offset: 4px;
   border-radius: 12px;
@@ -1101,12 +1108,12 @@ button:hover:not(:disabled) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: clamp(0.35rem, 1vw, 0.55rem);
   margin-top: -0.3rem;
   width: 100%;
   min-width: 0;
-  text-align: right;
+  text-align: center;
 }
 
 .slot-label {
@@ -1150,12 +1157,11 @@ button:hover:not(:disabled) {
 .dwarf-name-field {
   position: relative;
   width: clamp(16rem, 62vw, 28rem);
-  margin: clamp(-0.75rem, -1vh, -0.35rem) 0 0 auto;
+  margin: clamp(-0.75rem, -1vh, -0.35rem) auto 0;
   aspect-ratio: 618 / 89;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: clamp(0.45rem, 1.2vw, 0.75rem);
   padding-inline: clamp(0.65rem, 1.8vw, 0.9rem);
 }
 
@@ -1360,12 +1366,18 @@ button:hover:not(:disabled) {
   opacity: 1;
 }
 
+.customizer-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.3vw, 1.4rem);
+  align-items: stretch;
+}
+
 .customizer-body {
-  display: grid;
-  grid-template-columns: minmax(360px, 480px) minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: clamp(1.25rem, 3vw, 1.75rem);
   align-items: stretch;
-  align-content: start;
   min-height: 0;
 }
 
@@ -1373,6 +1385,7 @@ button:hover:not(:disabled) {
   display: grid;
   gap: clamp(0.85rem, 2.3vw, 1.3rem);
   align-content: start;
+  align-self: start;
 }
 
 .customizer-preview {
@@ -1394,9 +1407,9 @@ button:hover:not(:disabled) {
   gap: clamp(0.75rem, 2.1vw, 1.15rem);
   padding: 0 clamp(0.2rem, 0.9vw, 0.45rem);
   align-self: stretch;
-  justify-self: start;
   width: 100%;
   max-width: 420px;
+  margin: 0 auto;
 }
 
 .trait-sliders-panel .field-group {
@@ -1660,15 +1673,16 @@ button:hover:not(:disabled) {
 
   .customizer-main-card {
     gap: 1rem;
-  }
-
-  .customizer-top-bar.pixel-bar {
-    justify-content: center;
-    align-items: center;
-  }
-
-  .customizer-body {
     grid-template-columns: 1fr;
+  }
+
+  .customizer-visuals,
+  .customizer-detail-panel {
+    grid-column: 1;
+  }
+
+  .customizer-detail-panel {
+    align-items: center;
   }
 
   .customizer-visuals {
