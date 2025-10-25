@@ -90,10 +90,15 @@ select,
   backdrop-filter: blur(18px);
 }
 
+#dwarf-customizer {
+  justify-content: flex-start;
+}
+
 #dwarf-customizer .embark-panel {
   max-width: min(1400px, 98vw);
   max-height: min(880px, 92vh);
   padding: clamp(1.6rem, 2.8vw, 2.2rem);
+  margin: 0 auto;
 }
 
 .embark-header {
