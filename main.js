@@ -73,7 +73,7 @@ const baseTileCoords = {
   HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
-  LIZARDMEN_CITY: { row: 5, col: 1 }
+  LIZARDMEN_CITY: { row: 2, col: 11 }
 };
 
 const roadTileVariantDefinitions = (() => {
