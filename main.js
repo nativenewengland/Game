@@ -63,6 +63,7 @@ const baseTileCoords = {
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 9, col: 2 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
+  CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
@@ -5469,6 +5470,7 @@ function createWorld(seedString) {
   const dwarfholds = [];
   const towns = [];
   const towers = [];
+  const caves = [];
   const evilWizardTowers = [];
   const woodElfGroves = [];
   const waterMask = new Uint8Array(width * height);
@@ -6648,6 +6650,123 @@ function createWorld(seedString) {
     }
   }
 
+  const caveKey = tileLookup.has('CAVE') ? 'CAVE' : null;
+  if (caveKey) {
+    const caveCandidates = [];
+    const caveNoiseSeed = (seedNumber + 0x21f0e1eb) >>> 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        const overlayIsHill = tile.overlay === hillOverlayKey;
+        if (tile.overlay && !overlayIsHill) {
+          continue;
+        }
+        const heightValue = elevationField[idx];
+        let slopeSum = 0;
+        let neighborCount = 0;
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          slopeSum += Math.abs(heightValue - elevationField[nIdx]);
+          neighborCount += 1;
+          if (mountainMask && mountainMask[nIdx]) {
+            mountainNeighbors += 1;
+          } else {
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && mountainOverlayKey && isMountainOverlay(neighborTile.overlay)) {
+              mountainNeighbors += 1;
+            }
+          }
+        }
+        const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+        const slopeScore = clamp((averageSlope - 0.009) * 36, 0, 1);
+        const hillBonus = overlayIsHill ? 0.35 : 0;
+        const mountainBonus = Math.min(0.25, mountainNeighbors * 0.08);
+        const elevationScore = clamp((heightValue - seaLevel) * 1.9, 0, 1);
+        const noise = hashCoords(x, y, caveNoiseSeed) - 0.5;
+        const compositeScore =
+          hillBonus + slopeScore * 0.45 + mountainBonus + elevationScore * 0.2 + noise * 0.15;
+        if (compositeScore > 0.22) {
+          caveCandidates.push({ x, y, score: compositeScore, hill: overlayIsHill });
+        }
+      }
+    }
+
+    if (caveCandidates.length > 0) {
+      caveCandidates.sort((a, b) => b.score - a.score);
+      const area = width * height;
+      const baseTarget = Math.max(1, Math.round(area / 9000));
+      const maxCaves = computeStructurePlacementLimit(baseTarget, 22, 1);
+      const minDistanceBase = 6;
+      const minDistance = Math.max(3, minDistanceBase);
+      const placed = [];
+
+      for (let i = 0; i < caveCandidates.length; i += 1) {
+        if (placed.length >= maxCaves) {
+          break;
+        }
+        const candidate = caveCandidates[i];
+        if (candidate.score < 0.28) {
+          continue;
+        }
+        const requiredDistance = candidate.hill ? Math.max(3, minDistance - 1) : minDistance;
+        const requiredDistanceSq = requiredDistance * requiredDistance;
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < requiredDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const overlay = tile.overlay;
+        const overlayIsHill = overlay === hillOverlayKey;
+        if (overlay && !overlayIsHill) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        tile.structure = caveKey;
+        tile.structureName = 'Cave';
+        tile.structureDetails = { type: 'cave' };
+        placed.push(candidate);
+        caves.push({ x: candidate.x, y: candidate.y });
+      }
+    }
+  }
+
   const hasTreeTile = tileLookup.has('TREE');
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
@@ -7177,7 +7296,16 @@ function createWorld(seedString) {
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds, towns, towers, evilWizardTowers, woodElfGroves };
+  return {
+    tiles,
+    seedString: finalSeed,
+    dwarfholds,
+    towns,
+    towers,
+    caves,
+    evilWizardTowers,
+    woodElfGroves
+  };
 }
 
 function generateSeedString(seedNumber) {
