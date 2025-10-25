@@ -8446,6 +8446,30 @@ function createWorld(seedString) {
 
     desertMask.set(updatedMask);
 
+    if (hasSandTile) {
+      const verticalIsolation = [];
+      for (let y = 1; y < height - 1; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!desertMask[idx]) {
+            continue;
+          }
+          const aboveIdx = idx - width;
+          const belowIdx = idx + width;
+          const aboveIsDesert = desertMask[aboveIdx] === 1;
+          const belowIsDesert = desertMask[belowIdx] === 1;
+          if (!aboveIsDesert && !belowIsDesert) {
+            verticalIsolation.push(idx);
+          }
+        }
+      }
+      if (verticalIsolation.length > 0) {
+        for (let i = 0; i < verticalIsolation.length; i += 1) {
+          desertMask[verticalIsolation[i]] = 0;
+        }
+      }
+    }
+
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
