@@ -1057,12 +1057,10 @@ const woodElfGroveExports = [
 ];
 
 const woodElfGrovePopulationRoleOptions = [
-  { key: 'wardens', label: 'Bough Wardens', color: '#6ecf85' },
-  { key: 'druids', label: 'Circle Druids', color: '#9bd4a9' },
-  { key: 'scouts', label: 'Glade Scouts', color: '#8bbbcf' },
-  { key: 'singers', label: 'Chorus Singers', color: '#c4a6e8' },
-  { key: 'artisans', label: 'Canopy Artisans', color: '#f4c069' },
-  { key: 'others', label: 'Forest Folk', color: '#9e9e9e' }
+  { key: 'elves', label: 'Wood Elves', color: '#6ecf85' },
+  { key: 'satyrs', label: 'Satyrs', color: '#c18c5d' },
+  { key: 'nymphs', label: 'Nymphs', color: '#9bd4a9' },
+  { key: 'ents', label: 'Ents', color: '#8bbbcf' }
 ];
 
 function pickRandomFrom(array, random) {
@@ -1341,7 +1339,7 @@ function generateWoodElfGrovePopulationBreakdown(population, random) {
     random,
     {
       majorityIndex: 0,
-      majorityShareRange: [0.55, 0.75],
+      majorityShareRange: [0.9, 0.97],
       ensureMajority: true
     }
   );
