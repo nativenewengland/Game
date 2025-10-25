@@ -7264,6 +7264,24 @@ function createWorld(seedString) {
     }
   }
 
+  if (mountainMask || mountainOverlayKey) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile || !tile.river) {
+          continue;
+        }
+        if (mountainMask && mountainMask[idx]) {
+          mountainMask[idx] = 0;
+        }
+        if (tile.overlay && isMountainOverlay(tile.overlay)) {
+          tile.overlay = null;
+        }
+      }
+    }
+  }
+
   const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
   const portTownKey = tileLookup.has('PORT_TOWN') ? 'PORT_TOWN' : null;
   if (townKey) {
