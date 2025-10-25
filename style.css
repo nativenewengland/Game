@@ -1022,10 +1022,8 @@ button:hover:not(:disabled) {
 }
 
 .customizer-top-bar.pixel-bar {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
-  column-gap: clamp(0.6rem, 1.8vw, 1rem);
+  justify-content: flex-end;
+  align-items: flex-start;
 }
 
 .customizer-top-bar button {
@@ -1034,16 +1032,19 @@ button:hover:not(:disabled) {
 }
 
 .customizer-top-bar .dwarf-nav-button {
-  width: 3rem;
-  height: 3rem;
-  padding: 0.35rem;
+  position: relative;
+  z-index: 1;
+  width: clamp(2.4rem, 6vw, 2.9rem);
+  height: clamp(2.4rem, 6vw, 2.9rem);
+  padding: 0.25rem;
   border-radius: 14px;
   display: grid;
   place-items: center;
   justify-self: center;
-  background: none;
+  align-self: center;
   border: none;
-  box-shadow: none;
+  background: rgba(24, 18, 32, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
 }
 
 
@@ -1099,6 +1100,12 @@ button:hover:not(:disabled) {
   color: rgba(240, 198, 116, 0.75);
 }
 
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
 .field-control {
   width: 100%;
   padding: 0.65rem 0.9rem;
@@ -1117,9 +1124,11 @@ button:hover:not(:disabled) {
   width: clamp(16rem, 62vw, 28rem);
   margin: clamp(-0.75rem, -1vh, -0.35rem) 0 0 auto;
   aspect-ratio: 618 / 89;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: flex-end;
+  gap: clamp(0.45rem, 1.2vw, 0.75rem);
+  padding-inline: clamp(0.65rem, 1.8vw, 0.9rem);
 }
 
 .dwarf-name-field::before {
@@ -1137,7 +1146,8 @@ button:hover:not(:disabled) {
 
 .dwarf-name-input {
   position: relative;
-  width: 70%;
+  width: 100%;
+  min-width: 0;
   padding: 0.35rem 0.6rem;
   border: none;
   border-radius: 9px;
@@ -1324,7 +1334,7 @@ button:hover:not(:disabled) {
 
 .customizer-body {
   display: grid;
-  grid-template-columns: minmax(380px, 500px) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 480px) minmax(0, 1fr);
   gap: clamp(1.25rem, 3vw, 1.75rem);
   align-items: stretch;
   align-content: start;
@@ -1333,7 +1343,8 @@ button:hover:not(:disabled) {
 
 .customizer-visuals {
   display: grid;
-  gap: clamp(1rem, 2.5vw, 1.4rem);
+  gap: clamp(0.85rem, 2.3vw, 1.3rem);
+  align-content: start;
 }
 
 .customizer-preview {
@@ -1341,12 +1352,32 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: stretch;
   text-align: center;
-  gap: clamp(0.75rem, 2vw, 1.2rem);
+  gap: clamp(0.65rem, 1.8vw, 1rem);
   width: 100%;
   padding: clamp(0.85rem, 2vw, 1.3rem);
   background: none;
   border: none;
   box-shadow: none;
+  margin-top: clamp(-0.35rem, -1.2vw, -0.2rem);
+}
+
+.trait-sliders-panel {
+  display: grid;
+  gap: clamp(0.75rem, 2.1vw, 1.15rem);
+  padding: 0 clamp(0.2rem, 0.9vw, 0.45rem);
+  align-self: stretch;
+  justify-self: start;
+  width: 100%;
+  max-width: 420px;
+}
+
+.trait-sliders-panel .field-group {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.trait-sliders-panel .hair-colour-controls {
+  width: 100%;
 }
 
 .subpanel-title {
@@ -1605,6 +1636,7 @@ button:hover:not(:disabled) {
 
   .customizer-top-bar.pixel-bar {
     justify-content: center;
+    align-items: center;
   }
 
   .customizer-body {
@@ -1612,7 +1644,7 @@ button:hover:not(:disabled) {
   }
 
   .customizer-visuals {
-    grid-template-columns: 1fr;
+    justify-items: center;
   }
 
   .customizer-fields {
@@ -1622,16 +1654,13 @@ button:hover:not(:disabled) {
 
 @media (max-width: 720px) {
   .customizer-top-bar.pixel-bar {
-    grid-template-columns: 1fr;
-    row-gap: 0.75rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
   }
 
-  .customizer-top-bar .dwarf-nav-button {
-    justify-self: stretch;
-  }
-
-  .customizer-top-bar button {
-    width: 100%;
+  .dwarf-name-field {
+    margin: 0 auto;
   }
 
   .customizer-main-card {
