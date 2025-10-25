@@ -6100,6 +6100,7 @@ function createWorld(seedString) {
   if (hasIcebergOverlay && snowPresenceField) {
     let icebergPlacementCount = 0;
     let strongestIcebergCandidate = null;
+    const icebergOverlayKeySet = new Set(icebergOverlayKeys);
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
@@ -6132,6 +6133,26 @@ function createWorld(seedString) {
         if (!tile || tile.overlay) {
           continue;
         }
+        let hasAdjacentIceberg = false;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (
+            neighborTile &&
+            neighborTile.overlay &&
+            icebergOverlayKeySet.has(neighborTile.overlay)
+          ) {
+            hasAdjacentIceberg = true;
+            break;
+          }
+        }
+        if (hasAdjacentIceberg) {
+          continue;
+        }
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
@@ -6146,13 +6167,32 @@ function createWorld(seedString) {
       const { x, y } = strongestIcebergCandidate;
       const tile = tiles[y][x];
       if (tile && !tile.overlay) {
-        const variantNoise = hashCoords(x, y, icebergVariantSeed);
-        const variantIndex = Math.min(
-          icebergOverlayKeys.length - 1,
-          Math.floor(variantNoise * icebergOverlayKeys.length)
-        );
-        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
-        tile.overlay = overlayKey;
+        let hasAdjacentIceberg = false;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (
+            neighborTile &&
+            neighborTile.overlay &&
+            icebergOverlayKeySet.has(neighborTile.overlay)
+          ) {
+            hasAdjacentIceberg = true;
+            break;
+          }
+        }
+        if (!hasAdjacentIceberg) {
+          const variantNoise = hashCoords(x, y, icebergVariantSeed);
+          const variantIndex = Math.min(
+            icebergOverlayKeys.length - 1,
+            Math.floor(variantNoise * icebergOverlayKeys.length)
+          );
+          const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+          tile.overlay = overlayKey;
+        }
       }
     }
   }
