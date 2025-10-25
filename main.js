@@ -9503,33 +9503,173 @@ function createWorld(seedString) {
     }
   }
 
-  const classifyTileBiome = (tile) => {
-    if (!tile) {
-      return null;
+  const biomeRandom = mulberry32((seedNumber + 0x4c95e6d9) >>> 0);
+  const temperatureNoiseSeed = (seedNumber + 0x52f6af13) >>> 0;
+  const temperatureNoiseScale = 2.7 + biomeRandom() * 1.8;
+  const temperatureNoiseOffsetX = biomeRandom() * 8192;
+  const temperatureNoiseOffsetY = biomeRandom() * 8192;
+  const moistureNoiseSeed = (seedNumber + 0x6a4b5c27) >>> 0;
+  const moistureNoiseScale = 3.1 + biomeRandom() * 2.3;
+  const moistureNoiseOffsetX = biomeRandom() * 8192;
+  const moistureNoiseOffsetY = biomeRandom() * 8192;
+  const temperatureField = new Float32Array(width * height);
+  const moistureField = new Float32Array(width * height);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const normalizedX = (x + 0.5) / width;
+      const normalizedY = (y + 0.5) / height;
+      const latitudeFactor = 1 - Math.abs(normalizedY - 0.5) * 2;
+      const elevationValue = elevationField[idx];
+      const elevationAboveSea = Math.max(elevationValue - seaLevel, 0);
+      const elevationCooling = clamp(1 - elevationAboveSea * 3.5, 0, 1);
+      const temperatureNoise = octaveNoise(
+        (normalizedX + temperatureNoiseOffsetX) * temperatureNoiseScale,
+        (normalizedY + temperatureNoiseOffsetY) * temperatureNoiseScale,
+        temperatureNoiseSeed,
+        3,
+        0.55,
+        2.1
+      );
+      const baseTemperature = clamp(latitudeFactor * 0.75 + elevationCooling * 0.25, 0, 1);
+      temperatureField[idx] = clamp(baseTemperature + (temperatureNoise - 0.5) * 0.18, 0, 1);
+
+      const rainfallValue = rainfallField[idx];
+      const drainageValue = drainageField[idx];
+      const baseMoisture = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+      const moistureNoise = octaveNoise(
+        (normalizedX + moistureNoiseOffsetX) * moistureNoiseScale,
+        (normalizedY + moistureNoiseOffsetY) * moistureNoiseScale,
+        moistureNoiseSeed,
+        3,
+        0.55,
+        2.2
+      );
+      moistureField[idx] = clamp(baseMoisture + (moistureNoise - 0.5) * 0.14, 0, 1);
     }
-    if (tile.base === waterTileKey) {
+  }
+
+  const initialBiomeField = new Array(width * height);
+
+  const computeInitialBiome = (tile, idx, x, y) => {
+    if (!tile) {
+      return waterMask[idx] ? 'water' : null;
+    }
+    if (waterMask[idx] || tile.base === waterTileKey) {
       return 'water';
     }
     if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
       return 'mountain';
     }
-    if (hasSandTile && tile.base === sandTileKey) {
-      return 'desert';
-    }
     if (hasMarshTile && tile.base === marshTileKey) {
       return 'marsh';
     }
+    if (hasSandTile && tile.base === sandTileKey) {
+      return 'desert';
+    }
     if (hasSnowTile && tile.base === snowTileKey) {
-      if (isTreeOverlayKey(tile.overlay)) {
-        return 'forest';
+      if (tileHasTreeOverlay(tile)) {
+        return temperatureField[idx] > 0.35 ? 'forest' : 'tundra';
       }
       return 'tundra';
     }
-    if (isTreeOverlayKey(tile.overlay)) {
+    if (tileHasTreeOverlay(tile) || tileHasJungleOverlay(tile)) {
+      return temperatureField[idx] < 0.22 ? 'tundra' : 'forest';
+    }
+
+    const temperature = temperatureField[idx];
+    const moisture = moistureField[idx];
+    const dryness = 1 - moisture;
+    const relativeElevation = elevationField[idx] - seaLevel;
+
+    let nearbyWaterTiles = 0;
+    for (let i = 0; i < neighborOffsets8.length; i += 1) {
+      const nx = x + neighborOffsets8[i][0];
+      const ny = y + neighborOffsets8[i][1];
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+        continue;
+      }
+      const nIdx = ny * width + nx;
+      if (waterMask[nIdx]) {
+        nearbyWaterTiles += 1;
+      }
+    }
+
+    if (moisture > 0.78 && (relativeElevation < 0.06 || nearbyWaterTiles >= 3)) {
+      return 'marsh';
+    }
+    if (temperature < 0.2) {
+      return 'tundra';
+    }
+    if (dryness > 0.64 && temperature > 0.32) {
+      return 'desert';
+    }
+    if (moisture > 0.62 || (moisture > 0.52 && nearbyWaterTiles >= 2)) {
+      return 'forest';
+    }
+    if (moisture > 0.5 && temperature > 0.55) {
       return 'forest';
     }
     return 'grassland';
   };
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const tile = tiles[y][x];
+      const biomeType = computeInitialBiome(tile, idx, x, y);
+      initialBiomeField[idx] = biomeType;
+      if (tile) {
+        tile.biomeType = null;
+        tile.areaName = null;
+      }
+    }
+  }
+
+  let biomeField = initialBiomeField.slice();
+  let biomeBuffer = new Array(width * height);
+  const biomeSmoothingIterations = 2;
+
+  for (let iteration = 0; iteration < biomeSmoothingIterations; iteration += 1) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const currentType = biomeField[idx];
+        biomeBuffer[idx] = currentType;
+        if (!currentType || currentType === 'water' || currentType === 'mountain') {
+          continue;
+        }
+        const neighborCounts = new Map();
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const neighborType = biomeField[ny * width + nx];
+          if (!neighborType || neighborType === 'water') {
+            continue;
+          }
+          neighborCounts.set(neighborType, (neighborCounts.get(neighborType) || 0) + 1);
+        }
+        let bestType = currentType;
+        let bestCount = 0;
+        neighborCounts.forEach((count, type) => {
+          if (count > bestCount || (count === bestCount && type === currentType)) {
+            bestType = type;
+            bestCount = count;
+          }
+        });
+        if (bestType !== currentType && bestCount >= 5) {
+          biomeBuffer[idx] = bestType;
+        }
+      }
+    }
+    const swap = biomeField;
+    biomeField = biomeBuffer;
+    biomeBuffer = swap;
+  }
 
   const biomeVisited = new Uint8Array(width * height);
   const biomeClusters = [];
@@ -9540,8 +9680,8 @@ function createWorld(seedString) {
       if (biomeVisited[idx]) {
         continue;
       }
+      const baseBiome = biomeField[idx];
       const tile = tiles[y][x];
-      const baseBiome = classifyTileBiome(tile);
       if (!baseBiome) {
         biomeVisited[idx] = 1;
         if (tile) {
@@ -9562,9 +9702,9 @@ function createWorld(seedString) {
         if (cx === 0 || cy === 0 || cx === width - 1 || cy === height - 1) {
           touchesEdge = true;
         }
-        for (let i = 0; i < cardinalOffsets.length; i += 1) {
-          const nx = cx + cardinalOffsets[i][0];
-          const ny = cy + cardinalOffsets[i][1];
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = cx + neighborOffsets8[i][0];
+          const ny = cy + neighborOffsets8[i][1];
           if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
             continue;
           }
@@ -9572,8 +9712,7 @@ function createWorld(seedString) {
           if (biomeVisited[nIdx]) {
             continue;
           }
-          const neighborTile = tiles[ny][nx];
-          const neighborBiome = classifyTileBiome(neighborTile);
+          const neighborBiome = biomeField[nIdx];
           if (neighborBiome === baseBiome) {
             biomeVisited[nIdx] = 1;
             stack.push(nIdx);
