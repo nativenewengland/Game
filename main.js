@@ -226,6 +226,29 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
 
       return suitability;
     }
+    case 'village': {
+      if (tile.base === 'WATER') {
+        return 0;
+      }
+
+      const overlayIsMountain = isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+      const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+      const overlayIsForest = isTreeOverlayKey(tile.overlay);
+
+      let suitability = 1;
+
+      if (overlayIsMountain) {
+        suitability *= 0.2;
+      } else if (overlayIsHill) {
+        suitability *= 0.45;
+      }
+
+      if (overlayIsForest) {
+        suitability *= 0.5;
+      }
+
+      return suitability;
+    }
     default:
       return 1;
   }
@@ -2404,7 +2427,12 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       x: seed.x,
       y: seed.y,
       label: typeof seed.label === 'string' ? seed.label.trim() : '',
-      type: seed.type || 'settlement'
+      type: seed.type || 'settlement',
+      population: Number.isFinite(seed.population) ? seed.population : null,
+      settlementKind:
+        typeof seed.settlementKind === 'string' && seed.settlementKind.trim().length > 0
+          ? seed.settlementKind.trim()
+          : null
     });
   });
 
@@ -2412,24 +2440,51 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     return { factions: [] };
   }
 
+  const adjustClaimRadiusByPopulation = (seed, baseRadius) => {
+    if (!seed || seed.type !== 'town') {
+      return baseRadius;
+    }
+
+    const population = Number(seed.population);
+    if (!Number.isFinite(population) || population <= 0) {
+      return baseRadius;
+    }
+
+    const minPopulation = 120;
+    const fullPopulation = 2000;
+    const minMultiplierBase = seed.settlementKind === 'village' ? 0.32 : 0.4;
+    const minMultiplier = clamp(minMultiplierBase, 0.1, 0.99);
+    const normalized = clamp((population - minPopulation) / (fullPopulation - minPopulation), 0, 1);
+    const multiplier = minMultiplier + normalized * (1 - minMultiplier);
+    const scaledRadius = baseRadius * multiplier;
+    return Math.max(8, scaledRadius);
+  };
+
   const resolveClaimRadius = (seed) => {
     if (!seed || !seed.type) {
       return 26;
     }
+    let baseRadius = 26;
     switch (seed.type) {
       case 'dwarfhold':
-        return 36;
+        baseRadius = 36;
+        break;
       case 'town':
-        return 32;
+        baseRadius = 32;
+        break;
       case 'tower':
-        return 24;
+        baseRadius = 24;
+        break;
       case 'evilWizardTower':
-        return 24;
+        baseRadius = 24;
+        break;
       case 'woodElfGrove':
-        return 28;
+        baseRadius = 28;
+        break;
       default:
-        return 26;
+        baseRadius = 26;
     }
+    return adjustClaimRadiusByPopulation(seed, baseRadius);
   };
 
   const resolveFactionName = (seed) => {
@@ -2467,7 +2522,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         x: seed.x,
         y: seed.y,
         label: seed.label || null,
-        type: seed.type || 'settlement'
+        type: seed.settlementKind || seed.type || 'settlement'
       },
       territory: 0,
       claimRadius,
@@ -9042,31 +9097,41 @@ function createWorld(seedString) {
       x: hold.x,
       y: hold.y,
       label: hold.name || hold.structureName || 'Hold',
-      type: 'dwarfhold'
+      type: 'dwarfhold',
+      population: Number.isFinite(hold?.population) ? hold.population : null,
+      settlementKind: typeof hold?.type === 'string' ? hold.type : null
     })),
     ...towns.map((town) => ({
       x: town.x,
       y: town.y,
       label: town.name || town.structureName || 'Town',
-      type: 'town'
+      type: 'town',
+      population: Number.isFinite(town?.population) ? town.population : null,
+      settlementKind: typeof town?.type === 'string' ? town.type : null
     })),
     ...towers.map((tower) => ({
       x: tower.x,
       y: tower.y,
       label: tower.name || tower.structureName || 'Tower',
-      type: 'tower'
+      type: 'tower',
+      population: Number.isFinite(tower?.population) ? tower.population : null,
+      settlementKind: typeof tower?.type === 'string' ? tower.type : null
     })),
     ...evilWizardTowers.map((tower) => ({
       x: tower.x,
       y: tower.y,
       label: tower.name || tower.structureName || "Wizard's Tower",
-      type: 'evilWizardTower'
+      type: 'evilWizardTower',
+      population: Number.isFinite(tower?.population) ? tower.population : null,
+      settlementKind: typeof tower?.type === 'string' ? tower.type : null
     })),
     ...woodElfGroves.map((grove) => ({
       x: grove.x,
       y: grove.y,
       label: grove.name || grove.structureName || 'Grove',
-      type: 'woodElfGrove'
+      type: 'woodElfGrove',
+      population: Number.isFinite(grove?.population) ? grove.population : null,
+      settlementKind: typeof grove?.type === 'string' ? grove.type : null
     }))
   ];
 
