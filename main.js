@@ -2609,7 +2609,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
   if (isAbandoned) {
     return {
       type: 'abandonedDwarfhold',
-      classification: 'Abandoned Dwarfhold',
+      classification: 'Ruined Dwarfhold',
       name,
       population: 0,
       populationLabel: 'Population',
