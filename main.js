@@ -9852,7 +9852,7 @@ function drawWorld(world) {
           ctx.restore();
 
           if (showPoliticalBorders) {
-            const borderThickness = Math.max(1, Math.round(drawSize / 8));
+            const borderThickness = Math.max(1, Math.round(drawSize / 16));
             const leftNeighbor = x > 0 ? tiles[y][x - 1] : null;
             const rightNeighbor = x < width - 1 ? tiles[y][x + 1] : null;
             const topNeighbor = y > 0 ? tiles[y - 1][x] : null;
