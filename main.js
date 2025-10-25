@@ -6343,6 +6343,51 @@ function createWorld(seedString) {
     }
   }
 
+  if (hasSnowTile && hasIcebergOverlay && waterTileKey) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile || tile.base !== snowTileKey) {
+          continue;
+        }
+        let fullySurroundedByWater = true;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+            fullySurroundedByWater = false;
+            break;
+          }
+          if (!waterMask[ny * width + nx]) {
+            fullySurroundedByWater = false;
+            break;
+          }
+        }
+        if (!fullySurroundedByWater) {
+          continue;
+        }
+        waterMask[idx] = 1;
+        tile.base = waterTileKey;
+        tile.overlay = null;
+        tile.structure = null;
+        tile.structureName = null;
+        tile.structureDetails = null;
+        tile.river = null;
+        const variantNoise = hashCoords(x, y, icebergVariantSeed);
+        const variantIndex = Math.min(
+          icebergOverlayKeys.length - 1,
+          Math.floor(variantNoise * icebergOverlayKeys.length)
+        );
+        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        tile.overlay = overlayKey;
+        if (snowPresenceField) {
+          snowPresenceField[idx] = 1;
+        }
+      }
+    }
+  }
+
   if (hasIcebergOverlay && snowPresenceField) {
     const icebergChance = 1 / 50;
     for (let y = 0; y < height; y += 1) {
