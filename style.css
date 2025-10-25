@@ -485,10 +485,11 @@ button {
 }
 
 .return-button {
-  width: min(200px, 45%);
+  width: clamp(150px, 18vw, 210px);
+  max-width: 100%;
   aspect-ratio: 251 / 153;
   padding: 0;
-  margin-right: auto;
+  flex: 0 0 auto;
   border: none;
   border-radius: 0;
   background-color: transparent;
@@ -1276,6 +1277,10 @@ button:hover:not(:disabled) {
   flex: 1 1 auto;
 }
 
+.field-group--hair-colour .hair-colour-controls .return-button {
+  align-self: center;
+}
+
 .create-button--inline {
   flex: 0 0 auto;
   width: clamp(170px, 20vw, 230px);
@@ -1336,16 +1341,6 @@ button:hover:not(:disabled) {
   border-radius: 16px;
 }
 
-.customizer-inline-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: clamp(1rem, 2.5vw, 1.75rem);
-  width: 100%;
-  margin-top: clamp(0.15rem, 1.2vw, 0.5rem);
-  padding: clamp(0.2rem, 1vw, 0.6rem) clamp(0.6rem, 1.6vw, 1.1rem);
-}
-
 @media (max-width: 720px) {
   .field-group--hair-colour .hair-colour-controls {
     flex-direction: column;
@@ -1356,15 +1351,7 @@ button:hover:not(:disabled) {
     width: min(240px, 100%);
   }
 
-  .customizer-inline-actions {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-  }
-
-  .customizer-inline-actions .return-button,
-  .customizer-inline-actions .create-button {
+  .field-group--hair-colour .hair-colour-controls .return-button {
     width: min(240px, 100%);
   }
 }
