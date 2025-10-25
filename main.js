@@ -132,15 +132,19 @@ const riverTileCoords = {
   RIVER_MAJOR_MOUTH_NARROW_E: { row: 8, col: 15 }
 };
 
-const overworldIcebergReplacement = { row: 4, col: 3 };
+const icebergTileOptions = [
+  { row: 3, col: 4 },
+  { row: 3, col: 5 }
+];
 
-const icebergTileCoords = {
-  ICEBERG_SURROUND_1: overworldIcebergReplacement,
-  ICEBERG_SURROUND_2: overworldIcebergReplacement,
-  ICEBERG_SURROUND_3: overworldIcebergReplacement,
-  ICEBERG_SURROUND_4: overworldIcebergReplacement,
-  ICEBERG_SURROUND_5: overworldIcebergReplacement
-};
+const icebergTileCoords = (() => {
+  const keys = ['ICEBERG_SURROUND_1', 'ICEBERG_SURROUND_2'];
+  return keys.reduce((coords, key, index) => {
+    const option = icebergTileOptions[index % icebergTileOptions.length];
+    coords[key] = { ...option };
+    return coords;
+  }, {});
+})();
 
 const tileLookup = new Map();
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
