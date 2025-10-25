@@ -63,6 +63,7 @@ const baseTileCoords = {
   MOUNTAIN_TOP_B: { row: 0, col: 5 },
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
+  MOUNTAIN_PEAK: { row: 0, col: 10 },
   STONE: { row: 0, col: 2 },
   DWARFHOLD: { row: 2, col: 9 },
   ABANDONED_DWARFHOLD: { row: 2, col: 8 },
@@ -8264,6 +8265,8 @@ function createWorld(seedString) {
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
+  const mountainPeakKey = hasMountainTile && tileLookup.has('MOUNTAIN_PEAK') ? 'MOUNTAIN_PEAK' : null;
+  const mountainPeakHeightThreshold = 0.97;
   const mountainTopVariantKeys = hasMountainTile
     ? ['MOUNTAIN_TOP_A', 'MOUNTAIN_TOP_B'].filter((key) => tileLookup.has(key))
     : [];
@@ -8273,6 +8276,7 @@ function createWorld(seedString) {
   const mountainOverlayKeySet = hasMountainTile
     ? new Set([
         mountainOverlayKey,
+        mountainPeakKey,
         ...mountainTopVariantKeys,
         ...mountainBottomVariantKeys
       ].filter(Boolean))
@@ -8299,6 +8303,7 @@ function createWorld(seedString) {
   let mountainScores = null;
   let mountainCandidateThreshold = null;
   let mountainMask = null;
+  let mountainHeightField = null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
@@ -8594,7 +8599,7 @@ function createWorld(seedString) {
 
   if (hasMountainTile) {
     mountainScores = new Float32Array(width * height);
-    const mountainHeightField = new Float32Array(width * height);
+    mountainHeightField = new Float32Array(width * height);
     let ridgeField = new Float32Array(width * height);
     const ridgeDirectionIndex = new Int8Array(width * height);
     ridgeDirectionIndex.fill(-1);
@@ -9062,12 +9067,19 @@ function createWorld(seedString) {
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
-        if (mountainMask[idx]) {
-          const tile = tiles[y][x];
-          tile.overlay = mountainOverlayKey;
-          if (tile.base === marshTileKey) {
-            tile.base = grassTileKey;
-          }
+        if (!mountainMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        const normalizedHeight = mountainHeightField ? mountainHeightField[idx] : 0;
+        const usePeakOverlay =
+          mountainPeakKey && normalizedHeight >= mountainPeakHeightThreshold;
+        tile.overlay = usePeakOverlay ? mountainPeakKey : mountainOverlayKey;
+        if (tile.base === marshTileKey) {
+          tile.base = grassTileKey;
         }
       }
     }
@@ -11232,6 +11244,14 @@ function createWorld(seedString) {
         }
         const tile = tiles[y][x];
         if (!tile || !isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        if (mountainPeakKey && tile.overlay === mountainPeakKey) {
+          continue;
+        }
+        const normalizedHeight = mountainHeightField ? mountainHeightField[idx] : 0;
+        if (mountainPeakKey && normalizedHeight >= mountainPeakHeightThreshold) {
+          tile.overlay = mountainPeakKey;
           continue;
         }
         const hasMountainAbove = y > 0 && mountainMask[(y - 1) * width + x];
