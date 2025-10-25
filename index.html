@@ -289,70 +289,100 @@
         </header>
         <div class="customizer-layout">
           <section class="customizer-main" aria-live="polite">
-              <div class="customizer-main-card">
-                <div class="customizer-visuals">
-                  <div class="customizer-preview" role="group" aria-label="Appearance preview">
-                    <h3 class="subpanel-title">Appearance</h3>
-                    <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
-                      <canvas
-                        id="dwarf-portrait-canvas"
-                        class="dwarf-portrait-canvas"
-                        width="128"
-                        height="128"
-                        aria-hidden="true"
-                      ></canvas>
+            <div class="customizer-main-card">
+              <div class="customizer-visuals" data-draggable-id="visuals-panel">
+                <div class="customizer-preview" role="group" aria-label="Appearance preview">
+                  <h3 class="subpanel-title">Appearance</h3>
+                  <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
+                    <canvas
+                      id="dwarf-portrait-canvas"
+                      class="dwarf-portrait-canvas"
+                      width="128"
+                      height="128"
+                      aria-hidden="true"
+                    ></canvas>
+                  </div>
+                  <p id="dwarf-trait-summary" class="trait-summary"></p>
+                  <div
+                    id="dwarf-trait-attributes"
+                    class="trait-attributes"
+                    aria-live="polite"
+                    role="list"
+                  ></div>
+                </div>
+              </div>
+              <div class="customizer-detail-panel">
+                <div class="customizer-top-bar pixel-bar">
+                  <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
+                    <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
+                    <label
+                      id="founder-name-label"
+                      class="field-label sr-only"
+                      for="dwarf-name-input"
+                      >Founder name</label
+                    >
+                    <div class="dwarf-name-nav">
+                      <button
+                        type="button"
+                        id="dwarf-prev"
+                        class="secondary dwarf-nav-button dwarf-nav-button--prev"
+                        aria-label="Previous name"
+                      >
+                        <span class="dwarf-nav-icon" aria-hidden="true"></span>
+                      </button>
+                      <div class="dwarf-name-field">
+                        <input
+                          type="text"
+                          id="dwarf-name-input"
+                          class="dwarf-name-input"
+                          maxlength="40"
+                          autocomplete="off"
+                          required
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        id="dwarf-next"
+                        class="secondary dwarf-nav-button dwarf-nav-button--next"
+                        aria-label="Next name"
+                      >
+                        <span class="dwarf-nav-icon" aria-hidden="true"></span>
+                      </button>
                     </div>
-                    <p id="dwarf-trait-summary" class="trait-summary"></p>
-                    <div
-                      id="dwarf-trait-attributes"
-                      class="trait-attributes"
-                      aria-live="polite"
-                      role="list"
-                    ></div>
+                  </div>
+                  <div class="layout-edit-controls" role="group" aria-label="Layout editing controls">
+                    <button
+                      type="button"
+                      id="dwarf-layout-toggle"
+                      class="secondary layout-toggle-button"
+                      aria-pressed="false"
+                    >
+                      Enable Layout Dragging
+                    </button>
+                    <button
+                      type="button"
+                      id="dwarf-layout-save"
+                      class="secondary layout-save-button"
+                      disabled
+                    >
+                      Download Layout
+                    </button>
+                    <button
+                      type="button"
+                      id="dwarf-layout-reset"
+                      class="secondary layout-reset-button"
+                      disabled
+                    >
+                      Reset Layout
+                    </button>
                   </div>
                 </div>
-                <div class="customizer-detail-panel">
-                  <div class="customizer-top-bar pixel-bar">
-                    <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
-                      <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
-                      <label
-                        id="founder-name-label"
-                        class="field-label sr-only"
-                        for="dwarf-name-input"
-                        >Founder name</label
-                      >
-                      <div class="dwarf-name-nav">
-                        <button
-                          type="button"
-                          id="dwarf-prev"
-                          class="secondary dwarf-nav-button dwarf-nav-button--prev"
-                          aria-label="Previous name"
-                        >
-                          <span class="dwarf-nav-icon" aria-hidden="true"></span>
-                        </button>
-                        <div class="dwarf-name-field">
-                          <input
-                            type="text"
-                            id="dwarf-name-input"
-                            class="dwarf-name-input"
-                            maxlength="40"
-                            autocomplete="off"
-                            required
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          id="dwarf-next"
-                          class="secondary dwarf-nav-button dwarf-nav-button--next"
-                          aria-label="Next name"
-                        >
-                          <span class="dwarf-nav-icon" aria-hidden="true"></span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="customizer-body">
-                    <div class="trait-sliders-panel" aria-label="Appearance adjustments">
+                <div class="customizer-body">
+                  <div
+                    class="trait-sliders-panel"
+                    aria-label="Appearance adjustments"
+                    data-draggable-id="trait-sliders-panel"
+                  >
                       <div class="field-group">
                         <label for="dwarf-skin-slider" class="field-label">Skin tone</label>
                         <div class="trait-slider">
@@ -499,7 +529,7 @@
                         </div>
                       </div>
                     </div>
-                    <div class="customizer-fields">
+                    <div class="customizer-fields" data-draggable-id="customizer-fields-panel">
                       <div class="field-group field-group--gender">
                           <p id="dwarf-gender-label" class="field-label">Gender</p>
                           <div class="gender-toggle-wrapper">
