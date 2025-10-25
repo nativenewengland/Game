@@ -8791,6 +8791,8 @@ function createWorld(seedString) {
     }
     return treeOverlayKey;
   };
+  let treeDensityField = null;
+
   if (hasTreeTile) {
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
@@ -8800,7 +8802,7 @@ function createWorld(seedString) {
     const treeBaseOffsetY = rng() * 4096;
     const treeDetailOffsetX = rng() * 8192;
     const treeDetailOffsetY = rng() * 8192;
-    const treeDensityField = new Float32Array(width * height);
+    treeDensityField = new Float32Array(width * height);
     const treeMask = new Uint8Array(width * height);
     const clusterNeighborOffsets = [
       [-1, -1],
