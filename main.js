@@ -964,17 +964,55 @@ function generateDwarfholdPopulationBreakdown(population, random) {
   });
 }
 
-function generateEvilWizardTowerPopulationBreakdown(population, random) {
-  return generatePopulationBreakdownFromOptions(
-    evilWizardTowerPopulationRaceOptions,
-    population,
-    random,
-    {
-      majorityIndex: 0,
-      majorityShareRange: [0.45, 0.7],
-      ensureMajority: true
-    }
+function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCount) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const resolvedPopulation = Math.max(0, Math.round(Number.isFinite(population) ? population : 0));
+  const resolvedWizardCount = Math.max(
+    0,
+    Math.min(
+      Math.round(Number.isFinite(wizardCount) ? wizardCount : 0),
+      resolvedPopulation
+    )
   );
+  const remainderPopulation = Math.max(0, resolvedPopulation - resolvedWizardCount);
+
+  const remainderBreakdown =
+    remainderPopulation > 0
+      ? generatePopulationBreakdownFromOptions(
+          evilWizardTowerPopulationRaceOptions.slice(1),
+          remainderPopulation,
+          randomFn,
+          {
+            majorityIndex: 1,
+            majorityShareRange: [0.35, 0.6],
+            ensureMajority: true
+          }
+        )
+      : [];
+
+  const wizardEntry = {
+    ...evilWizardTowerPopulationRaceOptions[0],
+    percentage:
+      resolvedPopulation === 0
+        ? 0
+        : clamp((resolvedWizardCount / resolvedPopulation) * 100, 0, 100),
+    population: resolvedWizardCount
+  };
+
+  if (remainderBreakdown.length === 0) {
+    return [wizardEntry];
+  }
+
+  return [
+    wizardEntry,
+    ...remainderBreakdown.map((entry) => ({
+      ...entry,
+      percentage:
+        resolvedPopulation === 0
+          ? 0
+          : clamp((entry.population / resolvedPopulation) * 100, 0, 100)
+    }))
+  ];
 }
 
 function generateTownPopulationBreakdown(population, random) {
@@ -1065,17 +1103,19 @@ function generateDwarfholdDetails(name, random) {
 
 function generateEvilWizardTowerDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const populationRoll = randomFn();
-  const population =
-    populationRoll < 0.7
+  const population = Math.max(40, Math.floor(80 + randomFn() * 520));
+  const wizardRoll = randomFn();
+  const wizardCount =
+    wizardRoll < 0.7
       ? 1
       : 2 + Math.floor(randomFn() * 9);
+  const resolvedWizardCount = Math.max(1, Math.min(wizardCount, population));
   let classification = 'Wizard Tower';
-  if (population >= 9) {
+  if (population >= 400) {
     classification = 'Dread Citadel';
-  } else if (population >= 6) {
+  } else if (population >= 240) {
     classification = 'Shadow Spire';
-  } else if (population >= 3) {
+  } else if (population >= 140) {
     classification = 'Arcane Bastion';
   }
 
@@ -1086,7 +1126,11 @@ function generateEvilWizardTowerDetails(name, random) {
   const prominentGroup = cabal || null;
   const hallmark = pickRandomFrom(evilWizardTowerHallmarks, randomFn) ||
     'Shrouded in eldritch wards that thrum through the night.';
-  const populationBreakdown = generateEvilWizardTowerPopulationBreakdown(population, randomFn);
+  const populationBreakdown = generateEvilWizardTowerPopulationBreakdown(
+    population,
+    randomFn,
+    resolvedWizardCount
+  );
 
   return {
     type: 'evilWizardTower',
