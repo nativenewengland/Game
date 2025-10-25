@@ -1324,22 +1324,24 @@ button:hover:not(:disabled) {
 
 .field-group--hair-colour .hair-colour-controls {
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
   gap: clamp(0.9rem, 2.2vw, 1.35rem);
-}
-
-.field-group--hair-colour .trait-slider {
-  flex: 1 1 auto;
-}
-
-.field-group--hair-colour .hair-colour-controls .return-button {
-  align-self: center;
 }
 
 .create-button--inline {
   flex: 0 0 auto;
   width: clamp(170px, 20vw, 230px);
   max-width: 100%;
+}
+
+.customizer-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin-top: clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .gender-toggle {
@@ -1397,16 +1399,12 @@ button:hover:not(:disabled) {
 }
 
 @media (max-width: 720px) {
-  .field-group--hair-colour .hair-colour-controls {
-    flex-direction: column;
-    align-items: center;
+  .customizer-actions {
+    justify-content: center;
   }
 
-  .create-button--inline {
-    width: min(240px, 100%);
-  }
-
-  .field-group--hair-colour .hair-colour-controls .return-button {
+  .customizer-actions .return-button,
+  .customizer-actions .create-button--inline {
     width: min(240px, 100%);
   }
 }
