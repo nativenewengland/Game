@@ -153,6 +153,188 @@ const icebergTileCoords = (() => {
 })();
 
 const tileLookup = new Map();
+
+function registerCustomStructure(key, drawFn) {
+  if (!key || typeof drawFn !== 'function') {
+    return;
+  }
+  tileLookup.set(key, {
+    sheet: null,
+    sx: 0,
+    sy: 0,
+    size: drawSize,
+    draw: drawFn
+  });
+}
+
+function drawOrcCampStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const radius = size * 0.48;
+  ctx.fillStyle = '#2c4d2f';
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#50321f';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.18, size * 0.78);
+  ctx.lineTo(size * 0.34, size * 0.26);
+  ctx.lineTo(size * 0.5, size * 0.78);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#6b4226';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.54, size * 0.82);
+  ctx.lineTo(size * 0.72, size * 0.32);
+  ctx.lineTo(size * 0.86, size * 0.82);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(size * 0.33, size * 0.52, size * 0.08, size * 0.2);
+  ctx.fillRect(size * 0.66, size * 0.54, size * 0.09, size * 0.22);
+
+  ctx.fillStyle = '#c13f1a';
+  ctx.beginPath();
+  ctx.arc(size * 0.25, size * 0.62, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawDungeonStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const wallRadius = size * 0.16;
+  ctx.fillStyle = '#1f2330';
+  ctx.fillRect(size * 0.12, size * 0.18, size * 0.76, size * 0.66);
+  ctx.fillStyle = '#353a4a';
+  ctx.fillRect(size * 0.16, size * 0.24, size * 0.68, size * 0.54);
+
+  ctx.fillStyle = '#111317';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.38, size * 0.78);
+  ctx.lineTo(size * 0.5, size * 0.48);
+  ctx.lineTo(size * 0.62, size * 0.78);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#202633';
+  ctx.lineWidth = Math.max(1, size * 0.05);
+  ctx.strokeRect(size * 0.12 + ctx.lineWidth / 2, size * 0.18 + ctx.lineWidth / 2, size * 0.76 - ctx.lineWidth, size * 0.66 - ctx.lineWidth);
+
+  ctx.fillStyle = '#9f874a';
+  ctx.beginPath();
+  ctx.arc(size * 0.5, size * 0.42, wallRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMonasteryStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  ctx.fillStyle = '#f1f0e6';
+  ctx.fillRect(size * 0.18, size * 0.32, size * 0.64, size * 0.46);
+  ctx.fillStyle = '#d9d4bf';
+  ctx.fillRect(size * 0.22, size * 0.36, size * 0.56, size * 0.34);
+
+  ctx.fillStyle = '#c58d1d';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.14, size * 0.32);
+  ctx.lineTo(size * 0.5, size * 0.14);
+  ctx.lineTo(size * 0.86, size * 0.32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#a5690f';
+  ctx.fillRect(size * 0.44, size * 0.16, size * 0.12, size * 0.28);
+
+  ctx.strokeStyle = '#fff7ce';
+  ctx.lineWidth = Math.max(1, size * 0.04);
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5, size * 0.18);
+  ctx.lineTo(size * 0.5, size * 0.34);
+  ctx.moveTo(size * 0.44, size * 0.26);
+  ctx.lineTo(size * 0.56, size * 0.26);
+  ctx.stroke();
+
+  ctx.fillStyle = '#7a7263';
+  ctx.fillRect(size * 0.46, size * 0.54, size * 0.08, size * 0.24);
+  ctx.restore();
+}
+
+function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  ctx.fillStyle = '#5b666f';
+  ctx.fillRect(size * 0.12, size * 0.3, size * 0.76, size * 0.5);
+  ctx.fillStyle = '#77828b';
+  ctx.fillRect(size * 0.18, size * 0.36, size * 0.64, size * 0.38);
+
+  ctx.fillStyle = '#4a545c';
+  const towerWidth = size * 0.2;
+  ctx.fillRect(size * 0.12, size * 0.18, towerWidth, size * 0.42);
+  ctx.fillRect(size * 0.68, size * 0.18, towerWidth, size * 0.42);
+
+  ctx.fillStyle = '#2a2f33';
+  ctx.fillRect(size * 0.44, size * 0.54, size * 0.12, size * 0.26);
+
+  ctx.fillStyle = '#c7352d';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5, size * 0.18);
+  ctx.lineTo(size * 0.6, size * 0.32);
+  ctx.lineTo(size * 0.4, size * 0.32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#32393f';
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  ctx.beginPath();
+  const merlonCount = 4;
+  for (let i = 0; i < merlonCount; i += 1) {
+    const startX = size * 0.22 + (size * 0.56 * i) / merlonCount;
+    ctx.moveTo(startX, size * 0.32);
+    ctx.lineTo(startX + size * 0.08, size * 0.32);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSaintShrineStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const centerX = size / 2;
+  const centerY = size * 0.52;
+  ctx.fillStyle = '#d5ecff';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, size * 0.46, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f6f0d0';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, size * 0.34, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#b49a2a';
+  ctx.fillRect(size * 0.42, size * 0.26, size * 0.16, size * 0.44);
+  ctx.fillRect(size * 0.35, size * 0.58, size * 0.3, size * 0.16);
+
+  ctx.strokeStyle = '#fff6ba';
+  ctx.lineWidth = Math.max(1, size * 0.04);
+  ctx.beginPath();
+  ctx.moveTo(centerX, size * 0.18);
+  ctx.lineTo(centerX, size * 0.42);
+  ctx.moveTo(size * 0.4, size * 0.3);
+  ctx.lineTo(size * 0.6, size * 0.3);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, size * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
@@ -297,6 +479,12 @@ function registerTiles(sheetKey, coordMap) {
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
+
+registerCustomStructure('ORC_CAMP', (ctx, drawOptions) => drawOrcCampStructure(ctx, drawOptions));
+registerCustomStructure('DUNGEON', (ctx, drawOptions) => drawDungeonStructure(ctx, drawOptions));
+registerCustomStructure('MONASTERY', (ctx, drawOptions) => drawMonasteryStructure(ctx, drawOptions));
+registerCustomStructure('CASTLE', (ctx, drawOptions) => drawCastleStructure(ctx, drawOptions));
+registerCustomStructure('SAINT_SHRINE', (ctx, drawOptions) => drawSaintShrineStructure(ctx, drawOptions));
 
 // The evil wizard tower sprite only shows up on some tilesheets. If the
 // currently loaded set does not define it, fall back to the generic tower so
@@ -1664,6 +1852,153 @@ const lizardmenCityExports = [
   'Glittering shell mosaics'
 ];
 
+const orcTribeAdjectives = [
+  'Ironjaw',
+  'Bloodfang',
+  'Stormhide',
+  'Ashen',
+  'Bonegnaw',
+  'Thunderhoof',
+  'Grimgaze',
+  'Skullsplitter',
+  'Nightscar',
+  'Rageborn'
+];
+const orcTribeNouns = [
+  'Clan',
+  'Warband',
+  'Legion',
+  'Brood',
+  'Horde',
+  'Reavers',
+  'Marauders',
+  'Prowlers'
+];
+const orcCampFeatures = [
+  'War drums thunder at dusk from within the palisade.',
+  'Spiked palisades bear trophies from raided caravans.',
+  'Tattered war banners crackle in the smoky wind.',
+  'An arena of packed earth hosts nightly combat rites.',
+  'Blacksmith forges belch sparks as crude blades are hammered.',
+  'Watchfires burn green with alchemical fumes.',
+  'Captured standards hang as warnings to intruders.'
+];
+const orcWarLeaders = [
+  'Gorath the Red',
+  'Mazrak One-Eye',
+  'Thura Ironhide',
+  'Balgrom Spinebreaker',
+  'Igra Wildfang',
+  'Vorgh the Thunderer'
+];
+const orcThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Menacing'];
+
+const dungeonNamePrefixes = [
+  'Whispering',
+  'Sunken',
+  'Forsaken',
+  'Crumbling',
+  'Midnight',
+  'Shrouded',
+  'Veiled',
+  'Obsidian'
+];
+const dungeonNameSuffixes = [
+  'Vault',
+  'Depths',
+  'Catacomb',
+  'Sepulchre',
+  'Labyrinth',
+  'Halls',
+  'Crypt'
+];
+const dungeonPerils = [
+  'echo with restless spirits',
+  'are laced with shifting stonework traps',
+  'are patrolled by tireless constructs',
+  'hide relics bound with cursed wards',
+  'are veiled in ever-burning witchfire',
+  'conceal a slumbering wyrm'
+];
+const dungeonDepths = ['three', 'five', 'seven', 'nine'];
+
+const monasteryOrders = [
+  'Order of the Dawn Lantern',
+  'Order of Silent Rivers',
+  'Brotherhood of the Verdant Star',
+  'Scribes of the Hidden Song',
+  'Wardens of the Azure Flame',
+  'Sisters of the Gentle Bell'
+];
+const monasteryVirtues = [
+  'contemplation',
+  'vigilance',
+  'compassion',
+  'illumination',
+  'endurance',
+  'harmony'
+];
+const monasteryRelics = [
+  'a saintly bell that rings without wind',
+  'scrolls penned in starlight ink',
+  'the Ember Chalice of first dawn',
+  'a reliquary of luminous feathers',
+  'a mirror that remembers forgotten hymns'
+];
+
+const castleHouseNames = [
+  'House Blackthorn',
+  'House Rivenshield',
+  'House Cindergate',
+  'House Frostmere',
+  'House Dawnspear',
+  'House Emberhall'
+];
+const castleDefensiveTraits = [
+  'Commands a triple-ring curtain wall.',
+  'Boasts arrow-slitted towers overlooking the vale.',
+  'Is girded by rune-carved gatehouses.',
+  'Holds a hidden sally tunnel for swift sorties.',
+  'Is anchored to living stone by dwarven masonry.'
+];
+const castleBanners = [
+  'a silver gryphon on midnight blue',
+  'twin suns over a crimson field',
+  'a sable stag wreathed in ivy',
+  'interlocked hammers upon gold',
+  'a white phoenix rising from ash'
+];
+
+const saintlyNames = [
+  'Saint Elowen',
+  'Saint Calder',
+  'Saint Miriel',
+  'Saint Tharan',
+  'Saint Ysoria',
+  'Saint Brannoc'
+];
+const saintMiracles = [
+  'calmed a wildfire with a whispered prayer',
+  'healed an entire plague-struck village',
+  'turned back a tide of marauding spirits',
+  'walked across a frozen sea to guide refugees',
+  'struck down a demon with a blade of light'
+];
+const shrineOfferings = [
+  'garlands of moonpetals',
+  'etched votive coins',
+  'bottled starlight dew',
+  'hand-carved icons',
+  'woven prayer cords'
+];
+const shrinePilgrims = [
+  'penitents seeking absolution',
+  'knights pledging holy vows',
+  'healers learning forgotten benedictions',
+  'pilgrims chasing whispered visions',
+  'shepherds praying for gentle winters'
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -2677,6 +3012,180 @@ function generateLizardmenCityDetails(name, random) {
     majorExports,
     majorExportsLabel: 'Tributes & Trade',
     populationBreakdown
+  };
+}
+
+function generateOrcCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(orcTribeAdjectives, randomFn) || 'Ironjaw';
+  const noun = pickRandomFrom(orcTribeNouns, randomFn) || 'Clan';
+  const style = randomFn();
+  if (style < 0.35) {
+    return `${adjective} ${noun} Camp`;
+  }
+  if (style < 0.7) {
+    return `${adjective} ${noun} Warcamp`;
+  }
+  return `Camp of the ${adjective} ${noun}`;
+}
+
+function generateOrcCampDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(orcTribeAdjectives, randomFn) || 'Ironjaw';
+  const noun = pickRandomFrom(orcTribeNouns, randomFn) || 'Clan';
+  const tribeName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(orcWarLeaders, randomFn) || 'Gorath the Red';
+  const feature = pickRandomFrom(orcCampFeatures, randomFn) ||
+    'War drums thunder at dusk from within the palisade.';
+  const threatLevel = pickRandomFrom(orcThreatDescriptors, randomFn) || 'Severe';
+  const raidingFocus = pickRandomFrom(['plundered caravans', 'frontier villages', 'wandering merchants', 'remote farmsteads'], randomFn);
+
+  return {
+    type: 'orcCamp',
+    name,
+    displayType: 'Orc War Camp',
+    tribe: tribeName,
+    warLeader,
+    threatLevel,
+    inhabitants: `${tribeName} warriors`,
+    description: `${tribeName} raiders gather here, their sights set on ${raidingFocus || 'nearby lands'}. ${feature}`,
+    banner: pickRandomFrom(orcTribeAdjectives, randomFn) || 'Rageborn',
+    vow: 'Blood Oaths'
+  };
+}
+
+function generateDungeonName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(dungeonNamePrefixes, randomFn) || 'Sunken';
+  const suffix = pickRandomFrom(dungeonNameSuffixes, randomFn) || 'Vault';
+  const style = randomFn();
+  if (style < 0.4) {
+    return `${prefix} ${suffix}`;
+  }
+  if (style < 0.75) {
+    return `${suffix} of ${prefix} Echoes`;
+  }
+  return `${prefix} ${suffix} of Dread`;
+}
+
+function generateDungeonDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const peril = pickRandomFrom(dungeonPerils, randomFn) || 'echo with restless spirits';
+  const depth = pickRandomFrom(dungeonDepths, randomFn) || 'five';
+  const guardian = pickRandomFrom(
+    [
+      'bone sentries',
+      'arcane sentinels',
+      'chittering horrors',
+      'shadow-haunting spectres',
+      'oozing slimes'
+    ],
+    randomFn
+  ) || 'ancient wardens';
+
+  return {
+    type: 'dungeon',
+    name,
+    displayType: 'Ancient Dungeon',
+    threatLevel: 'High',
+    guardians: guardian,
+    depth: `${depth} levels`,
+    description: `Rumoured to ${peril}, the ${name} descends ${depth} levels where ${guardian} stalk forgotten halls.`
+  };
+}
+
+function generateMonasteryName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const orderName = pickRandomFrom(monasteryOrders, randomFn) || 'Order of the Dawn Lantern';
+  const virtue = pickRandomFrom(monasteryVirtues, randomFn) || 'contemplation';
+  const virtueName = virtue.charAt(0).toUpperCase() + virtue.slice(1);
+  if (randomFn() < 0.5) {
+    const trimmedOrder = orderName.toLowerCase().includes('monastery')
+      ? orderName
+      : `${orderName} Monastery`;
+    return trimmedOrder;
+  }
+  return `Monastery of ${virtueName}`;
+}
+
+function generateMonasteryDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const orderName = pickRandomFrom(monasteryOrders, randomFn) || 'Order of the Dawn Lantern';
+  const virtue = pickRandomFrom(monasteryVirtues, randomFn) || 'contemplation';
+  const virtueName = virtue.charAt(0).toUpperCase() + virtue.slice(1);
+  const relic = pickRandomFrom(monasteryRelics, randomFn) || 'a saintly bell that rings without wind';
+  const caretakerTitle = randomFn() < 0.5 ? 'Abbot' : 'Abbess';
+  const caretakerName = pickRandomFrom(
+    [...(townFirstNamePools.male || []), ...(townFirstNamePools.female || []), ...(townFirstNamePools.neutral || [])],
+    randomFn
+  ) || 'Seren';
+
+  return {
+    type: 'monastery',
+    name,
+    displayType: 'Sacred Monastery',
+    order: orderName,
+    devotion: `Vow of ${virtueName}`,
+    caretaker: `${caretakerTitle} ${caretakerName}`,
+    description: `${orderName} keep solemn watch here, dedicated to ${virtue}. Their cloisters guard ${relic}.`
+  };
+}
+
+function generateCastleName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const house = pickRandomFrom(castleHouseNames, randomFn) || 'House Blackthorn';
+  const base = house.replace(/^House\s+/i, '') || 'Blackthorn';
+  const style = randomFn();
+  if (style < 0.4) {
+    return `Castle ${base}`;
+  }
+  if (style < 0.7) {
+    return `${base} Keep`;
+  }
+  return `${base} Holdfast`;
+}
+
+function generateCastleDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const house = pickRandomFrom(castleHouseNames, randomFn) || 'House Blackthorn';
+  const banner = pickRandomFrom(castleBanners, randomFn) || 'a silver gryphon on midnight blue';
+  const trait = pickRandomFrom(castleDefensiveTraits, randomFn) || 'Commands a triple-ring curtain wall.';
+  const garrison = Math.max(60, Math.floor(120 + randomFn() * 380));
+
+  return {
+    type: 'castle',
+    name,
+    displayType: 'Fortified Castle',
+    rulingHouse: house,
+    banner,
+    garrison,
+    description: `${name} stands loyal to ${house}, its banner of ${banner}. ${trait}`
+  };
+}
+
+function generateSaintShrineName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const saint = pickRandomFrom(saintlyNames, randomFn) || 'Saint Elowen';
+  if (randomFn() < 0.5) {
+    return `Shrine of ${saint}`;
+  }
+  return `${saint}'s Shrine`;
+}
+
+function generateSaintShrineDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const saint = pickRandomFrom(saintlyNames, randomFn) || 'Saint Elowen';
+  const miracle = pickRandomFrom(saintMiracles, randomFn) || 'calmed a wildfire with a whispered prayer';
+  const offerings = pickRandomFrom(shrineOfferings, randomFn) || 'garlands of moonpetals';
+  const pilgrims = pickRandomFrom(shrinePilgrims, randomFn) || 'penitents seeking absolution';
+
+  return {
+    type: 'saintShrine',
+    name,
+    displayType: 'Saintly Shrine',
+    patronSaint: saint,
+    devotion: `Honours the miracle that ${saint.toLowerCase().includes('saint') ? '' : 'Saint '}${saint} ${miracle}.`,
+    description: `${name} marks where ${saint} ${miracle}. Pilgrims leave ${offerings}, and ${pilgrims} gather in hushed prayer.`
   };
 }
 
@@ -5862,13 +6371,66 @@ function buildStructureTooltipContent(tile) {
   }
 
   const fallbackTitle = `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
+  const sections = [fallbackTitle];
+  const entries = [];
   const faction = getFactionForTile(tile);
   if (faction && faction.name) {
-    const entries = [{ label: 'Realm', value: faction.name }];
+    entries.push({ label: 'Realm', value: faction.name });
     const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
     if (influenceDescription) {
       entries.push({ label: 'Territorial Hold', value: influenceDescription });
     }
+  }
+
+  if (details) {
+    if (details.displayType) {
+      entries.push({ label: 'Type', value: details.displayType });
+    }
+    if (details.tribe) {
+      entries.push({ label: 'Tribe', value: details.tribe });
+    }
+    if (details.threatLevel) {
+      entries.push({ label: 'Threat Level', value: details.threatLevel });
+    }
+    if (details.inhabitants) {
+      entries.push({ label: 'Inhabitants', value: details.inhabitants });
+    }
+    if (details.warLeader) {
+      entries.push({ label: 'Warlord', value: details.warLeader });
+    }
+    if (details.guardians) {
+      entries.push({ label: 'Guardians', value: details.guardians });
+    }
+    if (details.depth) {
+      entries.push({ label: 'Depth', value: details.depth });
+    }
+    if (details.order) {
+      entries.push({ label: 'Order', value: details.order });
+    }
+    if (details.devotion) {
+      entries.push({ label: 'Devotion', value: details.devotion });
+    }
+    if (details.caretaker) {
+      entries.push({ label: 'Caretaker', value: details.caretaker });
+    }
+    if (details.rulingHouse) {
+      entries.push({ label: 'Ruling House', value: details.rulingHouse });
+    }
+    if (details.banner) {
+      entries.push({ label: 'Banner', value: details.banner });
+    }
+    if (Number.isFinite(details.garrison)) {
+      entries.push({ label: 'Garrison', value: Math.max(0, Math.round(details.garrison)).toLocaleString('en-US') });
+    }
+    if (details.patronSaint) {
+      entries.push({ label: 'Patron Saint', value: details.patronSaint });
+    }
+    if (details.description) {
+      sections.push(`<p class="tooltip-note">${escapeHtml(details.description)}</p>`);
+    }
+  }
+
+  if (entries.length > 0) {
     const listItems = entries
       .map(
         ({ label, value }) =>
@@ -5877,9 +6439,10 @@ function buildStructureTooltipContent(tile) {
           )}</span></li>`
       )
       .join('');
-    return `${fallbackTitle}<ul class="tooltip-list">${listItems}</ul>`;
+    sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
   }
-  return fallbackTitle;
+
+  return sections.join('');
 }
 
 function showMapTooltip(content, pointerX, pointerY, boundsRect) {
@@ -7638,6 +8201,30 @@ function createWorld(seedString) {
   const evilWizardTowers = [];
   const woodElfGroves = [];
   const lizardmenCities = [];
+  const orcCamps = [];
+  const dungeons = [];
+  const monasteries = [];
+  const castles = [];
+  const saintShrines = [];
+  const computeNearestDistanceSq = (x, y, points) => {
+    if (!Array.isArray(points) || points.length === 0) {
+      return Infinity;
+    }
+    let best = Infinity;
+    for (let i = 0; i < points.length; i += 1) {
+      const point = points[i];
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+        continue;
+      }
+      const dx = x - point.x;
+      const dy = y - point.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < best) {
+        best = distSq;
+      }
+    }
+    return best;
+  };
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
@@ -9690,6 +10277,603 @@ function createWorld(seedString) {
     }
   }
 
+  const majorSettlementPoints = [
+    ...dwarfholds,
+    ...towns,
+    ...woodElfGroves,
+    ...lizardmenCities,
+    ...towers,
+    ...evilWizardTowers
+  ];
+  const hillOverlayKeysForStructures = new Set(['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key)));
+  const isHillOverlayForStructures = (overlayKey) =>
+    overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
+  const mapArea = width * height;
+  const orcCampNoiseSeed = (seedNumber + 0x4a1d2b7f) >>> 0;
+  const dungeonNoiseSeed = (seedNumber + 0x5c8d3a1f) >>> 0;
+  const monasteryNoiseSeed = (seedNumber + 0x6f12c43d) >>> 0;
+  const castleNoiseSeed = (seedNumber + 0x7be21a59) >>> 0;
+  const shrineNoiseSeed = (seedNumber + 0x8cf43123) >>> 0;
+
+  const orcCampKey = tileLookup.has('ORC_CAMP') ? 'ORC_CAMP' : null;
+  if (orcCampKey) {
+    const allowedOrcBases = new Set(
+      [grassTileKey, sandTileKey, marshTileKey, badlandsTileKey].filter((key) => typeof key === 'string')
+    );
+    const orcCampCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!allowedOrcBases.has(tile.base)) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const settlementDistSq = computeNearestDistanceSq(x, y, majorSettlementPoints);
+        if (settlementDistSq < 36) {
+          continue;
+        }
+        const rainfallValue = rainfallField[idx];
+        const dryness = clamp(1 - rainfallValue, 0, 1);
+        let baseScore = 0.2;
+        if (tile.base === badlandsTileKey) {
+          baseScore += 0.45;
+        } else if (tile.base === sandTileKey) {
+          baseScore += 0.36;
+        } else if (tile.base === marshTileKey) {
+          baseScore += 0.28;
+        } else {
+          baseScore += 0.24;
+        }
+        const hillBonus =
+          (isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay)) && tile.base !== marshTileKey
+            ? 0.16
+            : 0;
+        let waterAdjacency = 0;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            waterAdjacency += 1;
+          }
+        }
+        const waterScore = clamp(waterAdjacency * 0.08, 0, 0.18);
+        let settlementPenalty = 0;
+        if (settlementDistSq !== Infinity) {
+          const distance = Math.sqrt(settlementDistSq);
+          settlementPenalty = clamp((10 - distance) * 0.05, 0, 0.35);
+        }
+        const borderDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const edgeScore = clamp(borderDistance / Math.max(6, Math.min(width, height) / 3.2), 0, 1) * 0.12;
+        const noise = hashCoords(x, y, orcCampNoiseSeed) - 0.5;
+        const score =
+          baseScore +
+          dryness * 0.35 +
+          hillBonus +
+          waterScore +
+          edgeScore +
+          noise * 0.22 +
+          rng() * 0.18 -
+          settlementPenalty;
+        if (score > 0.28) {
+          orcCampCandidates.push({ x, y, score });
+        }
+      }
+    }
+
+    if (orcCampCandidates.length > 0) {
+      orcCampCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 14000));
+      const maxCamps = computeStructurePlacementLimit(baseTarget, 16, 1);
+      const minDistance = 8;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < orcCampCandidates.length; i += 1) {
+        if (placed.length >= maxCamps) {
+          break;
+        }
+        const candidate = orcCampCandidates[i];
+        if (candidate.score < 0.3) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const settlementDistSq = computeNearestDistanceSq(candidate.x, candidate.y, majorSettlementPoints);
+        if (settlementDistSq < 36) {
+          continue;
+        }
+        const name = generateOrcCampName(rng);
+        const details = generateOrcCampDetails(name, rng);
+        tile.structure = orcCampKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        orcCamps.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const dungeonKey = tileLookup.has('DUNGEON') ? 'DUNGEON' : null;
+  if (dungeonKey) {
+    const dungeonCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!isLandBaseTile(tile.base)) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const settlementDistSq = computeNearestDistanceSq(x, y, majorSettlementPoints);
+        if (settlementDistSq < 49) {
+          continue;
+        }
+        const heightValue = elevationField[idx];
+        let slopeSum = 0;
+        let neighborCount = 0;
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          slopeSum += Math.abs(heightValue - elevationField[nIdx]);
+          neighborCount += 1;
+          if (mountainMask && mountainMask[nIdx]) {
+            mountainNeighbors += 1;
+          } else {
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && mountainOverlayKey && isMountainOverlay(neighborTile.overlay)) {
+              mountainNeighbors += 1;
+            }
+          }
+        }
+        const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+        const slopeScore = clamp((averageSlope - 0.008) * 38, 0, 1);
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.12 : 0;
+        const mountainBonus = Math.min(0.3, mountainNeighbors * 0.08);
+        const moisture = clamp(rainfallField[idx] * 0.55 + (1 - drainageField[idx]) * 0.45, 0, 1);
+        const dampBonus = clamp(moisture * 0.25, 0, 0.18);
+        const noise = hashCoords(x, y, dungeonNoiseSeed) - 0.5;
+        const score = slopeScore * 0.45 + mountainBonus + hillBonus + dampBonus + noise * 0.3 + rng() * 0.15;
+        if (score > 0.2) {
+          dungeonCandidates.push({ x, y, score });
+        }
+      }
+    }
+
+    if (dungeonCandidates.length > 0) {
+      dungeonCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 21000));
+      const maxDungeons = computeStructurePlacementLimit(baseTarget, 14, 1);
+      const minDistance = 9;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < dungeonCandidates.length; i += 1) {
+        if (placed.length >= maxDungeons) {
+          break;
+        }
+        const candidate = dungeonCandidates[i];
+        if (candidate.score < 0.22) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!isLandBaseTile(tile.base)) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const name = generateDungeonName(rng);
+        const details = generateDungeonDetails(name, rng);
+        tile.structure = dungeonKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        dungeons.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const monasteryKey = tileLookup.has('MONASTERY') ? 'MONASTERY' : null;
+  if (monasteryKey) {
+    const monasteryCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const distanceToTownSq = computeNearestDistanceSq(x, y, towns);
+        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarfholds);
+        const settlementDistanceSq = Math.min(distanceToTownSq, distanceToHoldSq);
+        if (settlementDistanceSq === Infinity) {
+          continue;
+        }
+        const settlementDistance = Math.sqrt(settlementDistanceSq);
+        if (settlementDistance < 4 || settlementDistance > 46) {
+          continue;
+        }
+        const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+        if (distanceToOrcsSq < 49) {
+          continue;
+        }
+        let riverAdjacency = 0;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (neighborTile && neighborTile.river) {
+            riverAdjacency += 1;
+          }
+        }
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.18 : 0;
+        const riverScore = riverAdjacency > 0 ? clamp(0.18 + riverAdjacency * 0.08, 0, 0.3) : 0;
+        const noise = hashCoords(x, y, monasteryNoiseSeed) - 0.5;
+        const distanceScore = clamp((settlementDistance - 4) / 18, 0, 1) * 0.22;
+        const elevationValue = elevationField[idx];
+        const elevationScore = clamp((elevationValue - seaLevel) * 2, 0, 1) * 0.18;
+        const score =
+          0.28 + hillBonus + riverScore + distanceScore + elevationScore + noise * 0.2 + rng() * 0.12;
+        monasteryCandidates.push({ x, y, score });
+      }
+    }
+
+    if (monasteryCandidates.length > 0) {
+      monasteryCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 24000));
+      const maxMonasteries = computeStructurePlacementLimit(baseTarget, 12, 1);
+      const minDistance = 11;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < monasteryCandidates.length; i += 1) {
+        if (placed.length >= maxMonasteries) {
+          break;
+        }
+        const candidate = monasteryCandidates[i];
+        if (candidate.score < 0.32) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const name = generateMonasteryName(rng);
+        const details = generateMonasteryDetails(name, rng);
+        tile.structure = monasteryKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        monasteries.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const castleKey = tileLookup.has('CASTLE') ? 'CASTLE' : null;
+  if (castleKey) {
+    const castleCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.24 : 0;
+        const distanceToTownSq = computeNearestDistanceSq(x, y, towns);
+        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarfholds);
+        const settlementDistanceSq = Math.min(distanceToTownSq, distanceToHoldSq);
+        if (settlementDistanceSq === Infinity) {
+          continue;
+        }
+        const settlementDistance = Math.sqrt(settlementDistanceSq);
+        if (settlementDistance < 6) {
+          continue;
+        }
+        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const edgeScore = clamp(edgeDistance / Math.max(8, Math.min(width, height) / 2.6), 0, 1) * 0.18;
+        const heightValue = elevationField[idx];
+        let slopeSum = 0;
+        let neighborCount = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          slopeSum += Math.abs(heightValue - elevationField[nIdx]);
+          neighborCount += 1;
+        }
+        const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+        const slopeScore = clamp(averageSlope * 42, 0, 0.35);
+        const settlementScore = clamp((settlementDistance - 6) / 20, 0, 1) * 0.28;
+        const noise = hashCoords(x, y, castleNoiseSeed) - 0.5;
+        const score = hillBonus + edgeScore + slopeScore + settlementScore + noise * 0.22 + rng() * 0.12;
+        if (score > 0.32) {
+          castleCandidates.push({ x, y, score });
+        }
+      }
+    }
+
+    if (castleCandidates.length > 0) {
+      castleCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 26000));
+      const maxCastles = computeStructurePlacementLimit(baseTarget, 10, 1);
+      const minDistance = 12;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < castleCandidates.length; i += 1) {
+        if (placed.length >= maxCastles) {
+          break;
+        }
+        const candidate = castleCandidates[i];
+        if (candidate.score < 0.34) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        const name = generateCastleName(rng);
+        const details = generateCastleDetails(name, rng);
+        tile.structure = castleKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        castles.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const saintShrineKey = tileLookup.has('SAINT_SHRINE') ? 'SAINT_SHRINE' : null;
+  if (saintShrineKey) {
+    const shrineCandidates = [];
+    const monasteryPoints = monasteries.slice();
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const baseIsMarsh = tile.base === marshTileKey;
+        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const distanceToMonasterySq = computeNearestDistanceSq(x, y, monasteryPoints);
+        if (distanceToMonasterySq === Infinity || distanceToMonasterySq < 25 || distanceToMonasterySq > 1600) {
+          continue;
+        }
+        const distanceToSettlementSq = computeNearestDistanceSq(x, y, majorSettlementPoints);
+        if (distanceToSettlementSq < 25) {
+          continue;
+        }
+        let waterAdjacency = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            waterAdjacency += 1;
+          } else {
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && neighborTile.river) {
+              waterAdjacency += 1;
+            }
+          }
+        }
+        if (waterAdjacency === 0) {
+          continue;
+        }
+        const moisture = clamp(rainfallField[idx] * 0.6 + (1 - drainageField[idx]) * 0.4, 0, 1);
+        const moistureScore = clamp(moisture * 0.4, 0, 0.28);
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.12 : 0;
+        const monasteryDistance = Math.sqrt(distanceToMonasterySq);
+        const devotionScore = clamp((monasteryDistance - 5) / 18, 0, 1) * 0.22;
+        const noise = hashCoords(x, y, shrineNoiseSeed) - 0.5;
+        const score =
+          0.25 + moistureScore + hillBonus + devotionScore + waterAdjacency * 0.05 + noise * 0.22 + rng() * 0.12;
+        shrineCandidates.push({ x, y, score });
+      }
+    }
+
+    if (shrineCandidates.length > 0) {
+      shrineCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 24000));
+      const maxShrines = computeStructurePlacementLimit(baseTarget, 14, 1);
+      const minDistance = 9;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < shrineCandidates.length; i += 1) {
+        if (placed.length >= maxShrines) {
+          break;
+        }
+        const candidate = shrineCandidates[i];
+        if (candidate.score < 0.3) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const baseIsMarsh = tile.base === marshTileKey;
+        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+          continue;
+        }
+        const name = generateSaintShrineName(rng);
+        const details = generateSaintShrineDetails(name, rng);
+        tile.structure = saintShrineKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        saintShrines.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
   if (
     mountainOverlayKey &&
     mountainMask &&
@@ -10065,6 +11249,11 @@ function createWorld(seedString) {
     evilWizardTowers,
     lizardmenCities,
     woodElfGroves,
+    orcCamps,
+    dungeons,
+    monasteries,
+    castles,
+    saintShrines,
     factions
   };
 }
@@ -10237,21 +11426,33 @@ function drawWorld(world) {
         if (!structureDefinition) {
           continue;
         }
-        const structureSheet = state.tileSheets[structureDefinition.sheet];
-        if (!structureSheet || !structureSheet.image) {
-          continue;
+        if (typeof structureDefinition.draw === 'function') {
+          structureDefinition.draw(ctx, {
+            x,
+            y,
+            pixelX: x * drawSize,
+            pixelY: y * drawSize,
+            size: drawSize,
+            cell,
+            world
+          });
+        } else {
+          const structureSheet = state.tileSheets[structureDefinition.sheet];
+          if (!structureSheet || !structureSheet.image) {
+            continue;
+          }
+          ctx.drawImage(
+            structureSheet.image,
+            structureDefinition.sx,
+            structureDefinition.sy,
+            structureDefinition.size,
+            structureDefinition.size,
+            x * drawSize,
+            y * drawSize,
+            drawSize,
+            drawSize
+          );
         }
-        ctx.drawImage(
-          structureSheet.image,
-          structureDefinition.sx,
-          structureDefinition.sy,
-          structureDefinition.size,
-          structureDefinition.size,
-          x * drawSize,
-          y * drawSize,
-          drawSize,
-          drawSize
-        );
       }
 
       if (hasPoliticalOverlay && cell && cell.factionId !== null && cell.factionId !== undefined) {
