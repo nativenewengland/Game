@@ -796,6 +796,10 @@ button:hover:not(:disabled) {
   flex-direction: column;
   gap: 1rem;
   min-width: 240px;
+  padding: clamp(1.1rem, 2.4vw, 1.6rem);
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
 .roster-column h3 {
@@ -888,6 +892,10 @@ button:hover:not(:disabled) {
   width: 100%;
   flex: 1;
   min-height: 0;
+  padding: clamp(1.1rem, 2.4vw, 1.6rem);
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
 .pixel-bar {
@@ -1146,6 +1154,10 @@ button:hover:not(:disabled) {
   text-align: center;
   gap: clamp(0.75rem, 2vw, 1.2rem);
   width: 100%;
+  padding: clamp(0.85rem, 2vw, 1.3rem);
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
 .subpanel-title {
@@ -1288,6 +1300,10 @@ button:hover:not(:disabled) {
   grid-template-columns: repeat(3, minmax(220px, 1fr));
   gap: 1.1rem 1.5rem;
   align-content: start;
+  padding: clamp(0.85rem, 2vw, 1.3rem);
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
 .customizer-fields .field-group {
