@@ -2649,12 +2649,18 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
 
     const minPopulation = 120;
     const fullPopulation = 2000;
-    const minMultiplierBase = seed.settlementKind === 'village' ? 0.32 : 0.4;
+    const isVillage = seed.settlementKind === 'village';
+    const minMultiplierBase = isVillage ? 0.24 : 0.4;
     const minMultiplier = clamp(minMultiplierBase, 0.1, 0.99);
     const normalized = clamp((population - minPopulation) / (fullPopulation - minPopulation), 0, 1);
     const multiplier = minMultiplier + normalized * (1 - minMultiplier);
     const scaledRadius = baseRadius * multiplier;
-    return Math.max(8, scaledRadius);
+    let adjustedRadius = Math.max(8, scaledRadius);
+    if (isVillage) {
+      const maxVillageRadius = Math.max(12, baseRadius * 0.7);
+      adjustedRadius = Math.min(adjustedRadius, maxVillageRadius);
+    }
+    return adjustedRadius;
   };
 
   const resolveClaimRadius = (seed) => {
@@ -8874,16 +8880,19 @@ function createWorld(seedString) {
     const baseNeighborBonus = 0.08;
     const baseDensityAlwaysAdd = 0.6;
     const baseSoftSeedMultiplier = 1.8;
+    const growthSpeedModifier = clamp(0.45 + forestBias * 0.2, 0.35, 0.8);
+    const growthIterationModifier = clamp(0.5 + forestBias * 0.25, 0.5, 0.95);
     const seedThreshold = clamp(baseSeedThreshold - forestBias * 0.18, 0.35, 0.9);
     const softSeedThreshold = clamp(baseSoftSeedThreshold - forestBias * 0.16, 0.25, 0.85);
     const growthBaseline = clamp(baseGrowthBaseline - forestBias * 0.14, 0.2, 0.7);
     const neighborBonus = clamp(baseNeighborBonus + forestBias * 0.04, 0.02, 0.14);
     const densityAlwaysAddThreshold = clamp(
-      baseDensityAlwaysAdd - forestBias * 0.12,
-      0.4,
-      0.78
+      baseDensityAlwaysAdd - forestBias * 0.12 + (1 - growthSpeedModifier) * 0.1,
+      0.45,
+      0.82
     );
     const softSeedMultiplier = clamp(baseSoftSeedMultiplier + forestBias * 0.6, 0.8, 2.6);
+    const maxGrowthIterations = Math.max(1, Math.round(2 * growthIterationModifier));
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -8952,7 +8961,6 @@ function createWorld(seedString) {
       }
     }
 
-    const maxGrowthIterations = 2;
     for (let iteration = 0; iteration < maxGrowthIterations; iteration += 1) {
       const additions = [];
       for (let y = 0; y < height; y += 1) {
@@ -8989,11 +8997,9 @@ function createWorld(seedString) {
             continue;
           }
           const density = treeDensityField[idx];
-          const probability = clamp(
-            (density - growthBaseline) / 0.52 + neighborTrees * neighborBonus,
-            0,
-            1
-          );
+          const baseGrowthChance =
+            (density - growthBaseline) / 0.52 + neighborTrees * neighborBonus;
+          const probability = clamp(baseGrowthChance * growthSpeedModifier, 0, 1);
           if (density > densityAlwaysAddThreshold || rng() < probability) {
             additions.push(idx);
           }
