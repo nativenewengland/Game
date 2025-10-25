@@ -316,7 +316,7 @@ h3,
 }
 
 .game-title .game-logo {
-  width: clamp(12rem, 40vw, 22rem);
+  width: clamp(24rem, 80vw, 44rem);
   height: auto;
   filter: drop-shadow(0 0 14px rgba(240, 198, 116, 0.25))
     drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
