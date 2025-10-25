@@ -6686,6 +6686,7 @@ function buildRiverMap(
   width,
   height,
   seaLevel,
+  waterMask,
   options = {}
 ) {
   const frequencyNormalized = clamp(
@@ -6733,6 +6734,105 @@ function buildRiverMap(
     [-1, 0]
   ];
 
+  const oceanDistance = new Float32Array(width * height);
+  oceanDistance.fill(Number.POSITIVE_INFINITY);
+  const oceanMask = new Uint8Array(width * height);
+  if (waterMask && typeof waterMask.length === 'number') {
+    const queue = new Int32Array(width * height);
+    let queueHead = 0;
+    let queueTail = 0;
+    const enqueue = (value) => {
+      queue[queueTail] = value;
+      queueTail += 1;
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!waterMask[idx]) {
+          continue;
+        }
+        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
+          oceanMask[idx] = 1;
+          enqueue(idx);
+        }
+      }
+    }
+
+    if (queueTail === 0) {
+      for (let i = 0; i < waterMask.length; i += 1) {
+        if (waterMask[i]) {
+          oceanMask[i] = 1;
+          enqueue(i);
+        }
+      }
+    }
+
+    while (queueHead < queueTail) {
+      const current = queue[queueHead];
+      queueHead += 1;
+      const cx = current % width;
+      const cy = Math.floor(current / width);
+      for (let d = 0; d < directions.length; d += 1) {
+        const nx = cx + directions[d][0];
+        const ny = cy + directions[d][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        if (!waterMask[nIdx] || oceanMask[nIdx]) {
+          continue;
+        }
+        oceanMask[nIdx] = 1;
+        enqueue(nIdx);
+      }
+    }
+
+    queueHead = 0;
+    queueTail = 0;
+
+    for (let i = 0; i < oceanMask.length; i += 1) {
+      if (oceanMask[i]) {
+        oceanDistance[i] = 0;
+        enqueue(i);
+      }
+    }
+
+    if (queueTail === 0) {
+      for (let i = 0; i < waterMask.length; i += 1) {
+        if (waterMask[i]) {
+          oceanDistance[i] = 0;
+          enqueue(i);
+        }
+      }
+    }
+
+    while (queueHead < queueTail) {
+      const current = queue[queueHead];
+      queueHead += 1;
+      const cx = current % width;
+      const cy = Math.floor(current / width);
+      const baseDistance = oceanDistance[current];
+      for (let d = 0; d < directions.length; d += 1) {
+        const nx = cx + directions[d][0];
+        const ny = cy + directions[d][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        const nextDistance = baseDistance + 1;
+        if (nextDistance < oceanDistance[nIdx]) {
+          oceanDistance[nIdx] = nextDistance;
+          enqueue(nIdx);
+        }
+      }
+    }
+  } else {
+    oceanDistance.fill(width + height);
+  }
+
+  const oceanInfluence = lerp(0.008, 0.02, frequencyNormalized);
+
   for (let i = 0; i < candidates.length && i < maxSources; i += 1) {
     let { x, y } = candidates[i];
     let steps = 0;
@@ -6743,7 +6843,10 @@ function buildRiverMap(
       steps += 1;
 
       let lowestIdx = idx;
-      let lowestValue = elevation[idx];
+      const currentBaseValue = elevation[idx] - drainage[idx] * 0.02;
+      let lowestScore = currentBaseValue;
+      let lowestBaseValue = currentBaseValue;
+      const currentOceanDistance = oceanDistance[idx];
       for (let d = 0; d < directions.length; d += 1) {
         const nx = x + directions[d][0];
         const ny = y + directions[d][1];
@@ -6751,9 +6854,18 @@ function buildRiverMap(
           continue;
         }
         const nIdx = ny * width + nx;
-        const value = elevation[nIdx] - drainage[nIdx] * 0.02;
-        if (value < lowestValue) {
-          lowestValue = value;
+        const neighborBaseValue = elevation[nIdx] - drainage[nIdx] * 0.02;
+        let score = neighborBaseValue;
+        if (Number.isFinite(currentOceanDistance) && Number.isFinite(oceanDistance[nIdx])) {
+          const distanceDelta = oceanDistance[nIdx] - currentOceanDistance;
+          score += distanceDelta * oceanInfluence;
+        }
+        if (score < lowestScore - 1e-6) {
+          lowestScore = score;
+          lowestBaseValue = neighborBaseValue;
+          lowestIdx = nIdx;
+        } else if (Math.abs(score - lowestScore) <= 1e-6 && neighborBaseValue < lowestBaseValue) {
+          lowestBaseValue = neighborBaseValue;
           lowestIdx = nIdx;
         }
       }
@@ -8587,9 +8699,18 @@ function createWorld(seedString) {
     snowDistanceField = snowCount > 0 ? computeEuclideanDistanceField(snowMask, width, height) : null;
   }
 
-  const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel, {
-    frequencyNormalized: riverFrequencyNormalized
-  });
+  const riverMap = buildRiverMap(
+    elevationField,
+    rainfallField,
+    drainageField,
+    width,
+    height,
+    seaLevel,
+    waterMask,
+    {
+      frequencyNormalized: riverFrequencyNormalized
+    }
+  );
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
