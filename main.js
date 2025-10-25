@@ -48,10 +48,12 @@ const dwarfSpriteSheets = {
   }
 };
 
+const BADLANDS_TILE_COORD = { row: 2, col: 1 };
+
 const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
-  BADLANDS: { row: 2, col: 1 },
+  BADLANDS: BADLANDS_TILE_COORD,
   MARSH: { row: 4, col: 2 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
