@@ -12669,7 +12669,7 @@ function drawWorld(world) {
         const elevationValue = elevationField[cellIndex];
         const elevationColor = getElevationOverlayColor(elevationValue, seaLevel);
         if (elevationColor) {
-          drawOverlayCell(ctx, x, y, elevationColor, 0.32);
+          drawOverlayCell(ctx, x, y, elevationColor, 0.55);
         }
       }
 
@@ -12677,7 +12677,7 @@ function drawWorld(world) {
         const temperatureValue = temperatureField[cellIndex];
         const temperatureColor = getTemperatureOverlayColor(temperatureValue);
         if (temperatureColor) {
-          drawOverlayCell(ctx, x, y, temperatureColor, 0.3);
+          drawOverlayCell(ctx, x, y, temperatureColor, 0.55);
         }
       }
 
