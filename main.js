@@ -667,7 +667,8 @@ const settlementDetailTypes = new Set([
   'village',
   'hamlet',
   'evilWizardTower',
-  'tower'
+  'tower',
+  'woodElfGrove'
 ]);
 
 function resolveTownRulerTitle(gender, randomFn) {
@@ -918,6 +919,90 @@ const woodElfGroveDescriptors = [
   'of the Silver Song'
 ];
 
+const woodElfGroveElderTitles = [
+  'Grove Warden',
+  'Verdant Speaker',
+  'Circle Elder',
+  'Keeper of Boughs',
+  'Songwarden',
+  'Dawnwatcher'
+];
+
+const woodElfGroveElderGivenNames = [
+  'Aelar',
+  'Lethariel',
+  'Thamior',
+  'Keyleth',
+  'Varis',
+  'Nymeria',
+  'Caelynn',
+  'Theren',
+  'Sylvar',
+  'Ilyana',
+  'Faelar',
+  'Lunessa'
+];
+
+const woodElfGroveElderSurnames = [
+  'Silversong',
+  'Oakenshade',
+  'Nightbloom',
+  'Moonglade',
+  'Thornweaver',
+  'Starpetal',
+  'Sunshadow',
+  'Mistralwind',
+  'Fernstep',
+  'Willowstrand'
+];
+
+const woodElfGroveHallmarks = [
+  'Moonlit rites that weave auroras between the branches.',
+  'Ancient treants stand guard over every winding path.',
+  'Hidden pools shimmer with restorative starlight dew.',
+  'The groves chorus echoes across the forest at dusk.',
+  'Bough-bridges knit the canopy into spiralling promenades.',
+  'Druidic songcraft summons blossoms even in winter.'
+];
+
+const woodElfGroveCircleNames = [
+  'Circle of the Silver Bough',
+  'Circle of Verdant Stars',
+  'Circle of Whispering Winds',
+  'Circle of Dawnpetals',
+  'Circle of the Emerald Veil',
+  'Circle of Moonshadow Paths',
+  'Circle of the Luminous Seed',
+  'Circle of the Elder Stag'
+];
+
+const woodElfGroveOrders = [
+  'Wardens of the High Canopy',
+  'Rangers of the Verdant Way',
+  'Singers of the Luminous Thread',
+  'Druids of the Moonwell Accord',
+  'Keepers of the Auric Grove',
+  'Mistwalkers of the Emerald Watch'
+];
+
+const woodElfGroveExports = [
+  'Phials of rejuvenating moonwater',
+  'Runed arrowheads carved from starwood',
+  'Perfumed resins and incense petals',
+  'Luminous moss for healing rituals',
+  'Silken banners woven from leaf-fibres',
+  'Seedstones that sprout protective thickets'
+];
+
+const woodElfGrovePopulationRoleOptions = [
+  { key: 'wardens', label: 'Bough Wardens', color: '#6ecf85' },
+  { key: 'druids', label: 'Circle Druids', color: '#9bd4a9' },
+  { key: 'scouts', label: 'Glade Scouts', color: '#8bbbcf' },
+  { key: 'singers', label: 'Chorus Singers', color: '#c4a6e8' },
+  { key: 'artisans', label: 'Canopy Artisans', color: '#f4c069' },
+  { key: 'others', label: 'Forest Folk', color: '#9e9e9e' }
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -1147,6 +1232,19 @@ function generateTownPopulationBreakdown(population, random) {
     majorityShareRange: [0.6, 0.85],
     ensureMajority: true
   });
+}
+
+function generateWoodElfGrovePopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(
+    woodElfGrovePopulationRoleOptions,
+    population,
+    random,
+    {
+      majorityIndex: 0,
+      majorityShareRange: [0.55, 0.75],
+      ensureMajority: true
+    }
+  );
 }
 
 function generateDwarfholdName(random) {
@@ -1460,6 +1558,69 @@ function generateWoodElfGroveName(random) {
     return `${baseName} ${descriptor}`;
   }
   return baseName;
+}
+
+function generateWoodElfGroveDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(60, Math.floor(140 + randomFn() * 420));
+  let classification = 'Forest Retreat';
+  if (population >= 500) {
+    classification = 'Ancient Grove';
+  } else if (population >= 360) {
+    classification = 'Sacred Grove';
+  } else if (population >= 240) {
+    classification = 'Hidden Enclave';
+  } else if (population >= 180) {
+    classification = 'Canopy Sanctuary';
+  }
+
+  let populationDescriptor = 'wardens';
+  if (classification === 'Ancient Grove') {
+    populationDescriptor = 'elders';
+  } else if (classification === 'Sacred Grove') {
+    populationDescriptor = 'keepers';
+  } else if (classification === 'Hidden Enclave') {
+    populationDescriptor = 'sentinels';
+  } else if (classification === 'Canopy Sanctuary') {
+    populationDescriptor = 'guardians';
+  }
+
+  const elderTitle = pickRandomFrom(woodElfGroveElderTitles, randomFn) || 'Grove Warden';
+  const givenName = pickRandomFrom(woodElfGroveElderGivenNames, randomFn) || 'Aelar';
+  const surname = pickRandomFrom(woodElfGroveElderSurnames, randomFn) || 'Silversong';
+  const hallmark = pickRandomFrom(woodElfGroveHallmarks, randomFn) ||
+    'Moonlit rites that weave auroras between the branches.';
+  const foundedYearsAgo = Math.max(40, Math.floor(120 + randomFn() * 520));
+  const prominentGroup = pickRandomFrom(woodElfGroveCircleNames, randomFn) || 'Circle of the Silver Bough';
+  const majorGuildCount = clamp(Math.floor(1 + randomFn() * 2), 1, woodElfGroveOrders.length);
+  const majorGuilds = pickUniqueFrom(woodElfGroveOrders, majorGuildCount, randomFn);
+  const majorExportCount = clamp(Math.floor(1 + randomFn() * 2), 1, woodElfGroveExports.length);
+  const majorExports = pickUniqueFrom(woodElfGroveExports, majorExportCount, randomFn);
+  const populationBreakdown = generateWoodElfGrovePopulationBreakdown(population, randomFn);
+
+  return {
+    type: 'woodElfGrove',
+    classification,
+    name,
+    population,
+    populationLabel: 'Population',
+    populationDescriptor,
+    isSettlement: true,
+    ruler: {
+      title: elderTitle,
+      name: `${givenName} ${surname}`
+    },
+    foundedYearsAgo,
+    prominentGroup,
+    prominentGroupLabel: 'Circle in Residence',
+    hallmark,
+    hallmarkLabel: 'Revered For',
+    majorGuilds,
+    majorGuildsLabel: 'Sacred Orders',
+    majorExports,
+    majorExportsLabel: 'Seasonal Offerings',
+    populationBreakdown
+  };
 }
 
 function resolveTileName(baseKey) {
@@ -7182,11 +7343,12 @@ function createWorld(seedString) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
+          const details = generateWoodElfGroveDetails(name, rng);
           tile.structure = woodElfGroveKey;
-          tile.structureName = name;
-          tile.structureDetails = null;
+          tile.structureName = details.name || name;
+          tile.structureDetails = details;
           placed.push(candidate);
-          woodElfGroves.push({ x: candidate.x, y: candidate.y, name });
+          woodElfGroves.push({ x: candidate.x, y: candidate.y, ...details });
         }
       }
     }
