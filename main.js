@@ -6870,8 +6870,8 @@ function createWorld(seedString) {
   const waterTileKey = resolveTileName('WATER');
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
-  // Disable desert generation so no sand tiles are produced on the world map.
-  const sandGenerationEnabled = false;
+  // Enable desert generation so sand tiles can appear on the world map.
+  const sandGenerationEnabled = true;
   const hasSandTile = sandGenerationEnabled && tileLookup.has('SAND');
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
   const landBaseKeys = new Set([grassTileKey]);
