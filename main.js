@@ -466,6 +466,29 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
 
       return suitability;
     }
+    case 'town': {
+      if (tile.base === 'WATER') {
+        return 0;
+      }
+
+      const overlayIsMountain = isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+      const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+      const overlayIsForest = isTreeOverlayKey(tile.overlay);
+
+      let suitability = 1;
+
+      if (overlayIsMountain) {
+        suitability *= 0.3;
+      } else if (overlayIsHill) {
+        suitability *= 0.6;
+      }
+
+      if (overlayIsForest) {
+        suitability *= 0.75;
+      }
+
+      return suitability;
+    }
     default:
       return 1;
   }
