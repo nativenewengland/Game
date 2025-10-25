@@ -55,6 +55,7 @@ const baseTileCoords = {
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
   TREE_SNOW: { row: 1, col: 1 },
+  JUNGLE_TREE: { row: 3, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
   MOUNTAIN_TOP_A: { row: 0, col: 4 },
@@ -152,7 +153,7 @@ const tileLookup = new Map();
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
-const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW']);
+const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
 
 const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
 const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
@@ -3504,6 +3505,7 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
     waterMask,
     treeOverlayKey,
     treeSnowOverlayKey,
+    treeOverlayKeys: allTreeOverlayKeys,
     isMountainOverlay,
     replaceableOverlays
   } = options;
@@ -3549,6 +3551,7 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
         waterMask,
         treeOverlayKey,
         treeSnowOverlayKey,
+        treeOverlayKeys: allTreeOverlayKeys,
         isMountainOverlay,
         replaceableOverlays
       });
@@ -3599,6 +3602,7 @@ function placeRoadOverlayAt(x, y, options) {
     waterMask,
     treeOverlayKey,
     treeSnowOverlayKey,
+    treeOverlayKeys: allTreeOverlayKeys,
     isMountainOverlay,
     replaceableOverlays
   } = options || {};
@@ -3643,6 +3647,10 @@ function placeRoadOverlayAt(x, y, options) {
     return;
   }
 
+  const treeOverlays = Array.isArray(allTreeOverlayKeys) && allTreeOverlayKeys.length > 0
+    ? allTreeOverlayKeys
+    : [treeOverlayKey, treeSnowOverlayKey].filter((key, index, array) => key && array.indexOf(key) === index);
+
   if (tile.overlay && tile.overlay !== overlayKey) {
     let canReplace = false;
     if (replaceableOverlays) {
@@ -3653,8 +3661,7 @@ function placeRoadOverlayAt(x, y, options) {
       }
     }
     if (!canReplace) {
-      const isTreeOverlay =
-        treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+      const isTreeOverlay = treeOverlays.length > 0 && treeOverlays.includes(tile.overlay);
       if (!isTreeOverlay) {
         return;
       }
@@ -8332,8 +8339,34 @@ function createWorld(seedString) {
   const hasTreeTile = tileLookup.has('TREE');
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
+  const treeJungleOverlayKey = hasTreeTile && tileLookup.has('JUNGLE_TREE') ? 'JUNGLE_TREE' : null;
+  const treeOverlayKeys = [treeOverlayKey, treeSnowOverlayKey, treeJungleOverlayKey].filter(
+    (key, index, array) => key && array.indexOf(key) === index
+  );
   const isTreeOverlayKey = (overlayKey) =>
-    hasTreeTile && overlayKey != null && (overlayKey === treeOverlayKey || overlayKey === treeSnowOverlayKey);
+    hasTreeTile && overlayKey != null && treeOverlayKeys.includes(overlayKey);
+  const selectTreeOverlayForTile = (tile, idx, x, y) => {
+    if (!tile || !treeOverlayKey) {
+      return treeOverlayKey;
+    }
+    if (tile.base === snowTileKey && treeSnowOverlayKey) {
+      return treeSnowOverlayKey;
+    }
+    if (treeJungleOverlayKey) {
+      const normalizedY = (y + 0.5) / height;
+      const rainfallValue = rainfallField[idx];
+      const drainageValue = drainageField[idx];
+      const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 2, 0, 1);
+      const elevationAboveSea = elevationField[idx] - seaLevel;
+      const elevationHeatPenalty = clamp(Math.max(0, elevationAboveSea) * 2.8, 0, 1);
+      const heat = clamp(equatorialAlignment * 0.7 + (1 - elevationHeatPenalty) * 0.3, 0, 1);
+      const humidity = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
+      if (heat > 0.65 && humidity > 0.7) {
+        return treeJungleOverlayKey;
+      }
+    }
+    return treeOverlayKey;
+  };
   if (hasTreeTile) {
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
@@ -8434,7 +8467,7 @@ function createWorld(seedString) {
           if (!tile.hillOverlay && overlayIsHill) {
             tile.hillOverlay = overlay;
           }
-          tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
+          tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
         }
       }
     }
@@ -8520,7 +8553,7 @@ function createWorld(seedString) {
         if (!tile.hillOverlay && overlayIsHill) {
           tile.hillOverlay = overlay;
         }
-        tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
+        tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
       }
     }
 
@@ -8531,11 +8564,7 @@ function createWorld(seedString) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
           const tile = tiles[y][x];
-          if (
-            !tile ||
-            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
-            tile.structure
-          ) {
+          if (!tile || !isTreeOverlayKey(tile.overlay) || tile.structure) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -8579,11 +8608,7 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (
-            !tile ||
-            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
-            tile.structure
-          ) {
+          if (!tile || !isTreeOverlayKey(tile.overlay) || tile.structure) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
@@ -8599,9 +8624,7 @@ function createWorld(seedString) {
   }
 
   if (towns.length > 1) {
-    const roadReplaceableOverlays = new Set(
-      [treeOverlayKey, treeSnowOverlayKey, ...hillOverlayKeys].filter((key) => key)
-    );
+    const roadReplaceableOverlays = new Set([...treeOverlayKeys, ...hillOverlayKeys]);
     connectTownsWithinRange(tiles, towns, {
       maxDistance: 25,
       overlayKey: TOWN_ROAD_OVERLAY_KEY,
@@ -8611,6 +8634,7 @@ function createWorld(seedString) {
       waterMask,
       treeOverlayKey,
       treeSnowOverlayKey,
+      treeOverlayKeys,
       isMountainOverlay,
       replaceableOverlays: roadReplaceableOverlays
     });
@@ -8629,10 +8653,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -8700,10 +8721,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -8741,10 +8759,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (tile.overlay) {
@@ -8809,10 +8824,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (tile.overlay) {
