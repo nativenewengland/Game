@@ -12,3 +12,15 @@ path fail: dwarf,Construct building,112,103,149 -> 121,103,150: Id #10384:Path G
 path fail: carp,191,145,151 -> 172,162,151: Id #10166:Path Goal Flee Terrain:Station Marauder Mill at 182,156,151
 path fail: carp,190,146,151 -> 171,163,151: Id #10166:Path Goal Flee Terrain:Station Marauder Mill at 182,156,151
 path fail: horse,94,96,144 -> 95,98,143: Id #10033:Path Goal Seek Station:Station None at 94,96,144
+alligator snapping turtles: Null Pop Num
+minks: Null Pop Num
+longnose gars: Null Pop Num
+beavers: Null Pop Num
+common snapping turtles: Null Pop Num
+sea lampreys: Null Pop Num
+carp: Null Pop Num
+brook lampreys: Null Pop Num
+steelhead trout: Null Pop Num
+perch: Null Pop Num
+salmon: Null Pop Num
+shads: Null Pop Num
