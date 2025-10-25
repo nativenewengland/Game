@@ -11855,6 +11855,31 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
   }
 }
 
+function applyDesertMountainTint(ctx, cell, x, y) {
+  if (!ctx || !cell) {
+    return;
+  }
+
+  const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+  if (!overlayKey || !isMountainOverlayKey(overlayKey)) {
+    return;
+  }
+
+  const baseKey = typeof cell.base === 'string' ? cell.base : '';
+  const isSandBase = baseKey === 'SAND';
+  const isBadlandsBase = baseKey === 'BADLANDS';
+  if (!isSandBase && !isBadlandsBase) {
+    return;
+  }
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.globalAlpha = isBadlandsBase ? 0.35 : 0.45;
+  ctx.fillStyle = isBadlandsBase ? '#b38a5c' : '#dcbf7e';
+  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.restore();
+}
+
 function drawWorld(world) {
   const { tiles, seedString } = world;
   const factions = Array.isArray(world.factions) ? world.factions : [];
@@ -11945,6 +11970,8 @@ function drawWorld(world) {
           }
         }
       }
+
+      applyDesertMountainTint(ctx, cell, x, y);
 
       if (cell.river) {
         drawRiverSegment(ctx, cell.river, x, y);
