@@ -428,6 +428,7 @@ button {
   aspect-ratio: 150 / 136;
   padding: 0;
   border: none;
+  border-radius: 0;
   background: transparent;
   background-image: url('tilesheet/randombase.png');
   background-repeat: no-repeat;

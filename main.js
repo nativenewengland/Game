@@ -72,7 +72,8 @@ const baseTileCoords = {
   HILLS: { row: 3, col: 1 },
   HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
-  PORT_TOWN: { row: 4, col: 5 }
+  PORT_TOWN: { row: 4, col: 5 },
+  LIZARDMEN_CITY: { row: 5, col: 1 }
 };
 
 const roadTileVariantDefinitions = (() => {
@@ -154,12 +155,16 @@ const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
+const jungleOverlayKey = 'JUNGLE_TREE';
 
 const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
 const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
 const isTreeOverlayKey = (key) => typeof key === 'string' && treeOverlayKeySet.has(key);
 const tileHasTreeOverlay = (tile) =>
   Boolean(tile) && (isTreeOverlayKey(tile.overlay) || isTreeOverlayKey(tile.hillOverlay));
+const isJungleOverlayKey = (key) => typeof key === 'string' && key === jungleOverlayKey;
+const tileHasJungleOverlay = (tile) =>
+  Boolean(tile) && (isJungleOverlayKey(tile.overlay) || isJungleOverlayKey(tile.hillOverlay));
 
 function evaluateFactionTileSuitability(faction, tile, x, y) {
   if (!faction || !tile) {
@@ -188,6 +193,21 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
       }
       if (tileHasTreeOverlay(tile)) {
         return 1;
+      }
+      return 0;
+    }
+    case 'lizardmenCity': {
+      if (tile.structure === 'LIZARDMEN_CITY') {
+        return 1;
+      }
+      if (tile.base === 'WATER') {
+        return 0;
+      }
+      if (tileHasJungleOverlay(tile)) {
+        return 1;
+      }
+      if (tileHasTreeOverlay(tile)) {
+        return 0.3;
       }
       return 0;
     }
@@ -849,7 +869,8 @@ const settlementDetailTypes = new Set([
   'hamlet',
   'evilWizardTower',
   'tower',
-  'woodElfGrove'
+  'woodElfGrove',
+  'lizardmenCity'
 ]);
 
 function resolveTownRulerTitle(gender, randomFn) {
@@ -1494,6 +1515,70 @@ const woodElfGrovePopulationRoleOptions = [
   { key: 'ents', label: 'Ents', color: '#8bbbcf' }
 ];
 
+const lizardmenCityPopulationRoleOptions = [
+  { key: 'skinks', label: 'Skink Artisans', color: '#6bd38f' },
+  { key: 'saurus', label: 'Saurus Cohorts', color: '#3a9f68' },
+  { key: 'priests', label: 'Temple Acolytes', color: '#8cd1c6' },
+  { key: 'beastmasters', label: 'Beastmasters', color: '#b0f0d0' }
+];
+
+const lizardmenCityPrefixes = ['Ix', 'Zan', 'Tla', 'Chal', 'Maz', 'Quet', 'Ssz', 'Olo', 'Yax', 'Huac'];
+const lizardmenCitySuffixes = ['atl', 'tlan', 'co', 'maz', 'naka', 'zotl', 'chan', 'poc', 'quil', 'pan'];
+const lizardmenCityClassifications = [
+  'Temple City',
+  'Sacred Ziggurat',
+  'Jungle Metropolis',
+  'Canal Citadel',
+  'Sun Pyramid Enclave'
+];
+const lizardmenCityHallmarks = [
+  'Sun-drenched step pyramids rising above the canopy.',
+  'Mist-draped terraces fed by warm jungle springs.',
+  'Obsidian causeways linking flooded plazas.',
+  'Crocodilian cavalry drilling in emerald plazas.',
+  'Sacred cenotes ringed with chanting acolytes.',
+  'Jade-lined canals glowing with bioluminescent algae.'
+];
+const lizardmenCityRulerTitles = [
+  'High Scale-Priest',
+  'Sunblood Speaker',
+  'Serpent King',
+  'Celadon Oracle',
+  'Dawn-Caller',
+  'Mist Matron'
+];
+const lizardmenCityRulerNames = [
+  'Xilqua',
+  'Mazaton',
+  'Tezcali',
+  'Chakli',
+  'Zazamet',
+  'Itzali',
+  'Qaztil',
+  'Sszara',
+  'Olotec',
+  'Tzimek'
+];
+const lizardmenCityOrders = [
+  'Order of the Dawnfang',
+  'Jade Sentinel Cohort',
+  'Scaled Oracle Council',
+  'Mistfang Navigators',
+  'Emerald Tide Wardens',
+  'Obsidian Fang Legion',
+  'Sunblood Procession',
+  'Stormscale Tidewatch'
+];
+const lizardmenCityExports = [
+  'Sun-baked obsidian blades',
+  'Jade ritual masks',
+  'Rare dyes pressed from jungle blooms',
+  'Sacred incense cones',
+  'Feathered cloaks lacquered in gold',
+  'Fermented serpentwine',
+  'Glittering shell mosaics'
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -2004,6 +2089,19 @@ function generateWoodElfGrovePopulationBreakdown(population, random) {
   );
 }
 
+function generateLizardmenCityPopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(
+    lizardmenCityPopulationRoleOptions,
+    population,
+    random,
+    {
+      majorityIndex: 0,
+      majorityShareRange: [0.45, 0.6],
+      ensureMajority: true
+    }
+  );
+}
+
 function generateDwarfholdName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
@@ -2382,6 +2480,68 @@ function generateWoodElfGroveDetails(name, random) {
   };
 }
 
+function generateLizardmenCityName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(lizardmenCityPrefixes, randomFn) || 'Ix';
+  const suffix = pickRandomFrom(lizardmenCitySuffixes, randomFn) || 'tlan';
+  const extraSuffix = randomFn() < 0.25 ? pickRandomFrom(lizardmenCitySuffixes, randomFn) : '';
+  const separatorRoll = randomFn();
+  let separator = '';
+  if (separatorRoll < 0.35) {
+    separator = "'";
+  } else if (separatorRoll < 0.45) {
+    separator = '-';
+  }
+  const baseName = `${prefix}${separator}${suffix}${extraSuffix}`;
+  return baseName;
+}
+
+function generateLizardmenCityDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(400, Math.floor(2600 + randomFn() * 3200));
+  const classification = pickRandomFrom(lizardmenCityClassifications, randomFn) || 'Temple City';
+  const hallmark =
+    pickRandomFrom(lizardmenCityHallmarks, randomFn) || 'Sun-drenched step pyramids rising above the canopy.';
+  const rulerTitle = pickRandomFrom(lizardmenCityRulerTitles, randomFn) || 'High Scale-Priest';
+  const rulerName = pickRandomFrom(lizardmenCityRulerNames, randomFn) || 'Xilqua';
+  const rulerLabel = randomFn() < 0.5 ? 'Supreme Voice' : 'Sacred Regent';
+  const foundedYearsAgo = Math.max(80, Math.floor(140 + randomFn() * 460));
+  const majorGuildCount = clamp(Math.floor(1 + randomFn() * 2), 1, lizardmenCityOrders.length);
+  const majorGuilds = pickUniqueFrom(lizardmenCityOrders, majorGuildCount, randomFn);
+  const majorExportCount = clamp(Math.floor(1 + randomFn() * 2), 1, lizardmenCityExports.length);
+  const majorExports = pickUniqueFrom(lizardmenCityExports, majorExportCount, randomFn);
+  const prominentGroup =
+    majorGuilds.length > 0
+      ? pickRandomFrom(majorGuilds, randomFn)
+      : pickRandomFrom(lizardmenCityOrders, randomFn) || 'Sunblood Procession';
+  const populationBreakdown = generateLizardmenCityPopulationBreakdown(population, randomFn);
+
+  return {
+    type: 'lizardmenCity',
+    classification,
+    name,
+    population,
+    populationLabel: 'Population',
+    populationDescriptor: 'scaled souls',
+    isSettlement: true,
+    ruler: {
+      title: rulerTitle,
+      name: rulerName,
+      label: rulerLabel
+    },
+    foundedYearsAgo,
+    prominentGroup,
+    prominentGroupLabel: 'Sacred Order',
+    hallmark,
+    hallmarkLabel: 'Revered For',
+    majorGuilds,
+    majorGuildsLabel: 'Temple Orders',
+    majorExports,
+    majorExportsLabel: 'Tributes & Trade',
+    populationBreakdown
+  };
+}
+
 function generatePoliticalLandscape({ width, height, tiles, waterMask, random, settlements }) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   if (!Array.isArray(tiles) || tiles.length === 0 || width <= 0 || height <= 0) {
@@ -2489,6 +2649,9 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       case 'woodElfGrove':
         baseRadius = 28;
         break;
+      case 'lizardmenCity':
+        baseRadius = 30;
+        break;
       default:
         baseRadius = 26;
     }
@@ -2508,6 +2671,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         return `${label} Thanedom`;
       case 'woodElfGrove':
         return `${label} Canopy`;
+      case 'lizardmenCity':
+        return `${label} Temple-Host`;
       case 'evilWizardTower':
         return `${label} Enclave`;
       case 'tower':
@@ -2760,7 +2925,8 @@ const state = {
     riverFrequency: 50,
     humanSettlementFrequency: 50,
     dwarfSettlementFrequency: 50,
-    woodElfSettlementFrequency: 50
+    woodElfSettlementFrequency: 50,
+    lizardmenSettlementFrequency: 50
   },
   tileSheets,
   landMask: null,
@@ -3175,8 +3341,8 @@ const dwarfPortraitConfig = {
   hairOffsetY: -2,
   beardOffsetY: 2,
   eyePositions: [
-    { x: 13.75, y: 9.75 },
-    { x: 18.75, y: 9.75 }
+    { x: 8.75, y: 6.75 },
+    { x: 13.75, y: 6.75 }
   ],
   eyeSize: 2
 };
@@ -3249,6 +3415,8 @@ const elements = {
   dwarfSettlementFrequencyValue: document.getElementById('dwarf-settlement-frequency-value'),
   woodElfSettlementFrequencyInput: document.getElementById('wood-elf-settlement-frequency'),
   woodElfSettlementFrequencyValue: document.getElementById('wood-elf-settlement-frequency-value'),
+  lizardmenSettlementFrequencyInput: document.getElementById('lizardmen-settlement-frequency'),
+  lizardmenSettlementFrequencyValue: document.getElementById('lizardmen-settlement-frequency-value'),
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
   musicNowPlaying: document.getElementById('music-now-playing'),
@@ -3478,6 +3646,9 @@ function applyFormSettings() {
   const woodElfSettlementFrequencyRaw = elements.woodElfSettlementFrequencyInput
     ? Number.parseInt(elements.woodElfSettlementFrequencyInput.value, 10)
     : state.settings.woodElfSettlementFrequency;
+  const lizardmenSettlementFrequencyRaw = elements.lizardmenSettlementFrequencyInput
+    ? Number.parseInt(elements.lizardmenSettlementFrequencyInput.value, 10)
+    : state.settings.lizardmenSettlementFrequency;
 
   applyMapSizePresetToState(preset);
   state.settings.seedString = seedString;
@@ -3513,6 +3684,12 @@ function applyFormSettings() {
       ? state.settings.woodElfSettlementFrequency
       : woodElfSettlementFrequencyRaw,
     state.settings.woodElfSettlementFrequency
+  );
+  state.settings.lizardmenSettlementFrequency = sanitizeFrequencyValue(
+    Number.isNaN(lizardmenSettlementFrequencyRaw)
+      ? state.settings.lizardmenSettlementFrequency
+      : lizardmenSettlementFrequencyRaw,
+    state.settings.lizardmenSettlementFrequency
   );
 
   if (elements.worldMapSizeSelect) {
@@ -6659,18 +6836,28 @@ function createWorld(seedString) {
     state.settings.woodElfSettlementFrequency,
     50
   );
+  const lizardmenSettlementFrequencySetting = sanitizeFrequencyValue(
+    state.settings.lizardmenSettlementFrequency,
+    50
+  );
   const forestBias = (forestFrequencySetting - defaultForestFrequency) / 50;
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
   const riverFrequencyNormalized = clamp(riverFrequencySetting / 100, 0, 1);
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
   const dwarfSettlementFrequencyNormalized = clamp(dwarfSettlementFrequencySetting / 100, 0, 1);
   const woodElfSettlementFrequencyNormalized = clamp(woodElfSettlementFrequencySetting / 100, 0, 1);
+  const lizardmenSettlementFrequencyNormalized = clamp(
+    lizardmenSettlementFrequencySetting / 100,
+    0,
+    1
+  );
   const towerSettlementFrequencySetting =
     (humanSettlementFrequencySetting + dwarfSettlementFrequencySetting) / 2;
   const towerSettlementFrequencyNormalized = clamp(towerSettlementFrequencySetting / 100, 0, 1);
   const humanSettlementMultiplier = computeFrequencyMultiplier(humanSettlementFrequencySetting);
   const dwarfSettlementMultiplier = computeFrequencyMultiplier(dwarfSettlementFrequencySetting);
   const woodElfSettlementMultiplier = computeFrequencyMultiplier(woodElfSettlementFrequencySetting);
+  const lizardmenSettlementMultiplier = computeFrequencyMultiplier(lizardmenSettlementFrequencySetting);
   const towerSettlementMultiplier = computeFrequencyMultiplier(towerSettlementFrequencySetting);
   const mountainBiasLinear = mountainFrequencyNormalized * 2 - 1;
   const mountainBias =
@@ -7159,6 +7346,7 @@ function createWorld(seedString) {
   const caves = [];
   const evilWizardTowers = [];
   const woodElfGroves = [];
+  const lizardmenCities = [];
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
@@ -8859,6 +9047,82 @@ function createWorld(seedString) {
     }
   }
 
+  const lizardmenCityKey =
+    tileLookup.has('LIZARDMEN_CITY') && treeJungleOverlayKey ? 'LIZARDMEN_CITY' : null;
+  if (lizardmenCityKey && treeJungleOverlayKey) {
+    const cityCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!tileHasJungleOverlay(tile)) {
+          continue;
+        }
+        const rainfallValue = rainfallField[idx];
+        const drainageValue = drainageField[idx];
+        const normalizedY = (y + 0.5) / height;
+        const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 2, 0, 1);
+        const humidity = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+        const elevationValue = elevationField[idx];
+        const elevationPreference = clamp(1 - Math.abs(elevationValue - (seaLevel + 0.08)) * 3, 0, 1);
+        const density = treeDensityField ? treeDensityField[idx] : 0;
+        const score =
+          density * 0.45 + humidity * 0.25 + equatorialAlignment * 0.15 + elevationPreference * 0.15;
+        cityCandidates.push({ x, y, score });
+      }
+    }
+
+    if (cityCandidates.length > 0) {
+      cityCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(cityCandidates.length / 1650));
+      const maxCities = computeStructurePlacementLimit(baseTarget, 18, lizardmenSettlementMultiplier);
+      const minDistanceBase = 18;
+      const minDistance = adjustMinDistance(minDistanceBase, lizardmenSettlementFrequencyNormalized);
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < cityCandidates.length; i += 1) {
+        if (placed.length >= maxCities) {
+          break;
+        }
+        const candidate = cityCandidates[i];
+        if (candidate.score < 0.33) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!tileHasJungleOverlay(tile)) {
+          continue;
+        }
+        const name = generateLizardmenCityName(rng);
+        const details = generateLizardmenCityDetails(name, rng);
+        tile.structure = lizardmenCityKey;
+        tile.structureName = details.name || name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        lizardmenCities.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
   if (towns.length > 1) {
     const roadReplaceableOverlays = new Set([...treeOverlayKeys, ...hillOverlayKeys]);
     connectTownsWithinRange(tiles, towns, {
@@ -9269,6 +9533,14 @@ function createWorld(seedString) {
       population: Number.isFinite(tower?.population) ? tower.population : null,
       settlementKind: typeof tower?.type === 'string' ? tower.type : null
     })),
+    ...lizardmenCities.map((city) => ({
+      x: city.x,
+      y: city.y,
+      label: city.name || 'Temple City',
+      type: 'lizardmenCity',
+      population: Number.isFinite(city?.population) ? city.population : null,
+      settlementKind: typeof city?.type === 'string' ? city.type : null
+    })),
     ...woodElfGroves.map((grove) => ({
       x: grove.x,
       y: grove.y,
@@ -9296,6 +9568,7 @@ function createWorld(seedString) {
     towers,
     caves,
     evilWizardTowers,
+    lizardmenCities,
     woodElfGroves,
     factions
   };
@@ -9673,6 +9946,11 @@ function syncInputsWithSettings() {
     elements.woodElfSettlementFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.woodElfSettlementFrequencyValue, value);
   }
+  if (elements.lizardmenSettlementFrequencyInput) {
+    const value = sanitizeFrequencyValue(state.settings.lizardmenSettlementFrequency, 50);
+    elements.lizardmenSettlementFrequencyInput.value = value.toString();
+    updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
+  }
 }
 
 function attachEvents() {
@@ -9756,6 +10034,16 @@ function attachEvents() {
         state.settings.woodElfSettlementFrequency
       );
       updateFrequencyDisplay(elements.woodElfSettlementFrequencyValue, value);
+    });
+  }
+
+  if (elements.lizardmenSettlementFrequencyInput) {
+    elements.lizardmenSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.lizardmenSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
     });
   }
 
