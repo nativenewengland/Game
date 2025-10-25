@@ -61,7 +61,7 @@ const baseTileCoords = {
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
   STONE: { row: 0, col: 3 },
-  DWARFHOLD: { row: 1, col: 5 },
+  DWARFHOLD: { row: 9, col: 2 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
