@@ -1369,6 +1369,45 @@ const grasslandNameMotifs = [
   'Dreams'
 ];
 
+const jungleNameDescriptors = [
+  'Emerald',
+  'Verdant',
+  'Sun-dappled',
+  'Obsidian',
+  'Mist-shrouded',
+  'Ancient',
+  'Thundering',
+  'Canopy',
+  'Moonlit',
+  'Serpent'
+];
+
+const jungleNameNouns = [
+  'Jungle',
+  'Wilds',
+  'Canopy',
+  'Rainforest',
+  'Tangle',
+  'Deepwood',
+  'Labyrinth',
+  'Greenway',
+  'Expanse',
+  'Verdure'
+];
+
+const jungleNameMotifs = [
+  'Serpents',
+  'Drums',
+  'Monsoons',
+  'Spirits',
+  'Cenotes',
+  'Orchids',
+  'Tempests',
+  'Roots',
+  'Jaguar Spirits',
+  'Emerald Dawn'
+];
+
 const marshNameDescriptors = [
   'Glimmer',
   'Mire',
@@ -1406,6 +1445,45 @@ const marshNameMotifs = [
   'Moss',
   'Shadows',
   'Frogs'
+];
+
+const badlandsNameDescriptors = [
+  'Shattered',
+  'Redstone',
+  'Sundered',
+  'Dustfallen',
+  'Sunblasted',
+  'Windswept',
+  'Bleached',
+  'Broken',
+  'Scorched',
+  'Cracked'
+];
+
+const badlandsNameNouns = [
+  'Badlands',
+  'Wastes',
+  'Breaks',
+  'Barrens',
+  'Tablelands',
+  'Escarpment',
+  'Canyons',
+  'Bluffs',
+  'Ridges',
+  'Maze'
+];
+
+const badlandsNameMotifs = [
+  'Bones',
+  'Dust',
+  'Echoes',
+  'Thunderheads',
+  'Vultures',
+  'Ash',
+  'Mirages',
+  'Sunstorms',
+  'Ruins',
+  'Storms'
 ];
 
 const oceanNameDescriptors = [
@@ -1676,6 +1754,20 @@ function generateGrasslandName(random, context = {}) {
   return `${descriptor} ${noun}`;
 }
 
+function generateJungleName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(jungleNameDescriptors, randomFn) || 'Emerald';
+  const noun = pickRandomFrom(jungleNameNouns, randomFn) || 'Jungle';
+  const motif = pickRandomFrom(jungleNameMotifs, randomFn);
+  if (motif && randomFn() < 0.65) {
+    return `${noun} of the ${motif}`;
+  }
+  if (randomFn() < 0.45) {
+    return `The ${descriptor} ${noun}`;
+  }
+  return `${descriptor} ${noun}`;
+}
+
 function generateMarshlandName(random, context = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const descriptor = pickRandomFrom(marshNameDescriptors, randomFn) || 'Sunken';
@@ -1685,6 +1777,20 @@ function generateMarshlandName(random, context = {}) {
     return `${descriptor} ${noun} of the ${motif}`;
   }
   return `The ${descriptor} ${noun}`;
+}
+
+function generateBadlandsName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(badlandsNameDescriptors, randomFn) || 'Shattered';
+  const noun = pickRandomFrom(badlandsNameNouns, randomFn) || 'Badlands';
+  const motif = pickRandomFrom(badlandsNameMotifs, randomFn);
+  if (motif && randomFn() < 0.55) {
+    return `${noun} of the ${motif}`;
+  }
+  if (randomFn() < 0.35) {
+    return `The ${descriptor} ${noun}`;
+  }
+  return `${descriptor} ${noun}`;
 }
 
 function generateOceanName(random, context = {}) {
@@ -1721,8 +1827,10 @@ function generateLakeName(random, context = {}) {
 
 const biomeTypeDefinitions = {
   forest: { label: 'Forest', generator: generateForestRegionName },
+  jungle: { label: 'Jungle', generator: generateJungleName },
   mountain: { label: 'Mountain Range', generator: generateMountainRangeName },
   desert: { label: 'Desert', generator: generateDesertName },
+  badlands: { label: 'Badlands', generator: generateBadlandsName },
   tundra: { label: 'Tundra', generator: generateTundraName },
   grassland: { label: 'Grassland', generator: generateGrasslandName },
   marsh: { label: 'Marsh', generator: generateMarshlandName },
@@ -9565,6 +9673,9 @@ function createWorld(seedString) {
     if (hasMarshTile && tile.base === marshTileKey) {
       return 'marsh';
     }
+    if (hasBadlandsTile && tile.base === badlandsTileKey) {
+      return 'badlands';
+    }
     if (hasSandTile && tile.base === sandTileKey) {
       return 'desert';
     }
@@ -9574,7 +9685,13 @@ function createWorld(seedString) {
       }
       return 'tundra';
     }
-    if (tileHasTreeOverlay(tile) || tileHasJungleOverlay(tile)) {
+    if (tileHasJungleOverlay(tile)) {
+      if (temperatureField[idx] > 0.38 && moistureField[idx] > 0.55) {
+        return 'jungle';
+      }
+      return temperatureField[idx] < 0.22 ? 'tundra' : 'forest';
+    }
+    if (tileHasTreeOverlay(tile)) {
       return temperatureField[idx] < 0.22 ? 'tundra' : 'forest';
     }
 
@@ -9604,6 +9721,9 @@ function createWorld(seedString) {
     }
     if (dryness > 0.64 && temperature > 0.32) {
       return 'desert';
+    }
+    if (dryness > 0.52 && temperature > 0.35) {
+      return 'badlands';
     }
     if (moisture > 0.62 || (moisture > 0.52 && nearbyWaterTiles >= 2)) {
       return 'forest';
