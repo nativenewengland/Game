@@ -269,7 +269,7 @@
         </header>
         <div class="customizer-layout">
           <aside class="roster-column" aria-label="Founder overview">
-            <h3>Founding Dwarf</h3>
+            <h3 class="sr-only" id="founder-roster-heading">Founder roster</h3>
             <ul id="dwarf-roster-list" class="dwarf-roster-list" role="list"></ul>
             <div class="roster-traits">
               <div
@@ -291,9 +291,14 @@
                 >
                   <span class="dwarf-nav-icon" aria-hidden="true"></span>
                 </button>
-                <div class="dwarf-slot-info">
-                  <p id="dwarf-slot-label" class="slot-label">Founding Dwarf</p>
-                  <label class="field-label" for="dwarf-name-input">Name</label>
+                <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
+                  <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
+                  <label
+                    id="founder-name-label"
+                    class="field-label sr-only"
+                    for="dwarf-name-input"
+                    >Founder name</label
+                  >
                   <input
                     type="text"
                     id="dwarf-name-input"

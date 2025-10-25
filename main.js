@@ -2901,11 +2901,8 @@ function updateCustomizerUI() {
   dwarf.head = resolveHeadTypeValue(dwarf.head);
   const total = state.dwarfParty.dwarves.length;
   if (elements.dwarfSlotLabel) {
-    if (total === 1) {
-      elements.dwarfSlotLabel.textContent = 'Founding Dwarf';
-    } else {
-      elements.dwarfSlotLabel.textContent = `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}`;
-    }
+    elements.dwarfSlotLabel.textContent =
+      total > 1 ? `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}` : '';
   }
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.value = dwarf.name;
