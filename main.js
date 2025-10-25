@@ -63,12 +63,30 @@ const baseTileCoords = {
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 9, col: 2 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
+  CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
   TOWN: { row: 2, col: 1 }
 };
+
+const roadTileVariantDefinitions = (() => {
+  const sheet = tileSheets.base;
+  if (!sheet) {
+    return [];
+  }
+  const tileSize = sheet.tileSize;
+  const startColumn = 7;
+  const variantCount = 8;
+  const row = 3;
+  return Array.from({ length: variantCount }, (_, index) => ({
+    sheetKey: sheet.key,
+    sx: (startColumn + index) * tileSize,
+    sy: row * tileSize,
+    size: tileSize
+  }));
+})();
 
 const riverTileCoords = {
   RIVER_NS: { row: 4, col: 0 },
@@ -462,6 +480,100 @@ const evilWizardTowerPopulationRaceOptions = [
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
+const towerCommanderTitles = [
+  'Castellan',
+  'Commander of the Watch',
+  'High Warden',
+  'Beacon Marshal',
+  'Captain of the Rampart',
+  'Signal Master'
+];
+
+const towerCommanderGivenNames = [
+  'Aldren',
+  'Briala',
+  'Cordan',
+  'Davia',
+  'Elric',
+  'Faelan',
+  'Garrick',
+  'Helena',
+  'Ivor',
+  'Jasra',
+  'Kaelin',
+  'Liora',
+  'Marek',
+  'Neriah',
+  'Orin',
+  'Phaedra',
+  'Rothan',
+  'Selene',
+  'Tarin',
+  'Vaelis'
+];
+
+const towerCommanderSurnames = [
+  'Stonewatch',
+  'Dawnshield',
+  'Greybanner',
+  'Stormgaze',
+  'Ironflame',
+  'Swiftspire',
+  'Highward',
+  'Lighthelm',
+  'Crownguard',
+  'Starwall',
+  'Deepward',
+  'Brightmarch'
+];
+
+const towerOrderNames = [
+  'Order of the Dawnwatch',
+  'Azure Sentinel Brigade',
+  'Wardens of the Highroad',
+  'Gilded Lantern Cohort',
+  'Scarlet Banner Watch',
+  'Guardians of the Stormline',
+  'Emerald Rampart Order'
+];
+
+const towerDetachmentOptions = [
+  'Hawkrider Wing',
+  'Rune-Signal Corps',
+  'Ballista Battery',
+  'Skysteel Artillery',
+  'Shadow Lanterners',
+  'Emberguard Phalanx',
+  'Stormlance Cavalry'
+];
+
+const towerDutyOptions = [
+  'Guarding the high pass road',
+  'Maintaining the beacon chain',
+  'Patrolling the border marches',
+  'Escorting vital trade caravans',
+  'Watching over ancient ruins nearby',
+  'Shielding frontier villages from raiders'
+];
+
+const towerHallmarks = [
+  'Beacon flames that can be seen clear across the frontier.',
+  'Clockwork lifts that carry scouts to the highest parapets.',
+  'Signal mirrors that flash messages to distant allies at dusk.',
+  'A vaulted armoury stocked with relic blades and bannered shields.',
+  'An observatory dome charting the movements of stormclouds and foes alike.',
+  'Stone walls etched with oath-runes that glow at the approach of danger.'
+];
+
+const towerPopulationRoleOptions = [
+  { key: 'sentinels', label: 'Sentinels', color: '#8fbf9f' },
+  { key: 'marksmen', label: 'Marksmen', color: '#d2a679' },
+  { key: 'support', label: 'Support Crew', color: '#9bb6d8' },
+  { key: 'mages', label: 'Signal Mages', color: '#b389ff' },
+  { key: 'scouts', label: 'Scouts', color: '#f4c069' },
+  { key: 'others', label: 'Camp Followers', color: '#9e9e9e' }
+];
+
 const townRulerTitles = {
   male: ['Mayor', 'Lord Mayor', 'High Steward', 'Burgomaster', 'Castellan'],
   female: ['Mayor', 'Lady Mayor', 'High Steward', 'Burgomistress', 'Castellan'],
@@ -553,7 +665,8 @@ const settlementDetailTypes = new Set([
   'city',
   'village',
   'hamlet',
-  'evilWizardTower'
+  'evilWizardTower',
+  'tower'
 ]);
 
 function resolveTownRulerTitle(gender, randomFn) {
@@ -960,6 +1073,14 @@ function generatePopulationBreakdownFromOptions(options, population, random, con
   });
 }
 
+function generateTowerPopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(towerPopulationRoleOptions, population, random, {
+    majorityIndex: 0,
+    majorityShareRange: [0.45, 0.7],
+    ensureMajority: true
+  });
+}
+
 function generateDwarfholdPopulationBreakdown(population, random) {
   return generatePopulationBreakdownFromOptions(dwarfholdPopulationRaceOptions, population, random, {
     majorityIndex: 0,
@@ -1273,6 +1394,59 @@ function generateTowerName(random) {
     return `Tower ${qualifier}`;
   }
   return `${prefix} ${noun}`;
+}
+
+function generateTowerDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(24, Math.floor(60 + randomFn() * 360));
+  let classification = 'Watchtower';
+  if (population >= 320) {
+    classification = 'Border Fortress';
+  } else if (population >= 240) {
+    classification = 'Signal Bastion';
+  } else if (population >= 160) {
+    classification = 'Garrison Keep';
+  } else if (population >= 100) {
+    classification = 'Beacon Tower';
+  }
+
+  const commanderTitle = pickRandomFrom(towerCommanderTitles, randomFn) || 'Castellan';
+  const firstName = pickRandomFrom(towerCommanderGivenNames, randomFn) || 'Aldren';
+  const surname = pickRandomFrom(towerCommanderSurnames, randomFn) || 'Stonewatch';
+  const commanderName = `${firstName} ${surname}`;
+  const foundedYearsAgo = Math.max(6, Math.floor(14 + randomFn() * 220));
+  const prominentGroup = pickRandomFrom(towerOrderNames, randomFn) || 'Order of the Dawnwatch';
+  const hallmark = pickRandomFrom(towerHallmarks, randomFn) ||
+    'Maintains vigilant watch over the frontier beacons.';
+  const detachmentCount = clamp(Math.floor(1 + randomFn() * 3), 1, towerDetachmentOptions.length);
+  const detachments = pickUniqueFrom(towerDetachmentOptions, detachmentCount, randomFn);
+  const dutyCount = clamp(Math.floor(1 + randomFn() * 2), 1, towerDutyOptions.length);
+  const duties = pickUniqueFrom(towerDutyOptions, dutyCount, randomFn);
+  const populationBreakdown = generateTowerPopulationBreakdown(population, randomFn);
+
+  return {
+    type: 'tower',
+    classification,
+    name,
+    population,
+    populationLabel: 'Garrison Strength',
+    populationDescriptor: 'guards',
+    isSettlement: true,
+    ruler: {
+      title: commanderTitle,
+      name: commanderName
+    },
+    foundedYearsAgo,
+    prominentGroup,
+    prominentGroupLabel: 'Garrison Order',
+    hallmark,
+    hallmarkLabel: 'Renowned For',
+    majorGuilds: detachments,
+    majorGuildsLabel: 'Special Detachments',
+    majorExports: duties,
+    majorExportsLabel: 'Primary Duties',
+    populationBreakdown
+  };
 }
 
 function generateWoodElfGroveName(random) {
@@ -2153,7 +2327,7 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
   }
 
   const {
-    maxDistance = 50,
+    maxDistance = 25,
     overlayKey = TOWN_ROAD_OVERLAY_KEY,
     width,
     height,
@@ -5452,6 +5626,7 @@ function createWorld(seedString) {
   const dwarfholds = [];
   const towns = [];
   const towers = [];
+  const caves = [];
   const evilWizardTowers = [];
   const woodElfGroves = [];
   const waterMask = new Uint8Array(width * height);
@@ -6343,6 +6518,51 @@ function createWorld(seedString) {
     }
   }
 
+  if (hasSnowTile && hasIcebergOverlay && waterTileKey) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile || tile.base !== snowTileKey) {
+          continue;
+        }
+        let fullySurroundedByWater = true;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+            fullySurroundedByWater = false;
+            break;
+          }
+          if (!waterMask[ny * width + nx]) {
+            fullySurroundedByWater = false;
+            break;
+          }
+        }
+        if (!fullySurroundedByWater) {
+          continue;
+        }
+        waterMask[idx] = 1;
+        tile.base = waterTileKey;
+        tile.overlay = null;
+        tile.structure = null;
+        tile.structureName = null;
+        tile.structureDetails = null;
+        tile.river = null;
+        const variantNoise = hashCoords(x, y, icebergVariantSeed);
+        const variantIndex = Math.min(
+          icebergOverlayKeys.length - 1,
+          Math.floor(variantNoise * icebergOverlayKeys.length)
+        );
+        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        tile.overlay = overlayKey;
+        if (snowPresenceField) {
+          snowPresenceField[idx] = 1;
+        }
+      }
+    }
+  }
+
   if (hasIcebergOverlay && snowPresenceField) {
     const icebergChance = 1 / 50;
     for (let y = 0; y < height; y += 1) {
@@ -6582,6 +6802,123 @@ function createWorld(seedString) {
             tile.overlay = hillOverlayKey;
           }
         }
+      }
+    }
+  }
+
+  const caveKey = tileLookup.has('CAVE') ? 'CAVE' : null;
+  if (caveKey) {
+    const caveCandidates = [];
+    const caveNoiseSeed = (seedNumber + 0x21f0e1eb) >>> 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        const overlayIsHill = tile.overlay === hillOverlayKey;
+        if (tile.overlay && !overlayIsHill) {
+          continue;
+        }
+        const heightValue = elevationField[idx];
+        let slopeSum = 0;
+        let neighborCount = 0;
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          slopeSum += Math.abs(heightValue - elevationField[nIdx]);
+          neighborCount += 1;
+          if (mountainMask && mountainMask[nIdx]) {
+            mountainNeighbors += 1;
+          } else {
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && mountainOverlayKey && isMountainOverlay(neighborTile.overlay)) {
+              mountainNeighbors += 1;
+            }
+          }
+        }
+        const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+        const slopeScore = clamp((averageSlope - 0.009) * 36, 0, 1);
+        const hillBonus = overlayIsHill ? 0.35 : 0;
+        const mountainBonus = Math.min(0.25, mountainNeighbors * 0.08);
+        const elevationScore = clamp((heightValue - seaLevel) * 1.9, 0, 1);
+        const noise = hashCoords(x, y, caveNoiseSeed) - 0.5;
+        const compositeScore =
+          hillBonus + slopeScore * 0.45 + mountainBonus + elevationScore * 0.2 + noise * 0.15;
+        if (compositeScore > 0.22) {
+          caveCandidates.push({ x, y, score: compositeScore, hill: overlayIsHill });
+        }
+      }
+    }
+
+    if (caveCandidates.length > 0) {
+      caveCandidates.sort((a, b) => b.score - a.score);
+      const area = width * height;
+      const baseTarget = Math.max(1, Math.round(area / 9000));
+      const maxCaves = computeStructurePlacementLimit(baseTarget, 22, 1);
+      const minDistanceBase = 6;
+      const minDistance = Math.max(3, minDistanceBase);
+      const placed = [];
+
+      for (let i = 0; i < caveCandidates.length; i += 1) {
+        if (placed.length >= maxCaves) {
+          break;
+        }
+        const candidate = caveCandidates[i];
+        if (candidate.score < 0.28) {
+          continue;
+        }
+        const requiredDistance = candidate.hill ? Math.max(3, minDistance - 1) : minDistance;
+        const requiredDistanceSq = requiredDistance * requiredDistance;
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < requiredDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const overlay = tile.overlay;
+        const overlayIsHill = overlay === hillOverlayKey;
+        if (overlay && !overlayIsHill) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        tile.structure = caveKey;
+        tile.structureName = 'Cave';
+        tile.structureDetails = { type: 'cave' };
+        placed.push(candidate);
+        caves.push({ x: candidate.x, y: candidate.y });
       }
     }
   }
@@ -6839,7 +7176,7 @@ function createWorld(seedString) {
       [treeOverlayKey, treeSnowOverlayKey, hillOverlayKey].filter((key) => key)
     );
     connectTownsWithinRange(tiles, towns, {
-      maxDistance: 50,
+      maxDistance: 25,
       overlayKey: TOWN_ROAD_OVERLAY_KEY,
       width,
       height,
@@ -7060,11 +7397,12 @@ function createWorld(seedString) {
           continue;
         }
         const name = generateTowerName(rng);
+        const details = generateTowerDetails(name, rng);
         tile.structure = towerKey;
         tile.structureName = name;
-        tile.structureDetails = null;
+        tile.structureDetails = details;
         placed.push(candidate);
-        towers.push({ x: candidate.x, y: candidate.y, name });
+        towers.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
   }
@@ -7115,7 +7453,16 @@ function createWorld(seedString) {
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
-  return { tiles, seedString: finalSeed, dwarfholds, towns, towers, evilWizardTowers, woodElfGroves };
+  return {
+    tiles,
+    seedString: finalSeed,
+    dwarfholds,
+    towns,
+    towers,
+    caves,
+    evilWizardTowers,
+    woodElfGroves
+  };
 }
 
 function generateSeedString(seedNumber) {
@@ -7147,30 +7494,45 @@ function drawRiverSegment(ctx, river, x, y) {
   );
 }
 
+function getRoadTileVariantDefinition(x, y) {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || roadTileVariantDefinitions.length === 0) {
+    return null;
+  }
+  const hash = ((x + 1) * 73856093) ^ ((y + 1) * 19349663);
+  const index = Math.abs(hash) % roadTileVariantDefinitions.length;
+  return roadTileVariantDefinitions[index] || null;
+}
+
 function drawRoadOverlay(ctx, x, y) {
   if (!ctx) {
-    return;
+    return false;
   }
-  const px = x * drawSize;
-  const py = y * drawSize;
-  const inset = Math.max(1, Math.floor(drawSize * 0.2));
-  const width = drawSize - inset * 2;
-  const height = drawSize - inset * 2;
+  const definition = getRoadTileVariantDefinition(x, y);
+  if (!definition) {
+    return false;
+  }
+  const sheet = state.tileSheets[definition.sheetKey];
+  if (!sheet || !sheet.image) {
+    return false;
+  }
 
-  ctx.fillStyle = '#5c4632';
-  ctx.fillRect(px + inset, py + inset, width, height);
-
-  const detailInset = Math.max(1, Math.floor(drawSize * 0.32));
-  const detailWidth = drawSize - detailInset * 2;
-  const detailHeight = drawSize - detailInset * 2;
-  ctx.fillStyle = '#8d6f50';
-  ctx.fillRect(px + detailInset, py + detailInset, detailWidth, detailHeight);
+  ctx.drawImage(
+    sheet.image,
+    definition.sx,
+    definition.sy,
+    definition.size,
+    definition.size,
+    x * drawSize,
+    y * drawSize,
+    drawSize,
+    drawSize
+  );
+  return true;
 }
 
 function drawCustomOverlay(ctx, overlayKey, x, y) {
   if (overlayKey === TOWN_ROAD_OVERLAY_KEY) {
-    drawRoadOverlay(ctx, x, y);
-    return true;
+    return drawRoadOverlay(ctx, x, y);
   }
   return false;
 }
