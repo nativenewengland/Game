@@ -1341,8 +1341,8 @@ button:hover:not(:disabled) {
 
 .customizer-fields .field-group--gender {
   grid-column: 1 / -1;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   gap: 0.6rem;
 }
 
@@ -1350,16 +1350,16 @@ button:hover:not(:disabled) {
   display: flex;
   gap: 1.1rem;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .gender-toggle-wrapper {
   display: flex;
   gap: 1.1rem;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .gender-toggle-button {
