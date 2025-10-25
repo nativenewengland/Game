@@ -268,6 +268,14 @@
           <aside class="roster-column pixel-panel" aria-label="Founder overview">
             <h3>Founding Dwarf</h3>
             <ul id="dwarf-roster-list" class="dwarf-roster-list" role="list"></ul>
+            <div class="roster-traits">
+              <div
+                id="dwarf-trait-attributes"
+                class="trait-attributes"
+                aria-live="polite"
+                role="list"
+              ></div>
+            </div>
           </aside>
           <section class="customizer-main" aria-live="polite">
             <div class="customizer-main-card pixel-panel">
@@ -315,67 +323,60 @@
                       ></canvas>
                     </div>
                     <p id="dwarf-trait-summary" class="trait-summary"></p>
-                    <div
-                      id="dwarf-trait-attributes"
-                      class="trait-attributes"
-                      aria-live="polite"
-                      role="list"
-                    ></div>
-                  </div>
-                  <div class="customizer-inline-actions pixel-subpanel">
-                    <h3 class="subpanel-title">Legendary Luck</h3>
-                    <p class="subpanel-description">Spin the dice for a fresh face.</p>
-                    <div class="randomise-button">
-                      <button
-                        type="button"
-                        id="dwarf-randomise"
-                        class="secondary randomise-button__dice"
-                        aria-label="Randomise dwarf"
-                      ></button>
-                    </div>
                   </div>
                 </div>
                 <div class="customizer-fields pixel-subpanel">
                   <div class="field-group field-group--gender">
                       <p id="dwarf-gender-label" class="field-label">Gender</p>
-                      <div
-                        id="dwarf-gender-buttons"
-                        class="gender-toggle"
-                        role="radiogroup"
-                        aria-labelledby="dwarf-gender-label"
-                      >
+                      <div class="gender-toggle-wrapper">
                         <button
                           type="button"
-                          class="gender-toggle-button gender-toggle-button--female"
-                          data-gender-value="female"
-                          role="radio"
-                          aria-checked="true"
-                          tabindex="0"
+                          id="dwarf-randomise"
+                          class="gender-toggle-randomise"
+                          aria-label="Randomise dwarf"
                         >
-                          <img
-                            src="tilesheet/gender-button-female.png"
-                            alt="Female"
-                            width="87"
-                            height="88"
-                            loading="lazy"
-                          />
+                          <span class="randomise-button__dice" aria-hidden="true"></span>
+                          <span class="sr-only">Randomise dwarf</span>
                         </button>
-                        <button
-                          type="button"
-                          class="gender-toggle-button gender-toggle-button--male"
-                          data-gender-value="male"
-                          role="radio"
-                          aria-checked="false"
-                          tabindex="-1"
+                        <div
+                          id="dwarf-gender-buttons"
+                          class="gender-toggle"
+                          role="radiogroup"
+                          aria-labelledby="dwarf-gender-label"
                         >
-                          <img
-                            src="tilesheet/gender-button-male.png"
-                            alt="Male"
-                            width="87"
-                            height="88"
-                            loading="lazy"
-                          />
-                        </button>
+                          <button
+                            type="button"
+                            class="gender-toggle-button gender-toggle-button--female"
+                            data-gender-value="female"
+                            role="radio"
+                            aria-checked="true"
+                            tabindex="0"
+                          >
+                            <img
+                              src="tilesheet/gender-button-female.png"
+                              alt="Female"
+                              width="87"
+                              height="88"
+                              loading="lazy"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            class="gender-toggle-button gender-toggle-button--male"
+                            data-gender-value="male"
+                            role="radio"
+                            aria-checked="false"
+                            tabindex="-1"
+                          >
+                            <img
+                              src="tilesheet/gender-button-male.png"
+                              alt="Male"
+                              width="87"
+                              height="88"
+                              loading="lazy"
+                            />
+                          </button>
+                        </div>
                       </div>
                     </div>
 

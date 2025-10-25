@@ -409,13 +409,15 @@ button {
   color: #f0dfee;
 }
 
-.randomise-button {
+.gender-toggle-randomise {
   position: relative;
-  width: 150px;
-  height: 136px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 108px;
+  aspect-ratio: 150 / 136;
+  padding: 0;
+  border: none;
   background: transparent;
   background-image: url('tilesheet/randombase.png');
   background-repeat: no-repeat;
@@ -424,60 +426,52 @@ button {
   image-rendering: pixelated;
   box-shadow: 0 0.85rem 1.6rem rgba(0, 0, 0, 0.45);
   transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
-  cursor: default;
+  cursor: var(--cursor-wand-pointer);
 }
 
-.randomise-button:focus-within {
-  outline: 3px solid rgba(240, 198, 116, 0.9);
+.gender-toggle-randomise:hover,
+.gender-toggle-randomise:focus-visible {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow: 0 1.2rem 1.9rem rgba(0, 0, 0, 0.48);
+}
+
+.gender-toggle-randomise:focus-visible {
+  outline: 3px solid rgba(240, 198, 116, 0.85);
   outline-offset: 4px;
-  box-shadow: 0 1.2rem 2rem rgba(0, 0, 0, 0.55);
+  border-radius: 16px;
 }
 
-@supports selector(:has(*)) {
-  .randomise-button:has(.randomise-button__dice:hover:not(:disabled)) {
-    transform: translateY(-2px);
-    box-shadow: 0 1.2rem 1.8rem rgba(0, 0, 0, 0.5);
-  }
-
-  .randomise-button:has(.randomise-button__dice:active:not(:disabled)) {
-    transform: translateY(0);
-    box-shadow: 0 0.6rem 1.2rem rgba(0, 0, 0, 0.45);
-  }
+.gender-toggle-randomise:active {
+  transform: translateY(0);
+  filter: brightness(0.92);
+  box-shadow: 0 0.65rem 1.4rem rgba(0, 0, 0, 0.4);
 }
 
-.randomise-button__dice {
+.gender-toggle-randomise .randomise-button__dice {
   display: block;
-  width: 96px;
+  width: 72%;
   aspect-ratio: 704 / 469;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background-color: transparent;
   background-image: url('tilesheet/dice.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   image-rendering: pixelated;
-  cursor: var(--cursor-wand-pointer);
   transition: transform 140ms ease, filter 140ms ease;
 }
 
-.randomise-button__dice--rolled {
-  background-image: url('tilesheet/dice1.png');
-}
-
-.randomise-button__dice:hover:not(:disabled) {
+.gender-toggle-randomise:hover .randomise-button__dice {
   transform: translateY(-1px);
   filter: brightness(1.05);
 }
 
-.randomise-button__dice:active:not(:disabled) {
+.gender-toggle-randomise:active .randomise-button__dice {
   transform: translateY(0);
   filter: brightness(0.92);
 }
 
-.randomise-button__dice:focus-visible {
-  outline: none;
+.gender-toggle-randomise.randomise-button__dice--rolled .randomise-button__dice {
+  background-image: url('tilesheet/dice1.png');
 }
 
 .return-button {
@@ -822,6 +816,12 @@ button:hover:not(:disabled) {
   gap: 0.8rem;
 }
 
+.roster-traits {
+  display: flex;
+  justify-content: center;
+  padding: 0 0.5rem 0.75rem;
+}
+
 .dwarf-roster-list li {
   padding: 0.75rem 0.95rem;
   border-radius: 14px;
@@ -1127,7 +1127,7 @@ button:hover:not(:disabled) {
 
 .customizer-body {
   display: grid;
-  grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+  grid-template-columns: minmax(380px, 500px) minmax(0, 1fr);
   gap: clamp(1.25rem, 3vw, 1.75rem);
   align-items: stretch;
   align-content: start;
@@ -1209,7 +1209,7 @@ button:hover:not(:disabled) {
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   min-height: 4.5rem;
   width: 100%;
 }
@@ -1304,6 +1304,14 @@ button:hover:not(:disabled) {
 }
 
 .gender-toggle {
+  display: flex;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.gender-toggle-wrapper {
   display: flex;
   gap: 1.1rem;
   flex-wrap: wrap;
