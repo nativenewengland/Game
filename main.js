@@ -2828,9 +2828,12 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
   };
 
+  const claimRadiusScale = 0.25; // shrink territorial growth range by 75%
+
   const shuffledSeeds = shuffleArray(uniqueSeeds, randomFn);
   const factions = shuffledSeeds.map((seed, index) => {
     const claimRadius = resolveClaimRadius(seed);
+    const scaledClaimRadius = Math.max(1, claimRadius * claimRadiusScale);
     return {
       id: index,
       name: resolveFactionName(seed),
@@ -2842,8 +2845,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         type: seed.settlementKind || seed.type || 'settlement'
       },
       territory: 0,
-      claimRadius,
-      contestScale: Math.max(4, claimRadius * 0.6)
+      claimRadius: scaledClaimRadius,
+      contestScale: Math.max(4, scaledClaimRadius * 0.6)
     };
   });
 
