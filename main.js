@@ -970,6 +970,318 @@ const woodElfGroveHallmarks = [
   'Druidic songcraft summons blossoms even in winter.'
 ];
 
+const forestRegionNamePrefixes = [
+  'Verdant',
+  'Whispering',
+  'Emerald',
+  'Silver',
+  'Shadow',
+  'Golden',
+  'Moonlit',
+  'Ancient',
+  'Wild',
+  'Sunset'
+];
+
+const forestRegionNameSuffixes = [
+  'Groves',
+  'Woods',
+  'Thicket',
+  'Wilds',
+  'Canopy',
+  'Boughs',
+  'Hollows',
+  'Glade',
+  'Expanse',
+  'Reserve'
+];
+
+const forestRegionNameMotifs = [
+  'Echoes',
+  'Mists',
+  'Cicadas',
+  'Fables',
+  'Starlight',
+  'Owls',
+  'Whispers',
+  'Lanterns',
+  'Spirits',
+  'Willows'
+];
+
+const mountainRangeNamePrefixes = [
+  'Stone',
+  'Iron',
+  'Storm',
+  'Thunder',
+  'Frost',
+  'Dragon',
+  'Obsidian',
+  'Moon',
+  'Sunspire',
+  'Titan'
+];
+
+const mountainRangeNameSuffixes = [
+  'Peaks',
+  'Range',
+  'Highlands',
+  'Crown',
+  'Mountains',
+  'Spines',
+  'Escarpment',
+  'Ridge',
+  'Tor',
+  'Bastions'
+];
+
+const mountainRangeNameMotifs = [
+  'Storms',
+  'Giants',
+  'Dawn',
+  'Ash',
+  'Echoes',
+  'Legends',
+  'Stars',
+  'Anvils',
+  'Dragons',
+  'Auroras'
+];
+
+const desertNameDescriptors = [
+  'Shifting',
+  'Burning',
+  'Golden',
+  'Silent',
+  'Glass',
+  'Crimson',
+  'Howling',
+  'Endless',
+  'Scoured',
+  'Sunken'
+];
+
+const desertNameNouns = [
+  'Dunes',
+  'Waste',
+  'Expanse',
+  'Sea',
+  'Desert',
+  'Reach',
+  'Barrens',
+  'Quarter',
+  'Wastes',
+  'Sands'
+];
+
+const desertNameMotifs = [
+  'Mirages',
+  'Ashes',
+  'Suns',
+  'Bones',
+  'Scorpions',
+  'Dust',
+  'Secrets',
+  'Hollows',
+  'Echoes',
+  'Zephyrs'
+];
+
+const tundraNameDescriptors = [
+  'Frozen',
+  'Ivory',
+  'Bleak',
+  'Glimmering',
+  'Shivering',
+  'Frostbound',
+  'Auric',
+  'Pale',
+  'Windshorn',
+  'Starlit'
+];
+
+const tundraNameNouns = [
+  'Tundra',
+  'Reach',
+  'Steppes',
+  'Barrens',
+  'Fields',
+  'Expanse',
+  'Marches',
+  'Plateau',
+  'Glade',
+  'March'
+];
+
+const tundraNameMotifs = [
+  'Auroras',
+  'Frost',
+  'Comets',
+  'Stars',
+  'Echoes',
+  'Drifts',
+  'Owls',
+  'Lights',
+  'Mammoths',
+  'Silence'
+];
+
+const grasslandNameDescriptors = [
+  'Windward',
+  'Emerald',
+  'Golden',
+  'Rolling',
+  'Open',
+  'Skylit',
+  'Silver',
+  'Gentle',
+  'Breezy',
+  'Sunlit'
+];
+
+const grasslandNameNouns = [
+  'Plains',
+  'Meadows',
+  'Fields',
+  'Prairies',
+  'Steppes',
+  'Expanse',
+  'Downs',
+  'Reach',
+  'Hearth',
+  'Lowlands'
+];
+
+const grasslandNameMotifs = [
+  'Larks',
+  'Horizon',
+  'Harvests',
+  'Echoes',
+  'Sunsets',
+  'Breezes',
+  'Lanterns',
+  'Auroras',
+  'Stones',
+  'Dreams'
+];
+
+const marshNameDescriptors = [
+  'Glimmer',
+  'Mire',
+  'Gloom',
+  'Low',
+  'Sodden',
+  'Willow',
+  'Brackish',
+  'Sable',
+  'Sunken',
+  'Twilight'
+];
+
+const marshNameNouns = [
+  'Bog',
+  'Fen',
+  'Morass',
+  'Quagmire',
+  'Wetlands',
+  'Mires',
+  'Marsh',
+  'Reeds',
+  'Pools',
+  'Sinks'
+];
+
+const marshNameMotifs = [
+  'Fireflies',
+  'Lilies',
+  'Secrets',
+  'Mist',
+  'Echoes',
+  'Cranes',
+  'Reeds',
+  'Moss',
+  'Shadows',
+  'Frogs'
+];
+
+const oceanNameDescriptors = [
+  'Sapphire',
+  'Tempest',
+  'Sunken',
+  'Cerulean',
+  'Midnight',
+  'Gilded',
+  'Storm',
+  'Azure',
+  'Silent',
+  'Everdeep'
+];
+
+const oceanNameNouns = [
+  'Sea',
+  'Ocean',
+  'Gulf',
+  'Sound',
+  'Reach',
+  'Current',
+  'Depths',
+  'Expanse',
+  'Waters',
+  'Strait'
+];
+
+const oceanNameMotifs = [
+  'Sirens',
+  'Stars',
+  'Moons',
+  'Whales',
+  'Voyagers',
+  'Storms',
+  'Legends',
+  'Coral',
+  'Mists',
+  'Echoes'
+];
+
+const lakeNameDescriptors = [
+  'Silver',
+  'Crystal',
+  'Mirror',
+  'Still',
+  'Glimmer',
+  'Duskwater',
+  'Bright',
+  'Moon',
+  'Amber',
+  'Serene'
+];
+
+const lakeNameNouns = [
+  'Lake',
+  'Mere',
+  'Loch',
+  'Pond',
+  'Basin',
+  'Reservoir',
+  'Waters',
+  'Lagoon',
+  'Pool',
+  'Bay'
+];
+
+const lakeNameMotifs = [
+  'Echoes',
+  'Willows',
+  'Lanterns',
+  'Dreams',
+  'Reflections',
+  'Whispers',
+  'Herons',
+  'Lilies',
+  'Dawn',
+  'Stars'
+];
+
 const woodElfGroveCircleNames = [
   'Circle of the Silver Bough',
   'Circle of Verdant Stars',
@@ -1035,6 +1347,139 @@ function pickUniqueFrom(array, count, random) {
     }
   }
   return picks;
+}
+
+function generateForestRegionName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(forestRegionNamePrefixes, randomFn) || 'Verdant';
+  const suffix = pickRandomFrom(forestRegionNameSuffixes, randomFn) || 'Woods';
+  const motif = pickRandomFrom(forestRegionNameMotifs, randomFn);
+  if (motif && randomFn() < 0.65) {
+    return `${prefix} ${suffix} of the ${motif}`;
+  }
+  if (randomFn() < 0.35) {
+    return `The ${prefix} ${suffix}`;
+  }
+  return `${prefix} ${suffix}`;
+}
+
+function generateMountainRangeName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(mountainRangeNamePrefixes, randomFn) || 'Stone';
+  const suffix = pickRandomFrom(mountainRangeNameSuffixes, randomFn) || 'Peaks';
+  const motif = pickRandomFrom(mountainRangeNameMotifs, randomFn);
+  if (motif && randomFn() < 0.6) {
+    return `${prefix} ${suffix} of the ${motif}`;
+  }
+  return `The ${prefix} ${suffix}`;
+}
+
+function generateDesertName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(desertNameDescriptors, randomFn) || 'Shifting';
+  const noun = pickRandomFrom(desertNameNouns, randomFn) || 'Dunes';
+  const motif = pickRandomFrom(desertNameMotifs, randomFn);
+  if (motif && randomFn() < 0.5) {
+    return `${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateTundraName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(tundraNameDescriptors, randomFn) || 'Frozen';
+  const noun = pickRandomFrom(tundraNameNouns, randomFn) || 'Tundra';
+  const motif = pickRandomFrom(tundraNameMotifs, randomFn);
+  if (motif && randomFn() < 0.55) {
+    return `${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateGrasslandName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(grasslandNameDescriptors, randomFn) || 'Golden';
+  const noun = pickRandomFrom(grasslandNameNouns, randomFn) || 'Plains';
+  const motif = pickRandomFrom(grasslandNameMotifs, randomFn);
+  if (motif && randomFn() < 0.5) {
+    return `${noun} of the ${motif}`;
+  }
+  if (randomFn() < 0.4) {
+    return `The ${descriptor} ${noun}`;
+  }
+  return `${descriptor} ${noun}`;
+}
+
+function generateMarshlandName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(marshNameDescriptors, randomFn) || 'Sunken';
+  const noun = pickRandomFrom(marshNameNouns, randomFn) || 'Bog';
+  const motif = pickRandomFrom(marshNameMotifs, randomFn);
+  if (motif && randomFn() < 0.6) {
+    return `${descriptor} ${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateOceanName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(oceanNameDescriptors, randomFn) || 'Sapphire';
+  let noun = pickRandomFrom(oceanNameNouns, randomFn) || 'Sea';
+  const motif = pickRandomFrom(oceanNameMotifs, randomFn);
+  if (context && context.size && context.size < 120 && noun === 'Ocean') {
+    noun = 'Sea';
+  }
+  if (motif && randomFn() < 0.65) {
+    return `${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateLakeName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(lakeNameDescriptors, randomFn) || 'Silver';
+  const noun = pickRandomFrom(lakeNameNouns, randomFn) || 'Lake';
+  const motif = pickRandomFrom(lakeNameMotifs, randomFn);
+  const normalizedNoun = noun.toLowerCase();
+  if (normalizedNoun === 'lake' || normalizedNoun === 'loch') {
+    if (motif && randomFn() < 0.7) {
+      return `${noun} ${motif}`;
+    }
+    return `${noun} ${descriptor}`;
+  }
+  if (motif && randomFn() < 0.6) {
+    return `The ${descriptor} ${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+const biomeTypeDefinitions = {
+  forest: { label: 'Forest', generator: generateForestRegionName },
+  mountain: { label: 'Mountain Range', generator: generateMountainRangeName },
+  desert: { label: 'Desert', generator: generateDesertName },
+  tundra: { label: 'Tundra', generator: generateTundraName },
+  grassland: { label: 'Grassland', generator: generateGrasslandName },
+  marsh: { label: 'Marsh', generator: generateMarshlandName },
+  ocean: { label: 'Ocean', generator: generateOceanName },
+  lake: { label: 'Lake', generator: generateLakeName }
+};
+
+function generateBiomeAreaName(biomeType, random, context = {}) {
+  if (!biomeType) {
+    return null;
+  }
+  const definition = biomeTypeDefinitions[biomeType];
+  if (!definition || typeof definition.generator !== 'function') {
+    return null;
+  }
+  const name = definition.generator(random, context);
+  if (typeof name === 'string') {
+    const trimmed = name.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+  return null;
 }
 
 function generatePopulationBreakdownFromOptions(options, population, random, config = {}) {
@@ -4188,8 +4633,33 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
 }
 
 function buildStructureTooltipContent(tile) {
-  if (!tile || !tile.structureName) {
+  if (!tile) {
     return null;
+  }
+
+  if (!tile.structureName) {
+    const biomeType = tile.biomeType;
+    const areaName = tile.areaName;
+    if (!biomeType && !areaName) {
+      return null;
+    }
+    const definition = biomeType ? biomeTypeDefinitions[biomeType] : null;
+    let biomeLabel = definition && definition.label ? definition.label : null;
+    if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
+      biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
+    }
+    const fallbackTitle = biomeLabel ? `Unnamed ${biomeLabel}` : 'Unnamed Region';
+    const resolvedTitle = areaName || fallbackTitle;
+    if (!resolvedTitle) {
+      return null;
+    }
+    const sections = [`<div class="tooltip-title">${escapeHtml(resolvedTitle)}</div>`];
+    if (biomeLabel) {
+      const listItems =
+        `<li><span class="tooltip-term">Biome</span><span class="tooltip-value">${escapeHtml(biomeLabel)}</span></li>`;
+      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+    return sections.join('');
   }
 
   const details = tile.structureDetails;
@@ -5312,6 +5782,8 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.structureName = null;
     tile.structureDetails = null;
     tile.river = null;
+    tile.biomeType = null;
+    tile.areaName = null;
     waterMask[idx] = 1;
     return true;
   };
@@ -5894,7 +6366,9 @@ function createWorld(seedString) {
         structure: null,
         structureName: null,
         structureDetails: null,
-        river: null
+        river: null,
+        biomeType: null,
+        areaName: null
       }))
   );
   const dwarfholds = [];
@@ -5971,6 +6445,8 @@ function createWorld(seedString) {
       tile.structureName = null;
       tile.structureDetails = null;
       tile.river = null;
+      tile.biomeType = null;
+      tile.areaName = null;
     }
   }
 
@@ -6776,6 +7252,8 @@ function createWorld(seedString) {
         tile.structureName = null;
         tile.structureDetails = null;
         tile.river = null;
+        tile.biomeType = null;
+        tile.areaName = null;
       }
     }
   }
@@ -6858,6 +7336,8 @@ function createWorld(seedString) {
         tile.structureName = null;
         tile.structureDetails = null;
         tile.river = null;
+        tile.biomeType = null;
+        tile.areaName = null;
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
@@ -7255,6 +7735,8 @@ function createWorld(seedString) {
   const hasTreeTile = tileLookup.has('TREE');
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
+  const isTreeOverlayKey = (overlayKey) =>
+    hasTreeTile && overlayKey != null && (overlayKey === treeOverlayKey || overlayKey === treeSnowOverlayKey);
   if (hasTreeTile) {
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
@@ -7779,6 +8261,114 @@ function createWorld(seedString) {
         }
         tile.overlay = mountainOverlayKey;
       }
+    }
+  }
+
+  const classifyTileBiome = (tile) => {
+    if (!tile) {
+      return null;
+    }
+    if (tile.base === waterTileKey) {
+      return 'water';
+    }
+    if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+      return 'mountain';
+    }
+    if (hasSandTile && tile.base === sandTileKey) {
+      return 'desert';
+    }
+    if (hasMarshTile && tile.base === marshTileKey) {
+      return 'marsh';
+    }
+    if (hasSnowTile && tile.base === snowTileKey) {
+      if (isTreeOverlayKey(tile.overlay)) {
+        return 'forest';
+      }
+      return 'tundra';
+    }
+    if (isTreeOverlayKey(tile.overlay)) {
+      return 'forest';
+    }
+    return 'grassland';
+  };
+
+  const biomeVisited = new Uint8Array(width * height);
+  const biomeClusters = [];
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (biomeVisited[idx]) {
+        continue;
+      }
+      const tile = tiles[y][x];
+      const baseBiome = classifyTileBiome(tile);
+      if (!baseBiome) {
+        biomeVisited[idx] = 1;
+        if (tile) {
+          tile.biomeType = null;
+          tile.areaName = null;
+        }
+        continue;
+      }
+      const stack = [idx];
+      biomeVisited[idx] = 1;
+      const members = [];
+      let touchesEdge = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+      while (stack.length > 0) {
+        const current = stack.pop();
+        const cx = current % width;
+        const cy = Math.floor(current / width);
+        members.push(current);
+        if (cx === 0 || cy === 0 || cx === width - 1 || cy === height - 1) {
+          touchesEdge = true;
+        }
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = cx + cardinalOffsets[i][0];
+          const ny = cy + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (biomeVisited[nIdx]) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          const neighborBiome = classifyTileBiome(neighborTile);
+          if (neighborBiome === baseBiome) {
+            biomeVisited[nIdx] = 1;
+            stack.push(nIdx);
+          }
+        }
+      }
+      biomeClusters.push({ type: baseBiome, indices: members, touchesEdge, size: members.length });
+    }
+  }
+
+  const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
+
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    let resolvedType = cluster.type;
+    if (resolvedType === 'water') {
+      const qualifiesAsOcean = cluster.touchesEdge || cluster.size >= oceanSizeThreshold;
+      resolvedType = qualifiesAsOcean ? 'ocean' : 'lake';
+    }
+    const definition = biomeTypeDefinitions[resolvedType] || null;
+    const context = { size: cluster.size, touchesEdge: cluster.touchesEdge };
+    const generatedName = generateBiomeAreaName(resolvedType, rng, context);
+    const fallbackLabel = definition ? definition.label : null;
+    const resolvedName = generatedName || (fallbackLabel ? `Unnamed ${fallbackLabel}` : null);
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      const cx = clusterIdx % width;
+      const cy = Math.floor(clusterIdx / width);
+      const clusterTile = tiles[cy][cx];
+      if (!clusterTile) {
+        continue;
+      }
+      clusterTile.biomeType = resolvedType;
+      clusterTile.areaName = resolvedName;
     }
   }
 
