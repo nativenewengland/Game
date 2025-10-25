@@ -70,6 +70,23 @@ const baseTileCoords = {
   TOWN: { row: 2, col: 1 }
 };
 
+const roadTileVariantDefinitions = (() => {
+  const sheet = tileSheets.base;
+  if (!sheet) {
+    return [];
+  }
+  const tileSize = sheet.tileSize;
+  const startColumn = 7;
+  const variantCount = 8;
+  const row = 3;
+  return Array.from({ length: variantCount }, (_, index) => ({
+    sheetKey: sheet.key,
+    sx: (startColumn + index) * tileSize,
+    sy: row * tileSize,
+    size: tileSize
+  }));
+})();
+
 const riverTileCoords = {
   RIVER_NS: { row: 4, col: 0 },
   RIVER_WE: { row: 4, col: 1 },
@@ -2153,7 +2170,7 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
   }
 
   const {
-    maxDistance = 50,
+    maxDistance = 25,
     overlayKey = TOWN_ROAD_OVERLAY_KEY,
     width,
     height,
@@ -6839,7 +6856,7 @@ function createWorld(seedString) {
       [treeOverlayKey, treeSnowOverlayKey, hillOverlayKey].filter((key) => key)
     );
     connectTownsWithinRange(tiles, towns, {
-      maxDistance: 50,
+      maxDistance: 25,
       overlayKey: TOWN_ROAD_OVERLAY_KEY,
       width,
       height,
@@ -7147,30 +7164,45 @@ function drawRiverSegment(ctx, river, x, y) {
   );
 }
 
+function getRoadTileVariantDefinition(x, y) {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || roadTileVariantDefinitions.length === 0) {
+    return null;
+  }
+  const hash = ((x + 1) * 73856093) ^ ((y + 1) * 19349663);
+  const index = Math.abs(hash) % roadTileVariantDefinitions.length;
+  return roadTileVariantDefinitions[index] || null;
+}
+
 function drawRoadOverlay(ctx, x, y) {
   if (!ctx) {
-    return;
+    return false;
   }
-  const px = x * drawSize;
-  const py = y * drawSize;
-  const inset = Math.max(1, Math.floor(drawSize * 0.2));
-  const width = drawSize - inset * 2;
-  const height = drawSize - inset * 2;
+  const definition = getRoadTileVariantDefinition(x, y);
+  if (!definition) {
+    return false;
+  }
+  const sheet = state.tileSheets[definition.sheetKey];
+  if (!sheet || !sheet.image) {
+    return false;
+  }
 
-  ctx.fillStyle = '#5c4632';
-  ctx.fillRect(px + inset, py + inset, width, height);
-
-  const detailInset = Math.max(1, Math.floor(drawSize * 0.32));
-  const detailWidth = drawSize - detailInset * 2;
-  const detailHeight = drawSize - detailInset * 2;
-  ctx.fillStyle = '#8d6f50';
-  ctx.fillRect(px + detailInset, py + detailInset, detailWidth, detailHeight);
+  ctx.drawImage(
+    sheet.image,
+    definition.sx,
+    definition.sy,
+    definition.size,
+    definition.size,
+    x * drawSize,
+    y * drawSize,
+    drawSize,
+    drawSize
+  );
+  return true;
 }
 
 function drawCustomOverlay(ctx, overlayKey, x, y) {
   if (overlayKey === TOWN_ROAD_OVERLAY_KEY) {
-    drawRoadOverlay(ctx, x, y);
-    return true;
+    return drawRoadOverlay(ctx, x, y);
   }
   return false;
 }
