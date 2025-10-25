@@ -62,7 +62,7 @@ const baseTileCoords = {
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
   STONE: { row: 0, col: 3 },
-  DWARFHOLD: { row: 9, col: 2 },
+  DWARFHOLD: { row: 2, col: 9 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
@@ -2406,6 +2406,77 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function compute1dDistanceTransform(sourceLine, length, outputLine, v, z) {
+  let k = 0;
+  v[0] = 0;
+  z[0] = Number.NEGATIVE_INFINITY;
+  z[1] = Number.POSITIVE_INFINITY;
+  for (let q = 1; q < length; q += 1) {
+    let s;
+    do {
+      const p = v[k];
+      const numerator = sourceLine[q] + q * q - (sourceLine[p] + p * p);
+      const denominator = 2 * (q - p);
+      s = numerator / denominator;
+      if (s <= z[k]) {
+        k -= 1;
+      } else {
+        break;
+      }
+    } while (k >= 0);
+    k += 1;
+    v[k] = q;
+    z[k] = s;
+    z[k + 1] = Number.POSITIVE_INFINITY;
+  }
+  k = 0;
+  for (let q = 0; q < length; q += 1) {
+    while (z[k + 1] < q) {
+      k += 1;
+    }
+    const p = v[k];
+    const diff = q - p;
+    outputLine[q] = diff * diff + sourceLine[p];
+  }
+}
+
+function computeEuclideanDistanceField(sourceMask, width, height) {
+  const size = width * height;
+  const distances = new Float64Array(size);
+  const inf = 1e12;
+  for (let i = 0; i < size; i += 1) {
+    distances[i] = sourceMask[i] ? 0 : inf;
+  }
+  const maxDim = Math.max(width, height);
+  const lineBuffer = new Float64Array(maxDim);
+  const lineResult = new Float64Array(maxDim);
+  const v = new Int32Array(maxDim);
+  const z = new Float64Array(maxDim + 1);
+
+  for (let y = 0; y < height; y += 1) {
+    const offset = y * width;
+    for (let x = 0; x < width; x += 1) {
+      lineBuffer[x] = distances[offset + x];
+    }
+    compute1dDistanceTransform(lineBuffer, width, lineResult, v, z);
+    for (let x = 0; x < width; x += 1) {
+      distances[offset + x] = lineResult[x];
+    }
+  }
+
+  for (let x = 0; x < width; x += 1) {
+    for (let y = 0; y < height; y += 1) {
+      lineBuffer[y] = distances[y * width + x];
+    }
+    compute1dDistanceTransform(lineBuffer, height, lineResult, v, z);
+    for (let y = 0; y < height; y += 1) {
+      distances[y * width + x] = lineResult[y];
+    }
+  }
+
+  return distances;
 }
 
 function escapeHtml(value) {
@@ -6721,6 +6792,34 @@ function createWorld(seedString) {
     }
   }
 
+  if (hasMarshTile && hasSnowTile) {
+    const snowMask = new Uint8Array(width * height);
+    let snowCount = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (tile && tile.base === snowTileKey) {
+          snowMask[idx] = 1;
+          snowCount += 1;
+        }
+      }
+    }
+    if (snowCount > 0) {
+      const distanceField = computeEuclideanDistanceField(snowMask, width, height);
+      const marshExclusionRadiusSq = 75 * 75;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (tile && tile.base === marshTileKey && distanceField[idx] <= marshExclusionRadiusSq) {
+            tile.base = grassTileKey;
+          }
+        }
+      }
+    }
+  }
+
   if (hasSnowTile && hasIcebergOverlay && waterTileKey) {
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -6733,7 +6832,14 @@ function createWorld(seedString) {
         for (let i = 0; i < neighborOffsets8.length; i += 1) {
           const nx = x + neighborOffsets8[i][0];
           const ny = y + neighborOffsets8[i][1];
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+          if (ny < 0) {
+            if (y === 0) {
+              continue;
+            }
+            fullySurroundedByWater = false;
+            break;
+          }
+          if (nx < 0 || nx >= width || ny >= height) {
             fullySurroundedByWater = false;
             break;
           }
