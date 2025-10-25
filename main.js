@@ -527,13 +527,14 @@ const dwarfholdExportOptions = [
 const dwarfholdPopulationRaceOptions = [
   { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
   { key: 'humans', label: 'Humans', color: '#9bb6d8' },
-  { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
-  { key: 'elves', label: 'Elves', color: '#6ecf85' },
   { key: 'halflings', label: 'Halflings', color: '#f7a072' },
+  { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
   { key: 'goblins', label: 'Goblins', color: '#7f8c4d' },
   { key: 'kobolds', label: 'Kobolds', color: '#b1c8ff' },
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
+
+const dwarfholdNearbyTownRadius = 12;
 
 const evilWizardTowerPopulationRaceOptions = [
   { key: 'wizards', label: 'Wizards', color: '#9c5cff' },
@@ -1266,11 +1267,144 @@ function generateTowerPopulationBreakdown(population, random) {
   });
 }
 
-function generateDwarfholdPopulationBreakdown(population, random) {
-  return generatePopulationBreakdownFromOptions(dwarfholdPopulationRaceOptions, population, random, {
-    majorityIndex: 0,
-    majorityShareRange: [0.9, 1],
-    ensureMajority: true
+function generateDwarfholdPopulationBreakdown(population, random, options = {}) {
+  if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
+    return [];
+  }
+
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const hasNearbyHumanSettlement = Boolean(options && options.hasNearbyHumanSettlement);
+  const configMap = new Map(dwarfholdPopulationRaceOptions.map((config) => [config.key, config]));
+  const dwarfConfig = configMap.get('dwarves');
+
+  if (!dwarfConfig) {
+    return [];
+  }
+
+  const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+  const majorityRange = hasNearbyHumanSettlement ? [0.85, 0.93] : [0.9, 0.96];
+  const rangeMin = clamp(majorityRange[0], 0, 1);
+  const rangeMax = clamp(majorityRange[1], rangeMin, 1);
+  const shareRange = rangeMax - rangeMin;
+  const dwarfShare = shareRange <= 0 ? rangeMin : rangeMin + randomFn() * shareRange;
+  const shares = [{ config: dwarfConfig, share: clamp(dwarfShare, 0, 1) }];
+  const remainderShare = Math.max(0, 1 - shares[0].share);
+
+  const weightPlans = hasNearbyHumanSettlement
+    ? [
+        { key: 'humans', min: 0.9, max: 1.6 },
+        { key: 'halflings', min: 0.7, max: 1.2 },
+        { key: 'gnomes', min: 0.15, max: 0.4 },
+        { key: 'goblins', min: 0.12, max: 0.35 },
+        { key: 'kobolds', min: 0.12, max: 0.35 },
+        { key: 'others', min: 0, max: 0.2 }
+      ]
+    : [
+        { key: 'gnomes', min: 0.8, max: 1.4 },
+        { key: 'goblins', min: 0.9, max: 1.5 },
+        { key: 'kobolds', min: 0.7, max: 1.2 },
+        { key: 'others', min: 0, max: 0.25 }
+      ];
+
+  const weightEntries = weightPlans
+    .map((plan) => {
+      const config = configMap.get(plan.key);
+      if (!config) {
+        return null;
+      }
+      const min = Math.max(0, Number.isFinite(plan.min) ? plan.min : 0);
+      const max = Math.max(min, Number.isFinite(plan.max) ? plan.max : min);
+      if (max <= 0) {
+        return null;
+      }
+      const weight = min + randomFn() * (max - min);
+      if (weight <= 0) {
+        return null;
+      }
+      return { config, weight };
+    })
+    .filter(Boolean);
+
+  const weightSum = weightEntries.reduce((sum, entry) => sum + entry.weight, 0);
+
+  if (remainderShare > 0 && weightSum > 0) {
+    weightEntries.forEach((entry) => {
+      const share = (entry.weight / weightSum) * remainderShare;
+      shares.push({ config: entry.config, share });
+    });
+  }
+
+  const totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+  const safeTotalShare = totalShare > 0 ? totalShare : 1;
+  const normalizedShares = shares.map((entry) => ({
+    config: entry.config,
+    share: clamp(entry.share / safeTotalShare, 0, 1)
+  }));
+
+  const percentageDecimals = 2;
+  const percentageScale = 10 ** percentageDecimals;
+  const totalUnits = 100 * percentageScale;
+
+  const scaledEntries = normalizedShares.map(({ config, share }) => {
+    const safeShare = clamp(share, 0, 1);
+    const rawPercentage = safeShare * 100;
+    const scaledRaw = rawPercentage * percentageScale;
+    const baseUnit = Math.floor(scaledRaw);
+    const fraction = Math.max(0, Math.min(1, scaledRaw - baseUnit));
+    return {
+      config,
+      baseUnit,
+      fraction
+    };
+  });
+
+  const baseUnits = scaledEntries.map((entry) => entry.baseUnit);
+  let remainderUnits = totalUnits - baseUnits.reduce((sum, value) => sum + value, 0);
+  const fractionalOrder = scaledEntries
+    .map((entry, index) => ({ index, fraction: entry.fraction }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  if (fractionalOrder.length > 0) {
+    let incrementIndex = 0;
+    while (remainderUnits > 0) {
+      const target = fractionalOrder[incrementIndex % fractionalOrder.length];
+      baseUnits[target.index] += 1;
+      remainderUnits -= 1;
+      incrementIndex += 1;
+    }
+
+    const ascending = fractionalOrder.slice().reverse();
+    let decrementIndex = 0;
+    while (remainderUnits < 0 && ascending.length > 0) {
+      const target = ascending[decrementIndex % ascending.length];
+      if (baseUnits[target.index] > 0) {
+        baseUnits[target.index] -= 1;
+        remainderUnits += 1;
+      }
+      decrementIndex += 1;
+    }
+  }
+
+  if (remainderUnits !== 0 && baseUnits.length > 0) {
+    const lastIndex = baseUnits.length - 1;
+    const adjusted = Math.max(0, Math.min(totalUnits, baseUnits[lastIndex] + remainderUnits));
+    remainderUnits -= adjusted - baseUnits[lastIndex];
+    baseUnits[lastIndex] = adjusted;
+  }
+
+  return scaledEntries.map(({ config }, index) => {
+    const percentage = clamp(baseUnits[index] / percentageScale, 0, 100);
+    const count =
+      resolvedPopulation === null
+        ? null
+        : Math.max(0, Math.round((resolvedPopulation * percentage) / 100));
+    return {
+      key: config.key,
+      label: config.label,
+      color: config.color,
+      percentage,
+      population: count
+    };
   });
 }
 
@@ -1366,7 +1500,7 @@ function generateDwarfholdName(random) {
   return baseName;
 }
 
-function generateDwarfholdDetails(name, random) {
+function generateDwarfholdDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
   const genderRoll = randomFn();
@@ -1396,7 +1530,9 @@ function generateDwarfholdDetails(name, random) {
   );
   const majorExportCount = clamp(Math.floor(2 + randomFn() * 2), 1, dwarfholdExportOptions.length);
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
-  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
+  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn, {
+    hasNearbyHumanSettlement: Boolean(options && options.hasNearbyHumanSettlement)
+  });
 
   const classification = population >= 4000 ? 'greatDwarfhold' : 'dwarfhold';
   const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
@@ -3044,7 +3180,9 @@ function tryPlaceDwarfhold(candidate, options) {
     dwarfholdKey,
     greatDwarfholdKey,
     rng,
-    dwarfholds
+    dwarfholds,
+    towns,
+    nearbyTownDistanceSq
   } = options;
 
   if (!tiles || !Array.isArray(tiles[candidate.y])) {
@@ -3089,8 +3227,37 @@ function tryPlaceDwarfhold(candidate, options) {
     tile.overlay = mountainOverlayKey;
   }
 
+  const resolvedTownDistanceSq =
+    Number.isFinite(nearbyTownDistanceSq) && nearbyTownDistanceSq >= 0
+      ? nearbyTownDistanceSq
+      : dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius;
+
+  const hasNearbyHumanSettlement =
+    Array.isArray(towns) &&
+    towns.some((town) => {
+      if (!town || !Number.isFinite(town.x) || !Number.isFinite(town.y)) {
+        return false;
+      }
+      const dx = candidate.x - town.x;
+      const dy = candidate.y - town.y;
+      const distanceSq = dx * dx + dy * dy;
+      if (distanceSq > resolvedTownDistanceSq) {
+        return false;
+      }
+      const type = typeof town.type === 'string' ? town.type.toLowerCase() : '';
+      if (type === 'city' || type === 'town' || type === 'village') {
+        return true;
+      }
+      const classification =
+        typeof town.classification === 'string' ? town.classification.toLowerCase() : '';
+      if (classification === 'city' || classification === 'village' || classification.includes('town')) {
+        return true;
+      }
+      return false;
+    });
+
   const name = generateDwarfholdName(rng);
-  const details = generateDwarfholdDetails(name, rng);
+  const details = generateDwarfholdDetails(name, rng, { hasNearbyHumanSettlement });
   const structureKey =
     details.type === 'greatDwarfhold' && greatDwarfholdKey
       ? greatDwarfholdKey
@@ -7005,7 +7172,9 @@ function createWorld(seedString) {
           dwarfholdKey,
           greatDwarfholdKey,
           rng,
-          dwarfholds
+          dwarfholds,
+          towns,
+          nearbyTownDistanceSq: dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius
         };
 
         for (let i = 0; i < dwarfholdCandidates.length && placed.length < maxDwarfholds; i += 1) {
