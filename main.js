@@ -6733,7 +6733,14 @@ function createWorld(seedString) {
         for (let i = 0; i < neighborOffsets8.length; i += 1) {
           const nx = x + neighborOffsets8[i][0];
           const ny = y + neighborOffsets8[i][1];
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+          if (ny < 0) {
+            if (y === 0) {
+              continue;
+            }
+            fullySurroundedByWater = false;
+            break;
+          }
+          if (nx < 0 || nx >= width || ny >= height) {
             fullySurroundedByWater = false;
             break;
           }
