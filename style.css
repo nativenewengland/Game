@@ -886,12 +886,12 @@ button:hover:not(:disabled) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   gap: clamp(0.35rem, 1vw, 0.55rem);
   margin-top: -0.3rem;
   width: 100%;
   min-width: 0;
-  text-align: center;
+  text-align: right;
 }
 
 .slot-label {
@@ -929,23 +929,23 @@ button:hover:not(:disabled) {
 .dwarf-name-field {
   position: relative;
   width: clamp(16rem, 62vw, 28rem);
-  margin: clamp(-0.75rem, -1vh, -0.35rem) auto 0;
+  margin: clamp(-0.75rem, -1vh, -0.35rem) 0 0 auto;
   aspect-ratio: 618 / 89;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .dwarf-name-field::before {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url('tilesheet/nametype.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   image-rendering: pixelated;
   pointer-events: none;
+  display: none;
 }
 
 .dwarf-name-input {
