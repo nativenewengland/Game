@@ -9426,6 +9426,9 @@ function createWorld(seedString) {
   );
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
 
+  const coastlineFalloff = 4.2;
+  let oceanMask = waterTileKey ? new Uint8Array(width * height) : null;
+
   if (waterTileKey) {
     const landMaskForDistance = new Uint8Array(width * height);
     for (let i = 0; i < waterMask.length; i += 1) {
@@ -9445,7 +9448,6 @@ function createWorld(seedString) {
       }
     }
     const depthNormalization = maxWaterDepth > 0 ? 1 / maxWaterDepth : 1;
-    const coastlineFalloff = 4.2;
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
@@ -11536,8 +11538,53 @@ function createWorld(seedString) {
       if (!clusterTile) {
         continue;
       }
+      if (resolvedType === 'ocean' && oceanMask) {
+        oceanMask[clusterIdx] = 1;
+      }
       clusterTile.biomeType = resolvedType;
       clusterTile.areaName = resolvedName;
+    }
+  }
+
+  if (oceanMask) {
+    let hasOcean = false;
+    for (let i = 0; i < oceanMask.length; i += 1) {
+      if (oceanMask[i]) {
+        hasOcean = true;
+        break;
+      }
+    }
+    if (hasOcean) {
+      const oceanDistanceField = computeEuclideanDistanceField(oceanMask, width, height);
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (!tile) {
+            continue;
+          }
+          if (waterMask[idx]) {
+            tile.coastProximity = 0;
+            continue;
+          }
+          const distanceToOcean = Math.sqrt(oceanDistanceField[idx]);
+          const proximity = clamp(1 - distanceToOcean / coastlineFalloff, 0, 1);
+          tile.coastProximity = proximity;
+        }
+      }
+    } else {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (tile) {
+            tile.coastProximity = 0;
+          }
+        }
+      }
     }
   }
 
