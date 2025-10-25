@@ -9048,7 +9048,8 @@ function createWorld(seedString) {
             !tile ||
             !tileHasTreeOverlay(tile) ||
             tileHasJungleOverlay(tile) ||
-            tile.structure
+            tile.structure ||
+            (hasSnowTile && tile.base === snowTileKey)
           ) {
             continue;
           }
@@ -9097,7 +9098,8 @@ function createWorld(seedString) {
             !tile ||
             !tileHasTreeOverlay(tile) ||
             tileHasJungleOverlay(tile) ||
-            tile.structure
+            tile.structure ||
+            (hasSnowTile && tile.base === snowTileKey)
           ) {
             continue;
           }
