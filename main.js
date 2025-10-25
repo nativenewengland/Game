@@ -3626,7 +3626,10 @@ const state = {
   },
   ui: {
     showPoliticalBorders: false,
-    showPoliticalInfluence: false
+    showPoliticalInfluence: false,
+    showElevation: false,
+    showBiomes: false,
+    showTemperature: false
   },
   currentWorld: null
 };
@@ -4086,6 +4089,9 @@ const elements = {
   seedDisplay: document.querySelector('.seed-display'),
   politicalBordersToggle: document.getElementById('toggle-political-borders'),
   politicalInfluenceToggle: document.getElementById('toggle-political-influence'),
+  elevationToggle: document.getElementById('toggle-elevation'),
+  biomeToggle: document.getElementById('toggle-biomes'),
+  temperatureToggle: document.getElementById('toggle-temperature'),
   mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
   worldMapSizeSelect: document.getElementById('world-map-size-select'),
@@ -8228,7 +8234,10 @@ function createWorld(seedString) {
         areaName: null,
         waterDepth: 0,
         coastProximity: 0,
-        desertProximity: 0
+        desertProximity: 0,
+        elevation: 0,
+        temperature: 0,
+        moisture: 0
       }))
   );
   const dwarfholds = [];
@@ -8340,6 +8349,7 @@ function createWorld(seedString) {
       tile.waterDepth = 0;
       tile.coastProximity = 0;
       tile.desertProximity = 0;
+      tile.elevation = heightValue;
     }
   }
 
@@ -11294,6 +11304,7 @@ function createWorld(seedString) {
       const idx = y * width + x;
       const normalizedX = (x + 0.5) / width;
       const normalizedY = (y + 0.5) / height;
+      const tile = tiles[y][x];
       const latitudeFactor = 1 - Math.abs(normalizedY - 0.5) * 2;
       const elevationValue = elevationField[idx];
       const elevationAboveSea = Math.max(elevationValue - seaLevel, 0);
@@ -11321,6 +11332,10 @@ function createWorld(seedString) {
         2.2
       );
       moistureField[idx] = clamp(baseMoisture + (moistureNoise - 0.5) * 0.14, 0, 1);
+      if (tile) {
+        tile.temperature = temperatureField[idx];
+        tile.moisture = moistureField[idx];
+      }
     }
   }
 
@@ -11653,6 +11668,13 @@ function createWorld(seedString) {
     tiles,
     grassTileKey,
     waterTileKey,
+    width,
+    height,
+    seaLevel,
+    elevationField,
+    temperatureField,
+    moistureField,
+    biomeField,
     seedString: finalSeed,
     dwarfholds,
     towns,
@@ -11742,6 +11764,96 @@ function drawCustomOverlay(ctx, overlayKey, x, y) {
   return false;
 }
 
+function drawOverlayCell(ctx, x, y, color, alpha = 0.3) {
+  if (!ctx || !color) {
+    return;
+  }
+  const clampedAlpha = clamp(Number.isFinite(alpha) ? alpha : 0.3, 0, 1);
+  if (clampedAlpha <= 0) {
+    return;
+  }
+  ctx.save();
+  ctx.globalAlpha = clampedAlpha;
+  ctx.fillStyle = color;
+  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.restore();
+}
+
+function mixColors(colorA, colorB, t) {
+  const factor = clamp(Number.isFinite(t) ? t : 0, 0, 1);
+  return {
+    r: Math.round(colorA.r + (colorB.r - colorA.r) * factor),
+    g: Math.round(colorA.g + (colorB.g - colorA.g) * factor),
+    b: Math.round(colorA.b + (colorB.b - colorA.b) * factor)
+  };
+}
+
+function rgbToCss({ r, g, b }) {
+  const red = Math.round(Number.isFinite(r) ? r : 0);
+  const green = Math.round(Number.isFinite(g) ? g : 0);
+  const blue = Math.round(Number.isFinite(b) ? b : 0);
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function getElevationOverlayColor(value, seaLevel) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const safeSeaLevel = Number.isFinite(seaLevel) ? clamp(seaLevel, 0, 1) : 0.5;
+  const clampedValue = clamp(value, 0, 1);
+  if (clampedValue <= safeSeaLevel) {
+    const ratio = safeSeaLevel <= 0 ? 0 : clamp(clampedValue / safeSeaLevel, 0, 1);
+    const deep = { r: 23, g: 63, b: 140 };
+    const shallow = { r: 88, g: 164, b: 218 };
+    return rgbToCss(mixColors(deep, shallow, ratio));
+  }
+  const landSpan = Math.max(1 - safeSeaLevel, 0.0001);
+  const landRatio = clamp((clampedValue - safeSeaLevel) / landSpan, 0, 1);
+  const foothills = { r: 96, g: 158, b: 94 };
+  const highlands = { r: 168, g: 124, b: 80 };
+  const peaks = { r: 236, g: 230, b: 220 };
+  if (landRatio < 0.5) {
+    return rgbToCss(mixColors(foothills, highlands, landRatio * 2));
+  }
+  return rgbToCss(mixColors(highlands, peaks, (landRatio - 0.5) * 2));
+}
+
+function getTemperatureOverlayColor(value) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const t = clamp(value, 0, 1);
+  const cold = { r: 32, g: 74, b: 135 };
+  const temperate = { r: 245, g: 208, b: 112 };
+  const hot = { r: 204, g: 65, b: 52 };
+  if (t < 0.5) {
+    return rgbToCss(mixColors(cold, temperate, t * 2));
+  }
+  return rgbToCss(mixColors(temperate, hot, (t - 0.5) * 2));
+}
+
+const biomeOverlayColors = {
+  forest: '#2f855a',
+  jungle: '#0f766e',
+  mountain: '#9c6644',
+  desert: '#f4a261',
+  badlands: '#d97706',
+  tundra: '#94a3b8',
+  grassland: '#65a30d',
+  marsh: '#1d948a',
+  ocean: '#2563eb',
+  lake: '#38bdf8',
+  water: '#38bdf8'
+};
+
+function getBiomeOverlayColor(type) {
+  if (typeof type !== 'string' || type.length === 0) {
+    return null;
+  }
+  const normalized = type.toLowerCase();
+  return biomeOverlayColors[normalized] || null;
+}
+
 function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
   if (!ctx || !cell) {
     return;
@@ -11811,6 +11923,13 @@ function drawWorld(world) {
   const factions = Array.isArray(world.factions) ? world.factions : [];
   const showPoliticalBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
   const showPoliticalInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
+  const showElevation = Boolean(state.ui && state.ui.showElevation);
+  const showBiomes = Boolean(state.ui && state.ui.showBiomes);
+  const showTemperature = Boolean(state.ui && state.ui.showTemperature);
+  const shouldDrawDataOverlay = showElevation || showBiomes || showTemperature;
+  const elevationField = showElevation && world.elevationField ? world.elevationField : null;
+  const temperatureField = showTemperature && world.temperatureField ? world.temperatureField : null;
+  const seaLevel = Number.isFinite(world.seaLevel) ? world.seaLevel : null;
   const hasPoliticalOverlay = (showPoliticalBorders || showPoliticalInfluence) && factions.length > 0;
   const waterTileKey = world.waterTileKey || resolveTileName('WATER');
   const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
@@ -11833,6 +11952,7 @@ function drawWorld(world) {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const cell = tiles[y][x];
+      const cellIndex = shouldDrawDataOverlay ? y * width + x : null;
       const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('GRASS');
       if (!baseDefinition) {
         continue;
@@ -11898,6 +12018,29 @@ function drawWorld(world) {
       }
 
       applyDesertMountainTint(ctx, cell, x, y);
+
+      if (showElevation && elevationField && cellIndex !== null) {
+        const elevationValue = elevationField[cellIndex];
+        const elevationColor = getElevationOverlayColor(elevationValue, seaLevel);
+        if (elevationColor) {
+          drawOverlayCell(ctx, x, y, elevationColor, 0.32);
+        }
+      }
+
+      if (showTemperature && temperatureField && cellIndex !== null) {
+        const temperatureValue = temperatureField[cellIndex];
+        const temperatureColor = getTemperatureOverlayColor(temperatureValue);
+        if (temperatureColor) {
+          drawOverlayCell(ctx, x, y, temperatureColor, 0.3);
+        }
+      }
+
+      if (showBiomes) {
+        const biomeColor = getBiomeOverlayColor(cell && cell.biomeType);
+        if (biomeColor) {
+          drawOverlayCell(ctx, x, y, biomeColor, 0.35);
+        }
+      }
 
       if (cell.river) {
         drawRiverSegment(ctx, cell.river, x, y);
@@ -12048,6 +12191,9 @@ function updateOverlayToggleButton(button, isActive, labels) {
 function refreshOverlayToggleButtons() {
   const showBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
   const showInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
+  const showElevation = Boolean(state.ui && state.ui.showElevation);
+  const showBiomes = Boolean(state.ui && state.ui.showBiomes);
+  const showTemperature = Boolean(state.ui && state.ui.showTemperature);
   updateOverlayToggleButton(elements.politicalBordersToggle, showBorders, {
     active: 'Hide Borders',
     inactive: 'Show Borders'
@@ -12055,6 +12201,18 @@ function refreshOverlayToggleButtons() {
   updateOverlayToggleButton(elements.politicalInfluenceToggle, showInfluence, {
     active: 'Hide Influence',
     inactive: 'Show Influence'
+  });
+  updateOverlayToggleButton(elements.elevationToggle, showElevation, {
+    active: 'Hide Elevation',
+    inactive: 'Show Elevation'
+  });
+  updateOverlayToggleButton(elements.biomeToggle, showBiomes, {
+    active: 'Hide Biomes',
+    inactive: 'Show Biomes'
+  });
+  updateOverlayToggleButton(elements.temperatureToggle, showTemperature, {
+    active: 'Hide Temperature',
+    inactive: 'Show Temperature'
   });
 }
 
@@ -12157,6 +12315,36 @@ function attachEvents() {
   if (elements.politicalInfluenceToggle) {
     elements.politicalInfluenceToggle.addEventListener('click', () => {
       state.ui.showPoliticalInfluence = !state.ui.showPoliticalInfluence;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.elevationToggle) {
+    elements.elevationToggle.addEventListener('click', () => {
+      state.ui.showElevation = !state.ui.showElevation;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.biomeToggle) {
+    elements.biomeToggle.addEventListener('click', () => {
+      state.ui.showBiomes = !state.ui.showBiomes;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.temperatureToggle) {
+    elements.temperatureToggle.addEventListener('click', () => {
+      state.ui.showTemperature = !state.ui.showTemperature;
       refreshOverlayToggleButtons();
       if (state.currentWorld) {
         drawWorld(state.currentWorld);
