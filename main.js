@@ -69,6 +69,7 @@ const baseTileCoords = {
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
+  HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 }
 };
@@ -7403,8 +7404,12 @@ function createWorld(seedString) {
     }
   }
 
-  const hillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : null;
-  if (hillOverlayKey) {
+  const hillOverlayKeys = ['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key));
+  const hillOverlayKeySet = new Set(hillOverlayKeys);
+  const hillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : hillOverlayKeys[0] || null;
+  const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : hillOverlayKey;
+  const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayKeySet.has(overlayKey);
+  if (hillOverlayKeySet.size > 0 && hillOverlayKey) {
     const hillUpperThreshold = hasMountainTile
       ? mountainBaseThreshold
       : Math.min(0.92, seaLevel + 0.32);
@@ -7489,7 +7494,10 @@ function createWorld(seedString) {
             noiseValue * 0.12;
           const threshold = 0.5 - mountainBonus * 0.18;
           if (compositeScore > threshold) {
-            tile.overlay = hillOverlayKey;
+            const overlayKey = baseIsSnow ? snowHillOverlayKey : hillOverlayKey;
+            if (overlayKey) {
+              tile.overlay = overlayKey;
+            }
           }
         }
       }
@@ -7515,7 +7523,7 @@ function createWorld(seedString) {
         if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
-        const overlayIsHill = tile.overlay === hillOverlayKey;
+        const overlayIsHill = isHillOverlay(tile.overlay);
         if (tile.overlay && !overlayIsHill) {
           continue;
         }
@@ -7595,7 +7603,7 @@ function createWorld(seedString) {
           continue;
         }
         const overlay = tile.overlay;
-        const overlayIsHill = overlay === hillOverlayKey;
+        const overlayIsHill = isHillOverlay(overlay);
         if (overlay && !overlayIsHill) {
           continue;
         }
@@ -7870,7 +7878,7 @@ function createWorld(seedString) {
 
   if (towns.length > 1) {
     const roadReplaceableOverlays = new Set(
-      [treeOverlayKey, treeSnowOverlayKey, hillOverlayKey].filter((key) => key)
+      [treeOverlayKey, treeSnowOverlayKey, ...hillOverlayKeys].filter((key) => key)
     );
     connectTownsWithinRange(tiles, towns, {
       maxDistance: 25,
