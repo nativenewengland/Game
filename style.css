@@ -940,7 +940,10 @@ button:hover:not(:disabled) {
   content: "";
   position: absolute;
   inset: 0;
-  background: url('tilesheet/nametype.png') center/contain no-repeat;
+  background-image: url('tilesheet/nametype.png');
+  background-repeat: no-repeat;
+  background-position: center calc(50% - 6px);
+  background-size: 112%;
   image-rendering: pixelated;
   pointer-events: none;
 }
