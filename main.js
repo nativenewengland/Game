@@ -479,6 +479,100 @@ const evilWizardTowerPopulationRaceOptions = [
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
+const towerCommanderTitles = [
+  'Castellan',
+  'Commander of the Watch',
+  'High Warden',
+  'Beacon Marshal',
+  'Captain of the Rampart',
+  'Signal Master'
+];
+
+const towerCommanderGivenNames = [
+  'Aldren',
+  'Briala',
+  'Cordan',
+  'Davia',
+  'Elric',
+  'Faelan',
+  'Garrick',
+  'Helena',
+  'Ivor',
+  'Jasra',
+  'Kaelin',
+  'Liora',
+  'Marek',
+  'Neriah',
+  'Orin',
+  'Phaedra',
+  'Rothan',
+  'Selene',
+  'Tarin',
+  'Vaelis'
+];
+
+const towerCommanderSurnames = [
+  'Stonewatch',
+  'Dawnshield',
+  'Greybanner',
+  'Stormgaze',
+  'Ironflame',
+  'Swiftspire',
+  'Highward',
+  'Lighthelm',
+  'Crownguard',
+  'Starwall',
+  'Deepward',
+  'Brightmarch'
+];
+
+const towerOrderNames = [
+  'Order of the Dawnwatch',
+  'Azure Sentinel Brigade',
+  'Wardens of the Highroad',
+  'Gilded Lantern Cohort',
+  'Scarlet Banner Watch',
+  'Guardians of the Stormline',
+  'Emerald Rampart Order'
+];
+
+const towerDetachmentOptions = [
+  'Hawkrider Wing',
+  'Rune-Signal Corps',
+  'Ballista Battery',
+  'Skysteel Artillery',
+  'Shadow Lanterners',
+  'Emberguard Phalanx',
+  'Stormlance Cavalry'
+];
+
+const towerDutyOptions = [
+  'Guarding the high pass road',
+  'Maintaining the beacon chain',
+  'Patrolling the border marches',
+  'Escorting vital trade caravans',
+  'Watching over ancient ruins nearby',
+  'Shielding frontier villages from raiders'
+];
+
+const towerHallmarks = [
+  'Beacon flames that can be seen clear across the frontier.',
+  'Clockwork lifts that carry scouts to the highest parapets.',
+  'Signal mirrors that flash messages to distant allies at dusk.',
+  'A vaulted armoury stocked with relic blades and bannered shields.',
+  'An observatory dome charting the movements of stormclouds and foes alike.',
+  'Stone walls etched with oath-runes that glow at the approach of danger.'
+];
+
+const towerPopulationRoleOptions = [
+  { key: 'sentinels', label: 'Sentinels', color: '#8fbf9f' },
+  { key: 'marksmen', label: 'Marksmen', color: '#d2a679' },
+  { key: 'support', label: 'Support Crew', color: '#9bb6d8' },
+  { key: 'mages', label: 'Signal Mages', color: '#b389ff' },
+  { key: 'scouts', label: 'Scouts', color: '#f4c069' },
+  { key: 'others', label: 'Camp Followers', color: '#9e9e9e' }
+];
+
 const townRulerTitles = {
   male: ['Mayor', 'Lord Mayor', 'High Steward', 'Burgomaster', 'Castellan'],
   female: ['Mayor', 'Lady Mayor', 'High Steward', 'Burgomistress', 'Castellan'],
@@ -570,7 +664,8 @@ const settlementDetailTypes = new Set([
   'city',
   'village',
   'hamlet',
-  'evilWizardTower'
+  'evilWizardTower',
+  'tower'
 ]);
 
 function resolveTownRulerTitle(gender, randomFn) {
@@ -977,6 +1072,14 @@ function generatePopulationBreakdownFromOptions(options, population, random, con
   });
 }
 
+function generateTowerPopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(towerPopulationRoleOptions, population, random, {
+    majorityIndex: 0,
+    majorityShareRange: [0.45, 0.7],
+    ensureMajority: true
+  });
+}
+
 function generateDwarfholdPopulationBreakdown(population, random) {
   return generatePopulationBreakdownFromOptions(dwarfholdPopulationRaceOptions, population, random, {
     majorityIndex: 0,
@@ -1290,6 +1393,59 @@ function generateTowerName(random) {
     return `Tower ${qualifier}`;
   }
   return `${prefix} ${noun}`;
+}
+
+function generateTowerDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(24, Math.floor(60 + randomFn() * 360));
+  let classification = 'Watchtower';
+  if (population >= 320) {
+    classification = 'Border Fortress';
+  } else if (population >= 240) {
+    classification = 'Signal Bastion';
+  } else if (population >= 160) {
+    classification = 'Garrison Keep';
+  } else if (population >= 100) {
+    classification = 'Beacon Tower';
+  }
+
+  const commanderTitle = pickRandomFrom(towerCommanderTitles, randomFn) || 'Castellan';
+  const firstName = pickRandomFrom(towerCommanderGivenNames, randomFn) || 'Aldren';
+  const surname = pickRandomFrom(towerCommanderSurnames, randomFn) || 'Stonewatch';
+  const commanderName = `${firstName} ${surname}`;
+  const foundedYearsAgo = Math.max(6, Math.floor(14 + randomFn() * 220));
+  const prominentGroup = pickRandomFrom(towerOrderNames, randomFn) || 'Order of the Dawnwatch';
+  const hallmark = pickRandomFrom(towerHallmarks, randomFn) ||
+    'Maintains vigilant watch over the frontier beacons.';
+  const detachmentCount = clamp(Math.floor(1 + randomFn() * 3), 1, towerDetachmentOptions.length);
+  const detachments = pickUniqueFrom(towerDetachmentOptions, detachmentCount, randomFn);
+  const dutyCount = clamp(Math.floor(1 + randomFn() * 2), 1, towerDutyOptions.length);
+  const duties = pickUniqueFrom(towerDutyOptions, dutyCount, randomFn);
+  const populationBreakdown = generateTowerPopulationBreakdown(population, randomFn);
+
+  return {
+    type: 'tower',
+    classification,
+    name,
+    population,
+    populationLabel: 'Garrison Strength',
+    populationDescriptor: 'guards',
+    isSettlement: true,
+    ruler: {
+      title: commanderTitle,
+      name: commanderName
+    },
+    foundedYearsAgo,
+    prominentGroup,
+    prominentGroupLabel: 'Garrison Order',
+    hallmark,
+    hallmarkLabel: 'Renowned For',
+    majorGuilds: detachments,
+    majorGuildsLabel: 'Special Detachments',
+    majorExports: duties,
+    majorExportsLabel: 'Primary Duties',
+    populationBreakdown
+  };
 }
 
 function generateWoodElfGroveName(random) {
@@ -7122,11 +7278,12 @@ function createWorld(seedString) {
           continue;
         }
         const name = generateTowerName(rng);
+        const details = generateTowerDetails(name, rng);
         tile.structure = towerKey;
         tile.structureName = name;
-        tile.structureDetails = null;
+        tile.structureDetails = details;
         placed.push(candidate);
-        towers.push({ x: candidate.x, y: candidate.y, name });
+        towers.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
   }
