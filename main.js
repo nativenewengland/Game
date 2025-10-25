@@ -158,6 +158,8 @@ const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
 const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
 const isTreeOverlayKey = (key) => typeof key === 'string' && treeOverlayKeySet.has(key);
+const tileHasTreeOverlay = (tile) =>
+  Boolean(tile) && (isTreeOverlayKey(tile.overlay) || isTreeOverlayKey(tile.hillOverlay));
 
 function evaluateFactionTileSuitability(faction, tile, x, y) {
   if (!faction || !tile) {
@@ -184,7 +186,7 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
       if (tile.structure === 'WOOD_ELF_GROVES') {
         return 1;
       }
-      if (isTreeOverlayKey(tile.overlay)) {
+      if (tileHasTreeOverlay(tile)) {
         return 1;
       }
       return 0;
@@ -8683,7 +8685,7 @@ function createWorld(seedString) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
           const tile = tiles[y][x];
-          if (!tile || !isTreeOverlayKey(tile.overlay) || tile.structure) {
+          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -8727,7 +8729,7 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || !isTreeOverlayKey(tile.overlay) || tile.structure) {
+          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
