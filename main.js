@@ -151,6 +151,48 @@ const icebergTileCoords = (() => {
 const tileLookup = new Map();
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
+const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
+const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW']);
+
+const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
+const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
+const isTreeOverlayKey = (key) => typeof key === 'string' && treeOverlayKeySet.has(key);
+
+function evaluateFactionTileSuitability(faction, tile) {
+  if (!faction || !tile) {
+    return 0;
+  }
+
+  const type =
+    (faction.capital && typeof faction.capital.type === 'string' && faction.capital.type) || 'settlement';
+
+  switch (type) {
+    case 'dwarfhold': {
+      if (tile.structure === 'DWARFHOLD' || tile.structure === 'GREAT_DWARFHOLD') {
+        return 1;
+      }
+      if (isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay)) {
+        return 1;
+      }
+      if (isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay)) {
+        return 0.45;
+      }
+      return 0;
+    }
+    case 'woodElfGrove': {
+      if (tile.structure === 'WOOD_ELF_GROVES') {
+        return 1;
+      }
+      if (isTreeOverlayKey(tile.overlay)) {
+        return 1;
+      }
+      return 0;
+    }
+    default:
+      return 1;
+  }
+}
+
 function registerTiles(sheetKey, coordMap) {
   const sheet = tileSheets[sheetKey];
   Object.entries(coordMap).forEach(([name, coords]) => {
@@ -2410,18 +2452,32 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
 
       let bestFaction = null;
       let bestDistance = Infinity;
+      let bestAdjustedDistance = Infinity;
+      let bestSuitability = 0;
       let secondDistance = Infinity;
+      let secondAdjustedDistance = Infinity;
 
       for (let i = 0; i < factions.length; i += 1) {
         const faction = factions[i];
+        const suitability = evaluateFactionTileSuitability(faction, tile);
+        if (suitability <= 0) {
+          continue;
+        }
+
         const dx = x - faction.capital.x;
         const dy = y - faction.capital.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < bestDistance) {
+        const adjustedDistance = distance / suitability;
+
+        if (adjustedDistance < bestAdjustedDistance) {
+          secondAdjustedDistance = bestAdjustedDistance;
           secondDistance = bestDistance;
+          bestAdjustedDistance = adjustedDistance;
           bestDistance = distance;
           bestFaction = faction;
-        } else if (distance < secondDistance) {
+          bestSuitability = suitability;
+        } else if (adjustedDistance < secondAdjustedDistance) {
+          secondAdjustedDistance = adjustedDistance;
           secondDistance = distance;
         }
       }
@@ -2432,19 +2488,22 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         continue;
       }
 
-      if (bestDistance > bestFaction.claimRadius) {
+      const effectiveClaimRadius = bestFaction.claimRadius * Math.max(bestSuitability, 0.0001);
+
+      if (bestDistance > effectiveClaimRadius) {
         tile.factionId = null;
         tile.factionInfluence = 0;
         continue;
       }
 
-      const proximity = clamp(1 - bestDistance / bestFaction.claimRadius, 0, 1);
+      const proximity = clamp(1 - bestDistance / effectiveClaimRadius, 0, 1);
       let contestFactor = 1;
       if (Number.isFinite(secondDistance) && secondDistance < Infinity) {
         const gap = Math.max(0, secondDistance - bestDistance);
-        contestFactor = clamp(gap / bestFaction.contestScale, 0, 1);
+        const contestScale = bestFaction.contestScale * (1 / Math.max(bestSuitability, 0.35));
+        contestFactor = clamp(gap / contestScale, 0, 1);
       }
-      const influence = clamp(proximity * (0.7 + contestFactor * 0.3), 0, 1);
+      const influence = clamp(proximity * (0.7 + contestFactor * 0.3) * bestSuitability, 0, 1);
 
       tile.factionId = bestFaction.id;
       tile.factionInfluence = influence;
