@@ -7907,31 +7907,30 @@ function drawWorld(world) {
         drawSize
       );
 
-      if (cell.river) {
-        drawRiverSegment(ctx, cell.river, x, y);
-      }
-
       if (cell.overlay) {
         const overlayDefinition = tileLookup.get(cell.overlay);
         if (!overlayDefinition) {
           drawCustomOverlay(ctx, cell.overlay, x, y);
         } else {
           const overlaySheet = state.tileSheets[overlayDefinition.sheet];
-          if (!overlaySheet || !overlaySheet.image) {
-            continue;
+          if (overlaySheet && overlaySheet.image) {
+            ctx.drawImage(
+              overlaySheet.image,
+              overlayDefinition.sx,
+              overlayDefinition.sy,
+              overlayDefinition.size,
+              overlayDefinition.size,
+              x * drawSize,
+              y * drawSize,
+              drawSize,
+              drawSize
+            );
           }
-          ctx.drawImage(
-            overlaySheet.image,
-            overlayDefinition.sx,
-            overlayDefinition.sy,
-            overlayDefinition.size,
-            overlayDefinition.size,
-            x * drawSize,
-            y * drawSize,
-            drawSize,
-            drawSize
-          );
         }
+      }
+
+      if (cell.river) {
+        drawRiverSegment(ctx, cell.river, x, y);
       }
 
       if (cell.structure) {
