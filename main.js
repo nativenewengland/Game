@@ -6604,6 +6604,9 @@ function createWorld(seedString) {
         if (mountainMask[idx]) {
           const tile = tiles[y][x];
           tile.overlay = mountainOverlayKey;
+          if (tile.base === marshTileKey) {
+            tile.base = grassTileKey;
+          }
         }
       }
     }
@@ -7347,6 +7350,9 @@ function createWorld(seedString) {
           (density > softSeedThreshold && rng() < (density - softSeedThreshold) * softSeedMultiplier)
         ) {
           treeMask[idx] = 1;
+          if (tile.base === marshTileKey) {
+            tile.base = grassTileKey;
+          }
           tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
         }
       }
@@ -7423,6 +7429,9 @@ function createWorld(seedString) {
           continue;
         }
         treeMask[idx] = 1;
+        if (tile.base === marshTileKey) {
+          tile.base = grassTileKey;
+        }
         tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
       }
     }
