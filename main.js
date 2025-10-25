@@ -51,7 +51,7 @@ const dwarfSpriteSheets = {
 const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
-  MARSH: { row: 5, col: 3 },
+  MARSH: { row: 4, col: 2 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
   TREE_SNOW: { row: 1, col: 1 },
@@ -62,7 +62,7 @@ const baseTileCoords = {
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
   STONE: { row: 0, col: 3 },
-  DWARFHOLD: { row: 2, col: 9 },
+  DWARFHOLD: { row: 1, col: 7 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
