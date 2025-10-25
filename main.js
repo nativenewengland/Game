@@ -8990,7 +8990,12 @@ function createWorld(seedString) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
           const tile = tiles[y][x];
-          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
+          if (
+            !tile ||
+            !tileHasTreeOverlay(tile) ||
+            tileHasJungleOverlay(tile) ||
+            tile.structure
+          ) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -9034,7 +9039,12 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
+          if (
+            !tile ||
+            !tileHasTreeOverlay(tile) ||
+            tileHasJungleOverlay(tile) ||
+            tile.structure
+          ) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
