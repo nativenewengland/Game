@@ -64,6 +64,7 @@ const baseTileCoords = {
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
   STONE: { row: 0, col: 3 },
   DWARFHOLD: { row: 1, col: 7 },
+  ABANDONED_DWARFHOLD: { row: 2, col: 7 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
@@ -176,7 +177,11 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
 
   switch (type) {
     case 'dwarfhold': {
-      if (tile.structure === 'DWARFHOLD' || tile.structure === 'GREAT_DWARFHOLD') {
+      if (
+        tile.structure === 'DWARFHOLD' ||
+        tile.structure === 'GREAT_DWARFHOLD' ||
+        tile.structure === 'ABANDONED_DWARFHOLD'
+      ) {
         return 1;
       }
       if (isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay)) {
@@ -863,6 +868,7 @@ const townFirstNamePools = {
 const settlementDetailTypes = new Set([
   'dwarfhold',
   'greatDwarfhold',
+  'abandonedDwarfhold',
   'town',
   'city',
   'village',
@@ -2124,6 +2130,29 @@ function generateDwarfholdName(random) {
 
 function generateDwarfholdDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
+  const isAbandoned = Boolean(options && options.isAbandoned);
+
+  if (isAbandoned) {
+    return {
+      type: 'abandonedDwarfhold',
+      classification: 'Abandoned Dwarfhold',
+      name,
+      population: 0,
+      populationLabel: 'Population',
+      populationDescriptor: 'dwarves',
+      isSettlement: true,
+      ruler: null,
+      foundedYearsAgo: null,
+      prominentClan: null,
+      prominentGroup: null,
+      prominentGroupLabel: null,
+      hallmark: null,
+      majorGuilds: [],
+      majorExports: [],
+      populationBreakdown: []
+    };
+  }
+
   const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
   const genderRoll = randomFn();
   const gender = genderRoll < 0.9 ? 'male' : 'female';
@@ -3877,6 +3906,11 @@ function adjustMinDistance(baseDistance, normalized) {
   return Math.max(2, Math.round(baseDistance * scale));
 }
 
+function computeAbandonedDwarfholdChance(normalizedFrequency) {
+  const scarcity = 1 - clamp(normalizedFrequency, 0, 1);
+  return clamp(lerp(0.08, 0.28, scarcity), 0, 1);
+}
+
 function connectTownsWithinRange(tiles, towns, options = {}) {
   if (!Array.isArray(tiles) || !Array.isArray(towns) || towns.length < 2) {
     return;
@@ -4072,6 +4106,8 @@ function tryPlaceDwarfhold(candidate, options) {
     mountainOverlayKey,
     dwarfholdKey,
     greatDwarfholdKey,
+    abandonedDwarfholdKey,
+    abandonedDwarfholdChance,
     rng,
     dwarfholds,
     towns,
@@ -4149,12 +4185,24 @@ function tryPlaceDwarfhold(candidate, options) {
       return false;
     });
 
-  const name = generateDwarfholdName(rng);
-  const details = generateDwarfholdDetails(name, rng, { hasNearbyHumanSettlement });
-  const structureKey =
-    details.type === 'greatDwarfhold' && greatDwarfholdKey
-      ? greatDwarfholdKey
-      : dwarfholdKey;
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const resolvedAbandonedChance = clamp(
+    Number.isFinite(abandonedDwarfholdChance) ? abandonedDwarfholdChance : 0,
+    0,
+    1
+  );
+  const isAbandoned = resolvedAbandonedChance > 0 && randomFn() < resolvedAbandonedChance;
+  const name = generateDwarfholdName(randomFn);
+  const details = generateDwarfholdDetails(name, randomFn, {
+    hasNearbyHumanSettlement,
+    isAbandoned
+  });
+  let structureKey = dwarfholdKey;
+  if (details.type === 'abandonedDwarfhold') {
+    structureKey = abandonedDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
+  } else if (details.type === 'greatDwarfhold') {
+    structureKey = greatDwarfholdKey || dwarfholdKey || null;
+  }
 
   tile.structure = structureKey;
   tile.structureName = name;
@@ -8060,6 +8108,7 @@ function createWorld(seedString) {
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
+    const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
     if (dwarfholdKey) {
       const fallbackMountainScoreThreshold =
         mountainScores && mountainCandidateThreshold !== null
@@ -8098,6 +8147,9 @@ function createWorld(seedString) {
           24,
           dwarfSettlementMultiplier
         );
+        const abandonedDwarfholdChance = computeAbandonedDwarfholdChance(
+          dwarfSettlementFrequencyNormalized
+        );
         const minDistanceBase = 5;
         const minDistance = adjustMinDistance(minDistanceBase, dwarfSettlementFrequencyNormalized);
         const minDistanceSq = minDistance * minDistance;
@@ -8112,6 +8164,8 @@ function createWorld(seedString) {
           mountainOverlayKey,
           dwarfholdKey,
           greatDwarfholdKey,
+          abandonedDwarfholdKey,
+          abandonedDwarfholdChance,
           rng,
           dwarfholds,
           towns,
