@@ -910,6 +910,13 @@ button:hover:not(:disabled) {
   padding: clamp(0.6rem, 1.5vw, 0.9rem) clamp(1rem, 2.5vw, 1.5rem);
 }
 
+.customizer-top-bar.pixel-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: clamp(0.6rem, 1.8vw, 1rem);
+}
+
 .customizer-top-bar button {
   padding: 0.55rem 1.1rem;
   min-width: 3rem;
@@ -922,6 +929,7 @@ button:hover:not(:disabled) {
   border-radius: 14px;
   display: grid;
   place-items: center;
+  justify-self: center;
 }
 
 
@@ -942,8 +950,13 @@ button:hover:not(:disabled) {
 
 .dwarf-slot-info {
   flex: 1;
-  display: grid;
-  gap: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1vw, 0.55rem);
+  margin-top: -0.3rem;
+  width: 100%;
+  min-width: 0;
   text-align: center;
 }
 
@@ -953,6 +966,10 @@ button:hover:not(:disabled) {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(240, 198, 116, 0.75);
+}
+
+.slot-label:empty {
+  display: none;
 }
 
 .field-label {
@@ -973,6 +990,11 @@ button:hover:not(:disabled) {
   color: #f4ecdd;
   font-size: 1rem;
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.65rem 1.4rem rgba(0, 0, 0, 0.4);
+}
+
+.dwarf-name-input {
+  max-width: clamp(10.5rem, 45vw, 18rem);
+  margin: 0 auto;
 }
 
 .field-control {
@@ -1416,7 +1438,7 @@ button:hover:not(:disabled) {
     gap: 1rem;
   }
 
-  .pixel-bar {
+  .customizer-top-bar.pixel-bar {
     justify-content: center;
   }
 
@@ -1434,9 +1456,13 @@ button:hover:not(:disabled) {
 }
 
 @media (max-width: 720px) {
-  .pixel-bar {
-    flex-direction: column;
-    gap: 0.75rem;
+  .customizer-top-bar.pixel-bar {
+    grid-template-columns: 1fr;
+    row-gap: 0.75rem;
+  }
+
+  .customizer-top-bar .dwarf-nav-button {
+    justify-self: stretch;
   }
 
   .customizer-top-bar button {
