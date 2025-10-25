@@ -66,6 +66,7 @@ const baseTileCoords = {
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
+  HILLS: { row: 3, col: 1 },
   TOWN: { row: 2, col: 1 }
 };
 
@@ -6305,6 +6306,99 @@ function createWorld(seedString) {
         tile.structureDetails = details;
         towns.push({ x: candidate.x, y: candidate.y, ...details });
         placed.push(candidate);
+      }
+    }
+  }
+
+  const hillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : null;
+  if (hillOverlayKey) {
+    const hillUpperThreshold = hasMountainTile
+      ? mountainBaseThreshold
+      : Math.min(0.92, seaLevel + 0.32);
+    const hillLowerBaseline = hasMountainTile
+      ? mountainBaseThreshold - Math.max(0.16, mountainRange * 0.9)
+      : seaLevel + 0.12;
+    const hillLowerThreshold = clamp(
+      hillLowerBaseline,
+      seaLevel + 0.08,
+      hillUpperThreshold - 0.04
+    );
+    if (hillUpperThreshold - hillLowerThreshold > 0.015) {
+      const hillRange = Math.max(hillUpperThreshold - hillLowerThreshold, 0.0001);
+      const hillPresenceSeed = (seedNumber + 0x0d4d0015) >>> 0;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (
+            !tile ||
+            tile.overlay ||
+            tile.structure ||
+            tile.river
+          ) {
+            continue;
+          }
+          const baseIsGrass = tile.base === grassTileKey;
+          const baseIsSnow = tile.base === snowTileKey;
+          if (!baseIsGrass && !baseIsSnow) {
+            continue;
+          }
+          const heightValue = elevationField[idx];
+          if (heightValue < hillLowerThreshold || heightValue >= hillUpperThreshold) {
+            continue;
+          }
+          let slopeSum = 0;
+          let neighborCount = 0;
+          let hasMountainNeighbor = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            const neighborHeight = elevationField[nIdx];
+            slopeSum += Math.abs(heightValue - neighborHeight);
+            neighborCount += 1;
+            if (!hasMountainNeighbor) {
+              if (mountainMask && mountainMask[nIdx]) {
+                hasMountainNeighbor = true;
+              } else {
+                const neighborTile = tiles[ny][nx];
+                if (
+                  neighborTile &&
+                  mountainOverlayKey &&
+                  isMountainOverlay(neighborTile.overlay)
+                ) {
+                  hasMountainNeighbor = true;
+                }
+              }
+            }
+          }
+          const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+          const slopeScore = clamp((averageSlope - 0.01) * 32, 0, 1);
+          if (slopeScore < 0.08 && !hasMountainNeighbor) {
+            continue;
+          }
+          const heightScore = clamp((heightValue - hillLowerThreshold) / hillRange, 0, 1);
+          let mountainBonus = hasMountainNeighbor ? 0.25 : 0;
+          if (!hasMountainNeighbor && mountainScores) {
+            mountainBonus = Math.max(mountainBonus, clamp(mountainScores[idx] * 0.2, 0, 0.2));
+          }
+          const noiseValue = hashCoords(x, y, hillPresenceSeed) - 0.5;
+          const compositeScore =
+            heightScore * 0.6 +
+            slopeScore * 0.3 +
+            mountainBonus +
+            noiseValue * 0.12;
+          const threshold = 0.5 - mountainBonus * 0.18;
+          if (compositeScore > threshold) {
+            tile.overlay = hillOverlayKey;
+          }
+        }
       }
     }
   }
