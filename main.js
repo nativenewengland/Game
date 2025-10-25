@@ -9950,6 +9950,128 @@ function createWorld(seedString) {
       }
     }
 
+    if (treeJungleOverlayKey && treeOverlayKey) {
+      const jungleScoreCache = new Float32Array(width * height);
+      jungleScoreCache.fill(NaN);
+      const getJungleScore = (idx, x, y) => {
+        const cached = jungleScoreCache[idx];
+        if (!Number.isNaN(cached)) {
+          return cached;
+        }
+        if (!snowDistanceField || snowDistanceField[idx] > jungleSnowDistanceThresholdSq) {
+          jungleScoreCache[idx] = -1;
+          return -1;
+        }
+        const normalizedY = (y + 0.5) / height;
+        const rainfallValue = rainfallField[idx];
+        const drainageValue = drainageField[idx];
+        const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 2, 0, 1);
+        const elevationAboveSea = elevationField[idx] - seaLevel;
+        const elevationHeatPenalty = clamp(Math.max(0, elevationAboveSea) * 2.8, 0, 1);
+        const heat = clamp(equatorialAlignment * 0.7 + (1 - elevationHeatPenalty) * 0.3, 0, 1);
+        const humidity = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
+        const score = Math.min(heat - 0.65, humidity - 0.7);
+        jungleScoreCache[idx] = score;
+        return score;
+      };
+      const applyNormalTreeOverlay = (tile) => {
+        if (!tile) {
+          return;
+        }
+        if (tile.base === snowTileKey && treeSnowOverlayKey) {
+          tile.overlay = treeSnowOverlayKey;
+        } else {
+          tile.overlay = treeOverlayKey;
+        }
+      };
+      const applyJungleTreeOverlay = (tile) => {
+        if (!tile) {
+          return;
+        }
+        if (tile.base === snowTileKey && treeSnowOverlayKey) {
+          applyNormalTreeOverlay(tile);
+          return;
+        }
+        tile.overlay = treeJungleOverlayKey;
+      };
+      const classifyTreeOverlay = (tile) => {
+        if (!tile) {
+          return 'none';
+        }
+        if (tile.overlay === treeJungleOverlayKey) {
+          return 'jungle';
+        }
+        if (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey) {
+          return 'normal';
+        }
+        return 'none';
+      };
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const tile = tiles[y][x];
+          if (!tile) {
+            continue;
+          }
+          const type = classifyTreeOverlay(tile);
+          if (type === 'none') {
+            continue;
+          }
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx];
+            if (!neighborTile) {
+              continue;
+            }
+            const neighborType = classifyTreeOverlay(neighborTile);
+            if (neighborType === 'none' || neighborType === type) {
+              continue;
+            }
+            const jungleTile = type === 'jungle' ? tile : neighborTile;
+            const jungleIdx = (type === 'jungle' ? y : ny) * width + (type === 'jungle' ? x : nx);
+            const jungleX = type === 'jungle' ? x : nx;
+            const jungleY = type === 'jungle' ? y : ny;
+            const normalTile = type === 'normal' ? tile : neighborTile;
+            const normalIdx = (type === 'normal' ? y : ny) * width + (type === 'normal' ? x : nx);
+            const normalX = type === 'normal' ? x : nx;
+            const normalY = type === 'normal' ? y : ny;
+            if (normalTile.base === snowTileKey && treeSnowOverlayKey) {
+              applyNormalTreeOverlay(jungleTile);
+              continue;
+            }
+            if (jungleTile.base === snowTileKey && treeSnowOverlayKey) {
+              applyNormalTreeOverlay(jungleTile);
+              continue;
+            }
+            const jungleScore = getJungleScore(jungleIdx, jungleX, jungleY);
+            const normalScore = getJungleScore(normalIdx, normalX, normalY);
+            if (jungleScore >= 0 && normalScore >= 0) {
+              applyJungleTreeOverlay(normalTile);
+              continue;
+            }
+            if (jungleScore < 0 && normalScore < 0) {
+              applyNormalTreeOverlay(jungleTile);
+              continue;
+            }
+            const costMakeNormal = jungleScore > 0 ? jungleScore : 0;
+            const costMakeJungle = normalScore < 0 ? -normalScore : 0;
+            if (costMakeNormal < costMakeJungle) {
+              applyNormalTreeOverlay(jungleTile);
+            } else if (costMakeJungle < costMakeNormal) {
+              applyJungleTreeOverlay(normalTile);
+            } else if (jungleScore <= 0 && normalScore >= 0) {
+              applyNormalTreeOverlay(jungleTile);
+            } else {
+              applyJungleTreeOverlay(normalTile);
+            }
+          }
+        }
+      }
+    }
+
     const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
     if (woodElfGroveKey) {
       const groveCandidates = [];
