@@ -51,6 +51,7 @@ const dwarfSpriteSheets = {
 const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
+  BADLANDS: { row: 2, col: 1 },
   MARSH: { row: 4, col: 2 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
@@ -7115,12 +7116,17 @@ function createWorld(seedString) {
   const sandGenerationEnabled = true;
   const hasSandTile = sandGenerationEnabled && tileLookup.has('SAND');
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
+  const hasBadlandsTile = sandGenerationEnabled && tileLookup.has('BADLANDS');
+  const badlandsTileKey = hasBadlandsTile ? 'BADLANDS' : sandTileKey;
   const landBaseKeys = new Set([grassTileKey]);
   if (hasSnowTile) {
     landBaseKeys.add(snowTileKey);
   }
   if (hasSandTile) {
     landBaseKeys.add(sandTileKey);
+  }
+  if (hasBadlandsTile) {
+    landBaseKeys.add(badlandsTileKey);
   }
   if (hasMarshTile) {
     landBaseKeys.add(marshTileKey);
@@ -7202,7 +7208,12 @@ function createWorld(seedString) {
   const desertVariationOffsetY = hasSandTile ? rng() * 4096 : 0;
   const desertVariationStrength = hasSandTile ? 0.08 + rng() * 0.07 : 0;
   const desertSuitabilityField = hasSandTile ? new Float32Array(width * height) : null;
+  const desertHeatField = hasSandTile ? new Float32Array(width * height) : null;
   const desertMask = hasSandTile ? new Uint8Array(width * height) : null;
+  const desertBadlandsSeed = hasBadlandsTile ? (seedNumber + 0x428a2f98) >>> 0 : 0;
+  const desertBadlandsScale = hasBadlandsTile ? 3.4 + rng() * 3.6 : 1;
+  const desertBadlandsOffsetX = hasBadlandsTile ? rng() * 4096 : 0;
+  const desertBadlandsOffsetY = hasBadlandsTile ? rng() * 4096 : 0;
 
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
@@ -7301,6 +7312,9 @@ function createWorld(seedString) {
           1) *
         0.25;
       const heat = clamp(equatorialAlignment * 0.55 + (1 - elevationFactor) * 0.3 + desertHeatNoise, 0, 1);
+      if (desertHeatField) {
+        desertHeatField[idx] = heat;
+      }
       let suitability = clamp(aridity * 0.68 + heat * 0.42, 0, 1);
       if (desertSuitabilityStrength > 0) {
         const suitabilityNoise =
@@ -7590,8 +7604,29 @@ function createWorld(seedString) {
           continue;
         }
         if (desertMask[idx]) {
-          tiles[y][x].base = sandTileKey;
-        } else if (tiles[y][x].base === sandTileKey) {
+          let baseTileName = sandTileKey;
+          if (hasBadlandsTile) {
+            const heatValue = desertHeatField ? desertHeatField[idx] : 1;
+            const dryness = desertSuitabilityField ? desertSuitabilityField[idx] : heatValue;
+            if (heatValue > 0.58 && dryness > 0.5) {
+              const normalizedX = (x + 0.5) / width;
+              const normalizedY = (y + 0.5) / height;
+              const badlandsNoise = octaveNoise(
+                (normalizedX + desertBadlandsOffsetX) * desertBadlandsScale,
+                (normalizedY + desertBadlandsOffsetY) * desertBadlandsScale,
+                desertBadlandsSeed,
+                3,
+                0.55,
+                2.15
+              );
+              const badlandsLikelihood = clamp((heatValue - 0.58) * 1.25 + (dryness - 0.5) * 0.85, 0, 1);
+              if (badlandsNoise < badlandsLikelihood) {
+                baseTileName = badlandsTileKey;
+              }
+            }
+          }
+          tiles[y][x].base = baseTileName;
+        } else if (tiles[y][x].base === sandTileKey || (hasBadlandsTile && tiles[y][x].base === badlandsTileKey)) {
           tiles[y][x].base = grassTileKey;
         }
       }
@@ -7602,7 +7637,10 @@ function createWorld(seedString) {
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
-          if (tiles[y][x].base !== sandTileKey) {
+          if (
+            tiles[y][x].base !== sandTileKey &&
+            (!hasBadlandsTile || tiles[y][x].base !== badlandsTileKey)
+          ) {
             continue;
           }
           let nearSnow = false;
