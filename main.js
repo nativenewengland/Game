@@ -9950,6 +9950,39 @@ function createWorld(seedString) {
       }
     }
 
+    if (hasSandTile && treeOverlayKeys.length > 0) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!treeMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || !isTreeOverlayKey(tile.overlay)) {
+            continue;
+          }
+          let adjacentToSand = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && neighborTile.base === sandTileKey) {
+              adjacentToSand = true;
+              break;
+            }
+          }
+          if (!adjacentToSand) {
+            continue;
+          }
+          treeMask[idx] = 0;
+          tile.overlay = null;
+        }
+      }
+    }
+
     if (treeJungleOverlayKey && treeOverlayKey) {
       const jungleScoreCache = new Float32Array(width * height);
       jungleScoreCache.fill(NaN);
