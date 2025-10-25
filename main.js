@@ -7944,6 +7944,8 @@ function createWorld(seedString) {
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
   const hasBadlandsTile = sandGenerationEnabled && tileLookup.has('BADLANDS');
   const badlandsTileKey = hasBadlandsTile ? 'BADLANDS' : sandTileKey;
+  const hasStoneTile = tileLookup.has('STONE');
+  const stoneTileKey = hasStoneTile ? 'STONE' : grassTileKey;
   const landBaseKeys = new Set([grassTileKey]);
   if (hasSnowTile) {
     landBaseKeys.add(snowTileKey);
@@ -7953,6 +7955,9 @@ function createWorld(seedString) {
   }
   if (hasBadlandsTile) {
     landBaseKeys.add(badlandsTileKey);
+  }
+  if (hasStoneTile) {
+    landBaseKeys.add(stoneTileKey);
   }
   if (hasMarshTile) {
     landBaseKeys.add(marshTileKey);
@@ -9088,7 +9093,11 @@ function createWorld(seedString) {
         const usePeakOverlay =
           mountainPeakKey && normalizedHeight >= mountainPeakHeightThreshold;
         tile.overlay = usePeakOverlay ? mountainPeakKey : mountainOverlayKey;
-        if (tile.base === marshTileKey) {
+        const isSandBase = hasSandTile && tile.base === sandTileKey;
+        const isBadlandsBase = hasBadlandsTile && tile.base === badlandsTileKey;
+        if (isSandBase || isBadlandsBase) {
+          tile.base = stoneTileKey;
+        } else if (tile.base === marshTileKey) {
           tile.base = grassTileKey;
         }
       }
