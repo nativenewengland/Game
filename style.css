@@ -901,7 +901,6 @@ button:hover:not(:disabled) {
   color: rgba(240, 198, 116, 0.75);
 }
 
-.dwarf-name-input,
 .field-control {
   width: 100%;
   padding: 0.65rem 0.9rem;
@@ -914,9 +913,42 @@ button:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.65rem 1.4rem rgba(0, 0, 0, 0.4);
 }
 
-.dwarf-name-input {
-  max-width: clamp(10.5rem, 45vw, 18rem);
+
+.dwarf-name-field {
+  position: relative;
+  width: clamp(11.5rem, 45vw, 18.5rem);
   margin: 0 auto;
+  aspect-ratio: 512 / 176;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dwarf-name-field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url('tilesheet/nametype.png') center/contain no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.dwarf-name-input {
+  position: relative;
+  width: 68%;
+  padding: 0.35rem 0.6rem;
+  border: none;
+  border-radius: 9px;
+  background: rgba(24, 18, 32, 0.65);
+  color: #f4ecdd;
+  font-size: 1rem;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18);
+  z-index: 1;
+}
+
+.dwarf-name-input::placeholder {
+  color: rgba(244, 236, 221, 0.55);
 }
 
 .field-control {
@@ -934,11 +966,17 @@ button:hover:not(:disabled) {
   color: #111015;
 }
 
-.field-control:focus,
-.dwarf-name-input:focus {
+.field-control:focus {
   outline: 2px solid rgba(240, 198, 116, 0.7);
   outline-offset: 2px;
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.28), 0 0.85rem 1.6rem rgba(0, 0, 0, 0.45);
+}
+
+.dwarf-name-input:focus {
+  outline: 2px solid rgba(240, 198, 116, 0.7);
+  outline-offset: 2px;
+  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.35), 0 0.75rem 1.5rem rgba(0, 0, 0, 0.45);
+  background: rgba(24, 18, 32, 0.85);
 }
 
 .trait-slider {
