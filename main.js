@@ -3496,6 +3496,7 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
       const safePercentage = Number.isFinite(rawPercentage) ? Math.max(0, rawPercentage) : 0;
       const roundedPercentage = Math.round(safePercentage * 100) / 100;
       return {
+        key: typeof entry.key === 'string' && entry.key ? entry.key : null,
         label: entry.label || entry.key || 'Unknown',
         percentage: roundedPercentage,
         color: entry.color || '#999999',
@@ -3506,12 +3507,18 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
       };
     });
 
+  const priorityEntries = [];
   const majorEntries = [];
   let otherPercentage = 0;
   let otherPopulation = 0;
   let otherPopulationKnown = true;
 
   resolvedEntries.forEach((entry) => {
+    if (entry.key === 'wizards') {
+      priorityEntries.push(entry);
+      return;
+    }
+
     if (entry.percentage < 0.5) {
       otherPercentage += entry.percentage;
       if (entry.population === null) {
@@ -3524,9 +3531,11 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
     }
   });
 
+  const combinedEntries = [...priorityEntries, ...majorEntries];
+
   if (otherPercentage > 0) {
     const roundedOtherPercentage = Math.round(otherPercentage * 100) / 100;
-    majorEntries.push({
+    combinedEntries.push({
       label: 'Other',
       percentage: roundedOtherPercentage,
       color: '#666666',
@@ -3534,7 +3543,7 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
     });
   }
 
-  const displayEntries = majorEntries.length > 0 ? majorEntries : resolvedEntries;
+  const displayEntries = combinedEntries.length > 0 ? combinedEntries : resolvedEntries;
 
   if (displayEntries.length === 0) {
     return '';
