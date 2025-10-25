@@ -262,14 +262,14 @@ select,
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.25rem;
-  padding: 3.5rem 4.5rem;
+  gap: clamp(1rem, 2.5vw, 1.25rem);
+  padding: clamp(1.75rem, 4vw, 3.5rem) clamp(1.5rem, 5vw, 4.5rem);
   border-radius: 26px;
   backdrop-filter: blur(18px);
   background: linear-gradient(160deg, rgba(12, 8, 4, 0.78), rgba(6, 8, 16, 0.82));
   border: 2px solid rgba(138, 100, 46, 0.75);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1.5rem 3.5rem rgba(0, 0, 0, 0.55);
-  max-width: 580px;
+  width: min(92vw, 580px);
 }
 
 .title-overlay::before,
@@ -316,7 +316,7 @@ h3,
 }
 
 .game-title .game-logo {
-  width: clamp(24rem, 80vw, 44rem);
+  width: clamp(16rem, 60vw, 36rem);
   height: auto;
   filter: drop-shadow(0 0 14px rgba(240, 198, 116, 0.25))
     drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
@@ -334,6 +334,30 @@ h3,
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 1.25rem 0;
+  }
+
+  .title-overlay {
+    gap: 0.85rem;
+    padding: 1.5rem clamp(1.25rem, 6vw, 2rem);
+  }
+
+  .tagline {
+    font-size: 1rem;
+  }
+
+  .title-buttons {
+    flex-direction: column;
+    width: min(75vw, 20rem);
+  }
+
+  .title-buttons button {
+    width: 100%;
+  }
 }
 
 button {
