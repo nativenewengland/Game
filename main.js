@@ -6614,7 +6614,8 @@ function createWorld(seedString) {
           28,
           woodElfSettlementMultiplier
         );
-        const minDistanceBase = 6;
+        // Increase the base separation so wood elf groves feel rare and distinct.
+        const minDistanceBase = 14;
         const minDistance = adjustMinDistance(minDistanceBase, woodElfSettlementFrequencyNormalized);
         const minDistanceSq = minDistance * minDistance;
         const placed = [];
