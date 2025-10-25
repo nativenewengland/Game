@@ -62,7 +62,7 @@ const baseTileCoords = {
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
   STONE: { row: 0, col: 3 },
-  DWARFHOLD: { row: 9, col: 2 },
+  DWARFHOLD: { row: 2, col: 9 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
