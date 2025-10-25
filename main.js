@@ -159,7 +159,7 @@ const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith(
 const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
 const isTreeOverlayKey = (key) => typeof key === 'string' && treeOverlayKeySet.has(key);
 
-function evaluateFactionTileSuitability(faction, tile) {
+function evaluateFactionTileSuitability(faction, tile, x, y) {
   if (!faction || !tile) {
     return 0;
   }
@@ -188,6 +188,43 @@ function evaluateFactionTileSuitability(faction, tile) {
         return 1;
       }
       return 0;
+    }
+    case 'tower':
+    case 'evilWizardTower': {
+      if (tile.base === 'WATER') {
+        return 0;
+      }
+
+      const overlayIsMountain = isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+      const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+      const overlayIsForest = isTreeOverlayKey(tile.overlay);
+
+      let suitability = 1;
+
+      if (overlayIsMountain) {
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          const dx = x - faction.capital.x;
+          const dy = y - faction.capital.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance <= Math.SQRT2) {
+            suitability *= 0.35;
+          } else {
+            return 0.05;
+          }
+        } else {
+          return 0.05;
+        }
+      }
+
+      if (overlayIsHill) {
+        suitability *= 0.35;
+      }
+
+      if (overlayIsForest) {
+        suitability *= 0.35;
+      }
+
+      return suitability;
     }
     default:
       return 1;
@@ -2460,7 +2497,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
 
       for (let i = 0; i < factions.length; i += 1) {
         const faction = factions[i];
-        const suitability = evaluateFactionTileSuitability(faction, tile);
+        const suitability = evaluateFactionTileSuitability(faction, tile, x, y);
         if (suitability <= 0) {
           continue;
         }
