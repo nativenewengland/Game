@@ -51,6 +51,7 @@ const dwarfSpriteSheets = {
 const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
+  MARSH: { row: 5, col: 3 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
   TREE_SNOW: { row: 1, col: 1 },
@@ -5376,6 +5377,8 @@ function createWorld(seedString) {
   rainfallField.set(adjustedRainfall);
   normalizeField(drainageField);
   const grassTileKey = resolveTileName('GRASS');
+  const hasMarshTile = tileLookup.has('MARSH');
+  const marshTileKey = hasMarshTile ? 'MARSH' : grassTileKey;
   const waterTileKey = resolveTileName('WATER');
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
@@ -5389,6 +5392,9 @@ function createWorld(seedString) {
   }
   if (hasSandTile) {
     landBaseKeys.add(sandTileKey);
+  }
+  if (hasMarshTile) {
+    landBaseKeys.add(marshTileKey);
   }
   const snowLatitudeStart = 0.7;
   const snowLatitudeFull = 0.86;
@@ -5427,6 +5433,10 @@ function createWorld(seedString) {
   const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
   const icebergPresenceSeed = hasIcebergOverlay ? (seedNumber + 0x5ad1f32b) >>> 0 : 0;
 
+  const marshNoiseSeed = hasMarshTile ? (seedNumber + 0x1922b3a5) >>> 0 : 0;
+  const marshNoiseScale = hasMarshTile ? 3.9 + rng() * 3 : 1;
+  const marshNoiseOffsetX = hasMarshTile ? rng() * 4096 : 0;
+  const marshNoiseOffsetY = hasMarshTile ? rng() * 4096 : 0;
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
   const desertNoiseOffsetX = hasSandTile ? rng() * 4096 : 0;
@@ -5504,8 +5514,35 @@ function createWorld(seedString) {
       return snowTileKey;
     }
 
+    const rainfallValue = rainfallField[idx];
+    const drainageValue = drainageField[idx];
+    if (hasMarshTile) {
+      const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
+      const elevationAboveSea = heightValue - seaLevel;
+      const elevationHeatPenalty = clamp(elevationAboveSea * 3.6, 0, 1);
+      const heat = clamp(equatorialAlignment * 0.65 + (1 - elevationHeatPenalty) * 0.35, 0, 1);
+      const wetness = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+      const lowlandFactor = clamp(1 - Math.max(0, elevationAboveSea) * 5.2, 0, 1);
+      if (wetness > 0.68 && heat > 0.58 && lowlandFactor > 0.35) {
+        const marshNoise =
+          octaveNoise(
+            (normalizedX + marshNoiseOffsetX) * marshNoiseScale,
+            (normalizedY + marshNoiseOffsetY) * marshNoiseScale,
+            marshNoiseSeed,
+            3,
+            0.55,
+            2.15
+          ) *
+            2 -
+          1;
+        const marshScore = wetness * 0.6 + lowlandFactor * 0.25 + marshNoise * 0.15;
+        if (marshScore > 0.62) {
+          return marshTileKey;
+        }
+      }
+    }
+
     if (hasSandTile) {
-      const rainfallValue = rainfallField[idx];
       const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
       let equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
       if (desertBandStrength > 0) {
