@@ -6179,8 +6179,8 @@ function buildRiverMap(
     1
   );
   const frequencyMultiplier = lerp(0.45, 1.75, frequencyNormalized);
-  const rainfallThreshold = lerp(0.65, 0.45, frequencyNormalized);
-  const weightThreshold = 0.12 * lerp(1.7, 0.6, frequencyNormalized);
+  const rainfallThreshold = lerp(0.6, 0.35, frequencyNormalized);
+  const weightThreshold = 0.12 * lerp(1.45, 0.45, frequencyNormalized);
   const majorRiverThreshold = lerp(0.45, 0.28, frequencyNormalized);
 
   const riverMap = new Uint8Array(width * height);
@@ -6206,7 +6206,11 @@ function buildRiverMap(
 
   candidates.sort((a, b) => b.weight - a.weight);
   const baseSources = Math.max(8, Math.floor((width * height) / 3200));
-  const maxSources = Math.max(4, Math.round(baseSources * frequencyMultiplier));
+  const sourceDensityMultiplier = lerp(1.8, 3.1, frequencyNormalized);
+  const maxSources = Math.max(
+    4,
+    Math.round(baseSources * frequencyMultiplier * sourceDensityMultiplier)
+  );
   const directions = [
     [0, -1],
     [1, 0],
