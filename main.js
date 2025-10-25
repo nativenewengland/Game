@@ -1729,8 +1729,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
   }
 
   const toKey = (x, y) => `${x},${y}`;
-  const landTiles = [];
-
+  let hasLand = false;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
@@ -1743,11 +1742,13 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         tile.factionInfluence = 0;
         continue;
       }
-      landTiles.push({ x, y });
+      tile.factionId = null;
+      tile.factionInfluence = 0;
+      hasLand = true;
     }
   }
 
-  if (landTiles.length === 0) {
+  if (!hasLand) {
     return { factions: [] };
   }
 
@@ -1772,34 +1773,29 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     });
   });
 
-  const area = width * height;
-  const baseTarget = Math.round(3 + Math.sqrt(area) / 75);
-  const maxColors = Math.max(1, factionColorPalette.length);
-  const maxAvailable = Math.max(1, Math.min(maxColors, landTiles.length));
-  const desiredCount = Math.max(3, baseTarget);
-  const targetCount = Math.max(1, Math.min(maxAvailable, desiredCount));
-
-  if (uniqueSeeds.length < targetCount) {
-    const shuffledLand = shuffleArray(landTiles, randomFn);
-    for (let i = 0; i < shuffledLand.length && uniqueSeeds.length < targetCount; i += 1) {
-      const candidate = shuffledLand[i];
-      const key = toKey(candidate.x, candidate.y);
-      if (seenSeeds.has(key)) {
-        continue;
-      }
-      seenSeeds.add(key);
-      uniqueSeeds.push({
-        x: candidate.x,
-        y: candidate.y,
-        label: generateRealmName(randomFn),
-        type: 'wilds'
-      });
-    }
-  }
-
   if (uniqueSeeds.length === 0) {
     return { factions: [] };
   }
+
+  const resolveClaimRadius = (seed) => {
+    if (!seed || !seed.type) {
+      return 26;
+    }
+    switch (seed.type) {
+      case 'dwarfhold':
+        return 36;
+      case 'town':
+        return 32;
+      case 'tower':
+        return 24;
+      case 'evilWizardTower':
+        return 24;
+      case 'woodElfGrove':
+        return 28;
+      default:
+        return 26;
+    }
+  };
 
   const resolveFactionName = (seed) => {
     if (!seed) {
@@ -1825,23 +1821,24 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
   };
 
-  const shuffledSeeds = shuffleArray(uniqueSeeds, randomFn).slice(0, targetCount);
-  const factions = shuffledSeeds.map((seed, index) => ({
-    id: index,
-    name: resolveFactionName(seed),
-    color: pickFactionColor(index),
-    capital: {
-      x: seed.x,
-      y: seed.y,
-      label: seed.label || null,
-      type: seed.type || 'settlement'
-    },
-    territory: 0
-  }));
-
-  const diagonal = Math.sqrt(width * width + height * height);
-  const influenceRadius = Math.max(18, diagonal * 0.4);
-  const contestScale = Math.max(6, diagonal * 0.12);
+  const shuffledSeeds = shuffleArray(uniqueSeeds, randomFn);
+  const factions = shuffledSeeds.map((seed, index) => {
+    const claimRadius = resolveClaimRadius(seed);
+    return {
+      id: index,
+      name: resolveFactionName(seed),
+      color: pickFactionColor(index),
+      capital: {
+        x: seed.x,
+        y: seed.y,
+        label: seed.label || null,
+        type: seed.type || 'settlement'
+      },
+      territory: 0,
+      claimRadius,
+      contestScale: Math.max(4, claimRadius * 0.6)
+    };
+  });
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -1880,11 +1877,17 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         continue;
       }
 
-      const proximity = clamp(1 - bestDistance / influenceRadius, 0, 1);
+      if (bestDistance > bestFaction.claimRadius) {
+        tile.factionId = null;
+        tile.factionInfluence = 0;
+        continue;
+      }
+
+      const proximity = clamp(1 - bestDistance / bestFaction.claimRadius, 0, 1);
       let contestFactor = 1;
       if (Number.isFinite(secondDistance) && secondDistance < Infinity) {
         const gap = Math.max(0, secondDistance - bestDistance);
-        contestFactor = clamp(gap / contestScale, 0, 1);
+        contestFactor = clamp(gap / bestFaction.contestScale, 0, 1);
       }
       const influence = clamp(proximity * (0.7 + contestFactor * 0.3), 0, 1);
 
