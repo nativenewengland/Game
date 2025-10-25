@@ -113,12 +113,14 @@ const riverTileCoords = {
   RIVER_MAJOR_MOUTH_NARROW_E: { row: 8, col: 15 }
 };
 
+const overworldIcebergReplacement = { row: 4, col: 3 };
+
 const icebergTileCoords = {
-  ICEBERG_SURROUND_1: { row: 10, col: 4 },
-  ICEBERG_SURROUND_2: { row: 11, col: 4 },
-  ICEBERG_SURROUND_3: { row: 12, col: 4 },
-  ICEBERG_SURROUND_4: { row: 13, col: 4 },
-  ICEBERG_SURROUND_5: { row: 14, col: 4 }
+  ICEBERG_SURROUND_1: overworldIcebergReplacement,
+  ICEBERG_SURROUND_2: overworldIcebergReplacement,
+  ICEBERG_SURROUND_3: overworldIcebergReplacement,
+  ICEBERG_SURROUND_4: overworldIcebergReplacement,
+  ICEBERG_SURROUND_5: overworldIcebergReplacement
 };
 
 const tileLookup = new Map();
@@ -137,7 +139,7 @@ function registerTiles(sheetKey, coordMap) {
 
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
-registerTiles('worldEdgeGlacier', icebergTileCoords);
+registerTiles('base', icebergTileCoords);
 
 // The evil wizard tower sprite only shows up on some tilesheets. If the
 // currently loaded set does not define it, fall back to the generic tower so
