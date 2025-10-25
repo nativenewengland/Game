@@ -855,6 +855,9 @@ button:hover:not(:disabled) {
   display: grid;
   place-items: center;
   justify-self: center;
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
 
@@ -869,7 +872,13 @@ button:hover:not(:disabled) {
   image-rendering: pixelated;
 }
 
-.dwarf-nav-button--prev .dwarf-nav-icon {
+.customizer-top-bar .dwarf-nav-button:focus-visible {
+  outline: 3px solid rgba(240, 198, 116, 0.8);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.dwarf-nav-button--next .dwarf-nav-icon {
   transform: scaleX(-1);
 }
 
