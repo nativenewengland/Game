@@ -8001,7 +8001,7 @@ function createWorld(seedString) {
   let snowDistanceField = null;
 
   const marshNoiseSeed = hasMarshTile ? (seedNumber + 0x1922b3a5) >>> 0 : 0;
-  const marshNoiseScale = hasMarshTile ? 3.9 + rng() * 3 : 1;
+  const marshNoiseScale = hasMarshTile ? 2.2 + rng() * 1.6 : 1;
   const marshNoiseOffsetX = hasMarshTile ? rng() * 4096 : 0;
   const marshNoiseOffsetY = hasMarshTile ? rng() * 4096 : 0;
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
@@ -8046,40 +8046,75 @@ function createWorld(seedString) {
   const desertBadlandsOffsetX = hasBadlandsTile ? rng() * 4096 : 0;
   const desertBadlandsOffsetY = hasBadlandsTile ? rng() * 4096 : 0;
 
+  const sampleLatitudeWarp = (normalizedX, normalizedY, latitude) => {
+    if (!hasSandTile || desertWarpStrength <= 0) {
+      return { warpX: 0, warpY: 0, warpedLatitude: latitude };
+    }
+    const warpSampleX = octaveNoise(
+      (normalizedX + desertWarpOffsetX) * desertWarpScale,
+      (normalizedY + desertWarpOffsetY) * desertWarpScale,
+      desertWarpSeedX,
+      3,
+      0.55,
+      2.05
+    );
+    const warpSampleY = octaveNoise(
+      (normalizedX + desertWarpOffsetX + 37.71) * (desertWarpScale * 1.1),
+      (normalizedY + desertWarpOffsetY + 11.53) * (desertWarpScale * 0.92),
+      desertWarpSeedY,
+      3,
+      0.55,
+      2.05
+    );
+    const warpX = (warpSampleX * 2 - 1) * desertWarpStrength;
+    const warpY = (warpSampleY * 2 - 1) * desertWarpStrength;
+    return { warpX, warpY, warpedLatitude: clamp(latitude + warpY * 0.8, 0, 1) };
+  };
+
+  const computeMarshSuitabilityScore = (x, y, heightValue) => {
+    if (!hasMarshTile || heightValue <= seaLevel) {
+      return -Infinity;
+    }
+    const idx = y * width + x;
+    const normalizedX = (x + 0.5) / width;
+    const normalizedY = (y + 0.5) / height;
+    const latitude = 1 - normalizedY;
+    const { warpedLatitude } = sampleLatitudeWarp(normalizedX, normalizedY, latitude);
+    const rainfallValue = rainfallField[idx];
+    const drainageValue = drainageField[idx];
+    const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
+    const elevationAboveSea = heightValue - seaLevel;
+    const elevationHeatPenalty = clamp(elevationAboveSea * 3.6, 0, 1);
+    const heat = clamp(equatorialAlignment * 0.65 + (1 - elevationHeatPenalty) * 0.35, 0, 1);
+    const wetness = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+    const lowlandFactor = clamp(1 - Math.max(0, elevationAboveSea) * 5.2, 0, 1);
+    if (wetness <= 0.68 || heat <= 0.58 || lowlandFactor <= 0.35) {
+      return -Infinity;
+    }
+    const marshNoise =
+      octaveNoise(
+        (normalizedX + marshNoiseOffsetX) * marshNoiseScale,
+        (normalizedY + marshNoiseOffsetY) * marshNoiseScale,
+        marshNoiseSeed,
+        3,
+        0.55,
+        2.15
+      ) *
+        2 -
+      1;
+    return wetness * 0.6 + lowlandFactor * 0.25 + marshNoise * 0.15;
+  };
+
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
     const normalizedY = (y + 0.5) / height;
     const latitude = 1 - normalizedY;
-    let warpedLatitude = latitude;
-    let warpX = 0;
-    let warpY = 0;
+    const { warpX, warpY, warpedLatitude } = sampleLatitudeWarp(normalizedX, normalizedY, latitude);
     const idx = y * width + x;
 
     if (hasSandTile) {
       desertSuitabilityField[idx] = 0;
       desertMask[idx] = 0;
-    }
-
-    if (hasSandTile && desertWarpStrength > 0) {
-      const warpSampleX = octaveNoise(
-        (normalizedX + desertWarpOffsetX) * desertWarpScale,
-        (normalizedY + desertWarpOffsetY) * desertWarpScale,
-        desertWarpSeedX,
-        3,
-        0.55,
-        2.05
-      );
-      const warpSampleY = octaveNoise(
-        (normalizedX + desertWarpOffsetX + 37.71) * (desertWarpScale * 1.1),
-        (normalizedY + desertWarpOffsetY + 11.53) * (desertWarpScale * 0.92),
-        desertWarpSeedY,
-        3,
-        0.55,
-        2.05
-      );
-      warpX = (warpSampleX * 2 - 1) * desertWarpStrength;
-      warpY = (warpSampleY * 2 - 1) * desertWarpStrength;
-      warpedLatitude = clamp(latitude + warpY * 0.8, 0, 1);
     }
 
     if (hasSnowTile && computeSnowPresence(normalizedX, normalizedY, heightValue)) {
@@ -8088,30 +8123,9 @@ function createWorld(seedString) {
 
     const rainfallValue = rainfallField[idx];
     const drainageValue = drainageField[idx];
-    if (hasMarshTile) {
-      const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
-      const elevationAboveSea = heightValue - seaLevel;
-      const elevationHeatPenalty = clamp(elevationAboveSea * 3.6, 0, 1);
-      const heat = clamp(equatorialAlignment * 0.65 + (1 - elevationHeatPenalty) * 0.35, 0, 1);
-      const wetness = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
-      const lowlandFactor = clamp(1 - Math.max(0, elevationAboveSea) * 5.2, 0, 1);
-      if (wetness > 0.68 && heat > 0.58 && lowlandFactor > 0.35) {
-        const marshNoise =
-          octaveNoise(
-            (normalizedX + marshNoiseOffsetX) * marshNoiseScale,
-            (normalizedY + marshNoiseOffsetY) * marshNoiseScale,
-            marshNoiseSeed,
-            3,
-            0.55,
-            2.15
-          ) *
-            2 -
-          1;
-        const marshScore = wetness * 0.6 + lowlandFactor * 0.25 + marshNoise * 0.15;
-        if (marshScore > 0.62) {
-          return marshTileKey;
-        }
-      }
+    const marshScore = computeMarshSuitabilityScore(x, y, heightValue);
+    if (marshScore > 0.62) {
+      return marshTileKey;
     }
 
     if (hasSandTile) {
@@ -8613,6 +8627,85 @@ function createWorld(seedString) {
           } else {
             tile.desertProximity = 0;
           }
+        }
+      }
+    }
+  }
+
+  if (hasMarshTile) {
+    const marshMask = new Uint8Array(width * height);
+    const marshBuffer = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        marshMask[idx] = tiles[y][x].base === marshTileKey ? 1 : 0;
+      }
+    }
+    const marshIterations = 2;
+    for (let iteration = 0; iteration < marshIterations; iteration += 1) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            marshBuffer[idx] = 0;
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile) {
+            marshBuffer[idx] = 0;
+            continue;
+          }
+          const currentIsMarsh = marshMask[idx] === 1;
+          let marshNeighbors = 0;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              continue;
+            }
+            if (marshMask[nIdx]) {
+              marshNeighbors += 1;
+            }
+          }
+          const heightValue = elevationField[idx];
+          const marshScore = computeMarshSuitabilityScore(x, y, heightValue);
+          let nextIsMarsh = currentIsMarsh;
+          if (currentIsMarsh) {
+            if (marshNeighbors <= 1 && marshScore < 0.6) {
+              nextIsMarsh = false;
+            }
+          } else if (tile.base === grassTileKey && marshScore > 0.58) {
+            if (marshNeighbors >= 3) {
+              nextIsMarsh = true;
+            } else if (marshNeighbors >= 2 && marshScore > 0.66) {
+              nextIsMarsh = true;
+            } else {
+              nextIsMarsh = false;
+            }
+          } else {
+            nextIsMarsh = false;
+          }
+          if (!Number.isFinite(marshScore) || marshScore === -Infinity) {
+            nextIsMarsh = false;
+          }
+          marshBuffer[idx] = nextIsMarsh ? 1 : 0;
+        }
+      }
+      marshMask.set(marshBuffer);
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const shouldBeMarsh = marshMask[idx] === 1;
+        if (shouldBeMarsh) {
+          tiles[y][x].base = marshTileKey;
+        } else if (tiles[y][x].base === marshTileKey) {
+          tiles[y][x].base = grassTileKey;
         }
       }
     }
@@ -11514,7 +11607,19 @@ function createWorld(seedString) {
             bestCount = count;
           }
         });
-        if (bestType !== currentType && bestCount >= 5) {
+        if (bestType === currentType) {
+          continue;
+        }
+        const bestIsMarsh = bestType === 'marsh';
+        const currentIsMarsh = currentType === 'marsh';
+        if (currentIsMarsh) {
+          const marshSupport = neighborCounts.get('marsh') || 0;
+          if (marshSupport >= 2 && bestCount < 6) {
+            continue;
+          }
+        }
+        const requiredNeighbors = bestIsMarsh ? 4 : 5;
+        if (bestCount >= requiredNeighbors) {
           biomeBuffer[idx] = bestType;
         }
       }
