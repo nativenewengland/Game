@@ -332,6 +332,63 @@ const worldNames = [
   'Skibiti Toliterium'
 ];
 
+const realmNameAdjectives = [
+  'Azure',
+  'Gilded',
+  'Obsidian',
+  'Verdant',
+  'Crimson',
+  'Sable',
+  'Ivory',
+  'Stormborn',
+  'Radiant',
+  'Umbral',
+  'Ember',
+  'Frostbound',
+  'Sunlit',
+  'Twilight',
+  'Shattered',
+  'Celestial',
+  'Runed',
+  'Eclipsed'
+];
+
+const realmNameNouns = [
+  'Dominion',
+  'Compact',
+  'Marches',
+  'Concord',
+  'Throne',
+  'Hegemony',
+  'Alliance',
+  'Syndicate',
+  'Banner',
+  'Legion',
+  'Pact',
+  'Confederacy',
+  'Circle',
+  'Assembly',
+  'Holdings',
+  'Enclave',
+  'Sovereignty',
+  'Ward'
+];
+
+const factionColorPalette = [
+  '#ef4444',
+  '#3b82f6',
+  '#22c55e',
+  '#eab308',
+  '#a855f7',
+  '#f97316',
+  '#0ea5e9',
+  '#ec4899',
+  '#14b8a6',
+  '#c084fc',
+  '#facc15',
+  '#38bdf8'
+];
+
 const dwarfholdNamePrefixes = [
   'Stone',
   'Iron',
@@ -1037,6 +1094,44 @@ function pickUniqueFrom(array, count, random) {
   return picks;
 }
 
+function shuffleArray(array, random) {
+  if (!Array.isArray(array) || array.length === 0) {
+    return [];
+  }
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const copy = array.slice();
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(randomFn() * (i + 1));
+    const clampedJ = Math.max(0, Math.min(i, j));
+    const temp = copy[i];
+    copy[i] = copy[clampedJ];
+    copy[clampedJ] = temp;
+  }
+  return copy;
+}
+
+function generateRealmName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(realmNameAdjectives, randomFn);
+  const noun = pickRandomFrom(realmNameNouns, randomFn);
+  if (adjective && noun) {
+    return `${adjective} ${noun}`;
+  }
+  if (noun) {
+    return noun;
+  }
+  const fallbackNumber = Math.floor(randomFn() * 900) + 100;
+  return `Realm ${fallbackNumber}`;
+}
+
+function pickFactionColor(index) {
+  if (!Number.isFinite(index) || index < 0 || factionColorPalette.length === 0) {
+    return '#64748b';
+  }
+  const normalizedIndex = Math.floor(index) % factionColorPalette.length;
+  return factionColorPalette[normalizedIndex];
+}
+
 function generatePopulationBreakdownFromOptions(options, population, random, config = {}) {
   if (!Array.isArray(options) || options.length === 0) {
     return [];
@@ -1628,6 +1723,201 @@ function generateWoodElfGroveDetails(name, random) {
   };
 }
 
+function generatePoliticalLandscape({ width, height, tiles, waterMask, random, settlements }) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  if (!Array.isArray(tiles) || tiles.length === 0 || width <= 0 || height <= 0) {
+    return { factions: [] };
+  }
+
+  const toKey = (x, y) => `${x},${y}`;
+  const landTiles = [];
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const tile = tiles[y] ? tiles[y][x] : null;
+      if (!tile) {
+        continue;
+      }
+      if (waterMask && waterMask[idx]) {
+        tile.factionId = null;
+        tile.factionInfluence = 0;
+        continue;
+      }
+      landTiles.push({ x, y });
+    }
+  }
+
+  if (landTiles.length === 0) {
+    return { factions: [] };
+  }
+
+  const settlementSeeds = Array.isArray(settlements) ? settlements : [];
+  const uniqueSeeds = [];
+  const seenSeeds = new Set();
+
+  settlementSeeds.forEach((seed) => {
+    if (!seed || !Number.isFinite(seed.x) || !Number.isFinite(seed.y)) {
+      return;
+    }
+    const key = toKey(seed.x, seed.y);
+    if (seenSeeds.has(key)) {
+      return;
+    }
+    seenSeeds.add(key);
+    uniqueSeeds.push({
+      x: seed.x,
+      y: seed.y,
+      label: typeof seed.label === 'string' ? seed.label.trim() : '',
+      type: seed.type || 'settlement'
+    });
+  });
+
+  const area = width * height;
+  const baseTarget = Math.round(3 + Math.sqrt(area) / 75);
+  const maxColors = Math.max(1, factionColorPalette.length);
+  const maxAvailable = Math.max(1, Math.min(maxColors, landTiles.length));
+  const desiredCount = Math.max(3, baseTarget);
+  const targetCount = Math.max(1, Math.min(maxAvailable, desiredCount));
+
+  if (uniqueSeeds.length < targetCount) {
+    const shuffledLand = shuffleArray(landTiles, randomFn);
+    for (let i = 0; i < shuffledLand.length && uniqueSeeds.length < targetCount; i += 1) {
+      const candidate = shuffledLand[i];
+      const key = toKey(candidate.x, candidate.y);
+      if (seenSeeds.has(key)) {
+        continue;
+      }
+      seenSeeds.add(key);
+      uniqueSeeds.push({
+        x: candidate.x,
+        y: candidate.y,
+        label: generateRealmName(randomFn),
+        type: 'wilds'
+      });
+    }
+  }
+
+  if (uniqueSeeds.length === 0) {
+    return { factions: [] };
+  }
+
+  const resolveFactionName = (seed) => {
+    if (!seed) {
+      return generateRealmName(randomFn);
+    }
+    const label = typeof seed.label === 'string' ? seed.label.trim() : '';
+    if (!label) {
+      return generateRealmName(randomFn);
+    }
+    switch (seed.type) {
+      case 'dwarfhold':
+        return `${label} Thanedom`;
+      case 'woodElfGrove':
+        return `${label} Canopy`;
+      case 'evilWizardTower':
+        return `${label} Enclave`;
+      case 'tower':
+        return `${label} Marches`;
+      case 'town':
+        return `${label} Compact`;
+      default:
+        return `${label} Dominion`;
+    }
+  };
+
+  const shuffledSeeds = shuffleArray(uniqueSeeds, randomFn).slice(0, targetCount);
+  const factions = shuffledSeeds.map((seed, index) => ({
+    id: index,
+    name: resolveFactionName(seed),
+    color: pickFactionColor(index),
+    capital: {
+      x: seed.x,
+      y: seed.y,
+      label: seed.label || null,
+      type: seed.type || 'settlement'
+    },
+    territory: 0
+  }));
+
+  const diagonal = Math.sqrt(width * width + height * height);
+  const influenceRadius = Math.max(18, diagonal * 0.4);
+  const contestScale = Math.max(6, diagonal * 0.12);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const tile = tiles[y] ? tiles[y][x] : null;
+      if (!tile) {
+        continue;
+      }
+      if (waterMask && waterMask[idx]) {
+        tile.factionId = null;
+        tile.factionInfluence = 0;
+        continue;
+      }
+
+      let bestFaction = null;
+      let bestDistance = Infinity;
+      let secondDistance = Infinity;
+
+      for (let i = 0; i < factions.length; i += 1) {
+        const faction = factions[i];
+        const dx = x - faction.capital.x;
+        const dy = y - faction.capital.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < bestDistance) {
+          secondDistance = bestDistance;
+          bestDistance = distance;
+          bestFaction = faction;
+        } else if (distance < secondDistance) {
+          secondDistance = distance;
+        }
+      }
+
+      if (!bestFaction || !Number.isFinite(bestDistance)) {
+        tile.factionId = null;
+        tile.factionInfluence = 0;
+        continue;
+      }
+
+      const proximity = clamp(1 - bestDistance / influenceRadius, 0, 1);
+      let contestFactor = 1;
+      if (Number.isFinite(secondDistance) && secondDistance < Infinity) {
+        const gap = Math.max(0, secondDistance - bestDistance);
+        contestFactor = clamp(gap / contestScale, 0, 1);
+      }
+      const influence = clamp(proximity * (0.7 + contestFactor * 0.3), 0, 1);
+
+      tile.factionId = bestFaction.id;
+      tile.factionInfluence = influence;
+      bestFaction.territory += 1;
+    }
+  }
+
+  return { factions };
+}
+
+function describeInfluenceStrength(value) {
+  const strength = clamp(Number(value) || 0, 0, 1);
+  if (strength >= 0.85) {
+    return 'Seat of Power';
+  }
+  if (strength >= 0.65) {
+    return 'Heartland';
+  }
+  if (strength >= 0.45) {
+    return 'Core Territory';
+  }
+  if (strength >= 0.25) {
+    return 'Border March';
+  }
+  if (strength >= 0.12) {
+    return 'Outer Reach';
+  }
+  return 'Faint Influence';
+}
+
 function resolveTileName(baseKey) {
   return tileLookup.has(baseKey) ? baseKey : 'GRASS';
 }
@@ -1654,6 +1944,10 @@ const state = {
   dwarfParty: {
     dwarves: [],
     activeIndex: 0
+  },
+  ui: {
+    showPoliticalBorders: false,
+    showPoliticalInfluence: false
   },
   currentWorld: null
 };
@@ -2111,6 +2405,8 @@ const elements = {
   canvasWrapper: document.querySelector('.canvas-wrapper'),
   mapTooltip: document.getElementById('world-tooltip'),
   seedDisplay: document.querySelector('.seed-display'),
+  politicalBordersToggle: document.getElementById('toggle-political-borders'),
+  politicalInfluenceToggle: document.getElementById('toggle-political-influence'),
   mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
   worldMapSizeSelect: document.getElementById('world-map-size-select'),
@@ -4187,6 +4483,21 @@ function buildPopulationBreakdownSection(resolvedName, breakdown) {
   `;
 }
 
+function getFactionForTile(tile) {
+  if (!tile || tile.factionId === null || tile.factionId === undefined) {
+    return null;
+  }
+  const factionIndex = Number(tile.factionId);
+  if (!Number.isFinite(factionIndex)) {
+    return null;
+  }
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.factions)) {
+    return null;
+  }
+  return world.factions[factionIndex] || null;
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile || !tile.structureName) {
     return null;
@@ -4200,6 +4511,15 @@ function buildStructureTooltipContent(tile) {
     const entries = [];
     const resolvedName = details.name || tile.structureName;
     sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+
+    const faction = getFactionForTile(tile);
+    if (faction && faction.name) {
+      entries.push({ label: 'Realm', value: faction.name });
+      const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
+      if (influenceDescription) {
+        entries.push({ label: 'Territorial Hold', value: influenceDescription });
+      }
+    }
 
     if (details.classification) {
       entries.push({ label: 'Classification', value: details.classification });
@@ -4291,7 +4611,25 @@ function buildStructureTooltipContent(tile) {
     return sections.join('');
   }
 
-  return `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
+  const fallbackTitle = `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
+  const faction = getFactionForTile(tile);
+  if (faction && faction.name) {
+    const entries = [{ label: 'Realm', value: faction.name }];
+    const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
+    if (influenceDescription) {
+      entries.push({ label: 'Territorial Hold', value: influenceDescription });
+    }
+    const listItems = entries
+      .map(
+        ({ label, value }) =>
+          `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+            value
+          )}</span></li>`
+      )
+      .join('');
+    return `${fallbackTitle}<ul class="tooltip-list">${listItems}</ul>`;
+  }
+  return fallbackTitle;
 }
 
 function showMapTooltip(content, pointerX, pointerY, boundsRect) {
@@ -5894,7 +6232,9 @@ function createWorld(seedString) {
         structure: null,
         structureName: null,
         structureDetails: null,
-        river: null
+        river: null,
+        factionId: null,
+        factionInfluence: 0
       }))
   );
   const dwarfholds = [];
@@ -7783,6 +8123,48 @@ function createWorld(seedString) {
   }
 
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
+  const settlementSeeds = [
+    ...dwarfholds.map((hold) => ({
+      x: hold.x,
+      y: hold.y,
+      label: hold.name || hold.structureName || 'Hold',
+      type: 'dwarfhold'
+    })),
+    ...towns.map((town) => ({
+      x: town.x,
+      y: town.y,
+      label: town.name || town.structureName || 'Town',
+      type: 'town'
+    })),
+    ...towers.map((tower) => ({
+      x: tower.x,
+      y: tower.y,
+      label: tower.name || tower.structureName || 'Tower',
+      type: 'tower'
+    })),
+    ...evilWizardTowers.map((tower) => ({
+      x: tower.x,
+      y: tower.y,
+      label: tower.name || tower.structureName || "Wizard's Tower",
+      type: 'evilWizardTower'
+    })),
+    ...woodElfGroves.map((grove) => ({
+      x: grove.x,
+      y: grove.y,
+      label: grove.name || grove.structureName || 'Grove',
+      type: 'woodElfGrove'
+    }))
+  ];
+
+  const politicalData = generatePoliticalLandscape({
+    width,
+    height,
+    tiles,
+    waterMask,
+    random: rng,
+    settlements: settlementSeeds
+  });
+  const factions = politicalData.factions || [];
   return {
     tiles,
     seedString: finalSeed,
@@ -7791,7 +8173,8 @@ function createWorld(seedString) {
     towers,
     caves,
     evilWizardTowers,
-    woodElfGroves
+    woodElfGroves,
+    factions
   };
 }
 
@@ -7869,6 +8252,10 @@ function drawCustomOverlay(ctx, overlayKey, x, y) {
 
 function drawWorld(world) {
   const { tiles, seedString } = world;
+  const factions = Array.isArray(world.factions) ? world.factions : [];
+  const showPoliticalBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
+  const showPoliticalInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
+  const hasPoliticalOverlay = (showPoliticalBorders || showPoliticalInfluence) && factions.length > 0;
   hideMapTooltip();
   const height = tiles.length;
   const width = tiles[0].length;
@@ -7883,6 +8270,7 @@ function drawWorld(world) {
   elements.canvas.style.height = `${pixelHeight}px`;
 
   resetView(pixelWidth, pixelHeight);
+  refreshOverlayToggleButtons();
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -7954,6 +8342,60 @@ function drawWorld(world) {
           drawSize
         );
       }
+
+      if (hasPoliticalOverlay && cell && cell.factionId !== null && cell.factionId !== undefined) {
+        const factionIndex = Number(cell.factionId);
+        const safeIndex = Number.isFinite(factionIndex) ? Math.floor(factionIndex) : NaN;
+        const faction =
+          Number.isFinite(safeIndex) && safeIndex >= 0 && safeIndex < factions.length
+            ? factions[safeIndex]
+            : null;
+        if (faction && faction.color) {
+          const influenceStrength = clamp(Number(cell.factionInfluence) || 0, 0, 1);
+          const overlayAlphaBase = showPoliticalInfluence
+            ? clamp(0.18 + influenceStrength * 0.35, 0.12, 0.6)
+            : 0.2;
+          ctx.save();
+          ctx.fillStyle = faction.color;
+          ctx.globalAlpha = Math.min(0.6, overlayAlphaBase);
+          ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+          ctx.restore();
+
+          if (showPoliticalBorders) {
+            const borderThickness = Math.max(1, Math.round(drawSize / 8));
+            const leftNeighbor = x > 0 ? tiles[y][x - 1] : null;
+            const rightNeighbor = x < width - 1 ? tiles[y][x + 1] : null;
+            const topNeighbor = y > 0 ? tiles[y - 1][x] : null;
+            const bottomNeighbor = y < height - 1 ? tiles[y + 1][x] : null;
+            ctx.save();
+            ctx.fillStyle = '#0f172a';
+            ctx.globalAlpha = 0.55;
+            if (!topNeighbor || topNeighbor.factionId !== cell.factionId) {
+              ctx.fillRect(x * drawSize, y * drawSize, drawSize, borderThickness);
+            }
+            if (!bottomNeighbor || bottomNeighbor.factionId !== cell.factionId) {
+              ctx.fillRect(
+                x * drawSize,
+                y * drawSize + drawSize - borderThickness,
+                drawSize,
+                borderThickness
+              );
+            }
+            if (!leftNeighbor || leftNeighbor.factionId !== cell.factionId) {
+              ctx.fillRect(x * drawSize, y * drawSize, borderThickness, drawSize);
+            }
+            if (!rightNeighbor || rightNeighbor.factionId !== cell.factionId) {
+              ctx.fillRect(
+                x * drawSize + drawSize - borderThickness,
+                y * drawSize,
+                borderThickness,
+                drawSize
+              );
+            }
+            ctx.restore();
+          }
+        }
+      }
     }
   }
 
@@ -7996,6 +8438,30 @@ function generateAndRender(seedOverride) {
     elements.worldSeedInput.value = world.seedString;
   }
   updateWorldInfoSeedDisplay(world.seedString);
+}
+
+function updateOverlayToggleButton(button, isActive, labels) {
+  if (!button) {
+    return;
+  }
+  button.classList.toggle('active', Boolean(isActive));
+  button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  if (labels && labels.active && labels.inactive) {
+    button.textContent = isActive ? labels.active : labels.inactive;
+  }
+}
+
+function refreshOverlayToggleButtons() {
+  const showBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
+  const showInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
+  updateOverlayToggleButton(elements.politicalBordersToggle, showBorders, {
+    active: 'Hide Borders',
+    inactive: 'Show Borders'
+  });
+  updateOverlayToggleButton(elements.politicalInfluenceToggle, showInfluence, {
+    active: 'Hide Influence',
+    inactive: 'Show Influence'
+  });
 }
 
 function randomSeedString() {
@@ -8078,6 +8544,26 @@ function attachEvents() {
   });
 
   elements.closeOptions.addEventListener('click', () => toggleOptions(false));
+
+  if (elements.politicalBordersToggle) {
+    elements.politicalBordersToggle.addEventListener('click', () => {
+      state.ui.showPoliticalBorders = !state.ui.showPoliticalBorders;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.politicalInfluenceToggle) {
+    elements.politicalInfluenceToggle.addEventListener('click', () => {
+      state.ui.showPoliticalInfluence = !state.ui.showPoliticalInfluence;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
 
   if (elements.forestFrequencyInput) {
     elements.forestFrequencyInput.addEventListener('input', (event) => {
@@ -8410,6 +8896,8 @@ function attachEvents() {
       toggleOptions(false);
     }
   });
+
+  refreshOverlayToggleButtons();
 }
 
 attachEvents();
