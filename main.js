@@ -68,7 +68,8 @@ const baseTileCoords = {
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
-  TOWN: { row: 2, col: 1 }
+  TOWN: { row: 2, col: 1 },
+  PORT_TOWN: { row: 4, col: 5 }
 };
 
 const roadTileVariantDefinitions = (() => {
@@ -6616,6 +6617,7 @@ function createWorld(seedString) {
   }
 
   const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
+  const portTownKey = tileLookup.has('PORT_TOWN') ? 'PORT_TOWN' : null;
   if (townKey) {
     const townCandidates = [];
     for (let y = 0; y < height; y += 1) {
@@ -6704,7 +6706,26 @@ function createWorld(seedString) {
         }
         const name = generateTownName(rng);
         const details = generateTownDetails(name, rng);
-        tile.structure = townKey;
+        let structureKey = townKey;
+        if (portTownKey) {
+          let touchesWater = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = candidate.x + neighborOffsets8[i][0];
+            const ny = candidate.y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              touchesWater = true;
+              break;
+            }
+          }
+          if (touchesWater) {
+            structureKey = portTownKey;
+          }
+        }
+        tile.structure = structureKey;
         tile.structureName = name;
         tile.structureDetails = details;
         towns.push({ x: candidate.x, y: candidate.y, ...details });
