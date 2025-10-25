@@ -390,6 +390,18 @@ const factionColorPalette = [
   '#38bdf8'
 ];
 
+function pickFactionColor(index) {
+  if (!Array.isArray(factionColorPalette) || factionColorPalette.length === 0) {
+    return '#f97316';
+  }
+  const size = factionColorPalette.length;
+  if (!Number.isFinite(index)) {
+    return factionColorPalette[0];
+  }
+  const normalized = ((Math.floor(index) % size) + size) % size;
+  return factionColorPalette[normalized];
+}
+
 const dwarfholdNamePrefixes = [
   'Stone',
   'Iron',
@@ -3247,6 +3259,25 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function shuffleArray(items, random = Math.random) {
+  if (!Array.isArray(items) || items.length <= 1) {
+    return Array.isArray(items) ? items.slice() : [];
+  }
+  const result = items.slice();
+  const rng = typeof random === 'function' ? random : Math.random;
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const sample = clamp(rng(), 0, 1);
+    const j = Math.floor(sample * (i + 1));
+    const swapIndex = clamp(Number.isFinite(j) ? j : 0, 0, i);
+    if (swapIndex !== i) {
+      const temp = result[i];
+      result[i] = result[swapIndex];
+      result[swapIndex] = temp;
+    }
+  }
+  return result;
 }
 
 function compute1dDistanceTransform(sourceLine, length, outputLine, v, z) {
