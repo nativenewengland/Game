@@ -7582,6 +7582,8 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.river = null;
     tile.biomeType = null;
     tile.areaName = null;
+    tile.waterDepth = 0;
+    tile.coastProximity = 0;
     waterMask[idx] = 1;
     return true;
   };
@@ -8191,7 +8193,9 @@ function createWorld(seedString) {
         structureDetails: null,
         river: null,
         biomeType: null,
-        areaName: null
+        areaName: null,
+        waterDepth: 0,
+        coastProximity: 0
       }))
   );
   const dwarfholds = [];
@@ -8296,6 +8300,8 @@ function createWorld(seedString) {
       tile.river = null;
       tile.biomeType = null;
       tile.areaName = null;
+      tile.waterDepth = 0;
+      tile.coastProximity = 0;
     }
   }
 
@@ -9224,6 +9230,8 @@ function createWorld(seedString) {
         tile.river = null;
         tile.biomeType = null;
         tile.areaName = null;
+        tile.waterDepth = 0;
+        tile.coastProximity = 0;
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
@@ -9299,6 +9307,48 @@ function createWorld(seedString) {
     }
   );
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
+
+  if (waterTileKey) {
+    const landMaskForDistance = new Uint8Array(width * height);
+    for (let i = 0; i < waterMask.length; i += 1) {
+      landMaskForDistance[i] = waterMask[i] ? 0 : 1;
+    }
+    const waterDistanceField = computeEuclideanDistanceField(landMaskForDistance, width, height);
+    const landDistanceField = computeEuclideanDistanceField(waterMask, width, height);
+
+    let maxWaterDepth = 0;
+    for (let idx = 0; idx < waterDistanceField.length; idx += 1) {
+      if (!waterMask[idx]) {
+        continue;
+      }
+      const depth = Math.sqrt(waterDistanceField[idx]);
+      if (depth > maxWaterDepth) {
+        maxWaterDepth = depth;
+      }
+    }
+    const depthNormalization = maxWaterDepth > 0 ? 1 / maxWaterDepth : 1;
+    const coastlineFalloff = 4.2;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        if (waterMask[idx]) {
+          const depth = Math.sqrt(waterDistanceField[idx]);
+          tile.waterDepth = clamp(depth * depthNormalization, 0, 1);
+          tile.coastProximity = 0;
+        } else {
+          const distanceToWater = Math.sqrt(landDistanceField[idx]);
+          const proximity = clamp(1 - distanceToWater / coastlineFalloff, 0, 1);
+          tile.coastProximity = proximity;
+          tile.waterDepth = 0;
+        }
+      }
+    }
+  }
+
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
@@ -11241,6 +11291,8 @@ function createWorld(seedString) {
   const factions = politicalData.factions || [];
   return {
     tiles,
+    grassTileKey,
+    waterTileKey,
     seedString: finalSeed,
     dwarfholds,
     towns,
@@ -11330,12 +11382,44 @@ function drawCustomOverlay(ctx, overlayKey, x, y) {
   return false;
 }
 
+function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
+  if (!ctx || !cell) {
+    return;
+  }
+  const pixelX = x * drawSize;
+  const pixelY = y * drawSize;
+  const hasDistinctWaterTile = Boolean(waterTileKey) && waterTileKey !== grassTileKey;
+  const isWaterTile = hasDistinctWaterTile && cell.base === waterTileKey;
+  if (isWaterTile) {
+    const depth = clamp(Number.isFinite(cell.waterDepth) ? cell.waterDepth : 0, 0, 1);
+    const shallowFactor = clamp(1 - depth, 0, 1);
+    if (shallowFactor > 0.01) {
+      const alpha = shallowFactor * 0.32;
+      ctx.fillStyle = `rgba(88, 164, 218, ${alpha})`;
+      ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    }
+    return;
+  }
+  if (!grassTileKey || cell.base !== grassTileKey) {
+    return;
+  }
+  const coast = clamp(Number.isFinite(cell.coastProximity) ? cell.coastProximity : 0, 0, 1);
+  if (coast <= 0.01) {
+    return;
+  }
+  const alpha = coast * 0.4;
+  ctx.fillStyle = `rgba(226, 208, 167, ${alpha})`;
+  ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+}
+
 function drawWorld(world) {
   const { tiles, seedString } = world;
   const factions = Array.isArray(world.factions) ? world.factions : [];
   const showPoliticalBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
   const showPoliticalInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
   const hasPoliticalOverlay = (showPoliticalBorders || showPoliticalInfluence) && factions.length > 0;
+  const waterTileKey = world.waterTileKey || resolveTileName('WATER');
+  const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
   hideMapTooltip();
   const height = tiles.length;
   const width = tiles[0].length;
@@ -11374,6 +11458,8 @@ function drawWorld(world) {
         drawSize,
         drawSize
       );
+
+      applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey);
 
       if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
         const hillDefinition = tileLookup.get(cell.hillOverlay);
