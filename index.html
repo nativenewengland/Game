@@ -698,10 +698,29 @@
         </div>
         <div class="seed-display" aria-live="polite"></div>
       </header>
-      <main class="canvas-wrapper">
+      <main class="canvas-wrapper" tabindex="-1">
         <canvas id="world-canvas" width="6400" height="4800"></canvas>
         <div id="world-tooltip" class="map-tooltip" aria-hidden="true"></div>
       </main>
+      <section
+        id="structure-details"
+        class="modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="structure-details-title"
+      >
+        <div class="modal-header">
+          <div class="structure-details-titles">
+            <h2 id="structure-details-title">Structure Details</h2>
+            <p id="structure-details-subtitle" class="structure-details-subtitle hidden"></p>
+          </div>
+          <button id="structure-details-close" type="button" class="secondary" aria-label="Close details">
+            Close
+          </button>
+        </div>
+        <div id="structure-details-content" class="structure-details-content" aria-live="polite"></div>
+      </section>
     </div>
 
     <audio id="background-music" preload="auto" aria-hidden="true" tabindex="-1"></audio>

@@ -4086,6 +4086,11 @@ const elements = {
   canvas: document.getElementById('world-canvas'),
   canvasWrapper: document.querySelector('.canvas-wrapper'),
   mapTooltip: document.getElementById('world-tooltip'),
+  structureDetailsPanel: document.getElementById('structure-details'),
+  structureDetailsTitle: document.getElementById('structure-details-title'),
+  structureDetailsSubtitle: document.getElementById('structure-details-subtitle'),
+  structureDetailsContent: document.getElementById('structure-details-content'),
+  structureDetailsClose: document.getElementById('structure-details-close'),
   seedDisplay: document.querySelector('.seed-display'),
   politicalBordersToggle: document.getElementById('toggle-political-borders'),
   politicalInfluenceToggle: document.getElementById('toggle-political-influence'),
@@ -6089,6 +6094,10 @@ const viewState = {
   hasInteracted: false
 };
 
+const structureDetailsState = {
+  visible: false
+};
+
 function computeViewScales(wrapperWidth, wrapperHeight, worldWidth, worldHeight) {
   if (!worldWidth || !worldHeight || !wrapperWidth || !wrapperHeight) {
     return { contain: 1, cover: 1 };
@@ -6482,6 +6491,467 @@ function buildStructureTooltipContent(tile) {
   return sections.join('');
 }
 
+function formatStructureDetailLabel(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const stringValue = String(value)
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim();
+  if (!stringValue) {
+    return null;
+  }
+  return stringValue
+    .split(' ')
+    .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+    .join(' ');
+}
+
+function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) {
+    return '';
+  }
+
+  const resolvedEntries = breakdown
+    .filter((entry) => Number.isFinite(entry?.percentage) && entry.percentage > 0)
+    .map((entry) => {
+      const rawPercentage = Number(entry.percentage);
+      const safePercentage = Number.isFinite(rawPercentage) ? Math.max(0, rawPercentage) : 0;
+      const roundedPercentage = Math.round(safePercentage * 100) / 100;
+      return {
+        key: typeof entry.key === 'string' && entry.key ? entry.key : null,
+        label: entry.label || entry.key || 'Unknown',
+        percentage: roundedPercentage,
+        color: entry.color || '#999999',
+        population:
+          Number.isFinite(entry.population) && entry.population > 0
+            ? Math.max(0, Math.round(entry.population))
+            : null
+      };
+    });
+
+  const priorityEntries = [];
+  const majorEntries = [];
+  let otherPercentage = 0;
+  let otherPopulation = 0;
+  let otherPopulationKnown = true;
+
+  resolvedEntries.forEach((entry) => {
+    if (entry.key === 'wizards') {
+      priorityEntries.push(entry);
+      return;
+    }
+
+    if (entry.percentage < 0.5) {
+      otherPercentage += entry.percentage;
+      if (entry.population === null) {
+        otherPopulationKnown = false;
+      } else if (otherPopulationKnown) {
+        otherPopulation += entry.population;
+      }
+    } else {
+      majorEntries.push(entry);
+    }
+  });
+
+  const combinedEntries = [...priorityEntries, ...majorEntries];
+
+  if (otherPercentage > 0) {
+    const roundedOtherPercentage = Math.round(otherPercentage * 100) / 100;
+    combinedEntries.push({
+      label: 'Other',
+      percentage: roundedOtherPercentage,
+      color: '#666666',
+      population: otherPopulationKnown ? otherPopulation : null
+    });
+  }
+
+  const displayEntries = combinedEntries.length > 0 ? combinedEntries : resolvedEntries;
+
+  if (displayEntries.length === 0) {
+    return '';
+  }
+
+  let cumulative = 0;
+  const stops = displayEntries.map((entry, index) => {
+    const start = Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    cumulative = Math.round((cumulative + entry.percentage) * 100) / 100;
+    const end =
+      index === displayEntries.length - 1
+        ? 100
+        : Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    return `${entry.color} ${formatGradientPercentage(start)}% ${formatGradientPercentage(end)}%`;
+  });
+
+  if (stops.length === 0) {
+    return '';
+  }
+
+  const pieStyle = `background: conic-gradient(${stops.join(', ')});`;
+  const ariaLabelParts = ['Population breakdown'];
+  if (resolvedName) {
+    ariaLabelParts.push(`for ${resolvedName}`);
+  }
+  const ariaLabel = ariaLabelParts.join(' ');
+
+  const legendItems = displayEntries
+    .map((entry) => {
+      const valueParts = [`${formatPercentageDisplay(entry.percentage)}%`];
+      if (entry.population !== null) {
+        valueParts.push(`(${entry.population.toLocaleString('en-US')})`);
+      }
+      return `
+        <li>
+          <span class="structure-details-legend-swatch" style="background:${escapeHtml(entry.color)}"></span>
+          <span class="structure-details-legend-label">${escapeHtml(entry.label)}</span>
+          <span class="structure-details-legend-value">${escapeHtml(valueParts.join(' '))}</span>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <section class="structure-details-section">
+      <h3 class="structure-details-heading">Population Breakdown</h3>
+      <div class="structure-details-chart">
+        <div
+          class="structure-details-chart-pie"
+          role="img"
+          aria-label="${escapeHtml(ariaLabel)}"
+          style="${escapeHtml(pieStyle)}"
+        ></div>
+        <ul class="structure-details-chart-legend">${legendItems}</ul>
+      </div>
+    </section>
+  `;
+}
+
+function buildStructureDetailsPanelContent(tile, context = {}) {
+  if (!tile || !tile.structureName) {
+    return null;
+  }
+
+  const details = tile.structureDetails || {};
+  const resolvedName = details.name || tile.structureName;
+  const subtitleParts = [];
+  if (details.classification) {
+    subtitleParts.push(details.classification);
+  }
+  const typeLabel = details.displayType || formatStructureDetailLabel(details.type);
+  if (typeLabel) {
+    subtitleParts.push(typeLabel);
+  }
+  const subtitle = subtitleParts.join(' • ') || null;
+
+  const overviewEntries = [];
+  const addOverviewEntry = (label, value) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+    const isNumber = typeof value === 'number';
+    const stringValue = isNumber
+      ? value.toLocaleString('en-US')
+      : typeof value === 'string'
+      ? value.trim()
+      : String(value).trim();
+    if (!stringValue) {
+      return;
+    }
+    overviewEntries.push({ label, value: stringValue });
+  };
+
+  const listSections = [];
+  const listSectionKeys = new Set();
+  const addListSection = (items, label, key) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return;
+    }
+    const uniqueItems = Array.from(
+      new Set(
+        items
+          .map((item) => (typeof item === 'string' ? item.trim() : ''))
+          .filter((item) => item.length > 0)
+      )
+    );
+    if (uniqueItems.length === 0) {
+      return;
+    }
+    const sectionKey = key || label;
+    if (sectionKey && listSectionKeys.has(sectionKey)) {
+      return;
+    }
+    if (sectionKey) {
+      listSectionKeys.add(sectionKey);
+    }
+    listSections.push({ label, items: uniqueItems });
+  };
+
+  const narrativeSections = [];
+  const addNarrativeSection = (label, text) => {
+    if (!text) {
+      return;
+    }
+    narrativeSections.push({ label, text });
+  };
+
+  const mapX = Number(context.tileX);
+  const mapY = Number(context.tileY);
+  if (Number.isFinite(mapX) && Number.isFinite(mapY)) {
+    addOverviewEntry('Map Coordinates', `${mapX + 1}, ${mapY + 1}`);
+  }
+
+  if (tile.areaName) {
+    addOverviewEntry('Region', tile.areaName);
+  }
+
+  if (tile.biomeType) {
+    const definition = biomeTypeDefinitions[tile.biomeType];
+    let biomeLabel = definition && definition.label ? definition.label : null;
+    if (!biomeLabel) {
+      biomeLabel = formatStructureDetailLabel(tile.biomeType);
+    }
+    if (biomeLabel) {
+      addOverviewEntry('Biome', biomeLabel);
+    }
+  }
+
+  const faction = getFactionForTile(tile);
+  if (faction && faction.name) {
+    addOverviewEntry('Realm', faction.name);
+  }
+  const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
+  if (influenceDescription) {
+    addOverviewEntry('Territorial Hold', influenceDescription);
+  }
+
+  if (details.population !== null && details.population !== undefined) {
+    const roundedPopulation = Math.max(0, Math.round(Number(details.population)));
+    if (Number.isFinite(roundedPopulation)) {
+      const formattedPopulation = roundedPopulation.toLocaleString('en-US');
+      const populationLabel = details.populationLabel || 'Population';
+      const descriptor = details.populationDescriptor || null;
+      const populationDisplay = descriptor
+        ? `${formattedPopulation} ${descriptor}`
+        : formattedPopulation;
+      addOverviewEntry(populationLabel, populationDisplay);
+    }
+  }
+
+  if (details.classification && !subtitleParts.includes(details.classification)) {
+    addOverviewEntry('Classification', details.classification);
+  }
+
+  if (details.displayType) {
+    addOverviewEntry('Type', details.displayType);
+  } else if (!details.displayType && details.type) {
+    const formattedType = formatStructureDetailLabel(details.type);
+    if (formattedType) {
+      addOverviewEntry('Type', formattedType);
+    }
+  }
+
+  if (details.tribe) {
+    addOverviewEntry('Tribe', details.tribe);
+  }
+  if (details.threatLevel) {
+    addOverviewEntry('Threat Level', details.threatLevel);
+  }
+  if (details.inhabitants) {
+    addOverviewEntry('Inhabitants', details.inhabitants);
+  }
+  if (details.warLeader) {
+    addOverviewEntry('Warlord', details.warLeader);
+  }
+  if (details.guardians) {
+    addOverviewEntry('Guardians', details.guardians);
+  }
+  if (details.depth) {
+    addOverviewEntry('Depth', details.depth);
+  }
+  if (details.order) {
+    addOverviewEntry('Order', details.order);
+  }
+  if (details.devotion) {
+    addOverviewEntry('Devotion', details.devotion);
+  }
+  if (details.caretaker) {
+    addOverviewEntry('Caretaker', details.caretaker);
+  }
+  if (details.rulingHouse) {
+    addOverviewEntry('Ruling House', details.rulingHouse);
+  }
+  if (details.banner) {
+    addOverviewEntry('Banner', details.banner);
+  }
+  if (Number.isFinite(details.garrison)) {
+    addOverviewEntry('Garrison', Math.max(0, Math.round(details.garrison)).toLocaleString('en-US'));
+  }
+  if (details.patronSaint) {
+    addOverviewEntry('Patron Saint', details.patronSaint);
+  }
+  if (details.vow) {
+    addOverviewEntry('Vow', details.vow);
+  }
+
+  if (details.ruler && (details.ruler.title || details.ruler.name)) {
+    const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
+    const rulerName = details.ruler.name || '';
+    const combined = `${rulerTitle}${rulerName}`.trim();
+    if (combined) {
+      const rulerLabel = details.ruler.label || 'Ruler';
+      addOverviewEntry(rulerLabel, combined);
+    }
+  }
+
+  if (Number.isFinite(details.foundedYearsAgo)) {
+    const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
+    addOverviewEntry('Founded', `${foundedValue} years ago`);
+  }
+
+  const prominentGroup = details.prominentGroup || details.prominentClan;
+  if (prominentGroup) {
+    const prominentLabel =
+      details.prominentGroupLabel || (details.prominentClan ? 'Prominent Clan' : 'Prominent Group');
+    addOverviewEntry(prominentLabel, prominentGroup);
+  }
+
+  addListSection(details.majorGuilds, details.majorGuildsLabel || 'Major Guilds', 'majorGuilds');
+  addListSection(details.majorExports, details.majorExportsLabel || 'Major Exports', 'majorExports');
+
+  const excludedArrayKeys = new Set(['populationBreakdown', 'majorGuilds', 'majorExports']);
+  Object.entries(details).forEach(([key, value]) => {
+    if (!Array.isArray(value) || excludedArrayKeys.has(key)) {
+      return;
+    }
+    const label = formatStructureDetailLabel(key);
+    if (label) {
+      addListSection(value, label, key);
+    }
+  });
+
+  if (details.description) {
+    addNarrativeSection('Description', details.description);
+  }
+  if (details.hallmark) {
+    const hallmarkLabel = details.hallmarkLabel || 'Hallmark';
+    addNarrativeSection(hallmarkLabel, details.hallmark);
+  }
+
+  const breakdownSection = buildPopulationBreakdownPanelSection(resolvedName, details.populationBreakdown);
+
+  const sections = [];
+
+  if (overviewEntries.length > 0) {
+    const overviewItems = overviewEntries
+      .map(
+        (entry) => `
+          <div>
+            <dt>${escapeHtml(entry.label)}</dt>
+            <dd>${escapeHtml(entry.value)}</dd>
+          </div>
+        `
+      )
+      .join('');
+    sections.push(`
+      <section class="structure-details-section">
+        <h3 class="structure-details-heading">Overview</h3>
+        <dl class="structure-details-list">${overviewItems}</dl>
+      </section>
+    `);
+  }
+
+  listSections.forEach((section) => {
+    const items = section.items
+      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .join('');
+    sections.push(`
+      <section class="structure-details-section">
+        <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
+        <ul class="structure-details-bullet-list">${items}</ul>
+      </section>
+    `);
+  });
+
+  if (breakdownSection) {
+    sections.push(breakdownSection);
+  }
+
+  narrativeSections.forEach((section) => {
+    sections.push(`
+      <section class="structure-details-section">
+        <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
+        <p class="structure-details-paragraph">${escapeHtml(section.text)}</p>
+      </section>
+    `);
+  });
+
+  if (sections.length === 0) {
+    sections.push('<p class="structure-details-empty">No additional records found for this location.</p>');
+  }
+
+  return {
+    title: resolvedName,
+    subtitle,
+    body: sections.join('')
+  };
+}
+
+function showStructureDetails(tile, context = {}) {
+  if (!elements.structureDetailsPanel) {
+    return;
+  }
+
+  const content = buildStructureDetailsPanelContent(tile, context);
+  if (!content) {
+    hideStructureDetails();
+    return;
+  }
+
+  structureDetailsState.visible = true;
+  elements.structureDetailsPanel.classList.remove('hidden');
+  elements.structureDetailsPanel.setAttribute('aria-hidden', 'false');
+
+  if (elements.structureDetailsTitle) {
+    elements.structureDetailsTitle.textContent = content.title || tile.structureName;
+  }
+
+  if (elements.structureDetailsSubtitle) {
+    if (content.subtitle) {
+      elements.structureDetailsSubtitle.textContent = content.subtitle;
+      elements.structureDetailsSubtitle.classList.remove('hidden');
+    } else {
+      elements.structureDetailsSubtitle.textContent = '';
+      elements.structureDetailsSubtitle.classList.add('hidden');
+    }
+  }
+
+  if (elements.structureDetailsContent) {
+    elements.structureDetailsContent.innerHTML = content.body;
+  }
+
+  if (elements.structureDetailsClose && typeof elements.structureDetailsClose.focus === 'function') {
+    elements.structureDetailsClose.focus();
+  }
+}
+
+function hideStructureDetails(options = {}) {
+  if (!elements.structureDetailsPanel) {
+    return;
+  }
+
+  elements.structureDetailsPanel.classList.add('hidden');
+  elements.structureDetailsPanel.setAttribute('aria-hidden', 'true');
+  if (elements.structureDetailsContent) {
+    elements.structureDetailsContent.innerHTML = '';
+  }
+  structureDetailsState.visible = false;
+
+  if (options.returnFocus && elements.canvasWrapper && typeof elements.canvasWrapper.focus === 'function') {
+    elements.canvasWrapper.focus();
+  }
+}
+
 function showMapTooltip(content, pointerX, pointerY, boundsRect) {
   if (!elements.mapTooltip) {
     return;
@@ -6533,6 +7003,7 @@ function resetView(worldWidth, worldHeight) {
   viewState.translateY = (rect.height - worldHeight * viewState.scale) / 2;
   viewState.hasInteracted = false;
   applyViewTransform();
+  hideStructureDetails();
   hideMapTooltip();
 }
 
@@ -6589,33 +7060,23 @@ function setupMapInteractions() {
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
 
-  const updateHover = (event) => {
+  const resolveTileAtPointer = (event) => {
     if (!elements.canvasWrapper) {
-      return;
+      return null;
     }
-    const tiles = state.currentWorld ? state.currentWorld.tiles : null;
-    if (!Array.isArray(tiles) || tiles.length === 0) {
-      hideMapTooltip();
-      return;
-    }
-    if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
-      hideMapTooltip();
-      return;
-    }
-    if (isPanning && event.pointerId === activePointerId) {
-      hideMapTooltip();
-      return;
+    const world = state.currentWorld;
+    const tiles = world && Array.isArray(world.tiles) ? world.tiles : null;
+    if (!tiles || tiles.length === 0) {
+      return null;
     }
     const rect = elements.canvasWrapper.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
     const pointerY = event.clientY - rect.top;
     if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     if (pointerX < 0 || pointerY < 0 || pointerX > rect.width || pointerY > rect.height) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const worldPixelX = (pointerX - viewState.translateX) / viewState.scale;
     const worldPixelY = (pointerY - viewState.translateY) / viewState.scale;
@@ -6627,31 +7088,47 @@ function setupMapInteractions() {
       worldPixelX >= viewState.worldSize.width ||
       worldPixelY >= viewState.worldSize.height
     ) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const tileX = Math.floor(worldPixelX / drawSize);
     const tileY = Math.floor(worldPixelY / drawSize);
     if (tileY < 0 || tileY >= tiles.length) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const row = tiles[tileY];
     if (!Array.isArray(row) || tileX < 0 || tileX >= row.length) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const tile = row[tileX];
     if (!tile) {
+      return null;
+    }
+    return { tile, tileX, tileY, pointerX, pointerY, rect };
+  };
+
+  const updateHover = (event) => {
+    if (!elements.canvasWrapper) {
+      return;
+    }
+    if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
       hideMapTooltip();
       return;
     }
-    const tooltipContent = buildStructureTooltipContent(tile);
+    if (isPanning && event.pointerId === activePointerId) {
+      hideMapTooltip();
+      return;
+    }
+    const resolved = resolveTileAtPointer(event);
+    if (!resolved) {
+      hideMapTooltip();
+      return;
+    }
+    const tooltipContent = buildStructureTooltipContent(resolved.tile);
     if (!tooltipContent) {
       hideMapTooltip();
       return;
     }
-    showMapTooltip(tooltipContent, pointerX, pointerY, rect);
+    showMapTooltip(tooltipContent, resolved.pointerX, resolved.pointerY, resolved.rect);
   };
 
   const handleWheel = (event) => {
@@ -6659,6 +7136,7 @@ function setupMapInteractions() {
       return;
     }
     hideMapTooltip();
+    hideStructureDetails();
     event.preventDefault();
     const rect = elements.canvasWrapper.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
@@ -6680,7 +7158,11 @@ function setupMapInteractions() {
     if (activePointerId !== null) {
       return;
     }
-    if (event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch') {
+    const isPrimaryPointer = !(
+      event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch'
+    );
+    hideStructureDetails();
+    if (!isPrimaryPointer) {
       return;
     }
     hideMapTooltip();
@@ -6723,7 +7205,19 @@ function setupMapInteractions() {
     if (!viewState.worldSize.width || !viewState.worldSize.height) {
       return;
     }
+    hideStructureDetails();
     resetView(viewState.worldSize.width, viewState.worldSize.height);
+  };
+
+  const handleContextMenu = (event) => {
+    const resolved = resolveTileAtPointer(event);
+    if (!resolved || !resolved.tile || !resolved.tile.structureName) {
+      hideStructureDetails();
+      return;
+    }
+    event.preventDefault();
+    hideMapTooltip();
+    showStructureDetails(resolved.tile, { tileX: resolved.tileX, tileY: resolved.tileY });
   };
 
   elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
@@ -6733,6 +7227,7 @@ function setupMapInteractions() {
   elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
   elements.canvasWrapper.addEventListener('pointerenter', updateHover);
   elements.canvasWrapper.addEventListener('pointerleave', hideMapTooltip);
+  elements.canvasWrapper.addEventListener('contextmenu', handleContextMenu);
   elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
   window.addEventListener('resize', handleResize);
 }
@@ -12083,6 +12578,7 @@ function drawWorld(world) {
   const hasPoliticalOverlay = (showPoliticalBorders || showPoliticalInfluence) && factions.length > 0;
   const waterTileKey = world.waterTileKey || resolveTileName('WATER');
   const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
+  hideStructureDetails();
   hideMapTooltip();
   const height = tiles.length;
   const width = tiles[0].length;
@@ -12451,6 +12947,12 @@ function attachEvents() {
   });
 
   elements.closeOptions.addEventListener('click', () => toggleOptions(false));
+
+  if (elements.structureDetailsClose) {
+    elements.structureDetailsClose.addEventListener('click', () => {
+      hideStructureDetails({ returnFocus: true });
+    });
+  }
 
   if (elements.politicalBordersToggle) {
     elements.politicalBordersToggle.addEventListener('click', () => {
@@ -12832,6 +13334,10 @@ function attachEvents() {
     }
 
     if (event.key === 'Escape') {
+      if (structureDetailsState.visible) {
+        hideStructureDetails({ returnFocus: true });
+        return;
+      }
       if (isDwarfCustomizerVisible()) {
         closeDwarfCustomizer({ returnFocus: true });
         return;
