@@ -268,18 +268,6 @@
           />
         </header>
         <div class="customizer-layout">
-          <aside class="roster-column" aria-label="Founder overview">
-            <h3>Founding Dwarf</h3>
-            <ul id="dwarf-roster-list" class="dwarf-roster-list" role="list"></ul>
-            <div class="roster-traits">
-              <div
-                id="dwarf-trait-attributes"
-                class="trait-attributes"
-                aria-live="polite"
-                role="list"
-              ></div>
-            </div>
-          </aside>
           <section class="customizer-main" aria-live="polite">
             <div class="customizer-main-card">
               <div class="customizer-top-bar pixel-bar">
@@ -291,9 +279,14 @@
                 >
                   <span class="dwarf-nav-icon" aria-hidden="true"></span>
                 </button>
-                <div class="dwarf-slot-info">
-                  <p id="dwarf-slot-label" class="slot-label">Founding Dwarf</p>
-                  <label class="field-label" for="dwarf-name-input">Name</label>
+                <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
+                  <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
+                  <label
+                    id="founder-name-label"
+                    class="field-label sr-only"
+                    for="dwarf-name-input"
+                    >Founder name</label
+                  >
                   <input
                     type="text"
                     id="dwarf-name-input"
@@ -326,6 +319,12 @@
                       ></canvas>
                     </div>
                     <p id="dwarf-trait-summary" class="trait-summary"></p>
+                    <div
+                      id="dwarf-trait-attributes"
+                      class="trait-attributes"
+                      aria-live="polite"
+                      role="list"
+                    ></div>
                   </div>
                 </div>
                 <div class="customizer-fields">
@@ -353,7 +352,6 @@
                             data-gender-value="female"
                             role="radio"
                             aria-checked="true"
-                            tabindex="0"
                           >
                             <img
                               src="tilesheet/gender-button-female.png"
@@ -369,7 +367,6 @@
                             data-gender-value="male"
                             role="radio"
                             aria-checked="false"
-                            tabindex="-1"
                           >
                             <img
                               src="tilesheet/gender-button-male.png"

@@ -124,6 +124,7 @@ const icebergTileCoords = {
 };
 
 const tileLookup = new Map();
+const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 function registerTiles(sheetKey, coordMap) {
   const sheet = tileSheets[sheetKey];
@@ -2146,6 +2147,180 @@ function adjustMinDistance(baseDistance, normalized) {
   return Math.max(2, Math.round(baseDistance * scale));
 }
 
+function connectTownsWithinRange(tiles, towns, options = {}) {
+  if (!Array.isArray(tiles) || !Array.isArray(towns) || towns.length < 2) {
+    return;
+  }
+
+  const {
+    maxDistance = 50,
+    overlayKey = TOWN_ROAD_OVERLAY_KEY,
+    width,
+    height,
+    isLandBaseTile,
+    waterMask,
+    treeOverlayKey,
+    treeSnowOverlayKey,
+    isMountainOverlay,
+    replaceableOverlays
+  } = options;
+
+  if (!overlayKey || !Number.isFinite(maxDistance) || maxDistance <= 0) {
+    return;
+  }
+
+  const mapHeight = Number.isFinite(height) ? height : tiles.length;
+  const mapWidth = Number.isFinite(width)
+    ? width
+    : tiles.length > 0 && Array.isArray(tiles[0])
+      ? tiles[0].length
+      : 0;
+
+  if (!Number.isFinite(mapWidth) || mapWidth <= 0 || !Number.isFinite(mapHeight) || mapHeight <= 0) {
+    return;
+  }
+
+  const maxDistanceSq = maxDistance * maxDistance;
+
+  for (let i = 0; i < towns.length; i += 1) {
+    const townA = towns[i];
+    if (!townA || !Number.isFinite(townA.x) || !Number.isFinite(townA.y)) {
+      continue;
+    }
+    for (let j = i + 1; j < towns.length; j += 1) {
+      const townB = towns[j];
+      if (!townB || !Number.isFinite(townB.x) || !Number.isFinite(townB.y)) {
+        continue;
+      }
+      const dx = townA.x - townB.x;
+      const dy = townA.y - townB.y;
+      if (dx * dx + dy * dy > maxDistanceSq) {
+        continue;
+      }
+      carveRoadBetweenPoints(townA, townB, {
+        tiles,
+        overlayKey,
+        width: mapWidth,
+        height: mapHeight,
+        isLandBaseTile,
+        waterMask,
+        treeOverlayKey,
+        treeSnowOverlayKey,
+        isMountainOverlay,
+        replaceableOverlays
+      });
+    }
+  }
+}
+
+function carveRoadBetweenPoints(start, end, options) {
+  if (!start || !end || !options || !options.tiles) {
+    return;
+  }
+
+  let x0 = Math.round(start.x);
+  let y0 = Math.round(start.y);
+  const x1 = Math.round(end.x);
+  const y1 = Math.round(end.y);
+
+  const dx = Math.abs(x1 - x0);
+  const sx = x0 < x1 ? 1 : -1;
+  const dy = -Math.abs(y1 - y0);
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+
+  while (true) {
+    placeRoadOverlayAt(x0, y0, options);
+    if (x0 === x1 && y0 === y1) {
+      break;
+    }
+    const e2 = err * 2;
+    if (e2 >= dy) {
+      err += dy;
+      x0 += sx;
+    }
+    if (e2 <= dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+}
+
+function placeRoadOverlayAt(x, y, options) {
+  const {
+    tiles,
+    overlayKey = TOWN_ROAD_OVERLAY_KEY,
+    width,
+    height,
+    isLandBaseTile,
+    waterMask,
+    treeOverlayKey,
+    treeSnowOverlayKey,
+    isMountainOverlay,
+    replaceableOverlays
+  } = options || {};
+
+  if (!tiles || !overlayKey) {
+    return;
+  }
+
+  if (x < 0 || y < 0 || !Number.isFinite(x) || !Number.isFinite(y)) {
+    return;
+  }
+
+  const mapWidth = Number.isFinite(width) ? width : tiles.length > 0 ? tiles[0].length : 0;
+  const mapHeight = Number.isFinite(height) ? height : tiles.length;
+
+  if (x >= mapWidth || y >= mapHeight) {
+    return;
+  }
+
+  const row = tiles[y];
+  if (!Array.isArray(row)) {
+    return;
+  }
+
+  const tile = row[x];
+  if (!tile || tile.structure || tile.river) {
+    return;
+  }
+
+  if (typeof isLandBaseTile === 'function' && !isLandBaseTile(tile.base)) {
+    return;
+  }
+
+  if (waterMask && (Array.isArray(waterMask) || waterMask instanceof Uint8Array)) {
+    const idx = y * mapWidth + x;
+    if (idx >= 0 && idx < waterMask.length && waterMask[idx]) {
+      return;
+    }
+  }
+
+  if (typeof isMountainOverlay === 'function' && isMountainOverlay(tile.overlay)) {
+    return;
+  }
+
+  if (tile.overlay && tile.overlay !== overlayKey) {
+    let canReplace = false;
+    if (replaceableOverlays) {
+      if (typeof replaceableOverlays.has === 'function') {
+        canReplace = replaceableOverlays.has(tile.overlay);
+      } else if (Array.isArray(replaceableOverlays)) {
+        canReplace = replaceableOverlays.includes(tile.overlay);
+      }
+    }
+    if (!canReplace) {
+      const isTreeOverlay =
+        treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+      if (!isTreeOverlay) {
+        return;
+      }
+    }
+  }
+
+  tile.overlay = overlayKey;
+}
+
 function tryPlaceDwarfhold(candidate, options) {
   if (!candidate || !options) {
     return false;
@@ -2901,11 +3076,8 @@ function updateCustomizerUI() {
   dwarf.head = resolveHeadTypeValue(dwarf.head);
   const total = state.dwarfParty.dwarves.length;
   if (elements.dwarfSlotLabel) {
-    if (total === 1) {
-      elements.dwarfSlotLabel.textContent = 'Founding Dwarf';
-    } else {
-      elements.dwarfSlotLabel.textContent = `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}`;
-    }
+    elements.dwarfSlotLabel.textContent =
+      total > 1 ? `Dwarf ${state.dwarfParty.activeIndex + 1} of ${total}` : '';
   }
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.value = dwarf.name;
@@ -6662,6 +6834,24 @@ function createWorld(seedString) {
     }
   }
 
+  if (towns.length > 1) {
+    const roadReplaceableOverlays = new Set(
+      [treeOverlayKey, treeSnowOverlayKey, hillOverlayKey].filter((key) => key)
+    );
+    connectTownsWithinRange(tiles, towns, {
+      maxDistance: 50,
+      overlayKey: TOWN_ROAD_OVERLAY_KEY,
+      width,
+      height,
+      isLandBaseTile,
+      waterMask,
+      treeOverlayKey,
+      treeSnowOverlayKey,
+      isMountainOverlay,
+      replaceableOverlays: roadReplaceableOverlays
+    });
+  }
+
   const evilWizardTowerKey = tileLookup.has('EVIL_WIZARDS_TOWER') ? 'EVIL_WIZARDS_TOWER' : null;
   if (evilWizardTowerKey) {
     const towerCandidates = [];
@@ -6957,6 +7147,34 @@ function drawRiverSegment(ctx, river, x, y) {
   );
 }
 
+function drawRoadOverlay(ctx, x, y) {
+  if (!ctx) {
+    return;
+  }
+  const px = x * drawSize;
+  const py = y * drawSize;
+  const inset = Math.max(1, Math.floor(drawSize * 0.2));
+  const width = drawSize - inset * 2;
+  const height = drawSize - inset * 2;
+
+  ctx.fillStyle = '#5c4632';
+  ctx.fillRect(px + inset, py + inset, width, height);
+
+  const detailInset = Math.max(1, Math.floor(drawSize * 0.32));
+  const detailWidth = drawSize - detailInset * 2;
+  const detailHeight = drawSize - detailInset * 2;
+  ctx.fillStyle = '#8d6f50';
+  ctx.fillRect(px + detailInset, py + detailInset, detailWidth, detailHeight);
+}
+
+function drawCustomOverlay(ctx, overlayKey, x, y) {
+  if (overlayKey === TOWN_ROAD_OVERLAY_KEY) {
+    drawRoadOverlay(ctx, x, y);
+    return true;
+  }
+  return false;
+}
+
 function drawWorld(world) {
   const { tiles, seedString } = world;
   hideMapTooltip();
@@ -7004,23 +7222,24 @@ function drawWorld(world) {
       if (cell.overlay) {
         const overlayDefinition = tileLookup.get(cell.overlay);
         if (!overlayDefinition) {
-          continue;
+          drawCustomOverlay(ctx, cell.overlay, x, y);
+        } else {
+          const overlaySheet = state.tileSheets[overlayDefinition.sheet];
+          if (!overlaySheet || !overlaySheet.image) {
+            continue;
+          }
+          ctx.drawImage(
+            overlaySheet.image,
+            overlayDefinition.sx,
+            overlayDefinition.sy,
+            overlayDefinition.size,
+            overlayDefinition.size,
+            x * drawSize,
+            y * drawSize,
+            drawSize,
+            drawSize
+          );
         }
-        const overlaySheet = state.tileSheets[overlayDefinition.sheet];
-        if (!overlaySheet || !overlaySheet.image) {
-          continue;
-        }
-        ctx.drawImage(
-          overlaySheet.image,
-          overlayDefinition.sx,
-          overlayDefinition.sy,
-          overlayDefinition.size,
-          overlayDefinition.size,
-          x * drawSize,
-          y * drawSize,
-          drawSize,
-          drawSize
-        );
       }
 
       if (cell.structure) {
