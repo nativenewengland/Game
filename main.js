@@ -6744,6 +6744,7 @@ function createWorld(seedString) {
   const snowPresenceField = needSnowPresenceField ? new Uint8Array(width * height) : null;
   const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
   const icebergPresenceSeed = hasIcebergOverlay ? (seedNumber + 0x5ad1f32b) >>> 0 : 0;
+  let snowDistanceField = null;
 
   const marshNoiseSeed = hasMarshTile ? (seedNumber + 0x1922b3a5) >>> 0 : 0;
   const marshNoiseScale = hasMarshTile ? 3.9 + rng() * 3 : 1;
@@ -7997,6 +7998,22 @@ function createWorld(seedString) {
     }
   }
 
+  if (hasSnowTile) {
+    const snowMask = new Uint8Array(width * height);
+    let snowCount = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (tile && tile.base === snowTileKey) {
+          snowMask[idx] = 1;
+          snowCount += 1;
+        }
+      }
+    }
+    snowDistanceField = snowCount > 0 ? computeEuclideanDistanceField(snowMask, width, height) : null;
+  }
+
   const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel, {
     frequencyNormalized: riverFrequencyNormalized
   });
@@ -8377,6 +8394,7 @@ function createWorld(seedString) {
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
   const treeJungleOverlayKey = hasTreeTile && tileLookup.has('JUNGLE_TREE') ? 'JUNGLE_TREE' : null;
+  const jungleSnowDistanceThresholdSq = 100 * 100;
   const treeOverlayKeys = [treeOverlayKey, treeSnowOverlayKey, treeJungleOverlayKey].filter(
     (key, index, array) => key && array.indexOf(key) === index
   );
@@ -8390,6 +8408,11 @@ function createWorld(seedString) {
       return treeSnowOverlayKey;
     }
     if (treeJungleOverlayKey) {
+      const withinSnowRange =
+        snowDistanceField && snowDistanceField[idx] <= jungleSnowDistanceThresholdSq;
+      if (!withinSnowRange) {
+        return treeOverlayKey;
+      }
       const normalizedY = (y + 0.5) / height;
       const rainfallValue = rainfallField[idx];
       const drainageValue = drainageField[idx];
