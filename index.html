@@ -553,27 +553,35 @@
                       </div>
                     </div>
 
-                    <div class="field-group">
+                    <div class="field-group field-group--hair-colour">
                       <label for="dwarf-hair-slider" class="field-label">Hair colour</label>
-                      <div class="trait-slider">
-                        <div class="trait-slider-visual">
-                          <input
-                            id="dwarf-hair-slider"
-                            class="trait-slider-input"
-                            type="range"
-                            min="0"
-                            max="0"
-                            step="1"
-                            value="0"
-                          />
+                      <div class="hair-colour-controls">
+                        <div class="trait-slider">
+                          <div class="trait-slider-visual">
+                            <input
+                              id="dwarf-hair-slider"
+                              class="trait-slider-input"
+                              type="range"
+                              min="0"
+                              max="0"
+                              step="1"
+                              value="0"
+                            />
+                          </div>
+                          <div
+                            id="dwarf-hair-slider-value"
+                            class="trait-slider-value"
+                            aria-live="polite"
+                          >
+                            Obsidian Black
+                          </div>
                         </div>
-                        <div
-                          id="dwarf-hair-slider-value"
-                          class="trait-slider-value"
-                          aria-live="polite"
-                        >
-                          Obsidian Black
-                        </div>
+                        <button type="button" id="dwarf-back" class="return-button">
+                          <span class="sr-only">Back</span>
+                        </button>
+                        <button type="submit" class="create-button create-button--inline">
+                          <span class="sr-only">Begin Expedition</span>
+                        </button>
                       </div>
                     </div>
 
@@ -602,14 +610,6 @@
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="customizer-inline-actions">
-                <button type="button" id="dwarf-back" class="return-button">
-                  <span class="sr-only">Back</span>
-                </button>
-                <button type="submit" class="create-button">
-                  <span class="sr-only">Begin Expedition</span>
-                </button>
               </div>
             </div>
           </section>

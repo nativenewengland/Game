@@ -55,6 +55,7 @@ const baseTileCoords = {
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
   TREE_SNOW: { row: 1, col: 1 },
+  JUNGLE_TREE: { row: 3, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
   MOUNTAIN_TOP_A: { row: 0, col: 4 },
@@ -69,6 +70,7 @@ const baseTileCoords = {
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
+  HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 }
 };
@@ -149,6 +151,110 @@ const icebergTileCoords = (() => {
 
 const tileLookup = new Map();
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
+
+const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
+const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
+
+const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
+const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
+const isTreeOverlayKey = (key) => typeof key === 'string' && treeOverlayKeySet.has(key);
+const tileHasTreeOverlay = (tile) =>
+  Boolean(tile) && (isTreeOverlayKey(tile.overlay) || isTreeOverlayKey(tile.hillOverlay));
+
+function evaluateFactionTileSuitability(faction, tile, x, y) {
+  if (!faction || !tile) {
+    return 0;
+  }
+
+  const type =
+    (faction.capital && typeof faction.capital.type === 'string' && faction.capital.type) || 'settlement';
+
+  switch (type) {
+    case 'dwarfhold': {
+      if (tile.structure === 'DWARFHOLD' || tile.structure === 'GREAT_DWARFHOLD') {
+        return 1;
+      }
+      if (isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay)) {
+        return 1;
+      }
+      if (isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay)) {
+        return 0.45;
+      }
+      return 0;
+    }
+    case 'woodElfGrove': {
+      if (tile.structure === 'WOOD_ELF_GROVES') {
+        return 1;
+      }
+      if (tileHasTreeOverlay(tile)) {
+        return 1;
+      }
+      return 0;
+    }
+    case 'tower':
+    case 'evilWizardTower': {
+      if (tile.base === 'WATER') {
+        return 0;
+      }
+
+      const overlayIsMountain = isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+      const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+      const overlayIsForest = isTreeOverlayKey(tile.overlay);
+
+      let suitability = 1;
+
+      if (overlayIsMountain) {
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          const dx = x - faction.capital.x;
+          const dy = y - faction.capital.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance <= Math.SQRT2) {
+            suitability *= 0.35;
+          } else {
+            return 0.05;
+          }
+        } else {
+          return 0.05;
+        }
+      }
+
+      if (overlayIsHill) {
+        suitability *= 0.35;
+      }
+
+      if (overlayIsForest) {
+        suitability *= 0.35;
+      }
+
+      return suitability;
+    }
+    case 'village': {
+      if (tile.base === 'WATER') {
+        return 0;
+      }
+
+      const overlayIsMountain = isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+      const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+      const overlayIsForest = isTreeOverlayKey(tile.overlay);
+
+      let suitability = 1;
+
+      if (overlayIsMountain) {
+        suitability *= 0.2;
+      } else if (overlayIsHill) {
+        suitability *= 0.45;
+      }
+
+      if (overlayIsForest) {
+        suitability *= 0.5;
+      }
+
+      return suitability;
+    }
+    default:
+      return 1;
+  }
+}
 
 function registerTiles(sheetKey, coordMap) {
   const sheet = tileSheets[sheetKey];
@@ -389,6 +495,18 @@ const factionColorPalette = [
   '#38bdf8'
 ];
 
+function pickFactionColor(index) {
+  if (!Array.isArray(factionColorPalette) || factionColorPalette.length === 0) {
+    return '#f97316';
+  }
+  const size = factionColorPalette.length;
+  if (!Number.isFinite(index)) {
+    return factionColorPalette[0];
+  }
+  const normalized = ((Math.floor(index) % size) + size) % size;
+  return factionColorPalette[normalized];
+}
+
 const dwarfholdNamePrefixes = [
   'Stone',
   'Iron',
@@ -526,13 +644,14 @@ const dwarfholdExportOptions = [
 const dwarfholdPopulationRaceOptions = [
   { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
   { key: 'humans', label: 'Humans', color: '#9bb6d8' },
-  { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
-  { key: 'elves', label: 'Elves', color: '#6ecf85' },
   { key: 'halflings', label: 'Halflings', color: '#f7a072' },
+  { key: 'gnomes', label: 'Gnomes', color: '#c9a3e6' },
   { key: 'goblins', label: 'Goblins', color: '#7f8c4d' },
   { key: 'kobolds', label: 'Kobolds', color: '#b1c8ff' },
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
+
+const dwarfholdNearbyTownRadius = 12;
 
 const evilWizardTowerPopulationRaceOptions = [
   { key: 'wizards', label: 'Wizards', color: '#9c5cff' },
@@ -1027,6 +1146,318 @@ const woodElfGroveHallmarks = [
   'Druidic songcraft summons blossoms even in winter.'
 ];
 
+const forestRegionNamePrefixes = [
+  'Verdant',
+  'Whispering',
+  'Emerald',
+  'Silver',
+  'Shadow',
+  'Golden',
+  'Moonlit',
+  'Ancient',
+  'Wild',
+  'Sunset'
+];
+
+const forestRegionNameSuffixes = [
+  'Groves',
+  'Woods',
+  'Thicket',
+  'Wilds',
+  'Canopy',
+  'Boughs',
+  'Hollows',
+  'Glade',
+  'Expanse',
+  'Reserve'
+];
+
+const forestRegionNameMotifs = [
+  'Echoes',
+  'Mists',
+  'Cicadas',
+  'Fables',
+  'Starlight',
+  'Owls',
+  'Whispers',
+  'Lanterns',
+  'Spirits',
+  'Willows'
+];
+
+const mountainRangeNamePrefixes = [
+  'Stone',
+  'Iron',
+  'Storm',
+  'Thunder',
+  'Frost',
+  'Dragon',
+  'Obsidian',
+  'Moon',
+  'Sunspire',
+  'Titan'
+];
+
+const mountainRangeNameSuffixes = [
+  'Peaks',
+  'Range',
+  'Highlands',
+  'Crown',
+  'Mountains',
+  'Spines',
+  'Escarpment',
+  'Ridge',
+  'Tor',
+  'Bastions'
+];
+
+const mountainRangeNameMotifs = [
+  'Storms',
+  'Giants',
+  'Dawn',
+  'Ash',
+  'Echoes',
+  'Legends',
+  'Stars',
+  'Anvils',
+  'Dragons',
+  'Auroras'
+];
+
+const desertNameDescriptors = [
+  'Shifting',
+  'Burning',
+  'Golden',
+  'Silent',
+  'Glass',
+  'Crimson',
+  'Howling',
+  'Endless',
+  'Scoured',
+  'Sunken'
+];
+
+const desertNameNouns = [
+  'Dunes',
+  'Waste',
+  'Expanse',
+  'Sea',
+  'Desert',
+  'Reach',
+  'Barrens',
+  'Quarter',
+  'Wastes',
+  'Sands'
+];
+
+const desertNameMotifs = [
+  'Mirages',
+  'Ashes',
+  'Suns',
+  'Bones',
+  'Scorpions',
+  'Dust',
+  'Secrets',
+  'Hollows',
+  'Echoes',
+  'Zephyrs'
+];
+
+const tundraNameDescriptors = [
+  'Frozen',
+  'Ivory',
+  'Bleak',
+  'Glimmering',
+  'Shivering',
+  'Frostbound',
+  'Auric',
+  'Pale',
+  'Windshorn',
+  'Starlit'
+];
+
+const tundraNameNouns = [
+  'Tundra',
+  'Reach',
+  'Steppes',
+  'Barrens',
+  'Fields',
+  'Expanse',
+  'Marches',
+  'Plateau',
+  'Glade',
+  'March'
+];
+
+const tundraNameMotifs = [
+  'Auroras',
+  'Frost',
+  'Comets',
+  'Stars',
+  'Echoes',
+  'Drifts',
+  'Owls',
+  'Lights',
+  'Mammoths',
+  'Silence'
+];
+
+const grasslandNameDescriptors = [
+  'Windward',
+  'Emerald',
+  'Golden',
+  'Rolling',
+  'Open',
+  'Skylit',
+  'Silver',
+  'Gentle',
+  'Breezy',
+  'Sunlit'
+];
+
+const grasslandNameNouns = [
+  'Plains',
+  'Meadows',
+  'Fields',
+  'Prairies',
+  'Steppes',
+  'Expanse',
+  'Downs',
+  'Reach',
+  'Hearth',
+  'Lowlands'
+];
+
+const grasslandNameMotifs = [
+  'Larks',
+  'Horizon',
+  'Harvests',
+  'Echoes',
+  'Sunsets',
+  'Breezes',
+  'Lanterns',
+  'Auroras',
+  'Stones',
+  'Dreams'
+];
+
+const marshNameDescriptors = [
+  'Glimmer',
+  'Mire',
+  'Gloom',
+  'Low',
+  'Sodden',
+  'Willow',
+  'Brackish',
+  'Sable',
+  'Sunken',
+  'Twilight'
+];
+
+const marshNameNouns = [
+  'Bog',
+  'Fen',
+  'Morass',
+  'Quagmire',
+  'Wetlands',
+  'Mires',
+  'Marsh',
+  'Reeds',
+  'Pools',
+  'Sinks'
+];
+
+const marshNameMotifs = [
+  'Fireflies',
+  'Lilies',
+  'Secrets',
+  'Mist',
+  'Echoes',
+  'Cranes',
+  'Reeds',
+  'Moss',
+  'Shadows',
+  'Frogs'
+];
+
+const oceanNameDescriptors = [
+  'Sapphire',
+  'Tempest',
+  'Sunken',
+  'Cerulean',
+  'Midnight',
+  'Gilded',
+  'Storm',
+  'Azure',
+  'Silent',
+  'Everdeep'
+];
+
+const oceanNameNouns = [
+  'Sea',
+  'Ocean',
+  'Gulf',
+  'Sound',
+  'Reach',
+  'Current',
+  'Depths',
+  'Expanse',
+  'Waters',
+  'Strait'
+];
+
+const oceanNameMotifs = [
+  'Sirens',
+  'Stars',
+  'Moons',
+  'Whales',
+  'Voyagers',
+  'Storms',
+  'Legends',
+  'Coral',
+  'Mists',
+  'Echoes'
+];
+
+const lakeNameDescriptors = [
+  'Silver',
+  'Crystal',
+  'Mirror',
+  'Still',
+  'Glimmer',
+  'Duskwater',
+  'Bright',
+  'Moon',
+  'Amber',
+  'Serene'
+];
+
+const lakeNameNouns = [
+  'Lake',
+  'Mere',
+  'Loch',
+  'Pond',
+  'Basin',
+  'Reservoir',
+  'Waters',
+  'Lagoon',
+  'Pool',
+  'Bay'
+];
+
+const lakeNameMotifs = [
+  'Echoes',
+  'Willows',
+  'Lanterns',
+  'Dreams',
+  'Reflections',
+  'Whispers',
+  'Herons',
+  'Lilies',
+  'Dawn',
+  'Stars'
+];
+
 const woodElfGroveCircleNames = [
   'Circle of the Silver Bough',
   'Circle of Verdant Stars',
@@ -1057,12 +1488,10 @@ const woodElfGroveExports = [
 ];
 
 const woodElfGrovePopulationRoleOptions = [
-  { key: 'wardens', label: 'Bough Wardens', color: '#6ecf85' },
-  { key: 'druids', label: 'Circle Druids', color: '#9bd4a9' },
-  { key: 'scouts', label: 'Glade Scouts', color: '#8bbbcf' },
-  { key: 'singers', label: 'Chorus Singers', color: '#c4a6e8' },
-  { key: 'artisans', label: 'Canopy Artisans', color: '#f4c069' },
-  { key: 'others', label: 'Forest Folk', color: '#9e9e9e' }
+  { key: 'elves', label: 'Wood Elves', color: '#6ecf85' },
+  { key: 'satyrs', label: 'Satyrs', color: '#c18c5d' },
+  { key: 'nymphs', label: 'Nymphs', color: '#9bd4a9' },
+  { key: 'ents', label: 'Ents', color: '#8bbbcf' }
 ];
 
 function pickRandomFrom(array, random) {
@@ -1094,42 +1523,137 @@ function pickUniqueFrom(array, count, random) {
   return picks;
 }
 
-function shuffleArray(array, random) {
-  if (!Array.isArray(array) || array.length === 0) {
-    return [];
-  }
+function generateForestRegionName(random, context = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const copy = array.slice();
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(randomFn() * (i + 1));
-    const clampedJ = Math.max(0, Math.min(i, j));
-    const temp = copy[i];
-    copy[i] = copy[clampedJ];
-    copy[clampedJ] = temp;
+  const prefix = pickRandomFrom(forestRegionNamePrefixes, randomFn) || 'Verdant';
+  const suffix = pickRandomFrom(forestRegionNameSuffixes, randomFn) || 'Woods';
+  const motif = pickRandomFrom(forestRegionNameMotifs, randomFn);
+  if (motif && randomFn() < 0.65) {
+    return `${prefix} ${suffix} of the ${motif}`;
   }
-  return copy;
+  if (randomFn() < 0.35) {
+    return `The ${prefix} ${suffix}`;
+  }
+  return `${prefix} ${suffix}`;
 }
 
-function generateRealmName(random) {
+function generateMountainRangeName(random, context = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const adjective = pickRandomFrom(realmNameAdjectives, randomFn);
-  const noun = pickRandomFrom(realmNameNouns, randomFn);
-  if (adjective && noun) {
-    return `${adjective} ${noun}`;
+  const prefix = pickRandomFrom(mountainRangeNamePrefixes, randomFn) || 'Stone';
+  const suffix = pickRandomFrom(mountainRangeNameSuffixes, randomFn) || 'Peaks';
+  const motif = pickRandomFrom(mountainRangeNameMotifs, randomFn);
+  if (motif && randomFn() < 0.6) {
+    return `${prefix} ${suffix} of the ${motif}`;
   }
-  if (noun) {
-    return noun;
-  }
-  const fallbackNumber = Math.floor(randomFn() * 900) + 100;
-  return `Realm ${fallbackNumber}`;
+  return `The ${prefix} ${suffix}`;
 }
 
-function pickFactionColor(index) {
-  if (!Number.isFinite(index) || index < 0 || factionColorPalette.length === 0) {
-    return '#64748b';
+function generateDesertName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(desertNameDescriptors, randomFn) || 'Shifting';
+  const noun = pickRandomFrom(desertNameNouns, randomFn) || 'Dunes';
+  const motif = pickRandomFrom(desertNameMotifs, randomFn);
+  if (motif && randomFn() < 0.5) {
+    return `${noun} of the ${motif}`;
   }
-  const normalizedIndex = Math.floor(index) % factionColorPalette.length;
-  return factionColorPalette[normalizedIndex];
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateTundraName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(tundraNameDescriptors, randomFn) || 'Frozen';
+  const noun = pickRandomFrom(tundraNameNouns, randomFn) || 'Tundra';
+  const motif = pickRandomFrom(tundraNameMotifs, randomFn);
+  if (motif && randomFn() < 0.55) {
+    return `${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateGrasslandName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(grasslandNameDescriptors, randomFn) || 'Golden';
+  const noun = pickRandomFrom(grasslandNameNouns, randomFn) || 'Plains';
+  const motif = pickRandomFrom(grasslandNameMotifs, randomFn);
+  if (motif && randomFn() < 0.5) {
+    return `${noun} of the ${motif}`;
+  }
+  if (randomFn() < 0.4) {
+    return `The ${descriptor} ${noun}`;
+  }
+  return `${descriptor} ${noun}`;
+}
+
+function generateMarshlandName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(marshNameDescriptors, randomFn) || 'Sunken';
+  const noun = pickRandomFrom(marshNameNouns, randomFn) || 'Bog';
+  const motif = pickRandomFrom(marshNameMotifs, randomFn);
+  if (motif && randomFn() < 0.6) {
+    return `${descriptor} ${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateOceanName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(oceanNameDescriptors, randomFn) || 'Sapphire';
+  let noun = pickRandomFrom(oceanNameNouns, randomFn) || 'Sea';
+  const motif = pickRandomFrom(oceanNameMotifs, randomFn);
+  if (context && context.size && context.size < 120 && noun === 'Ocean') {
+    noun = 'Sea';
+  }
+  if (motif && randomFn() < 0.65) {
+    return `${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+function generateLakeName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(lakeNameDescriptors, randomFn) || 'Silver';
+  const noun = pickRandomFrom(lakeNameNouns, randomFn) || 'Lake';
+  const motif = pickRandomFrom(lakeNameMotifs, randomFn);
+  const normalizedNoun = noun.toLowerCase();
+  if (normalizedNoun === 'lake' || normalizedNoun === 'loch') {
+    if (motif && randomFn() < 0.7) {
+      return `${noun} ${motif}`;
+    }
+    return `${noun} ${descriptor}`;
+  }
+  if (motif && randomFn() < 0.6) {
+    return `The ${descriptor} ${noun} of the ${motif}`;
+  }
+  return `The ${descriptor} ${noun}`;
+}
+
+const biomeTypeDefinitions = {
+  forest: { label: 'Forest', generator: generateForestRegionName },
+  mountain: { label: 'Mountain Range', generator: generateMountainRangeName },
+  desert: { label: 'Desert', generator: generateDesertName },
+  tundra: { label: 'Tundra', generator: generateTundraName },
+  grassland: { label: 'Grassland', generator: generateGrasslandName },
+  marsh: { label: 'Marsh', generator: generateMarshlandName },
+  ocean: { label: 'Ocean', generator: generateOceanName },
+  lake: { label: 'Lake', generator: generateLakeName }
+};
+
+function generateBiomeAreaName(biomeType, random, context = {}) {
+  if (!biomeType) {
+    return null;
+  }
+  const definition = biomeTypeDefinitions[biomeType];
+  if (!definition || typeof definition.generator !== 'function') {
+    return null;
+  }
+  const name = definition.generator(random, context);
+  if (typeof name === 'string') {
+    const trimmed = name.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+  return null;
 }
 
 function generatePopulationBreakdownFromOptions(options, population, random, config = {}) {
@@ -1267,11 +1791,144 @@ function generateTowerPopulationBreakdown(population, random) {
   });
 }
 
-function generateDwarfholdPopulationBreakdown(population, random) {
-  return generatePopulationBreakdownFromOptions(dwarfholdPopulationRaceOptions, population, random, {
-    majorityIndex: 0,
-    majorityShareRange: [0.9, 1],
-    ensureMajority: true
+function generateDwarfholdPopulationBreakdown(population, random, options = {}) {
+  if (!Array.isArray(dwarfholdPopulationRaceOptions) || dwarfholdPopulationRaceOptions.length === 0) {
+    return [];
+  }
+
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const hasNearbyHumanSettlement = Boolean(options && options.hasNearbyHumanSettlement);
+  const configMap = new Map(dwarfholdPopulationRaceOptions.map((config) => [config.key, config]));
+  const dwarfConfig = configMap.get('dwarves');
+
+  if (!dwarfConfig) {
+    return [];
+  }
+
+  const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+  const majorityRange = hasNearbyHumanSettlement ? [0.85, 0.93] : [0.9, 0.96];
+  const rangeMin = clamp(majorityRange[0], 0, 1);
+  const rangeMax = clamp(majorityRange[1], rangeMin, 1);
+  const shareRange = rangeMax - rangeMin;
+  const dwarfShare = shareRange <= 0 ? rangeMin : rangeMin + randomFn() * shareRange;
+  const shares = [{ config: dwarfConfig, share: clamp(dwarfShare, 0, 1) }];
+  const remainderShare = Math.max(0, 1 - shares[0].share);
+
+  const weightPlans = hasNearbyHumanSettlement
+    ? [
+        { key: 'humans', min: 0.9, max: 1.6 },
+        { key: 'halflings', min: 0.7, max: 1.2 },
+        { key: 'gnomes', min: 0.15, max: 0.4 },
+        { key: 'goblins', min: 0.12, max: 0.35 },
+        { key: 'kobolds', min: 0.12, max: 0.35 },
+        { key: 'others', min: 0, max: 0.2 }
+      ]
+    : [
+        { key: 'gnomes', min: 0.8, max: 1.4 },
+        { key: 'goblins', min: 0.9, max: 1.5 },
+        { key: 'kobolds', min: 0.7, max: 1.2 },
+        { key: 'others', min: 0, max: 0.25 }
+      ];
+
+  const weightEntries = weightPlans
+    .map((plan) => {
+      const config = configMap.get(plan.key);
+      if (!config) {
+        return null;
+      }
+      const min = Math.max(0, Number.isFinite(plan.min) ? plan.min : 0);
+      const max = Math.max(min, Number.isFinite(plan.max) ? plan.max : min);
+      if (max <= 0) {
+        return null;
+      }
+      const weight = min + randomFn() * (max - min);
+      if (weight <= 0) {
+        return null;
+      }
+      return { config, weight };
+    })
+    .filter(Boolean);
+
+  const weightSum = weightEntries.reduce((sum, entry) => sum + entry.weight, 0);
+
+  if (remainderShare > 0 && weightSum > 0) {
+    weightEntries.forEach((entry) => {
+      const share = (entry.weight / weightSum) * remainderShare;
+      shares.push({ config: entry.config, share });
+    });
+  }
+
+  const totalShare = shares.reduce((sum, entry) => sum + entry.share, 0);
+  const safeTotalShare = totalShare > 0 ? totalShare : 1;
+  const normalizedShares = shares.map((entry) => ({
+    config: entry.config,
+    share: clamp(entry.share / safeTotalShare, 0, 1)
+  }));
+
+  const percentageDecimals = 2;
+  const percentageScale = 10 ** percentageDecimals;
+  const totalUnits = 100 * percentageScale;
+
+  const scaledEntries = normalizedShares.map(({ config, share }) => {
+    const safeShare = clamp(share, 0, 1);
+    const rawPercentage = safeShare * 100;
+    const scaledRaw = rawPercentage * percentageScale;
+    const baseUnit = Math.floor(scaledRaw);
+    const fraction = Math.max(0, Math.min(1, scaledRaw - baseUnit));
+    return {
+      config,
+      baseUnit,
+      fraction
+    };
+  });
+
+  const baseUnits = scaledEntries.map((entry) => entry.baseUnit);
+  let remainderUnits = totalUnits - baseUnits.reduce((sum, value) => sum + value, 0);
+  const fractionalOrder = scaledEntries
+    .map((entry, index) => ({ index, fraction: entry.fraction }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  if (fractionalOrder.length > 0) {
+    let incrementIndex = 0;
+    while (remainderUnits > 0) {
+      const target = fractionalOrder[incrementIndex % fractionalOrder.length];
+      baseUnits[target.index] += 1;
+      remainderUnits -= 1;
+      incrementIndex += 1;
+    }
+
+    const ascending = fractionalOrder.slice().reverse();
+    let decrementIndex = 0;
+    while (remainderUnits < 0 && ascending.length > 0) {
+      const target = ascending[decrementIndex % ascending.length];
+      if (baseUnits[target.index] > 0) {
+        baseUnits[target.index] -= 1;
+        remainderUnits += 1;
+      }
+      decrementIndex += 1;
+    }
+  }
+
+  if (remainderUnits !== 0 && baseUnits.length > 0) {
+    const lastIndex = baseUnits.length - 1;
+    const adjusted = Math.max(0, Math.min(totalUnits, baseUnits[lastIndex] + remainderUnits));
+    remainderUnits -= adjusted - baseUnits[lastIndex];
+    baseUnits[lastIndex] = adjusted;
+  }
+
+  return scaledEntries.map(({ config }, index) => {
+    const percentage = clamp(baseUnits[index] / percentageScale, 0, 100);
+    const count =
+      resolvedPopulation === null
+        ? null
+        : Math.max(0, Math.round((resolvedPopulation * percentage) / 100));
+    return {
+      key: config.key,
+      label: config.label,
+      color: config.color,
+      percentage,
+      population: count
+    };
   });
 }
 
@@ -1341,7 +1998,7 @@ function generateWoodElfGrovePopulationBreakdown(population, random) {
     random,
     {
       majorityIndex: 0,
-      majorityShareRange: [0.55, 0.75],
+      majorityShareRange: [0.9, 0.97],
       ensureMajority: true
     }
   );
@@ -1367,7 +2024,7 @@ function generateDwarfholdName(random) {
   return baseName;
 }
 
-function generateDwarfholdDetails(name, random) {
+function generateDwarfholdDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
   const genderRoll = randomFn();
@@ -1397,7 +2054,9 @@ function generateDwarfholdDetails(name, random) {
   );
   const majorExportCount = clamp(Math.floor(2 + randomFn() * 2), 1, dwarfholdExportOptions.length);
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
-  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn);
+  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn, {
+    hasNearbyHumanSettlement: Boolean(options && options.hasNearbyHumanSettlement)
+  });
 
   const classification = population >= 4000 ? 'greatDwarfhold' : 'dwarfhold';
   const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
@@ -1730,8 +2389,13 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
   }
 
   const toKey = (x, y) => `${x},${y}`;
-  const landTiles = [];
-
+  const cardinalNeighborOffsets = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1]
+  ];
+  let hasLand = false;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
@@ -1744,11 +2408,13 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         tile.factionInfluence = 0;
         continue;
       }
-      landTiles.push({ x, y });
+      tile.factionId = null;
+      tile.factionInfluence = 0;
+      hasLand = true;
     }
   }
 
-  if (landTiles.length === 0) {
+  if (!hasLand) {
     return { factions: [] };
   }
 
@@ -1769,38 +2435,65 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       x: seed.x,
       y: seed.y,
       label: typeof seed.label === 'string' ? seed.label.trim() : '',
-      type: seed.type || 'settlement'
+      type: seed.type || 'settlement',
+      population: Number.isFinite(seed.population) ? seed.population : null,
+      settlementKind:
+        typeof seed.settlementKind === 'string' && seed.settlementKind.trim().length > 0
+          ? seed.settlementKind.trim()
+          : null
     });
   });
-
-  const area = width * height;
-  const baseTarget = Math.round(3 + Math.sqrt(area) / 75);
-  const maxColors = Math.max(1, factionColorPalette.length);
-  const maxAvailable = Math.max(1, Math.min(maxColors, landTiles.length));
-  const desiredCount = Math.max(3, baseTarget);
-  const targetCount = Math.max(1, Math.min(maxAvailable, desiredCount));
-
-  if (uniqueSeeds.length < targetCount) {
-    const shuffledLand = shuffleArray(landTiles, randomFn);
-    for (let i = 0; i < shuffledLand.length && uniqueSeeds.length < targetCount; i += 1) {
-      const candidate = shuffledLand[i];
-      const key = toKey(candidate.x, candidate.y);
-      if (seenSeeds.has(key)) {
-        continue;
-      }
-      seenSeeds.add(key);
-      uniqueSeeds.push({
-        x: candidate.x,
-        y: candidate.y,
-        label: generateRealmName(randomFn),
-        type: 'wilds'
-      });
-    }
-  }
 
   if (uniqueSeeds.length === 0) {
     return { factions: [] };
   }
+
+  const adjustClaimRadiusByPopulation = (seed, baseRadius) => {
+    if (!seed || seed.type !== 'town') {
+      return baseRadius;
+    }
+
+    const population = Number(seed.population);
+    if (!Number.isFinite(population) || population <= 0) {
+      return baseRadius;
+    }
+
+    const minPopulation = 120;
+    const fullPopulation = 2000;
+    const minMultiplierBase = seed.settlementKind === 'village' ? 0.32 : 0.4;
+    const minMultiplier = clamp(minMultiplierBase, 0.1, 0.99);
+    const normalized = clamp((population - minPopulation) / (fullPopulation - minPopulation), 0, 1);
+    const multiplier = minMultiplier + normalized * (1 - minMultiplier);
+    const scaledRadius = baseRadius * multiplier;
+    return Math.max(8, scaledRadius);
+  };
+
+  const resolveClaimRadius = (seed) => {
+    if (!seed || !seed.type) {
+      return 26;
+    }
+    let baseRadius = 26;
+    switch (seed.type) {
+      case 'dwarfhold':
+        baseRadius = 36;
+        break;
+      case 'town':
+        baseRadius = 32;
+        break;
+      case 'tower':
+        baseRadius = 24;
+        break;
+      case 'evilWizardTower':
+        baseRadius = 24;
+        break;
+      case 'woodElfGrove':
+        baseRadius = 28;
+        break;
+      default:
+        baseRadius = 26;
+    }
+    return adjustClaimRadiusByPopulation(seed, baseRadius);
+  };
 
   const resolveFactionName = (seed) => {
     if (!seed) {
@@ -1826,23 +2519,131 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
   };
 
-  const shuffledSeeds = shuffleArray(uniqueSeeds, randomFn).slice(0, targetCount);
-  const factions = shuffledSeeds.map((seed, index) => ({
-    id: index,
-    name: resolveFactionName(seed),
-    color: pickFactionColor(index),
-    capital: {
-      x: seed.x,
-      y: seed.y,
-      label: seed.label || null,
-      type: seed.type || 'settlement'
-    },
-    territory: 0
-  }));
+  const shuffledSeeds = shuffleArray(uniqueSeeds, randomFn);
+  const factions = shuffledSeeds.map((seed, index) => {
+    const claimRadius = resolveClaimRadius(seed);
+    return {
+      id: index,
+      name: resolveFactionName(seed),
+      color: pickFactionColor(index),
+      capital: {
+        x: seed.x,
+        y: seed.y,
+        label: seed.label || null,
+        type: seed.settlementKind || seed.type || 'settlement'
+      },
+      territory: 0,
+      claimRadius,
+      contestScale: Math.max(4, claimRadius * 0.6)
+    };
+  });
 
-  const diagonal = Math.sqrt(width * width + height * height);
-  const influenceRadius = Math.max(18, diagonal * 0.4);
-  const contestScale = Math.max(6, diagonal * 0.12);
+  const factionById = new Map(factions.map((faction) => [faction.id, faction]));
+
+  const enforceFactionConnectivity = () => {
+    if (factions.length === 0) {
+      return;
+    }
+
+    const connectedByFactionId = new Map();
+
+    factions.forEach((faction) => {
+      const capital = faction.capital || {};
+      const cx = Number.isFinite(capital.x) ? capital.x : null;
+      const cy = Number.isFinite(capital.y) ? capital.y : null;
+
+      if (cx === null || cy === null || cx < 0 || cy < 0 || cx >= width || cy >= height) {
+        connectedByFactionId.set(faction.id, new Set());
+        return;
+      }
+
+      const startRow = tiles[cy];
+      const startTile = startRow ? startRow[cx] : null;
+      if (!startTile || startTile.factionId !== faction.id) {
+        connectedByFactionId.set(faction.id, new Set());
+        return;
+      }
+
+      const visited = new Set();
+      const queue = [[cx, cy]];
+      let index = 0;
+      visited.add(toKey(cx, cy));
+
+      while (index < queue.length) {
+        const [tx, ty] = queue[index];
+        index += 1;
+
+        for (let i = 0; i < cardinalNeighborOffsets.length; i += 1) {
+          const offset = cardinalNeighborOffsets[i];
+          const nx = tx + offset[0];
+          const ny = ty + offset[1];
+
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+
+          const neighborRow = tiles[ny];
+          const neighborTile = neighborRow ? neighborRow[nx] : null;
+          if (!neighborTile || neighborTile.factionId !== faction.id) {
+            continue;
+          }
+
+          const neighborKey = toKey(nx, ny);
+          if (!visited.has(neighborKey)) {
+            visited.add(neighborKey);
+            queue.push([nx, ny]);
+          }
+        }
+      }
+
+      connectedByFactionId.set(faction.id, visited);
+    });
+
+    for (let y = 0; y < height; y += 1) {
+      const row = tiles[y];
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < width; x += 1) {
+        const tile = row[x];
+        if (!tile || tile.factionId === null || tile.factionId === undefined) {
+          continue;
+        }
+        const connectedKeys = connectedByFactionId.get(tile.factionId);
+        if (!connectedKeys) {
+          tile.factionId = null;
+          tile.factionInfluence = 0;
+          continue;
+        }
+        const key = toKey(x, y);
+        if (!connectedKeys.has(key)) {
+          tile.factionId = null;
+          tile.factionInfluence = 0;
+        }
+      }
+    }
+
+    factions.forEach((faction) => {
+      faction.territory = 0;
+    });
+
+    for (let y = 0; y < height; y += 1) {
+      const row = tiles[y];
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < width; x += 1) {
+        const tile = row[x];
+        if (!tile || tile.factionId === null || tile.factionId === undefined) {
+          continue;
+        }
+        const faction = factionById.get(tile.factionId);
+        if (faction) {
+          faction.territory += 1;
+        }
+      }
+    }
+  };
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -1859,18 +2660,32 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
 
       let bestFaction = null;
       let bestDistance = Infinity;
+      let bestAdjustedDistance = Infinity;
+      let bestSuitability = 0;
       let secondDistance = Infinity;
+      let secondAdjustedDistance = Infinity;
 
       for (let i = 0; i < factions.length; i += 1) {
         const faction = factions[i];
+        const suitability = evaluateFactionTileSuitability(faction, tile, x, y);
+        if (suitability <= 0) {
+          continue;
+        }
+
         const dx = x - faction.capital.x;
         const dy = y - faction.capital.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < bestDistance) {
+        const adjustedDistance = distance / suitability;
+
+        if (adjustedDistance < bestAdjustedDistance) {
+          secondAdjustedDistance = bestAdjustedDistance;
           secondDistance = bestDistance;
+          bestAdjustedDistance = adjustedDistance;
           bestDistance = distance;
           bestFaction = faction;
-        } else if (distance < secondDistance) {
+          bestSuitability = suitability;
+        } else if (adjustedDistance < secondAdjustedDistance) {
+          secondAdjustedDistance = adjustedDistance;
           secondDistance = distance;
         }
       }
@@ -1881,19 +2696,30 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         continue;
       }
 
-      const proximity = clamp(1 - bestDistance / influenceRadius, 0, 1);
+      const effectiveClaimRadius = bestFaction.claimRadius * Math.max(bestSuitability, 0.0001);
+
+      if (bestDistance > effectiveClaimRadius) {
+        tile.factionId = null;
+        tile.factionInfluence = 0;
+        continue;
+      }
+
+      const proximity = clamp(1 - bestDistance / effectiveClaimRadius, 0, 1);
       let contestFactor = 1;
       if (Number.isFinite(secondDistance) && secondDistance < Infinity) {
         const gap = Math.max(0, secondDistance - bestDistance);
+        const contestScale = bestFaction.contestScale * (1 / Math.max(bestSuitability, 0.35));
         contestFactor = clamp(gap / contestScale, 0, 1);
       }
-      const influence = clamp(proximity * (0.7 + contestFactor * 0.3), 0, 1);
+      const influence = clamp(proximity * (0.7 + contestFactor * 0.3) * bestSuitability, 0, 1);
 
       tile.factionId = bestFaction.id;
       tile.factionInfluence = influence;
       bestFaction.territory += 1;
     }
   }
+
+  enforceFactionConnectivity();
 
   return { factions };
 }
@@ -2704,6 +3530,25 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function shuffleArray(items, random = Math.random) {
+  if (!Array.isArray(items) || items.length <= 1) {
+    return Array.isArray(items) ? items.slice() : [];
+  }
+  const result = items.slice();
+  const rng = typeof random === 'function' ? random : Math.random;
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const sample = clamp(rng(), 0, 1);
+    const j = Math.floor(sample * (i + 1));
+    const swapIndex = clamp(Number.isFinite(j) ? j : 0, 0, i);
+    if (swapIndex !== i) {
+      const temp = result[i];
+      result[i] = result[swapIndex];
+      result[swapIndex] = temp;
+    }
+  }
+  return result;
+}
+
 function compute1dDistanceTransform(sourceLine, length, outputLine, v, z) {
   let k = 0;
   v[0] = 0;
@@ -2869,6 +3714,7 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
     waterMask,
     treeOverlayKey,
     treeSnowOverlayKey,
+    treeOverlayKeys: allTreeOverlayKeys,
     isMountainOverlay,
     replaceableOverlays
   } = options;
@@ -2914,6 +3760,7 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
         waterMask,
         treeOverlayKey,
         treeSnowOverlayKey,
+        treeOverlayKeys: allTreeOverlayKeys,
         isMountainOverlay,
         replaceableOverlays
       });
@@ -2964,6 +3811,7 @@ function placeRoadOverlayAt(x, y, options) {
     waterMask,
     treeOverlayKey,
     treeSnowOverlayKey,
+    treeOverlayKeys: allTreeOverlayKeys,
     isMountainOverlay,
     replaceableOverlays
   } = options || {};
@@ -3008,6 +3856,10 @@ function placeRoadOverlayAt(x, y, options) {
     return;
   }
 
+  const treeOverlays = Array.isArray(allTreeOverlayKeys) && allTreeOverlayKeys.length > 0
+    ? allTreeOverlayKeys
+    : [treeOverlayKey, treeSnowOverlayKey].filter((key, index, array) => key && array.indexOf(key) === index);
+
   if (tile.overlay && tile.overlay !== overlayKey) {
     let canReplace = false;
     if (replaceableOverlays) {
@@ -3018,8 +3870,7 @@ function placeRoadOverlayAt(x, y, options) {
       }
     }
     if (!canReplace) {
-      const isTreeOverlay =
-        treeOverlayKey && (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey);
+      const isTreeOverlay = treeOverlays.length > 0 && treeOverlays.includes(tile.overlay);
       if (!isTreeOverlay) {
         return;
       }
@@ -3045,7 +3896,9 @@ function tryPlaceDwarfhold(candidate, options) {
     dwarfholdKey,
     greatDwarfholdKey,
     rng,
-    dwarfholds
+    dwarfholds,
+    towns,
+    nearbyTownDistanceSq
   } = options;
 
   if (!tiles || !Array.isArray(tiles[candidate.y])) {
@@ -3090,8 +3943,37 @@ function tryPlaceDwarfhold(candidate, options) {
     tile.overlay = mountainOverlayKey;
   }
 
+  const resolvedTownDistanceSq =
+    Number.isFinite(nearbyTownDistanceSq) && nearbyTownDistanceSq >= 0
+      ? nearbyTownDistanceSq
+      : dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius;
+
+  const hasNearbyHumanSettlement =
+    Array.isArray(towns) &&
+    towns.some((town) => {
+      if (!town || !Number.isFinite(town.x) || !Number.isFinite(town.y)) {
+        return false;
+      }
+      const dx = candidate.x - town.x;
+      const dy = candidate.y - town.y;
+      const distanceSq = dx * dx + dy * dy;
+      if (distanceSq > resolvedTownDistanceSq) {
+        return false;
+      }
+      const type = typeof town.type === 'string' ? town.type.toLowerCase() : '';
+      if (type === 'city' || type === 'town' || type === 'village') {
+        return true;
+      }
+      const classification =
+        typeof town.classification === 'string' ? town.classification.toLowerCase() : '';
+      if (classification === 'city' || classification === 'village' || classification.includes('town')) {
+        return true;
+      }
+      return false;
+    });
+
   const name = generateDwarfholdName(rng);
-  const details = generateDwarfholdDetails(name, rng);
+  const details = generateDwarfholdDetails(name, rng, { hasNearbyHumanSettlement });
   const structureKey =
     details.type === 'greatDwarfhold' && greatDwarfholdKey
       ? greatDwarfholdKey
@@ -4499,8 +5381,33 @@ function getFactionForTile(tile) {
 }
 
 function buildStructureTooltipContent(tile) {
-  if (!tile || !tile.structureName) {
+  if (!tile) {
     return null;
+  }
+
+  if (!tile.structureName) {
+    const biomeType = tile.biomeType;
+    const areaName = tile.areaName;
+    if (!biomeType && !areaName) {
+      return null;
+    }
+    const definition = biomeType ? biomeTypeDefinitions[biomeType] : null;
+    let biomeLabel = definition && definition.label ? definition.label : null;
+    if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
+      biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
+    }
+    const fallbackTitle = biomeLabel ? `Unnamed ${biomeLabel}` : 'Unnamed Region';
+    const resolvedTitle = areaName || fallbackTitle;
+    if (!resolvedTitle) {
+      return null;
+    }
+    const sections = [`<div class="tooltip-title">${escapeHtml(resolvedTitle)}</div>`];
+    if (biomeLabel) {
+      const listItems =
+        `<li><span class="tooltip-term">Biome</span><span class="tooltip-value">${escapeHtml(biomeLabel)}</span></li>`;
+      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+    return sections.join('');
   }
 
   const details = tile.structureDetails;
@@ -5444,8 +6351,8 @@ function buildRiverMap(
     1
   );
   const frequencyMultiplier = lerp(0.45, 1.75, frequencyNormalized);
-  const rainfallThreshold = lerp(0.65, 0.45, frequencyNormalized);
-  const weightThreshold = 0.12 * lerp(1.7, 0.6, frequencyNormalized);
+  const rainfallThreshold = lerp(0.6, 0.35, frequencyNormalized);
+  const weightThreshold = 0.12 * lerp(1.45, 0.45, frequencyNormalized);
   const majorRiverThreshold = lerp(0.45, 0.28, frequencyNormalized);
 
   const riverMap = new Uint8Array(width * height);
@@ -5471,7 +6378,11 @@ function buildRiverMap(
 
   candidates.sort((a, b) => b.weight - a.weight);
   const baseSources = Math.max(8, Math.floor((width * height) / 3200));
-  const maxSources = Math.max(4, Math.round(baseSources * frequencyMultiplier));
+  const sourceDensityMultiplier = lerp(1.8, 3.1, frequencyNormalized);
+  const maxSources = Math.max(
+    4,
+    Math.round(baseSources * frequencyMultiplier * sourceDensityMultiplier)
+  );
   const directions = [
     [0, -1],
     [1, 0],
@@ -5646,10 +6557,13 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     }
     tile.base = waterTileKey;
     tile.overlay = null;
+    tile.hillOverlay = null;
     tile.structure = null;
     tile.structureName = null;
     tile.structureDetails = null;
     tile.river = null;
+    tile.biomeType = null;
+    tile.areaName = null;
     waterMask[idx] = 1;
     return true;
   };
@@ -5956,8 +6870,8 @@ function createWorld(seedString) {
   const waterTileKey = resolveTileName('WATER');
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
-  // Disable desert generation so no sand tiles are produced on the world map.
-  const sandGenerationEnabled = false;
+  // Enable desert generation so sand tiles can appear on the world map.
+  const sandGenerationEnabled = true;
   const hasSandTile = sandGenerationEnabled && tileLookup.has('SAND');
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
   const landBaseKeys = new Set([grassTileKey]);
@@ -6006,6 +6920,7 @@ function createWorld(seedString) {
   const snowPresenceField = needSnowPresenceField ? new Uint8Array(width * height) : null;
   const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
   const icebergPresenceSeed = hasIcebergOverlay ? (seedNumber + 0x5ad1f32b) >>> 0 : 0;
+  let snowDistanceField = null;
 
   const marshNoiseSeed = hasMarshTile ? (seedNumber + 0x1922b3a5) >>> 0 : 0;
   const marshNoiseScale = hasMarshTile ? 3.9 + rng() * 3 : 1;
@@ -6229,12 +7144,13 @@ function createWorld(seedString) {
       Array.from({ length: width }, () => ({
         base: grassTileKey,
         overlay: null,
+        hillOverlay: null,
         structure: null,
         structureName: null,
         structureDetails: null,
         river: null,
-        factionId: null,
-        factionInfluence: 0
+        biomeType: null,
+        areaName: null
       }))
   );
   const dwarfholds = [];
@@ -6307,10 +7223,13 @@ function createWorld(seedString) {
       const tile = tiles[y][x];
       tile.base = isWater ? waterTileKey : determineLandBaseTile(x, y, heightValue);
       tile.overlay = null;
+      tile.hillOverlay = null;
       tile.structure = null;
       tile.structureName = null;
       tile.structureDetails = null;
       tile.river = null;
+      tile.biomeType = null;
+      tile.areaName = null;
     }
   }
 
@@ -7006,7 +7925,9 @@ function createWorld(seedString) {
           dwarfholdKey,
           greatDwarfholdKey,
           rng,
-          dwarfholds
+          dwarfholds,
+          towns,
+          nearbyTownDistanceSq: dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius
         };
 
         for (let i = 0; i < dwarfholdCandidates.length && placed.length < maxDwarfholds; i += 1) {
@@ -7115,10 +8036,13 @@ function createWorld(seedString) {
         const heightValue = elevationField[idx];
         tile.base = determineLandBaseTile(x, y, heightValue);
         tile.overlay = null;
+        tile.hillOverlay = null;
         tile.structure = null;
         tile.structureName = null;
         tile.structureDetails = null;
         tile.river = null;
+        tile.biomeType = null;
+        tile.areaName = null;
       }
     }
   }
@@ -7197,10 +8121,13 @@ function createWorld(seedString) {
         waterMask[idx] = 1;
         tile.base = waterTileKey;
         tile.overlay = null;
+        tile.hillOverlay = null;
         tile.structure = null;
         tile.structureName = null;
         tile.structureDetails = null;
         tile.river = null;
+        tile.biomeType = null;
+        tile.areaName = null;
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
@@ -7247,6 +8174,22 @@ function createWorld(seedString) {
     }
   }
 
+  if (hasSnowTile) {
+    const snowMask = new Uint8Array(width * height);
+    let snowCount = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (tile && tile.base === snowTileKey) {
+          snowMask[idx] = 1;
+          snowCount += 1;
+        }
+      }
+    }
+    snowDistanceField = snowCount > 0 ? computeEuclideanDistanceField(snowMask, width, height) : null;
+  }
+
   const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel, {
     frequencyNormalized: riverFrequencyNormalized
   });
@@ -7280,6 +8223,7 @@ function createWorld(seedString) {
         }
         if (tile.overlay && isMountainOverlay(tile.overlay)) {
           tile.overlay = null;
+          tile.hillOverlay = null;
         }
       }
     }
@@ -7403,8 +8347,12 @@ function createWorld(seedString) {
     }
   }
 
-  const hillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : null;
-  if (hillOverlayKey) {
+  const hillOverlayKeys = ['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key));
+  const hillOverlayKeySet = new Set(hillOverlayKeys);
+  const hillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : hillOverlayKeys[0] || null;
+  const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : hillOverlayKey;
+  const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayKeySet.has(overlayKey);
+  if (hillOverlayKeySet.size > 0 && hillOverlayKey) {
     const hillUpperThreshold = hasMountainTile
       ? mountainBaseThreshold
       : Math.min(0.92, seaLevel + 0.32);
@@ -7489,7 +8437,11 @@ function createWorld(seedString) {
             noiseValue * 0.12;
           const threshold = 0.5 - mountainBonus * 0.18;
           if (compositeScore > threshold) {
-            tile.overlay = hillOverlayKey;
+            const overlayKey = baseIsSnow ? snowHillOverlayKey : hillOverlayKey;
+            if (overlayKey) {
+              tile.hillOverlay = overlayKey;
+              tile.overlay = overlayKey;
+            }
           }
         }
       }
@@ -7515,8 +8467,9 @@ function createWorld(seedString) {
         if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
-        const overlayIsHill = tile.overlay === hillOverlayKey;
-        if (tile.overlay && !overlayIsHill) {
+        const overlayIsHill =
+          isHillOverlay(tile.overlay) || isHillOverlay(tile.hillOverlay);
+        if (tile.overlay && !isHillOverlay(tile.overlay)) {
           continue;
         }
         const heightValue = elevationField[idx];
@@ -7595,8 +8548,8 @@ function createWorld(seedString) {
           continue;
         }
         const overlay = tile.overlay;
-        const overlayIsHill = overlay === hillOverlayKey;
-        if (overlay && !overlayIsHill) {
+        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
+        if (overlay && !isHillOverlay(overlay)) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
@@ -7616,6 +8569,40 @@ function createWorld(seedString) {
   const hasTreeTile = tileLookup.has('TREE');
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
+  const treeJungleOverlayKey = hasTreeTile && tileLookup.has('JUNGLE_TREE') ? 'JUNGLE_TREE' : null;
+  const jungleSnowDistanceThresholdSq = 100 * 100;
+  const treeOverlayKeys = [treeOverlayKey, treeSnowOverlayKey, treeJungleOverlayKey].filter(
+    (key, index, array) => key && array.indexOf(key) === index
+  );
+  const isTreeOverlayKey = (overlayKey) =>
+    hasTreeTile && overlayKey != null && treeOverlayKeys.includes(overlayKey);
+  const selectTreeOverlayForTile = (tile, idx, x, y) => {
+    if (!tile || !treeOverlayKey) {
+      return treeOverlayKey;
+    }
+    if (tile.base === snowTileKey && treeSnowOverlayKey) {
+      return treeSnowOverlayKey;
+    }
+    if (treeJungleOverlayKey) {
+      const withinSnowRange =
+        snowDistanceField && snowDistanceField[idx] <= jungleSnowDistanceThresholdSq;
+      if (!withinSnowRange) {
+        return treeOverlayKey;
+      }
+      const normalizedY = (y + 0.5) / height;
+      const rainfallValue = rainfallField[idx];
+      const drainageValue = drainageField[idx];
+      const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 2, 0, 1);
+      const elevationAboveSea = elevationField[idx] - seaLevel;
+      const elevationHeatPenalty = clamp(Math.max(0, elevationAboveSea) * 2.8, 0, 1);
+      const heat = clamp(equatorialAlignment * 0.7 + (1 - elevationHeatPenalty) * 0.3, 0, 1);
+      const humidity = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
+      if (heat > 0.65 && humidity > 0.7) {
+        return treeJungleOverlayKey;
+      }
+    }
+    return treeOverlayKey;
+  };
   if (hasTreeTile) {
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
@@ -7693,8 +8680,10 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
+        const overlay = tile.overlay;
+        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
         if (
-          tile.overlay ||
+          (overlay && !overlayIsHill) ||
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
@@ -7711,7 +8700,10 @@ function createWorld(seedString) {
           if (tile.base === marshTileKey) {
             tile.base = grassTileKey;
           }
-          tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
+          if (!tile.hillOverlay && overlayIsHill) {
+            tile.hillOverlay = overlay;
+          }
+          tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
         }
       }
     }
@@ -7726,8 +8718,10 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
+          const overlay = tile.overlay;
+          const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
           if (
-            tile.overlay ||
+            (overlay && !overlayIsHill) ||
             !isLandBaseTile(tile.base) ||
             tile.structure ||
             tile.river ||
@@ -7777,8 +8771,10 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
+        const overlay = tile.overlay;
+        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
         if (
-          tile.overlay ||
+          (overlay && !overlayIsHill) ||
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
@@ -7790,7 +8786,10 @@ function createWorld(seedString) {
         if (tile.base === marshTileKey) {
           tile.base = grassTileKey;
         }
-        tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
+        if (!tile.hillOverlay && overlayIsHill) {
+          tile.hillOverlay = overlay;
+        }
+        tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
       }
     }
 
@@ -7801,11 +8800,7 @@ function createWorld(seedString) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
           const tile = tiles[y][x];
-          if (
-            !tile ||
-            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
-            tile.structure
-          ) {
+          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -7849,11 +8844,7 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (
-            !tile ||
-            (tile.overlay !== treeOverlayKey && tile.overlay !== treeSnowOverlayKey) ||
-            tile.structure
-          ) {
+          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
@@ -7869,9 +8860,7 @@ function createWorld(seedString) {
   }
 
   if (towns.length > 1) {
-    const roadReplaceableOverlays = new Set(
-      [treeOverlayKey, treeSnowOverlayKey, hillOverlayKey].filter((key) => key)
-    );
+    const roadReplaceableOverlays = new Set([...treeOverlayKeys, ...hillOverlayKeys]);
     connectTownsWithinRange(tiles, towns, {
       maxDistance: 25,
       overlayKey: TOWN_ROAD_OVERLAY_KEY,
@@ -7881,6 +8870,7 @@ function createWorld(seedString) {
       waterMask,
       treeOverlayKey,
       treeSnowOverlayKey,
+      treeOverlayKeys,
       isMountainOverlay,
       replaceableOverlays: roadReplaceableOverlays
     });
@@ -7899,10 +8889,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -7970,10 +8957,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -8011,10 +8995,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (tile.overlay) {
@@ -8079,10 +9060,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (
-          treeOverlayKey &&
-          (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey)
-        ) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         if (tile.overlay) {
@@ -8149,37 +9127,155 @@ function createWorld(seedString) {
     }
   }
 
+  const classifyTileBiome = (tile) => {
+    if (!tile) {
+      return null;
+    }
+    if (tile.base === waterTileKey) {
+      return 'water';
+    }
+    if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+      return 'mountain';
+    }
+    if (hasSandTile && tile.base === sandTileKey) {
+      return 'desert';
+    }
+    if (hasMarshTile && tile.base === marshTileKey) {
+      return 'marsh';
+    }
+    if (hasSnowTile && tile.base === snowTileKey) {
+      if (isTreeOverlayKey(tile.overlay)) {
+        return 'forest';
+      }
+      return 'tundra';
+    }
+    if (isTreeOverlayKey(tile.overlay)) {
+      return 'forest';
+    }
+    return 'grassland';
+  };
+
+  const biomeVisited = new Uint8Array(width * height);
+  const biomeClusters = [];
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (biomeVisited[idx]) {
+        continue;
+      }
+      const tile = tiles[y][x];
+      const baseBiome = classifyTileBiome(tile);
+      if (!baseBiome) {
+        biomeVisited[idx] = 1;
+        if (tile) {
+          tile.biomeType = null;
+          tile.areaName = null;
+        }
+        continue;
+      }
+      const stack = [idx];
+      biomeVisited[idx] = 1;
+      const members = [];
+      let touchesEdge = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+      while (stack.length > 0) {
+        const current = stack.pop();
+        const cx = current % width;
+        const cy = Math.floor(current / width);
+        members.push(current);
+        if (cx === 0 || cy === 0 || cx === width - 1 || cy === height - 1) {
+          touchesEdge = true;
+        }
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = cx + cardinalOffsets[i][0];
+          const ny = cy + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (biomeVisited[nIdx]) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          const neighborBiome = classifyTileBiome(neighborTile);
+          if (neighborBiome === baseBiome) {
+            biomeVisited[nIdx] = 1;
+            stack.push(nIdx);
+          }
+        }
+      }
+      biomeClusters.push({ type: baseBiome, indices: members, touchesEdge, size: members.length });
+    }
+  }
+
+  const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
+
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    let resolvedType = cluster.type;
+    if (resolvedType === 'water') {
+      const qualifiesAsOcean = cluster.touchesEdge || cluster.size >= oceanSizeThreshold;
+      resolvedType = qualifiesAsOcean ? 'ocean' : 'lake';
+    }
+    const definition = biomeTypeDefinitions[resolvedType] || null;
+    const context = { size: cluster.size, touchesEdge: cluster.touchesEdge };
+    const generatedName = generateBiomeAreaName(resolvedType, rng, context);
+    const fallbackLabel = definition ? definition.label : null;
+    const resolvedName = generatedName || (fallbackLabel ? `Unnamed ${fallbackLabel}` : null);
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      const cx = clusterIdx % width;
+      const cy = Math.floor(clusterIdx / width);
+      const clusterTile = tiles[cy][cx];
+      if (!clusterTile) {
+        continue;
+      }
+      clusterTile.biomeType = resolvedType;
+      clusterTile.areaName = resolvedName;
+    }
+  }
+
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
   const settlementSeeds = [
     ...dwarfholds.map((hold) => ({
       x: hold.x,
       y: hold.y,
       label: hold.name || hold.structureName || 'Hold',
-      type: 'dwarfhold'
+      type: 'dwarfhold',
+      population: Number.isFinite(hold?.population) ? hold.population : null,
+      settlementKind: typeof hold?.type === 'string' ? hold.type : null
     })),
     ...towns.map((town) => ({
       x: town.x,
       y: town.y,
       label: town.name || town.structureName || 'Town',
-      type: 'town'
+      type: 'town',
+      population: Number.isFinite(town?.population) ? town.population : null,
+      settlementKind: typeof town?.type === 'string' ? town.type : null
     })),
     ...towers.map((tower) => ({
       x: tower.x,
       y: tower.y,
       label: tower.name || tower.structureName || 'Tower',
-      type: 'tower'
+      type: 'tower',
+      population: Number.isFinite(tower?.population) ? tower.population : null,
+      settlementKind: typeof tower?.type === 'string' ? tower.type : null
     })),
     ...evilWizardTowers.map((tower) => ({
       x: tower.x,
       y: tower.y,
       label: tower.name || tower.structureName || "Wizard's Tower",
-      type: 'evilWizardTower'
+      type: 'evilWizardTower',
+      population: Number.isFinite(tower?.population) ? tower.population : null,
+      settlementKind: typeof tower?.type === 'string' ? tower.type : null
     })),
     ...woodElfGroves.map((grove) => ({
       x: grove.x,
       y: grove.y,
       label: grove.name || grove.structureName || 'Grove',
-      type: 'woodElfGrove'
+      type: 'woodElfGrove',
+      population: Number.isFinite(grove?.population) ? grove.population : null,
+      settlementKind: typeof grove?.type === 'string' ? grove.type : null
     }))
   ];
 
@@ -8321,6 +9417,26 @@ function drawWorld(world) {
         drawSize,
         drawSize
       );
+
+      if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
+        const hillDefinition = tileLookup.get(cell.hillOverlay);
+        if (hillDefinition) {
+          const hillSheet = state.tileSheets[hillDefinition.sheet];
+          if (hillSheet && hillSheet.image) {
+            ctx.drawImage(
+              hillSheet.image,
+              hillDefinition.sx,
+              hillDefinition.sy,
+              hillDefinition.size,
+              hillDefinition.size,
+              x * drawSize,
+              y * drawSize,
+              drawSize,
+              drawSize
+            );
+          }
+        }
+      }
 
       if (cell.overlay) {
         const overlayDefinition = tileLookup.get(cell.overlay);
