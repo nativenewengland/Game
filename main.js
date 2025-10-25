@@ -8250,6 +8250,7 @@ function createWorld(seedString) {
   const towers = [];
   const caves = [];
   const evilWizardTowers = [];
+  const towerProximityPoints = [];
   const woodElfGroves = [];
   const lizardmenCities = [];
   const orcCamps = [];
@@ -8257,6 +8258,11 @@ function createWorld(seedString) {
   const monasteries = [];
   const castles = [];
   const saintShrines = [];
+  const recordTowerProximityPoint = (x, y) => {
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      towerProximityPoints.push({ x, y });
+    }
+  };
   const computeNearestDistanceSq = (x, y, points) => {
     if (!Array.isArray(points) || points.length === 0) {
       return Infinity;
@@ -10514,6 +10520,20 @@ function createWorld(seedString) {
             break;
           }
         }
+        if (!tooClose) {
+          for (let j = 0; j < towerProximityPoints.length; j += 1) {
+            const other = towerProximityPoints[j];
+            if (!other) {
+              continue;
+            }
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+        }
         if (tooClose) {
           continue;
         }
@@ -10541,6 +10561,7 @@ function createWorld(seedString) {
         tile.structureName = name;
         tile.structureDetails = details;
         placed.push(candidate);
+        recordTowerProximityPoint(candidate.x, candidate.y);
         evilWizardTowers.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
@@ -10617,6 +10638,20 @@ function createWorld(seedString) {
             break;
           }
         }
+        if (!tooClose) {
+          for (let j = 0; j < towerProximityPoints.length; j += 1) {
+            const other = towerProximityPoints[j];
+            if (!other) {
+              continue;
+            }
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+        }
         if (tooClose) {
           continue;
         }
@@ -10641,6 +10676,7 @@ function createWorld(seedString) {
         tile.structureName = name;
         tile.structureDetails = details;
         placed.push(candidate);
+        recordTowerProximityPoint(candidate.x, candidate.y);
         towers.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
