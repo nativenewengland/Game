@@ -940,12 +940,13 @@ button:hover:not(:disabled) {
   content: "";
   position: absolute;
   inset: 0;
+  background-image: url('tilesheet/nametype.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   image-rendering: pixelated;
   pointer-events: none;
-  display: none;
+  z-index: 0;
 }
 
 .dwarf-name-input {
