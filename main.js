@@ -7614,6 +7614,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.areaName = null;
     tile.waterDepth = 0;
     tile.coastProximity = 0;
+    tile.desertProximity = 0;
     waterMask[idx] = 1;
     return true;
   };
@@ -8225,7 +8226,8 @@ function createWorld(seedString) {
         biomeType: null,
         areaName: null,
         waterDepth: 0,
-        coastProximity: 0
+        coastProximity: 0,
+        desertProximity: 0
       }))
   );
   const dwarfholds = [];
@@ -8332,6 +8334,7 @@ function createWorld(seedString) {
       tile.areaName = null;
       tile.waterDepth = 0;
       tile.coastProximity = 0;
+      tile.desertProximity = 0;
     }
   }
 
@@ -8510,6 +8513,55 @@ function createWorld(seedString) {
           if (nearSnow) {
             tiles[y][x].base = grassTileKey;
             desertMask[idx] = 0;
+          }
+        }
+      }
+    }
+  }
+
+  if (hasSandTile) {
+    const desertMaskForDistance = new Uint8Array(width * height);
+    let desertTileCount = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        const baseKey = tile.base;
+        const isDesertTile =
+          baseKey === sandTileKey || (hasBadlandsTile && baseKey === badlandsTileKey);
+        if (isDesertTile) {
+          desertMaskForDistance[idx] = 1;
+          desertTileCount += 1;
+          tile.desertProximity = 0;
+        } else {
+          desertMaskForDistance[idx] = 0;
+        }
+      }
+    }
+
+    if (desertTileCount > 0) {
+      const desertDistanceField = computeEuclideanDistanceField(
+        desertMaskForDistance,
+        width,
+        height
+      );
+      const desertTransitionFalloff = 4.5;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (!tile || desertMaskForDistance[idx]) {
+            continue;
+          }
+          if (tile.base === grassTileKey) {
+            const distanceToDesert = Math.sqrt(desertDistanceField[idx]);
+            const proximity = clamp(1 - distanceToDesert / desertTransitionFalloff, 0, 1);
+            tile.desertProximity = proximity;
+          } else {
+            tile.desertProximity = 0;
           }
         }
       }
@@ -9369,6 +9421,7 @@ function createWorld(seedString) {
           const depth = Math.sqrt(waterDistanceField[idx]);
           tile.waterDepth = clamp(depth * depthNormalization, 0, 1);
           tile.coastProximity = 0;
+          tile.desertProximity = 0;
         } else {
           const distanceToWater = Math.sqrt(landDistanceField[idx]);
           const proximity = clamp(1 - distanceToWater / coastlineFalloff, 0, 1);
@@ -11761,12 +11814,21 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     return;
   }
   const coast = clamp(Number.isFinite(cell.coastProximity) ? cell.coastProximity : 0, 0, 1);
-  if (coast <= 0.01) {
-    return;
+  if (coast > 0.01) {
+    const alpha = coast * 0.4;
+    ctx.fillStyle = `rgba(226, 208, 167, ${alpha})`;
+    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
   }
-  const alpha = coast * 0.4;
-  ctx.fillStyle = `rgba(226, 208, 167, ${alpha})`;
-  ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+  const desertProximity = clamp(
+    Number.isFinite(cell.desertProximity) ? cell.desertProximity : 0,
+    0,
+    1
+  );
+  if (desertProximity > 0.01) {
+    const desertAlpha = desertProximity * 0.35;
+    ctx.fillStyle = `rgba(233, 214, 166, ${desertAlpha})`;
+    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+  }
 }
 
 function drawWorld(world) {
