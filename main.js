@@ -5067,10 +5067,6 @@ function createWorld(seedString) {
   const snowPresenceField = needSnowPresenceField ? new Uint8Array(width * height) : null;
   const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
   const icebergPresenceSeed = hasIcebergOverlay ? (seedNumber + 0x5ad1f32b) >>> 0 : 0;
-  const icebergPresenceScale = hasIcebergOverlay ? 1.6 + rng() * 1.8 : 1;
-  const icebergPresenceOffsetX = hasIcebergOverlay ? rng() * 8192 : 0;
-  const icebergPresenceOffsetY = hasIcebergOverlay ? rng() * 8192 : 0;
-  const icebergPresenceThreshold = hasIcebergOverlay ? 0.55 + rng() * 0.12 : 1;
 
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
@@ -6164,59 +6160,24 @@ function createWorld(seedString) {
   }
 
   if (hasIcebergOverlay && snowPresenceField) {
-    let icebergPlacementCount = 0;
-    let strongestIcebergCandidate = null;
-    const icebergOverlayKeySet = new Set(icebergOverlayKeys);
+    const icebergChance = 1 / 50;
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
-        if (!waterMask[idx]) {
+        if (!waterMask[idx] || !snowPresenceField[idx]) {
           continue;
         }
-        if (!snowPresenceField[idx]) {
-          continue;
-        }
-        const normalizedX = (x + 0.5) / width;
         const normalizedY = (y + 0.5) / height;
-        const icebergPresenceNoise = octaveNoise(
-          (normalizedX + icebergPresenceOffsetX) * icebergPresenceScale,
-          (normalizedY + icebergPresenceOffsetY) * icebergPresenceScale,
-          icebergPresenceSeed,
-          3,
-          0.55,
-          2.15
-        );
-        if (
-          !strongestIcebergCandidate ||
-          icebergPresenceNoise > strongestIcebergCandidate.noise
-        ) {
-          strongestIcebergCandidate = { x, y, noise: icebergPresenceNoise };
+        const latitude = 1 - normalizedY;
+        if (latitude < snowLatitudeStart) {
+          continue;
         }
-        if (icebergPresenceNoise < icebergPresenceThreshold) {
+        const presenceNoise = hashCoords(x, y, icebergPresenceSeed);
+        if (presenceNoise >= icebergChance) {
           continue;
         }
         const tile = tiles[y][x];
         if (!tile || tile.overlay) {
-          continue;
-        }
-        let hasAdjacentIceberg = false;
-        for (let i = 0; i < neighborOffsets8.length; i += 1) {
-          const nx = x + neighborOffsets8[i][0];
-          const ny = y + neighborOffsets8[i][1];
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
-            continue;
-          }
-          const neighborTile = tiles[ny][nx];
-          if (
-            neighborTile &&
-            neighborTile.overlay &&
-            icebergOverlayKeySet.has(neighborTile.overlay)
-          ) {
-            hasAdjacentIceberg = true;
-            break;
-          }
-        }
-        if (hasAdjacentIceberg) {
           continue;
         }
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
@@ -6226,39 +6187,6 @@ function createWorld(seedString) {
         );
         const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
         tile.overlay = overlayKey;
-        icebergPlacementCount += 1;
-      }
-    }
-    if (icebergPlacementCount === 0 && strongestIcebergCandidate) {
-      const { x, y } = strongestIcebergCandidate;
-      const tile = tiles[y][x];
-      if (tile && !tile.overlay) {
-        let hasAdjacentIceberg = false;
-        for (let i = 0; i < neighborOffsets8.length; i += 1) {
-          const nx = x + neighborOffsets8[i][0];
-          const ny = y + neighborOffsets8[i][1];
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
-            continue;
-          }
-          const neighborTile = tiles[ny][nx];
-          if (
-            neighborTile &&
-            neighborTile.overlay &&
-            icebergOverlayKeySet.has(neighborTile.overlay)
-          ) {
-            hasAdjacentIceberg = true;
-            break;
-          }
-        }
-        if (!hasAdjacentIceberg) {
-          const variantNoise = hashCoords(x, y, icebergVariantSeed);
-          const variantIndex = Math.min(
-            icebergOverlayKeys.length - 1,
-            Math.floor(variantNoise * icebergOverlayKeys.length)
-          );
-          const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
-          tile.overlay = overlayKey;
-        }
       }
     }
   }
