@@ -11503,6 +11503,88 @@ function createWorld(seedString) {
     }
   }
 
+  const forestJungleBufferTiles = [];
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const tile = tiles[y][x];
+      if (!tile || tile.structure || tileHasTownSettlement(tile)) {
+        continue;
+      }
+      const biomeType = tile.biomeType;
+      if (biomeType !== 'forest' && biomeType !== 'jungle') {
+        continue;
+      }
+      let touchesConflict = false;
+      for (let i = 0; i < neighborOffsets8.length; i += 1) {
+        const nx = x + neighborOffsets8[i][0];
+        const ny = y + neighborOffsets8[i][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (!neighborTile) {
+          continue;
+        }
+        const neighborBiome = neighborTile.biomeType;
+        if (!neighborBiome) {
+          continue;
+        }
+        if (
+          (biomeType === 'forest' && neighborBiome === 'jungle') ||
+          (biomeType === 'jungle' && neighborBiome === 'forest')
+        ) {
+          touchesConflict = true;
+          break;
+        }
+      }
+      if (touchesConflict) {
+        forestJungleBufferTiles.push({ x, y, idx: y * width + x });
+      }
+    }
+  }
+
+  if (forestJungleBufferTiles.length > 0) {
+    const bufferAreaNameCache = new Map();
+    const getBufferAreaName = (type) => {
+      if (bufferAreaNameCache.has(type)) {
+        return bufferAreaNameCache.get(type);
+      }
+      const definition = biomeTypeDefinitions[type] || null;
+      const fallback = definition && definition.label ? `Unnamed ${definition.label}` : null;
+      bufferAreaNameCache.set(type, fallback);
+      return fallback;
+    };
+
+    for (let i = 0; i < forestJungleBufferTiles.length; i += 1) {
+      const { x, y, idx } = forestJungleBufferTiles[i];
+      const tile = tiles[y][x];
+      if (!tile) {
+        continue;
+      }
+      const moisture = Number.isFinite(moistureField[idx]) ? moistureField[idx] : 0;
+      let replacementType = moisture > 0.68 && hasMarshTile ? 'marsh' : 'grassland';
+      if (replacementType === 'marsh' && !hasMarshTile) {
+        replacementType = 'grassland';
+      }
+
+      tile.biomeType = replacementType;
+      tile.areaName = getBufferAreaName(replacementType);
+
+      if (replacementType === 'marsh' && hasMarshTile) {
+        tile.base = marshTileKey;
+      } else if (replacementType === 'grassland' && tile.base === marshTileKey && grassTileKey) {
+        tile.base = grassTileKey;
+      }
+
+      if (tile.overlay && isTreeOverlayKey(tile.overlay)) {
+        tile.overlay = null;
+      }
+      if (tile.hillOverlay && isTreeOverlayKey(tile.hillOverlay)) {
+        tile.hillOverlay = null;
+      }
+    }
+  }
+
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
   const settlementSeeds = [
     ...dwarfholds.map((hold) => ({
