@@ -1646,10 +1646,18 @@ const dwarfBeardRows = {
   default: 26
 };
 
+const dwarfBaseBodyTint = '#5b473c';
+
+const dwarfPortraitBaseFrames = {
+  male: { sheet: 'body', col: 4, row: 8, tint: dwarfBaseBodyTint, offsetY: 4 },
+  female: { sheet: 'body', col: 4, row: 9, tint: dwarfBaseBodyTint, offsetY: 4 }
+};
+
 const dwarfPortraitConfig = {
   tileSize: 32,
   scale: 4,
-  baseFrame: { sheet: 'body', col: 4, row: 8, tint: '#5b473c', offsetY: 4 },
+  baseFrame: dwarfPortraitBaseFrames.male,
+  baseFrames: dwarfPortraitBaseFrames,
   head: { sheet: 'eyes', row: 0, offsetY: 0 },
   hairOffsetY: -2,
   beardOffsetY: 2,
@@ -2315,6 +2323,15 @@ function ensurePortraitContext() {
   return dwarfPortraitState.ctx;
 }
 
+function getBaseBodyFrame(dwarf) {
+  const frames = dwarfPortraitConfig.baseFrames;
+  const gender = dwarf?.gender;
+  if (gender && frames && Object.prototype.hasOwnProperty.call(frames, gender)) {
+    return frames[gender];
+  }
+  return dwarfPortraitConfig.baseFrame || null;
+}
+
 function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
   const sheet = dwarfSpriteSheets[sheetKey];
   if (!sheet?.image) {
@@ -2415,13 +2432,14 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
   if (!canvas) {
     return;
   }
-  const { tileSize, scale, baseFrame, head, eyePositions, eyeSize } = dwarfPortraitConfig;
+  const { tileSize, scale, head, eyePositions, eyeSize } = dwarfPortraitConfig;
   const destSize = tileSize * scale;
   const baseX = Math.floor((canvas.width - destSize) / 2);
   const baseY = Math.floor((canvas.height - destSize) / 2);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  const baseFrame = getBaseBodyFrame(dwarf);
   if (baseFrame) {
     drawTintedSprite(ctx, baseFrame.sheet, baseFrame, baseX, baseY, scale, baseFrame.tint);
   }
