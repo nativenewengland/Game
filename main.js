@@ -4498,138 +4498,278 @@ function getFactionForTile(tile) {
   return world.factions[factionIndex] || null;
 }
 
-function buildStructureTooltipContent(tile) {
-  if (!tile || !tile.structureName) {
-    return null;
+const terrainLabelByKey = {
+  base: {
+    GRASS: 'Grassland',
+    SAND: 'Desert',
+    SNOW: 'Snowfield',
+    MARSH: 'Marshland',
+    WATER: 'Ocean',
+    TREE: 'Forest',
+    TREE_SNOW: 'Snowy Forest'
+  },
+  overlay: {
+    TREE: 'Forest',
+    TREE_SNOW: 'Snowy Forest',
+    HILLS: 'Hills',
+    MOUNTAIN: 'Mountain',
+    MOUNTAIN_TOP_A: 'Mountain Peak',
+    MOUNTAIN_TOP_B: 'Mountain Peak',
+    MOUNTAIN_BOTTOM_A: 'Mountain Foothills',
+    MOUNTAIN_BOTTOM_B: 'Mountain Foothills',
+    TOWN_ROAD: 'Road'
+  }
+};
+
+function capitalize(word) {
+  if (!word) {
+    return '';
+  }
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+function humanizeKeySegment(segment) {
+  if (!segment) {
+    return '';
+  }
+  const directionLabels = { N: 'North', S: 'South', E: 'East', W: 'West' };
+  if (/^[NSEW]+$/.test(segment)) {
+    const parts = segment.split('').map((char) => directionLabels[char] || char);
+    return parts
+      .map((part, index) => (index === 0 ? capitalize(part) : part.toLowerCase()))
+      .join('-');
+  }
+  return capitalize(segment);
+}
+
+function humanizeKey(key) {
+  if (!key) {
+    return '';
+  }
+  return key
+    .split('_')
+    .map((segment) => humanizeKeySegment(segment))
+    .filter(Boolean)
+    .join(' ');
+}
+
+function getTerrainLabel(category, key) {
+  if (!key) {
+    return 'None';
+  }
+  const lookup = terrainLabelByKey[category];
+  if (lookup && lookup[key]) {
+    return lookup[key];
+  }
+  return humanizeKey(key);
+}
+
+function describeRiverState(riverKey) {
+  if (!riverKey) {
+    return 'None';
+  }
+  const majorPrefix = 'RIVER_MAJOR_';
+  const basePrefix = 'RIVER_';
+  let descriptor = riverKey;
+  let labelPrefix = '';
+  if (riverKey.startsWith(majorPrefix)) {
+    descriptor = riverKey.slice(majorPrefix.length);
+    labelPrefix = 'Major river';
+  } else if (riverKey.startsWith(basePrefix)) {
+    descriptor = riverKey.slice(basePrefix.length);
+    labelPrefix = 'River';
+  }
+  let descriptorLabel = '';
+  if (descriptor === '0') {
+    descriptorLabel = 'Source';
+  } else {
+    descriptorLabel = humanizeKey(descriptor);
+  }
+  if (labelPrefix) {
+    return descriptorLabel ? `${labelPrefix} ${descriptorLabel}` : labelPrefix;
+  }
+  return descriptorLabel || 'None';
+}
+
+function buildTerrainSection(tile, options = {}) {
+  if (!tile) {
+    return '';
+  }
+  const { isPrimary = false } = options;
+  const headingLabel = isPrimary ? 'Terrain Details' : 'Terrain';
+  const headingTag = isPrimary ? 'title' : 'subtitle';
+  const baseLabel = getTerrainLabel('base', tile.base) || 'Unknown';
+  const overlayLabel = getTerrainLabel('overlay', tile.overlay);
+  const riverLabel = describeRiverState(tile.river);
+  const entries = [
+    { label: 'Base', value: baseLabel || 'Unknown' },
+    { label: 'Overlay', value: overlayLabel || 'None' },
+    { label: 'River', value: riverLabel || 'None' }
+  ];
+  const listItems = entries
+    .map(
+      ({ label, value }) =>
+        `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+          value
+        )}</span></li>`
+    )
+    .join('');
+  return `
+    <div class="tooltip-${headingTag}">${escapeHtml(headingLabel)}</div>
+    <ul class="tooltip-list">${listItems}</ul>
+  `;
+}
+
+function buildTileTooltipContent(tile) {
+  if (!tile) {
+    return '';
   }
 
-  const details = tile.structureDetails;
-  const isSettlement =
-    details && (details.isSettlement || (details.type && settlementDetailTypes.has(details.type)));
-  if (isSettlement) {
-    const sections = [];
-    const entries = [];
-    const resolvedName = details.name || tile.structureName;
-    sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+  let structureMarkup = '';
+  if (tile.structureName) {
+    const details = tile.structureDetails;
+    const isSettlement =
+      details && (details.isSettlement || (details.type && settlementDetailTypes.has(details.type)));
+    if (isSettlement) {
+      const sections = [];
+      const entries = [];
+      const resolvedName = details.name || tile.structureName;
+      sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
 
-    const faction = getFactionForTile(tile);
-    if (faction && faction.name) {
-      entries.push({ label: 'Realm', value: faction.name });
-      const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
-      if (influenceDescription) {
-        entries.push({ label: 'Territorial Hold', value: influenceDescription });
+      const faction = getFactionForTile(tile);
+      if (faction && faction.name) {
+        entries.push({ label: 'Realm', value: faction.name });
+        const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
+        if (influenceDescription) {
+          entries.push({ label: 'Territorial Hold', value: influenceDescription });
+        }
       }
-    }
 
-    if (details.classification) {
-      entries.push({ label: 'Classification', value: details.classification });
-    }
-
-    if (Number.isFinite(details.population)) {
-      const populationValue = Math.max(0, Math.round(details.population));
-      const formattedPopulation = populationValue.toLocaleString('en-US');
-      const populationLabel = details.populationLabel || 'Population';
-      const populationDescriptor = details.populationDescriptor || null;
-      const populationDisplay = populationDescriptor
-        ? `${formattedPopulation} ${populationDescriptor}`
-        : formattedPopulation;
-      entries.push({ label: populationLabel, value: populationDisplay });
-    }
-
-    if (details.ruler) {
-      const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
-      const rulerName = details.ruler.name || '';
-      const combined = `${rulerTitle}${rulerName}`.trim();
-      if (combined) {
-        const rulerLabel = details.ruler.label || 'Ruler';
-        entries.push({ label: rulerLabel, value: combined });
+      if (details.classification) {
+        entries.push({ label: 'Classification', value: details.classification });
       }
-    }
 
-    if (Number.isFinite(details.foundedYearsAgo)) {
-      const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
-      entries.push({ label: 'Founded', value: `${foundedValue} years ago` });
-    }
-
-    const prominentGroup = details.prominentGroup || details.prominentClan;
-    if (prominentGroup) {
-      const prominentLabel = details.prominentGroupLabel || (details.prominentClan ? 'Prominent Clan' : 'Prominent Group');
-      entries.push({ label: prominentLabel, value: prominentGroup });
-    }
-
-    if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
-      const uniqueGuilds = Array.from(
-        new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
-      );
-      if (uniqueGuilds.length > 0) {
-        const guildsLabel = details.majorGuildsLabel || 'Major Guilds';
-        entries.push({ label: guildsLabel, value: uniqueGuilds.join(', ') });
+      if (Number.isFinite(details.population)) {
+        const populationValue = Math.max(0, Math.round(details.population));
+        const formattedPopulation = populationValue.toLocaleString('en-US');
+        const populationLabel = details.populationLabel || 'Population';
+        const populationDescriptor = details.populationDescriptor || null;
+        const populationDisplay = populationDescriptor
+          ? `${formattedPopulation} ${populationDescriptor}`
+          : formattedPopulation;
+        entries.push({ label: populationLabel, value: populationDisplay });
       }
-    }
 
-    if (Array.isArray(details.majorExports) && details.majorExports.length > 0) {
-      const uniqueExports = Array.from(
-        new Set(details.majorExports.filter((item) => typeof item === 'string' && item.trim()))
-      );
-      if (uniqueExports.length > 0) {
-        const exportsLabel = details.majorExportsLabel || 'Major Exports';
-        entries.push({ label: exportsLabel, value: uniqueExports.join(', ') });
+      if (details.ruler) {
+        const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
+        const rulerName = details.ruler.name || '';
+        const combined = `${rulerTitle}${rulerName}`.trim();
+        if (combined) {
+          const rulerLabel = details.ruler.label || 'Ruler';
+          entries.push({ label: rulerLabel, value: combined });
+        }
       }
-    }
 
-    if (entries.length > 0) {
-      const listItems = entries
-        .map(
-          ({ label, value }) =>
-            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
-              value
-            )}</span></li>`
-        )
-        .join('');
-      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
-    }
+      if (Number.isFinite(details.foundedYearsAgo)) {
+        const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
+        entries.push({ label: 'Founded', value: `${foundedValue} years ago` });
+      }
 
-    const breakdownSection = buildPopulationBreakdownSection(resolvedName, details.populationBreakdown);
+      const prominentGroup = details.prominentGroup || details.prominentClan;
+      if (prominentGroup) {
+        const prominentLabel =
+          details.prominentGroupLabel || (details.prominentClan ? 'Prominent Clan' : 'Prominent Group');
+        entries.push({ label: prominentLabel, value: prominentGroup });
+      }
 
-    if (breakdownSection) {
-      sections.push(breakdownSection);
-    }
+      if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
+        const uniqueGuilds = Array.from(
+          new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
+        );
+        if (uniqueGuilds.length > 0) {
+          const guildsLabel = details.majorGuildsLabel || 'Major Guilds';
+          entries.push({ label: guildsLabel, value: uniqueGuilds.join(', ') });
+        }
+      }
 
-    if (details.hallmark) {
-      const hallmarkLabel = details.hallmarkLabel;
-      const noteContent = escapeHtml(details.hallmark);
-      if (hallmarkLabel) {
-        sections.push(`
-          <div class="tooltip-subtitle">${escapeHtml(hallmarkLabel)}</div>
-          <p class="tooltip-note">${noteContent}</p>
-        `);
+      if (Array.isArray(details.majorExports) && details.majorExports.length > 0) {
+        const uniqueExports = Array.from(
+          new Set(details.majorExports.filter((item) => typeof item === 'string' && item.trim()))
+        );
+        if (uniqueExports.length > 0) {
+          const exportsLabel = details.majorExportsLabel || 'Major Exports';
+          entries.push({ label: exportsLabel, value: uniqueExports.join(', ') });
+        }
+      }
+
+      if (Array.isArray(details.majorImports) && details.majorImports.length > 0) {
+        const uniqueImports = Array.from(
+          new Set(details.majorImports.filter((item) => typeof item === 'string' && item.trim()))
+        );
+        if (uniqueImports.length > 0) {
+          const importsLabel = details.majorImportsLabel || 'Major Imports';
+          entries.push({ label: importsLabel, value: uniqueImports.join(', ') });
+        }
+      }
+
+      if (entries.length > 0) {
+        const listItems = entries
+          .map(
+            ({ label, value }) =>
+              `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+                value
+              )}</span></li>`
+          )
+          .join('');
+        sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+      }
+
+      const breakdownSection = buildPopulationBreakdownSection(resolvedName, details.populationBreakdown);
+
+      if (breakdownSection) {
+        sections.push(breakdownSection);
+      }
+
+      if (details.hallmark) {
+        const hallmarkLabel = details.hallmarkLabel;
+        const noteContent = escapeHtml(details.hallmark);
+        if (hallmarkLabel) {
+          sections.push(`
+            <div class="tooltip-subtitle">${escapeHtml(hallmarkLabel)}</div>
+            <p class="tooltip-note">${noteContent}</p>
+          `);
+        } else {
+          sections.push(`<p class="tooltip-note">${noteContent}</p>`);
+        }
+      }
+
+      structureMarkup = sections.join('');
+    } else {
+      const fallbackTitle = `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
+      const faction = getFactionForTile(tile);
+      if (faction && faction.name) {
+        const entries = [{ label: 'Realm', value: faction.name }];
+        const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
+        if (influenceDescription) {
+          entries.push({ label: 'Territorial Hold', value: influenceDescription });
+        }
+        const listItems = entries
+          .map(
+            ({ label, value }) =>
+              `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+                value
+              )}</span></li>`
+          )
+          .join('');
+        structureMarkup = `${fallbackTitle}<ul class="tooltip-list">${listItems}</ul>`;
       } else {
-        sections.push(`<p class="tooltip-note">${noteContent}</p>`);
+        structureMarkup = fallbackTitle;
       }
     }
-
-    return sections.join('');
   }
 
-  const fallbackTitle = `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
-  const faction = getFactionForTile(tile);
-  if (faction && faction.name) {
-    const entries = [{ label: 'Realm', value: faction.name }];
-    const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
-    if (influenceDescription) {
-      entries.push({ label: 'Territorial Hold', value: influenceDescription });
-    }
-    const listItems = entries
-      .map(
-        ({ label, value }) =>
-          `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
-            value
-          )}</span></li>`
-      )
-      .join('');
-    return `${fallbackTitle}<ul class="tooltip-list">${listItems}</ul>`;
-  }
-  return fallbackTitle;
+  const terrainSection = buildTerrainSection(tile, { isPrimary: !structureMarkup });
+  return [structureMarkup, terrainSection].filter(Boolean).join('');
 }
 
 function showMapTooltip(content, pointerX, pointerY, boundsRect) {
@@ -4796,7 +4936,7 @@ function setupMapInteractions() {
       hideMapTooltip();
       return;
     }
-    const tooltipContent = buildStructureTooltipContent(tile);
+    const tooltipContent = buildTileTooltipContent(tile);
     if (!tooltipContent) {
       hideMapTooltip();
       return;
