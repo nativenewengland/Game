@@ -1264,7 +1264,7 @@ button:hover:not(:disabled) {
   left: 50%;
   bottom: calc(100% + 0.5rem);
   transform: translateX(-50%);
-  max-width: 240px;
+  min-width: 400px;
   padding: 0.75rem;
   font-size: 0.85rem;
   line-height: 1.4;
