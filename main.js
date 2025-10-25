@@ -6247,6 +6247,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     }
     tile.base = waterTileKey;
     tile.overlay = null;
+    tile.hillOverlay = null;
     tile.structure = null;
     tile.structureName = null;
     tile.structureDetails = null;
@@ -6832,6 +6833,7 @@ function createWorld(seedString) {
       Array.from({ length: width }, () => ({
         base: grassTileKey,
         overlay: null,
+        hillOverlay: null,
         structure: null,
         structureName: null,
         structureDetails: null,
@@ -6910,6 +6912,7 @@ function createWorld(seedString) {
       const tile = tiles[y][x];
       tile.base = isWater ? waterTileKey : determineLandBaseTile(x, y, heightValue);
       tile.overlay = null;
+      tile.hillOverlay = null;
       tile.structure = null;
       tile.structureName = null;
       tile.structureDetails = null;
@@ -7722,6 +7725,7 @@ function createWorld(seedString) {
         const heightValue = elevationField[idx];
         tile.base = determineLandBaseTile(x, y, heightValue);
         tile.overlay = null;
+        tile.hillOverlay = null;
         tile.structure = null;
         tile.structureName = null;
         tile.structureDetails = null;
@@ -7806,6 +7810,7 @@ function createWorld(seedString) {
         waterMask[idx] = 1;
         tile.base = waterTileKey;
         tile.overlay = null;
+        tile.hillOverlay = null;
         tile.structure = null;
         tile.structureName = null;
         tile.structureDetails = null;
@@ -7891,6 +7896,7 @@ function createWorld(seedString) {
         }
         if (tile.overlay && isMountainOverlay(tile.overlay)) {
           tile.overlay = null;
+          tile.hillOverlay = null;
         }
       }
     }
@@ -8106,6 +8112,7 @@ function createWorld(seedString) {
           if (compositeScore > threshold) {
             const overlayKey = baseIsSnow ? snowHillOverlayKey : hillOverlayKey;
             if (overlayKey) {
+              tile.hillOverlay = overlayKey;
               tile.overlay = overlayKey;
             }
           }
@@ -8133,8 +8140,9 @@ function createWorld(seedString) {
         if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
-        const overlayIsHill = isHillOverlay(tile.overlay);
-        if (tile.overlay && !overlayIsHill) {
+        const overlayIsHill =
+          isHillOverlay(tile.overlay) || isHillOverlay(tile.hillOverlay);
+        if (tile.overlay && !isHillOverlay(tile.overlay)) {
           continue;
         }
         const heightValue = elevationField[idx];
@@ -8213,8 +8221,8 @@ function createWorld(seedString) {
           continue;
         }
         const overlay = tile.overlay;
-        const overlayIsHill = isHillOverlay(overlay);
-        if (overlay && !overlayIsHill) {
+        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
+        if (overlay && !isHillOverlay(overlay)) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
@@ -8313,8 +8321,10 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
+        const overlay = tile.overlay;
+        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
         if (
-          tile.overlay ||
+          (overlay && !overlayIsHill) ||
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
@@ -8331,6 +8341,9 @@ function createWorld(seedString) {
           if (tile.base === marshTileKey) {
             tile.base = grassTileKey;
           }
+          if (!tile.hillOverlay && overlayIsHill) {
+            tile.hillOverlay = overlay;
+          }
           tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
         }
       }
@@ -8346,8 +8359,10 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
+          const overlay = tile.overlay;
+          const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
           if (
-            tile.overlay ||
+            (overlay && !overlayIsHill) ||
             !isLandBaseTile(tile.base) ||
             tile.structure ||
             tile.river ||
@@ -8397,8 +8412,10 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
+        const overlay = tile.overlay;
+        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
         if (
-          tile.overlay ||
+          (overlay && !overlayIsHill) ||
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
@@ -8409,6 +8426,9 @@ function createWorld(seedString) {
         treeMask[idx] = 1;
         if (tile.base === marshTileKey) {
           tile.base = grassTileKey;
+        }
+        if (!tile.hillOverlay && overlayIsHill) {
+          tile.hillOverlay = overlay;
         }
         tile.overlay = tile.base === snowTileKey ? treeSnowOverlayKey : treeOverlayKey;
       }
@@ -9049,6 +9069,26 @@ function drawWorld(world) {
         drawSize,
         drawSize
       );
+
+      if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
+        const hillDefinition = tileLookup.get(cell.hillOverlay);
+        if (hillDefinition) {
+          const hillSheet = state.tileSheets[hillDefinition.sheet];
+          if (hillSheet && hillSheet.image) {
+            ctx.drawImage(
+              hillSheet.image,
+              hillDefinition.sx,
+              hillDefinition.sy,
+              hillDefinition.size,
+              hillDefinition.size,
+              x * drawSize,
+              y * drawSize,
+              drawSize,
+              drawSize
+            );
+          }
+        }
+      }
 
       if (cell.overlay) {
         const overlayDefinition = tileLookup.get(cell.overlay);
