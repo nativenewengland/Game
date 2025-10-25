@@ -1065,13 +1065,17 @@ function generateDwarfholdDetails(name, random) {
 
 function generateEvilWizardTowerDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const population = Math.max(40, Math.floor(80 + randomFn() * 520));
+  const populationRoll = randomFn();
+  const population =
+    populationRoll < 0.7
+      ? 1
+      : 2 + Math.floor(randomFn() * 9);
   let classification = 'Wizard Tower';
-  if (population >= 400) {
+  if (population >= 9) {
     classification = 'Dread Citadel';
-  } else if (population >= 240) {
+  } else if (population >= 6) {
     classification = 'Shadow Spire';
-  } else if (population >= 140) {
+  } else if (population >= 3) {
     classification = 'Arcane Bastion';
   }
 
