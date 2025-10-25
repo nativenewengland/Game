@@ -349,6 +349,13 @@ const tileHasTreeOverlay = (tile) =>
 const isJungleOverlayKey = (key) => typeof key === 'string' && key === jungleOverlayKey;
 const tileHasJungleOverlay = (tile) =>
   Boolean(tile) && (isJungleOverlayKey(tile.overlay) || isJungleOverlayKey(tile.hillOverlay));
+const townSettlementTypes = new Set(['town', 'city', 'village']);
+const isTownSettlementDetails = (details) =>
+  Boolean(details) &&
+  details.isSettlement === true &&
+  typeof details.type === 'string' &&
+  townSettlementTypes.has(details.type);
+const tileHasTownSettlement = (tile) => isTownSettlementDetails(tile?.structureDetails);
 
 function evaluateFactionTileSuitability(faction, tile, x, y) {
   if (!faction || !tile) {
@@ -9398,11 +9405,19 @@ function createWorld(seedString) {
         if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
+        if (tile.base !== grassTileKey) {
+          continue;
+        }
         const elevationValue = elevationField[idx];
         const preferredElevation = seaLevel + 0.18;
         const elevationScore = clamp(1 - Math.abs(elevationValue - preferredElevation) * 2.1, 0, 1);
+        const rainfallValue = rainfallField[idx];
+        const drainageValue = drainageField[idx];
+        const localMoisture = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
         let roughness = 0;
         let neighborCount = 0;
+        let neighborhoodMoistureSum = 0;
+        let neighborhoodMoistureSamples = 0;
         for (let i = 0; i < neighborOffsets8.length; i += 1) {
           const nx = x + neighborOffsets8[i][0];
           const ny = y + neighborOffsets8[i][1];
@@ -9415,12 +9430,70 @@ function createWorld(seedString) {
           }
           roughness += Math.abs(elevationValue - elevationField[nIdx]);
           neighborCount += 1;
+          const neighborMoisture = clamp(
+            rainfallField[nIdx] * 0.7 + (1 - drainageField[nIdx]) * 0.3,
+            0,
+            1
+          );
+          neighborhoodMoistureSum += neighborMoisture;
+          neighborhoodMoistureSamples += 1;
         }
         const averageRoughness = neighborCount > 0 ? roughness / neighborCount : 0;
         const slopeScore = clamp(1 - averageRoughness * 12, 0, 1);
         const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
         const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2);
         const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
+        const neighborhoodMoisture =
+          neighborhoodMoistureSamples > 0
+            ? neighborhoodMoistureSum / neighborhoodMoistureSamples
+            : localMoisture;
+        const blendedMoisture = localMoisture * 0.65 + neighborhoodMoisture * 0.35;
+        const dryness = 1 - blendedMoisture;
+        const humidityExcess = Math.max(0, blendedMoisture - 0.52);
+        const swampPressure = Math.max(0, blendedMoisture - 0.68);
+        const aridPressure = Math.max(0, dryness - 0.55);
+        const poorDrainage = Math.max(0, 0.48 - drainageValue);
+        const normalizedY = (y + 0.5) / height;
+        const latitudeFactor = 1 - Math.abs(normalizedY - 0.5) * 2;
+        const elevationAboveSea = Math.max(elevationValue - seaLevel, 0);
+        const elevationCooling = clamp(1 - elevationAboveSea * 3.5, 0, 1);
+        const approximateTemperature = clamp(
+          latitudeFactor * 0.75 + elevationCooling * 0.25,
+          0,
+          1
+        );
+        const relativeElevation = elevationValue - seaLevel;
+        let biomeTendency = 'grassland';
+        if (relativeElevation < 0.05) {
+          if (blendedMoisture > 0.7) {
+            biomeTendency = 'marsh';
+          } else if (blendedMoisture > 0.54 && approximateTemperature > 0.52) {
+            biomeTendency = 'forest';
+          }
+        } else if (blendedMoisture < 0.3) {
+          biomeTendency = 'badlands';
+        } else if (approximateTemperature < 0.3) {
+          biomeTendency = 'tundra';
+        } else if (blendedMoisture > 0.72) {
+          biomeTendency = 'marsh';
+        } else if (blendedMoisture > 0.52 && approximateTemperature > 0.55) {
+          biomeTendency = 'forest';
+        }
+        let grassPreference = clamp(
+          1 - humidityExcess * 1.4 - swampPressure * 1.25 - aridPressure * 1.05 - poorDrainage * 0.55,
+          0,
+          1
+        );
+        if (biomeTendency === 'forest') {
+          grassPreference *= 0.12;
+        } else if (biomeTendency === 'marsh') {
+          grassPreference *= 0.08;
+        } else if (biomeTendency === 'tundra' || biomeTendency === 'badlands') {
+          grassPreference *= 0.35;
+        }
+        if (grassPreference < 0.22) {
+          continue;
+        }
         let riverAdjacency = 0;
         for (let i = 0; i < cardinalOffsets.length; i += 1) {
           const nx = x + cardinalOffsets[i][0];
@@ -9434,9 +9507,23 @@ function createWorld(seedString) {
           }
         }
         const riverScore = riverAdjacency > 0 ? clamp(0.18 + riverAdjacency * 0.06, 0, 0.32) : 0;
+        const biomePenalty =
+          biomeTendency === 'forest'
+            ? 0.24
+            : biomeTendency === 'marsh'
+            ? 0.18
+            : biomeTendency === 'tundra' || biomeTendency === 'badlands'
+            ? 0.08
+            : 0;
         const score =
-          elevationScore * 0.4 + slopeScore * 0.25 + edgeScore * 0.15 + riverScore + rng() * 0.2;
-        townCandidates.push({ x, y, score });
+          elevationScore * 0.35 +
+          slopeScore * 0.2 +
+          edgeScore * 0.12 +
+          riverScore +
+          grassPreference * 0.32 -
+          biomePenalty +
+          rng() * 0.12;
+        townCandidates.push({ x, y, score, grassPreference });
       }
     }
 
@@ -9455,6 +9542,9 @@ function createWorld(seedString) {
           break;
         }
         const candidate = townCandidates[i];
+        if (candidate.grassPreference != null && candidate.grassPreference < 0.25) {
+          continue;
+        }
         let tooClose = false;
         for (let j = 0; j < placed.length; j += 1) {
           const other = placed[j];
@@ -11180,6 +11270,9 @@ function createWorld(seedString) {
     if (waterMask[idx] || tile.base === waterTileKey) {
       return 'water';
     }
+    if (tileHasTownSettlement(tile)) {
+      return 'grassland';
+    }
     if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
       return 'mountain';
     }
@@ -11270,6 +11363,10 @@ function createWorld(seedString) {
         const idx = y * width + x;
         const currentType = biomeField[idx];
         biomeBuffer[idx] = currentType;
+        const tile = tiles[y][x];
+        if (tileHasTownSettlement(tile)) {
+          continue;
+        }
         if (!currentType || currentType === 'water' || currentType === 'mountain') {
           continue;
         }
