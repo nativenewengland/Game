@@ -9915,36 +9915,21 @@ function createWorld(seedString) {
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
   const treeJungleOverlayKey = hasTreeTile && tileLookup.has('JUNGLE_TREE') ? 'JUNGLE_TREE' : null;
-  const jungleSnowDistanceThresholdSq = 100 * 100;
+  let jungleMask = null;
   const treeOverlayKeys = [treeOverlayKey, treeSnowOverlayKey, treeJungleOverlayKey].filter(
     (key, index, array) => key && array.indexOf(key) === index
   );
   const isTreeOverlayKey = (overlayKey) =>
     hasTreeTile && overlayKey != null && treeOverlayKeys.includes(overlayKey);
-  const selectTreeOverlayForTile = (tile, idx, x, y) => {
+  const selectTreeOverlayForTile = (tile, idx) => {
     if (!tile || !treeOverlayKey) {
       return treeOverlayKey;
     }
     if (tile.base === snowTileKey && treeSnowOverlayKey) {
       return treeSnowOverlayKey;
     }
-    if (treeJungleOverlayKey) {
-      const withinSnowRange =
-        snowDistanceField && snowDistanceField[idx] <= jungleSnowDistanceThresholdSq;
-      if (!withinSnowRange) {
-        return treeOverlayKey;
-      }
-      const normalizedY = (y + 0.5) / height;
-      const rainfallValue = rainfallField[idx];
-      const drainageValue = drainageField[idx];
-      const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 2, 0, 1);
-      const elevationAboveSea = elevationField[idx] - seaLevel;
-      const elevationHeatPenalty = clamp(Math.max(0, elevationAboveSea) * 2.8, 0, 1);
-      const heat = clamp(equatorialAlignment * 0.7 + (1 - elevationHeatPenalty) * 0.3, 0, 1);
-      const humidity = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
-      if (heat > 0.65 && humidity > 0.7) {
-        return treeJungleOverlayKey;
-      }
+    if (treeJungleOverlayKey && jungleMask && jungleMask[idx]) {
+      return treeJungleOverlayKey;
     }
     return treeOverlayKey;
   };
@@ -9961,6 +9946,84 @@ function createWorld(seedString) {
     const treeDetailOffsetY = rng() * 8192;
     treeDensityField = new Float32Array(width * height);
     const treeMask = new Uint8Array(width * height);
+    if (treeJungleOverlayKey) {
+      jungleMask = new Uint8Array(width * height);
+      const jungleBaseSeed = (seedNumber + 0x4b9c1fcb) >>> 0;
+      const jungleDetailSeed = (seedNumber + 0x1e35a9bd) >>> 0;
+      const jungleBaseScale = 1.65 + rng() * 1.15;
+      const jungleDetailScale = 5.1 + rng() * 2.9;
+      const jungleBaseOffsetX = rng() * 4096;
+      const jungleBaseOffsetY = rng() * 4096;
+      const jungleDetailOffsetX = rng() * 8192;
+      const jungleDetailOffsetY = rng() * 8192;
+      const jungleSnowBufferSq = 130 * 130;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || !isLandBaseTile(tile.base)) {
+            continue;
+          }
+          if (hasSnowTile && tile.base === snowTileKey) {
+            continue;
+          }
+          if (hasSandTile && tile.base === sandTileKey) {
+            continue;
+          }
+          if (hasBadlandsTile && tile.base === badlandsTileKey) {
+            continue;
+          }
+          if (snowDistanceField && snowDistanceField[idx] < jungleSnowBufferSq) {
+            continue;
+          }
+          const normalizedX = (x + 0.5) / width;
+          const normalizedY = (y + 0.5) / height;
+          const baseNoise = octaveNoise(
+            (normalizedX + jungleBaseOffsetX) * jungleBaseScale,
+            (normalizedY + jungleBaseOffsetY) * jungleBaseScale,
+            jungleBaseSeed,
+            3,
+            0.6,
+            1.95
+          );
+          const detailNoise = octaveNoise(
+            (normalizedX + jungleDetailOffsetX) * jungleDetailScale,
+            (normalizedY + jungleDetailOffsetY) * jungleDetailScale,
+            jungleDetailSeed,
+            4,
+            0.5,
+            2.35
+          );
+          const noiseValue = baseNoise * 0.68 + detailNoise * 0.32;
+          const rainfallValue = rainfallField[idx];
+          const drainageValue = drainageField[idx];
+          const humidity = clamp(rainfallValue * 0.82 + (1 - drainageValue) * 0.18, 0, 1);
+          const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 3.4, 0, 1);
+          const elevationValue = elevationField[idx];
+          const elevationAboveSea = Math.max(0, elevationValue - seaLevel);
+          const elevationScore = clamp(0.28 - elevationAboveSea, 0, 1);
+          const elevationPenalty = clamp(elevationAboveSea * 3.1, 0, 1);
+          const heat = clamp(equatorialAlignment * 0.85 + (1 - elevationPenalty) * 0.25, 0, 1);
+          if (heat < 0.68 || humidity < 0.74 || equatorialAlignment < 0.45) {
+            continue;
+          }
+          const drainageScore = clamp(0.55 - drainageValue, 0, 1);
+          const combinedScore =
+            (heat - 0.68) * 0.35 +
+            (humidity - 0.74) * 0.45 +
+            (equatorialAlignment - 0.45) * 0.25 +
+            drainageScore * 0.2 +
+            elevationScore * 0.3 +
+            (noiseValue - 0.55) * 0.25;
+          if (combinedScore > 0.12) {
+            jungleMask[idx] = 1;
+          }
+        }
+      }
+    }
     const clusterNeighborOffsets = [
       [-1, -1],
       [0, -1],
@@ -10053,7 +10116,7 @@ function createWorld(seedString) {
           if (!tile.hillOverlay && overlayIsHill) {
             tile.hillOverlay = overlay;
           }
-          tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
+          tile.overlay = selectTreeOverlayForTile(tile, idx);
         }
       }
     }
@@ -10136,7 +10199,7 @@ function createWorld(seedString) {
         if (!tile.hillOverlay && overlayIsHill) {
           tile.hillOverlay = overlay;
         }
-        tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
+        tile.overlay = selectTreeOverlayForTile(tile, idx);
       }
     }
 
@@ -10169,128 +10232,6 @@ function createWorld(seedString) {
           }
           treeMask[idx] = 0;
           tile.overlay = null;
-        }
-      }
-    }
-
-    if (treeJungleOverlayKey && treeOverlayKey) {
-      const jungleScoreCache = new Float32Array(width * height);
-      jungleScoreCache.fill(NaN);
-      const getJungleScore = (idx, x, y) => {
-        const cached = jungleScoreCache[idx];
-        if (!Number.isNaN(cached)) {
-          return cached;
-        }
-        if (!snowDistanceField || snowDistanceField[idx] > jungleSnowDistanceThresholdSq) {
-          jungleScoreCache[idx] = -1;
-          return -1;
-        }
-        const normalizedY = (y + 0.5) / height;
-        const rainfallValue = rainfallField[idx];
-        const drainageValue = drainageField[idx];
-        const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 2, 0, 1);
-        const elevationAboveSea = elevationField[idx] - seaLevel;
-        const elevationHeatPenalty = clamp(Math.max(0, elevationAboveSea) * 2.8, 0, 1);
-        const heat = clamp(equatorialAlignment * 0.7 + (1 - elevationHeatPenalty) * 0.3, 0, 1);
-        const humidity = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
-        const score = Math.min(heat - 0.65, humidity - 0.7);
-        jungleScoreCache[idx] = score;
-        return score;
-      };
-      const applyNormalTreeOverlay = (tile) => {
-        if (!tile) {
-          return;
-        }
-        if (tile.base === snowTileKey && treeSnowOverlayKey) {
-          tile.overlay = treeSnowOverlayKey;
-        } else {
-          tile.overlay = treeOverlayKey;
-        }
-      };
-      const applyJungleTreeOverlay = (tile) => {
-        if (!tile) {
-          return;
-        }
-        if (tile.base === snowTileKey && treeSnowOverlayKey) {
-          applyNormalTreeOverlay(tile);
-          return;
-        }
-        tile.overlay = treeJungleOverlayKey;
-      };
-      const classifyTreeOverlay = (tile) => {
-        if (!tile) {
-          return 'none';
-        }
-        if (tile.overlay === treeJungleOverlayKey) {
-          return 'jungle';
-        }
-        if (tile.overlay === treeOverlayKey || tile.overlay === treeSnowOverlayKey) {
-          return 'normal';
-        }
-        return 'none';
-      };
-      for (let y = 0; y < height; y += 1) {
-        for (let x = 0; x < width; x += 1) {
-          const tile = tiles[y][x];
-          if (!tile) {
-            continue;
-          }
-          const type = classifyTreeOverlay(tile);
-          if (type === 'none') {
-            continue;
-          }
-          for (let i = 0; i < neighborOffsets8.length; i += 1) {
-            const nx = x + neighborOffsets8[i][0];
-            const ny = y + neighborOffsets8[i][1];
-            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-              continue;
-            }
-            const neighborTile = tiles[ny][nx];
-            if (!neighborTile) {
-              continue;
-            }
-            const neighborType = classifyTreeOverlay(neighborTile);
-            if (neighborType === 'none' || neighborType === type) {
-              continue;
-            }
-            const jungleTile = type === 'jungle' ? tile : neighborTile;
-            const jungleIdx = (type === 'jungle' ? y : ny) * width + (type === 'jungle' ? x : nx);
-            const jungleX = type === 'jungle' ? x : nx;
-            const jungleY = type === 'jungle' ? y : ny;
-            const normalTile = type === 'normal' ? tile : neighborTile;
-            const normalIdx = (type === 'normal' ? y : ny) * width + (type === 'normal' ? x : nx);
-            const normalX = type === 'normal' ? x : nx;
-            const normalY = type === 'normal' ? y : ny;
-            if (normalTile.base === snowTileKey && treeSnowOverlayKey) {
-              applyNormalTreeOverlay(jungleTile);
-              continue;
-            }
-            if (jungleTile.base === snowTileKey && treeSnowOverlayKey) {
-              applyNormalTreeOverlay(jungleTile);
-              continue;
-            }
-            const jungleScore = getJungleScore(jungleIdx, jungleX, jungleY);
-            const normalScore = getJungleScore(normalIdx, normalX, normalY);
-            if (jungleScore >= 0 && normalScore >= 0) {
-              applyJungleTreeOverlay(normalTile);
-              continue;
-            }
-            if (jungleScore < 0 && normalScore < 0) {
-              applyNormalTreeOverlay(jungleTile);
-              continue;
-            }
-            const costMakeNormal = jungleScore > 0 ? jungleScore : 0;
-            const costMakeJungle = normalScore < 0 ? -normalScore : 0;
-            if (costMakeNormal < costMakeJungle) {
-              applyNormalTreeOverlay(jungleTile);
-            } else if (costMakeJungle < costMakeNormal) {
-              applyJungleTreeOverlay(normalTile);
-            } else if (jungleScore <= 0 && normalScore >= 0) {
-              applyNormalTreeOverlay(jungleTile);
-            } else {
-              applyJungleTreeOverlay(normalTile);
-            }
-          }
         }
       }
     }
@@ -11577,88 +11518,6 @@ function createWorld(seedString) {
       }
       clusterTile.biomeType = resolvedType;
       clusterTile.areaName = resolvedName;
-    }
-  }
-
-  const forestJungleBufferTiles = [];
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      if (!tile || tile.structure || tileHasTownSettlement(tile)) {
-        continue;
-      }
-      const biomeType = tile.biomeType;
-      if (biomeType !== 'forest' && biomeType !== 'jungle') {
-        continue;
-      }
-      let touchesConflict = false;
-      for (let i = 0; i < neighborOffsets8.length; i += 1) {
-        const nx = x + neighborOffsets8[i][0];
-        const ny = y + neighborOffsets8[i][1];
-        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-          continue;
-        }
-        const neighborTile = tiles[ny][nx];
-        if (!neighborTile) {
-          continue;
-        }
-        const neighborBiome = neighborTile.biomeType;
-        if (!neighborBiome) {
-          continue;
-        }
-        if (
-          (biomeType === 'forest' && neighborBiome === 'jungle') ||
-          (biomeType === 'jungle' && neighborBiome === 'forest')
-        ) {
-          touchesConflict = true;
-          break;
-        }
-      }
-      if (touchesConflict) {
-        forestJungleBufferTiles.push({ x, y, idx: y * width + x });
-      }
-    }
-  }
-
-  if (forestJungleBufferTiles.length > 0) {
-    const bufferAreaNameCache = new Map();
-    const getBufferAreaName = (type) => {
-      if (bufferAreaNameCache.has(type)) {
-        return bufferAreaNameCache.get(type);
-      }
-      const definition = biomeTypeDefinitions[type] || null;
-      const fallback = definition && definition.label ? `Unnamed ${definition.label}` : null;
-      bufferAreaNameCache.set(type, fallback);
-      return fallback;
-    };
-
-    for (let i = 0; i < forestJungleBufferTiles.length; i += 1) {
-      const { x, y, idx } = forestJungleBufferTiles[i];
-      const tile = tiles[y][x];
-      if (!tile) {
-        continue;
-      }
-      const moisture = Number.isFinite(moistureField[idx]) ? moistureField[idx] : 0;
-      let replacementType = moisture > 0.68 && hasMarshTile ? 'marsh' : 'grassland';
-      if (replacementType === 'marsh' && !hasMarshTile) {
-        replacementType = 'grassland';
-      }
-
-      tile.biomeType = replacementType;
-      tile.areaName = getBufferAreaName(replacementType);
-
-      if (replacementType === 'marsh' && hasMarshTile) {
-        tile.base = marshTileKey;
-      } else if (replacementType === 'grassland' && tile.base === marshTileKey && grassTileKey) {
-        tile.base = grassTileKey;
-      }
-
-      if (tile.overlay && isTreeOverlayKey(tile.overlay)) {
-        tile.overlay = null;
-      }
-      if (tile.hillOverlay && isTreeOverlayKey(tile.hillOverlay)) {
-        tile.hillOverlay = null;
-      }
     }
   }
 
