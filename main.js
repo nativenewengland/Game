@@ -51,6 +51,7 @@ const dwarfSpriteSheets = {
 const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
+  MARSH: { row: 5, col: 3 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
   TREE_SNOW: { row: 1, col: 1 },
@@ -68,7 +69,8 @@ const baseTileCoords = {
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
-  TOWN: { row: 2, col: 1 }
+  TOWN: { row: 2, col: 1 },
+  PORT_TOWN: { row: 4, col: 5 }
 };
 
 const roadTileVariantDefinitions = (() => {
@@ -131,15 +133,19 @@ const riverTileCoords = {
   RIVER_MAJOR_MOUTH_NARROW_E: { row: 8, col: 15 }
 };
 
-const overworldIcebergReplacement = { row: 4, col: 3 };
+const icebergTileOptions = [
+  { row: 3, col: 4 },
+  { row: 3, col: 5 }
+];
 
-const icebergTileCoords = {
-  ICEBERG_SURROUND_1: overworldIcebergReplacement,
-  ICEBERG_SURROUND_2: overworldIcebergReplacement,
-  ICEBERG_SURROUND_3: overworldIcebergReplacement,
-  ICEBERG_SURROUND_4: overworldIcebergReplacement,
-  ICEBERG_SURROUND_5: overworldIcebergReplacement
-};
+const icebergTileCoords = (() => {
+  const keys = ['ICEBERG_SURROUND_1', 'ICEBERG_SURROUND_2'];
+  return keys.reduce((coords, key, index) => {
+    const option = icebergTileOptions[index % icebergTileOptions.length];
+    coords[key] = { ...option };
+    return coords;
+  }, {});
+})();
 
 const tileLookup = new Map();
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
@@ -666,7 +672,8 @@ const settlementDetailTypes = new Set([
   'village',
   'hamlet',
   'evilWizardTower',
-  'tower'
+  'tower',
+  'woodElfGrove'
 ]);
 
 function resolveTownRulerTitle(gender, randomFn) {
@@ -917,6 +924,90 @@ const woodElfGroveDescriptors = [
   'of the Silver Song'
 ];
 
+const woodElfGroveElderTitles = [
+  'Grove Warden',
+  'Verdant Speaker',
+  'Circle Elder',
+  'Keeper of Boughs',
+  'Songwarden',
+  'Dawnwatcher'
+];
+
+const woodElfGroveElderGivenNames = [
+  'Aelar',
+  'Lethariel',
+  'Thamior',
+  'Keyleth',
+  'Varis',
+  'Nymeria',
+  'Caelynn',
+  'Theren',
+  'Sylvar',
+  'Ilyana',
+  'Faelar',
+  'Lunessa'
+];
+
+const woodElfGroveElderSurnames = [
+  'Silversong',
+  'Oakenshade',
+  'Nightbloom',
+  'Moonglade',
+  'Thornweaver',
+  'Starpetal',
+  'Sunshadow',
+  'Mistralwind',
+  'Fernstep',
+  'Willowstrand'
+];
+
+const woodElfGroveHallmarks = [
+  'Moonlit rites that weave auroras between the branches.',
+  'Ancient treants stand guard over every winding path.',
+  'Hidden pools shimmer with restorative starlight dew.',
+  'The groves chorus echoes across the forest at dusk.',
+  'Bough-bridges knit the canopy into spiralling promenades.',
+  'Druidic songcraft summons blossoms even in winter.'
+];
+
+const woodElfGroveCircleNames = [
+  'Circle of the Silver Bough',
+  'Circle of Verdant Stars',
+  'Circle of Whispering Winds',
+  'Circle of Dawnpetals',
+  'Circle of the Emerald Veil',
+  'Circle of Moonshadow Paths',
+  'Circle of the Luminous Seed',
+  'Circle of the Elder Stag'
+];
+
+const woodElfGroveOrders = [
+  'Wardens of the High Canopy',
+  'Rangers of the Verdant Way',
+  'Singers of the Luminous Thread',
+  'Druids of the Moonwell Accord',
+  'Keepers of the Auric Grove',
+  'Mistwalkers of the Emerald Watch'
+];
+
+const woodElfGroveExports = [
+  'Phials of rejuvenating moonwater',
+  'Runed arrowheads carved from starwood',
+  'Perfumed resins and incense petals',
+  'Luminous moss for healing rituals',
+  'Silken banners woven from leaf-fibres',
+  'Seedstones that sprout protective thickets'
+];
+
+const woodElfGrovePopulationRoleOptions = [
+  { key: 'wardens', label: 'Bough Wardens', color: '#6ecf85' },
+  { key: 'druids', label: 'Circle Druids', color: '#9bd4a9' },
+  { key: 'scouts', label: 'Glade Scouts', color: '#8bbbcf' },
+  { key: 'singers', label: 'Chorus Singers', color: '#c4a6e8' },
+  { key: 'artisans', label: 'Canopy Artisans', color: '#f4c069' },
+  { key: 'others', label: 'Forest Folk', color: '#9e9e9e' }
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -1146,6 +1237,19 @@ function generateTownPopulationBreakdown(population, random) {
     majorityShareRange: [0.6, 0.85],
     ensureMajority: true
   });
+}
+
+function generateWoodElfGrovePopulationBreakdown(population, random) {
+  return generatePopulationBreakdownFromOptions(
+    woodElfGrovePopulationRoleOptions,
+    population,
+    random,
+    {
+      majorityIndex: 0,
+      majorityShareRange: [0.55, 0.75],
+      ensureMajority: true
+    }
+  );
 }
 
 function generateDwarfholdName(random) {
@@ -1459,6 +1563,69 @@ function generateWoodElfGroveName(random) {
     return `${baseName} ${descriptor}`;
   }
   return baseName;
+}
+
+function generateWoodElfGroveDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(60, Math.floor(140 + randomFn() * 420));
+  let classification = 'Forest Retreat';
+  if (population >= 500) {
+    classification = 'Ancient Grove';
+  } else if (population >= 360) {
+    classification = 'Sacred Grove';
+  } else if (population >= 240) {
+    classification = 'Hidden Enclave';
+  } else if (population >= 180) {
+    classification = 'Canopy Sanctuary';
+  }
+
+  let populationDescriptor = 'wardens';
+  if (classification === 'Ancient Grove') {
+    populationDescriptor = 'elders';
+  } else if (classification === 'Sacred Grove') {
+    populationDescriptor = 'keepers';
+  } else if (classification === 'Hidden Enclave') {
+    populationDescriptor = 'sentinels';
+  } else if (classification === 'Canopy Sanctuary') {
+    populationDescriptor = 'guardians';
+  }
+
+  const elderTitle = pickRandomFrom(woodElfGroveElderTitles, randomFn) || 'Grove Warden';
+  const givenName = pickRandomFrom(woodElfGroveElderGivenNames, randomFn) || 'Aelar';
+  const surname = pickRandomFrom(woodElfGroveElderSurnames, randomFn) || 'Silversong';
+  const hallmark = pickRandomFrom(woodElfGroveHallmarks, randomFn) ||
+    'Moonlit rites that weave auroras between the branches.';
+  const foundedYearsAgo = Math.max(40, Math.floor(120 + randomFn() * 520));
+  const prominentGroup = pickRandomFrom(woodElfGroveCircleNames, randomFn) || 'Circle of the Silver Bough';
+  const majorGuildCount = clamp(Math.floor(1 + randomFn() * 2), 1, woodElfGroveOrders.length);
+  const majorGuilds = pickUniqueFrom(woodElfGroveOrders, majorGuildCount, randomFn);
+  const majorExportCount = clamp(Math.floor(1 + randomFn() * 2), 1, woodElfGroveExports.length);
+  const majorExports = pickUniqueFrom(woodElfGroveExports, majorExportCount, randomFn);
+  const populationBreakdown = generateWoodElfGrovePopulationBreakdown(population, randomFn);
+
+  return {
+    type: 'woodElfGrove',
+    classification,
+    name,
+    population,
+    populationLabel: 'Population',
+    populationDescriptor,
+    isSettlement: true,
+    ruler: {
+      title: elderTitle,
+      name: `${givenName} ${surname}`
+    },
+    foundedYearsAgo,
+    prominentGroup,
+    prominentGroupLabel: 'Circle in Residence',
+    hallmark,
+    hallmarkLabel: 'Revered For',
+    majorGuilds,
+    majorGuildsLabel: 'Sacred Orders',
+    majorExports,
+    majorExportsLabel: 'Seasonal Offerings',
+    populationBreakdown
+  };
 }
 
 function resolveTileName(baseKey) {
@@ -5375,6 +5542,8 @@ function createWorld(seedString) {
   rainfallField.set(adjustedRainfall);
   normalizeField(drainageField);
   const grassTileKey = resolveTileName('GRASS');
+  const hasMarshTile = tileLookup.has('MARSH');
+  const marshTileKey = hasMarshTile ? 'MARSH' : grassTileKey;
   const waterTileKey = resolveTileName('WATER');
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
@@ -5388,6 +5557,9 @@ function createWorld(seedString) {
   }
   if (hasSandTile) {
     landBaseKeys.add(sandTileKey);
+  }
+  if (hasMarshTile) {
+    landBaseKeys.add(marshTileKey);
   }
   const snowLatitudeStart = 0.7;
   const snowLatitudeFull = 0.86;
@@ -5426,6 +5598,10 @@ function createWorld(seedString) {
   const icebergVariantSeed = hasIcebergOverlay ? (seedNumber + 0x3d0e12f7) >>> 0 : 0;
   const icebergPresenceSeed = hasIcebergOverlay ? (seedNumber + 0x5ad1f32b) >>> 0 : 0;
 
+  const marshNoiseSeed = hasMarshTile ? (seedNumber + 0x1922b3a5) >>> 0 : 0;
+  const marshNoiseScale = hasMarshTile ? 3.9 + rng() * 3 : 1;
+  const marshNoiseOffsetX = hasMarshTile ? rng() * 4096 : 0;
+  const marshNoiseOffsetY = hasMarshTile ? rng() * 4096 : 0;
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
   const desertNoiseOffsetX = hasSandTile ? rng() * 4096 : 0;
@@ -5503,8 +5679,35 @@ function createWorld(seedString) {
       return snowTileKey;
     }
 
+    const rainfallValue = rainfallField[idx];
+    const drainageValue = drainageField[idx];
+    if (hasMarshTile) {
+      const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
+      const elevationAboveSea = heightValue - seaLevel;
+      const elevationHeatPenalty = clamp(elevationAboveSea * 3.6, 0, 1);
+      const heat = clamp(equatorialAlignment * 0.65 + (1 - elevationHeatPenalty) * 0.35, 0, 1);
+      const wetness = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+      const lowlandFactor = clamp(1 - Math.max(0, elevationAboveSea) * 5.2, 0, 1);
+      if (wetness > 0.68 && heat > 0.58 && lowlandFactor > 0.35) {
+        const marshNoise =
+          octaveNoise(
+            (normalizedX + marshNoiseOffsetX) * marshNoiseScale,
+            (normalizedY + marshNoiseOffsetY) * marshNoiseScale,
+            marshNoiseSeed,
+            3,
+            0.55,
+            2.15
+          ) *
+            2 -
+          1;
+        const marshScore = wetness * 0.6 + lowlandFactor * 0.25 + marshNoise * 0.15;
+        if (marshScore > 0.62) {
+          return marshTileKey;
+        }
+      }
+    }
+
     if (hasSandTile) {
-      const rainfallValue = rainfallField[idx];
       const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
       let equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
       if (desertBandStrength > 0) {
@@ -6616,6 +6819,7 @@ function createWorld(seedString) {
   }
 
   const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
+  const portTownKey = tileLookup.has('PORT_TOWN') ? 'PORT_TOWN' : null;
   if (townKey) {
     const townCandidates = [];
     for (let y = 0; y < height; y += 1) {
@@ -6704,7 +6908,26 @@ function createWorld(seedString) {
         }
         const name = generateTownName(rng);
         const details = generateTownDetails(name, rng);
-        tile.structure = townKey;
+        let structureKey = townKey;
+        if (portTownKey) {
+          let touchesWater = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = candidate.x + neighborOffsets8[i][0];
+            const ny = candidate.y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              touchesWater = true;
+              break;
+            }
+          }
+          if (touchesWater) {
+            structureKey = portTownKey;
+          }
+        }
+        tile.structure = structureKey;
         tile.structureName = name;
         tile.structureDetails = details;
         towns.push({ x: candidate.x, y: candidate.y, ...details });
@@ -7161,11 +7384,12 @@ function createWorld(seedString) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
+          const details = generateWoodElfGroveDetails(name, rng);
           tile.structure = woodElfGroveKey;
-          tile.structureName = name;
-          tile.structureDetails = null;
+          tile.structureName = details.name || name;
+          tile.structureDetails = details;
           placed.push(candidate);
-          woodElfGroves.push({ x: candidate.x, y: candidate.y, name });
+          woodElfGroves.push({ x: candidate.x, y: candidate.y, ...details });
         }
       }
     }
