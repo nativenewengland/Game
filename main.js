@@ -4287,6 +4287,252 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
   };
 
+  const applyOverlordVassalRules = () => {
+    if (!Array.isArray(factions) || factions.length === 0) {
+      return;
+    }
+
+    const neighborMap = new Map();
+    const recordNeighbor = (sourceId, targetId) => {
+      if (sourceId === null || sourceId === undefined || targetId === null || targetId === undefined) {
+        return;
+      }
+      if (sourceId === targetId) {
+        return;
+      }
+      if (!neighborMap.has(sourceId)) {
+        neighborMap.set(sourceId, new Set());
+      }
+      neighborMap.get(sourceId).add(targetId);
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      const row = tiles[y];
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < width; x += 1) {
+        const tile = row[x];
+        if (!tile) {
+          continue;
+        }
+        const factionId = tile.factionId;
+        if (factionId === null || factionId === undefined) {
+          continue;
+        }
+        for (let i = 0; i < cardinalNeighborOffsets.length; i += 1) {
+          const [ox, oy] = cardinalNeighborOffsets[i];
+          const nx = x + ox;
+          const ny = y + oy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const neighborRow = tiles[ny];
+          const neighborTile = neighborRow ? neighborRow[nx] : null;
+          if (!neighborTile) {
+            continue;
+          }
+          const neighborFactionId = neighborTile.factionId;
+          if (neighborFactionId === null || neighborFactionId === undefined) {
+            continue;
+          }
+          recordNeighbor(factionId, neighborFactionId);
+        }
+      }
+    }
+
+    if (neighborMap.size === 0) {
+      return;
+    }
+
+    const assignmentCandidates = [];
+
+    const resolveCapitalType = (faction) => {
+      if (!faction || !faction.capital || typeof faction.capital.type !== 'string') {
+        return '';
+      }
+      return faction.capital.type.trim().toLowerCase();
+    };
+
+    const resolveDistanceBetween = (a, b) => {
+      const ax = Number.isFinite(a?.capital?.x) ? a.capital.x : null;
+      const ay = Number.isFinite(a?.capital?.y) ? a.capital.y : null;
+      const bx = Number.isFinite(b?.capital?.x) ? b.capital.x : null;
+      const by = Number.isFinite(b?.capital?.y) ? b.capital.y : null;
+      if (ax === null || ay === null || bx === null || by === null) {
+        return Infinity;
+      }
+      return Math.hypot(bx - ax, by - ay);
+    };
+
+    factions.forEach((faction) => {
+      if (!faction || faction.id === null || faction.id === undefined) {
+        return;
+      }
+      const capitalType = resolveCapitalType(faction);
+      if (!capitalType) {
+        return;
+      }
+      const neighbors = neighborMap.get(faction.id);
+      if (!neighbors || neighbors.size === 0) {
+        return;
+      }
+
+      const allowedVassalTypes = [];
+      if (capitalType === 'greatdwarfhold') {
+        allowedVassalTypes.push('dwarfhold');
+      } else if (capitalType === 'castle') {
+        allowedVassalTypes.push('town', 'city', 'village');
+      }
+
+      if (allowedVassalTypes.length === 0) {
+        return;
+      }
+
+      neighbors.forEach((neighborId) => {
+        const neighborFaction = factionById.get(neighborId);
+        if (!neighborFaction) {
+          return;
+        }
+        const neighborType = resolveCapitalType(neighborFaction);
+        if (!allowedVassalTypes.includes(neighborType)) {
+          return;
+        }
+        assignmentCandidates.push({
+          vassalId: neighborFaction.id,
+          overlordId: faction.id,
+          distance: resolveDistanceBetween(faction, neighborFaction)
+        });
+      });
+    });
+
+    if (assignmentCandidates.length === 0) {
+      return;
+    }
+
+    assignmentCandidates.sort((a, b) => {
+      const distA = Number.isFinite(a.distance) ? a.distance : Infinity;
+      const distB = Number.isFinite(b.distance) ? b.distance : Infinity;
+      return distA - distB;
+    });
+
+    const vassalAssignments = new Map();
+
+    assignmentCandidates.forEach(({ vassalId, overlordId }) => {
+      if (vassalId === overlordId) {
+        return;
+      }
+      if (vassalAssignments.has(vassalId)) {
+        return;
+      }
+      const overlordFaction = factionById.get(overlordId);
+      const vassalFaction = factionById.get(vassalId);
+      if (!overlordFaction || !vassalFaction) {
+        return;
+      }
+      const overlordType = resolveCapitalType(overlordFaction);
+      const vassalType = resolveCapitalType(vassalFaction);
+      if (overlordType === 'greatdwarfhold' && vassalType !== 'dwarfhold') {
+        return;
+      }
+      if (overlordType === 'castle' && !['town', 'city', 'village'].includes(vassalType)) {
+        return;
+      }
+      vassalAssignments.set(vassalId, overlordId);
+    });
+
+    if (vassalAssignments.size === 0) {
+      return;
+    }
+
+    factions.forEach((faction) => {
+      if (!faction) {
+        return;
+      }
+      faction.vassals = [];
+      faction.isVassal = false;
+      faction.overlordId = null;
+    });
+
+    vassalAssignments.forEach((overlordId, vassalId) => {
+      const overlordFaction = factionById.get(overlordId);
+      const vassalFaction = factionById.get(vassalId);
+      if (!overlordFaction || !vassalFaction) {
+        return;
+      }
+      vassalFaction.isVassal = true;
+      vassalFaction.overlordId = overlordId;
+      if (!Array.isArray(overlordFaction.vassals)) {
+        overlordFaction.vassals = [];
+      }
+      overlordFaction.vassals.push(vassalId);
+    });
+
+    for (let y = 0; y < height; y += 1) {
+      const row = tiles[y];
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < width; x += 1) {
+        const tile = row[x];
+        if (!tile) {
+          continue;
+        }
+        const currentFactionId = tile.factionId;
+        if (currentFactionId === null || currentFactionId === undefined) {
+          continue;
+        }
+        const overlordId = vassalAssignments.get(currentFactionId);
+        if (overlordId === undefined) {
+          continue;
+        }
+        tile.factionId = overlordId;
+        tile.factionInfluence = clamp(Number(tile.factionInfluence) || 0, 0, 1);
+      }
+    }
+
+    factions.forEach((faction) => {
+      if (faction) {
+        faction.territory = 0;
+      }
+    });
+
+    for (let y = 0; y < height; y += 1) {
+      const row = tiles[y];
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < width; x += 1) {
+        const tile = row[x];
+        if (!tile) {
+          continue;
+        }
+        const tileFactionId = tile.factionId;
+        if (tileFactionId === null || tileFactionId === undefined) {
+          continue;
+        }
+        const faction = factionById.get(tileFactionId);
+        if (faction) {
+          faction.territory += 1;
+        }
+      }
+    }
+
+    factions.forEach((faction) => {
+      const capitalX = Number.isFinite(faction?.capital?.x) ? faction.capital.x : null;
+      const capitalY = Number.isFinite(faction?.capital?.y) ? faction.capital.y : null;
+      if (capitalX === null || capitalY === null) {
+        return;
+      }
+      const row = tiles[capitalY];
+      const tile = row ? row[capitalX] : null;
+      if (!tile || tile.factionId !== faction.id) {
+        return;
+      }
+      tile.factionInfluence = Math.max(Number(tile.factionInfluence) || 0, 0.9);
+    });
+  };
+
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
@@ -4478,6 +4724,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
 
   fillUnclaimedEnclaves();
   enforceFactionConnectivity();
+  applyOverlordVassalRules();
 
   return { factions };
 }
