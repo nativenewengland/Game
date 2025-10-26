@@ -11885,6 +11885,7 @@ function createWorld(seedString) {
   const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : primaryHillOverlayKey;
   const hillOverlayPresenceKeys = [...baseHillOverlayOptions, snowHillOverlayKey].filter(Boolean);
   const hillOverlayPresenceKeySet = new Set(hillOverlayPresenceKeys);
+  const hillOverlayKeys = Array.from(hillOverlayPresenceKeySet);
   const hillVariantSelectionSeed = (seedNumber + 0x3ab41d7f) >>> 0;
   const selectBaseHillOverlayKey = (x, y) => {
     if (baseHillOverlayOptions.length === 0) {
