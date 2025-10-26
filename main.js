@@ -10955,8 +10955,13 @@ function createWorld(seedString) {
           if (tile.base === marshTileKey) {
             tile.base = grassTileKey;
           }
-          if (!tile.hillOverlay && overlayIsHill) {
-            tile.hillOverlay = overlay;
+          const hillOverlayKeyForTile = isHillOverlay(overlay)
+            ? overlay
+            : isHillOverlay(tile.hillOverlay)
+            ? tile.hillOverlay
+            : null;
+          if (hillOverlayKeyForTile) {
+            tile.hillOverlay = hillOverlayKeyForTile;
           }
           tile.overlay = selectTreeOverlayForTile(tile, idx);
         }
@@ -11038,8 +11043,13 @@ function createWorld(seedString) {
         if (tile.base === marshTileKey) {
           tile.base = grassTileKey;
         }
-        if (!tile.hillOverlay && overlayIsHill) {
-          tile.hillOverlay = overlay;
+        const hillOverlayKeyForTile = isHillOverlay(overlay)
+          ? overlay
+          : isHillOverlay(tile.hillOverlay)
+          ? tile.hillOverlay
+          : null;
+        if (hillOverlayKeyForTile) {
+          tile.hillOverlay = hillOverlayKeyForTile;
         }
         tile.overlay = selectTreeOverlayForTile(tile, idx);
       }
