@@ -135,6 +135,7 @@ const baseTileCoords = {
   PORT_TOWN: { row: 4, col: 5 },
   CASTLE: { row: 4, col: 6 },
   ROADSIDE_TAVERN: { row: 1, col: 12 },
+  HAMLET: { row: 1, col: 13 },
   OASIS: { row: 0, col: 12 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
