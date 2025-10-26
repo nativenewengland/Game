@@ -5537,6 +5537,7 @@ const layoutEditorState = {
 };
 
 const layoutPositionEpsilon = 0.01;
+const layoutInteractiveSelector = 'button, input, select, textarea';
 
 function getLayoutDraggableElements() {
   if (!elements.dwarfCustomizerForm) {
@@ -5610,9 +5611,37 @@ function updateLayoutControlStates() {
   }
 }
 
+function setLayoutInteractivityDisabled(shouldDisable) {
+  if (!elements.dwarfCustomizerForm) {
+    return;
+  }
+
+  const interactiveElements = Array.from(
+    elements.dwarfCustomizerForm.querySelectorAll(layoutInteractiveSelector)
+  ).filter((element) => !element.closest('.layout-edit-controls'));
+
+  interactiveElements.forEach((element) => {
+    if (!(element instanceof HTMLElement)) {
+      return;
+    }
+
+    if (shouldDisable) {
+      element.dataset.layoutWasDisabled = element.disabled ? 'true' : 'false';
+      element.disabled = true;
+      element.classList.add('layout-interaction-disabled');
+    } else {
+      const wasDisabled = element.dataset.layoutWasDisabled === 'true';
+      element.disabled = wasDisabled;
+      delete element.dataset.layoutWasDisabled;
+      element.classList.remove('layout-interaction-disabled');
+    }
+  });
+}
+
 function setLayoutEditingActive(shouldActivate) {
   const isActive = Boolean(shouldActivate);
   if (layoutEditorState.isActive === isActive) {
+    setLayoutInteractivityDisabled(isActive);
     updateLayoutControlStates();
     return;
   }
@@ -5624,6 +5653,8 @@ function setLayoutEditingActive(shouldActivate) {
   if (elements.dwarfCustomizer) {
     elements.dwarfCustomizer.classList.toggle('layout-editing-active', isActive);
   }
+
+  setLayoutInteractivityDisabled(isActive);
 
   if (!isActive) {
     getLayoutDraggableElements().forEach((element) => {
