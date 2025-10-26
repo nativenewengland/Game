@@ -8422,9 +8422,14 @@ function buildRiverMap(
     1
   );
   const frequencyMultiplier = lerp(0.45, 1.75, frequencyNormalized);
-  const rainfallThreshold = lerp(0.6, 0.35, frequencyNormalized);
   const weightThreshold = 0.12 * lerp(1.45, 0.45, frequencyNormalized);
   const majorRiverThreshold = lerp(0.45, 0.28, frequencyNormalized);
+  const randomFn =
+    typeof options.random === 'function'
+      ? options.random
+      : typeof options.rng === 'function'
+      ? options.rng
+      : Math.random;
 
   const riverMap = new Uint8Array(width * height);
   const candidates = [];
@@ -8435,12 +8440,10 @@ function buildRiverMap(
       if (elev <= seaLevel + 0.02) {
         continue;
       }
-      const rain = rainfall[idx];
-      if (rain < rainfallThreshold) {
-        continue;
-      }
       const sink = 1 - drainage[idx];
-      const weight = rain * rain * (elev - seaLevel) * (0.5 + sink * 0.5);
+      const heightFactor = Math.max(0, elev - seaLevel);
+      const randomness = 0.35 + randomFn() * 0.65;
+      const weight = (heightFactor * 0.7 + sink * 0.3) * randomness;
       if (weight > weightThreshold) {
         candidates.push({ x, y, weight });
       }
@@ -8630,7 +8633,6 @@ function buildRiverMap(
   ) {
     const coastalCandidates = [];
     const coastalTaken = new Uint8Array(width * height);
-    const coastalRainThreshold = rainfallThreshold * 0.6;
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -8652,15 +8654,12 @@ function buildRiverMap(
           if (elevation[nIdx] <= seaLevel) {
             continue;
           }
-          const rain = rainfall[nIdx];
-          if (rain < coastalRainThreshold) {
-            continue;
-          }
           const sink = 1 - drainage[nIdx];
           const lowlandBoost = Math.max(0, seaLevel + 0.12 - elevation[nIdx]);
-          const weight =
-            rain * (0.65 + sink * 0.35) * (1 + lowlandBoost * 3.2);
-          const strength = rain > rainfallThreshold * 1.1 ? 2 : 1;
+          const randomness = 0.4 + randomFn() * 0.6;
+          const basePotential = Math.max(0, elevation[nIdx] - seaLevel) * 0.5 + sink * 0.5;
+          const weight = (basePotential + lowlandBoost * 3.2) * randomness;
+          const strength = weight > majorRiverThreshold ? 2 : 1;
           coastalTaken[nIdx] = 1;
           coastalCandidates.push({
             x: nx,
@@ -8682,13 +8681,13 @@ function buildRiverMap(
 
     if (maxOceanSources > 0) {
       const inlandInfluence = lerp(0.006, 0.018, frequencyNormalized);
-      const rainfallStopThreshold = rainfallThreshold * 0.4;
       const maxReverseLength = Math.max(
         6,
         Math.round(
           Math.sqrt(width * height) * lerp(0.32, 0.58, frequencyNormalized)
         )
       );
+      const detourProbability = lerp(0.08, 0.22, frequencyNormalized);
 
       for (let i = 0; i < maxOceanSources; i += 1) {
         const start = coastalCandidates[i];
@@ -8743,14 +8742,13 @@ function buildRiverMap(
             ) {
               continue;
             }
-            const neighborRain = rainfall[nIdx];
-            if (neighborRain < rainfallStopThreshold && pathIndices.length > 4) {
+            if (pathIndices.length > 4 && randomFn() < detourProbability) {
               continue;
             }
 
             let score = neighborBaseValue;
             score -= distanceDelta * inlandInfluence;
-            score -= neighborRain * 0.02;
+            score -= randomFn() * 0.02;
 
             if (score < bestScore) {
               bestScore = score;
@@ -10950,7 +10948,8 @@ function createWorld(seedString) {
     seaLevel,
     waterMask,
     {
-      frequencyNormalized: riverFrequencyNormalized
+      frequencyNormalized: riverFrequencyNormalized,
+      random: rng
     }
   );
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
