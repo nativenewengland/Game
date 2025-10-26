@@ -7376,6 +7376,10 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   }
 
+  if (breakdownSection) {
+    sections.push(breakdownSection);
+  }
+
   listSections.forEach((section) => {
     const items = section.items
       .map((item) => `<li>${escapeHtml(item)}</li>`)
@@ -7387,10 +7391,6 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
       </section>
     `);
   });
-
-  if (breakdownSection) {
-    sections.push(breakdownSection);
-  }
 
   narrativeSections.forEach((section) => {
     sections.push(`
