@@ -10782,6 +10782,39 @@ function createWorld(seedString) {
   }
 
   if (hasSandTile) {
+    const isAdjacentToWater = (x, y) => {
+      for (let i = 0; i < neighborOffsets8.length; i += 1) {
+        const nx = x + neighborOffsets8[i][0];
+        const ny = y + neighborOffsets8[i][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        if (waterMask[nIdx]) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const hasAdjacentSand = (x, y, excludeIndices = null) => {
+      for (let i = 0; i < neighborOffsets8.length; i += 1) {
+        const nx = x + neighborOffsets8[i][0];
+        const ny = y + neighborOffsets8[i][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        if (excludeIndices && excludeIndices.has(nIdx)) {
+          continue;
+        }
+        if (tiles[ny][nx].base === sandTileKey) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     const blurIterations = 2;
     const blurRadius = 2;
     const smoothingSamples = [];
@@ -10970,7 +11003,11 @@ function createWorld(seedString) {
                 2.15
               );
               const badlandsLikelihood = clamp((heatValue - 0.58) * 1.25 + (dryness - 0.5) * 0.85, 0, 1);
-              if (badlandsNoise < badlandsLikelihood) {
+              if (
+                badlandsNoise < badlandsLikelihood &&
+                !isAdjacentToWater(x, y) &&
+                hasAdjacentSand(x, y)
+              ) {
                 baseTileName = badlandsTileKey;
               }
             }
@@ -11011,6 +11048,9 @@ function createWorld(seedString) {
             if (!desertMask[idx] || badlandsMask[idx]) {
               continue;
             }
+            if (isAdjacentToWater(x, y)) {
+              continue;
+            }
             let neighborCount = 0;
             let hasLeft = false;
             let hasRight = false;
@@ -11043,7 +11083,11 @@ function createWorld(seedString) {
             const hasVerticalBridge = hasUp && hasDown;
             const hasCrossBridge =
               (hasLeft || hasRight) && (hasUp || hasDown) && neighborCount >= 3;
-            if (neighborCount >= 2 && (hasHorizontalBridge || hasVerticalBridge || hasCrossBridge)) {
+            if (
+              neighborCount >= 2 &&
+              (hasHorizontalBridge || hasVerticalBridge || hasCrossBridge) &&
+              hasAdjacentSand(x, y)
+            ) {
               additions.push({ idx, x, y });
             }
           }
@@ -11051,10 +11095,39 @@ function createWorld(seedString) {
         if (additions.length === 0) {
           break;
         }
-        for (let i = 0; i < additions.length; i += 1) {
-          const { idx, x, y } = additions[i];
+        const additionSet = new Set(additions.map(({ idx }) => idx));
+        const validAdditions = additions.filter(({ x, y }) =>
+          hasAdjacentSand(x, y, additionSet)
+        );
+        if (validAdditions.length === 0) {
+          break;
+        }
+        for (let i = 0; i < validAdditions.length; i += 1) {
+          const { idx, x, y } = validAdditions[i];
           badlandsMask[idx] = 1;
           tiles[y][x].base = badlandsTileKey;
+        }
+      }
+    }
+
+    if (badlandsMask) {
+      const revertIndices = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!badlandsMask[idx]) {
+            continue;
+          }
+          if (isAdjacentToWater(x, y) || !hasAdjacentSand(x, y)) {
+            revertIndices.push({ idx, x, y });
+          }
+        }
+      }
+      if (revertIndices.length > 0) {
+        for (let i = 0; i < revertIndices.length; i += 1) {
+          const { idx, x, y } = revertIndices[i];
+          badlandsMask[idx] = 0;
+          tiles[y][x].base = sandTileKey;
         }
       }
     }
