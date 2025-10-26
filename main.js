@@ -10522,7 +10522,21 @@ function createWorld(seedString) {
   const desertBandScale = hasSandTile ? 1.4 + rng() * 1.6 : 1;
   const desertBandOffsetX = hasSandTile ? rng() * 2048 : 0;
   const desertBandOffsetY = hasSandTile ? rng() * 2048 : 0;
-  const desertBandStrength = hasSandTile ? 0.2 + rng() * 0.25 : 0;
+  const desertBandStrength = hasSandTile ? 0.12 + rng() * 0.18 : 0;
+  const desertBandSeedSecondary = hasSandTile ? (seedNumber + 0x1f83d9ab) >>> 0 : 0;
+  const desertBandSeedTertiary = hasSandTile ? (seedNumber + 0x5be0cd19) >>> 0 : 0;
+  const desertBandScaleSecondary = hasSandTile ? desertBandScale * (0.85 + rng() * 0.5) : 1;
+  const desertBandScaleTertiary = hasSandTile ? desertBandScale * (0.75 + rng() * 0.6) : 1;
+  const desertBandOffsetXSecondary = hasSandTile ? rng() * 2048 : 0;
+  const desertBandOffsetYSecondary = hasSandTile ? rng() * 2048 : 0;
+  const desertBandOffsetXTertiary = hasSandTile ? rng() * 2048 : 0;
+  const desertBandOffsetYTertiary = hasSandTile ? rng() * 2048 : 0;
+  const desertBandRotation = hasSandTile ? rng() * Math.PI * 2 : 0;
+  const desertBandRotationSecondary = hasSandTile ? rng() * Math.PI * 2 : 0;
+  const desertBandCos = Math.cos(desertBandRotation);
+  const desertBandSin = Math.sin(desertBandRotation);
+  const desertBandCosSecondary = Math.cos(desertBandRotationSecondary);
+  const desertBandSinSecondary = Math.sin(desertBandRotationSecondary);
   const desertSuitabilitySeed = hasSandTile ? (seedNumber + 0xbb67ae85) >>> 0 : 0;
   const desertSuitabilityScale = hasSandTile ? 2.8 + rng() * 2.8 : 1;
   const desertSuitabilityOffsetX = hasSandTile ? rng() * 8192 : 0;
@@ -10633,7 +10647,7 @@ function createWorld(seedString) {
       const aridity = clamp(1 - rainfallValue * 1.2, 0, 1);
       let equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
       if (desertBandStrength > 0) {
-        const bandNoise = octaveNoise(
+        const bandNoisePrimary = octaveNoise(
           (normalizedX + desertBandOffsetX) * desertBandScale,
           (normalizedY + desertBandOffsetY) * desertBandScale,
           desertBandSeed,
@@ -10641,7 +10655,30 @@ function createWorld(seedString) {
           0.55,
           2.1
         );
-        const bandWarp = (bandNoise * 2 - 1) * desertBandStrength;
+        const centeredX = normalizedX - 0.5;
+        const centeredY = normalizedY - 0.5;
+        const rotatedPrimaryX = centeredX * desertBandCos - centeredY * desertBandSin;
+        const rotatedPrimaryY = centeredX * desertBandSin + centeredY * desertBandCos;
+        const bandNoiseSecondary = octaveNoise(
+          (rotatedPrimaryX + 0.5 + desertBandOffsetXSecondary) * desertBandScaleSecondary,
+          (rotatedPrimaryY + 0.5 + desertBandOffsetYSecondary) * desertBandScaleSecondary,
+          desertBandSeedSecondary,
+          4,
+          0.55,
+          2.1
+        );
+        const rotatedSecondaryX = centeredX * desertBandCosSecondary - centeredY * desertBandSinSecondary;
+        const rotatedSecondaryY = centeredX * desertBandSinSecondary + centeredY * desertBandCosSecondary;
+        const bandNoiseTertiary = octaveNoise(
+          (rotatedSecondaryX + 0.5 + desertBandOffsetXTertiary) * desertBandScaleTertiary,
+          (rotatedSecondaryY + 0.5 + desertBandOffsetYTertiary) * desertBandScaleTertiary,
+          desertBandSeedTertiary,
+          4,
+          0.55,
+          2.1
+        );
+        const combinedBandNoise = (bandNoisePrimary + bandNoiseSecondary + bandNoiseTertiary) / 3;
+        const bandWarp = (combinedBandNoise * 2 - 1) * desertBandStrength;
         equatorialAlignment = clamp(equatorialAlignment + bandWarp, 0, 1);
       }
       const elevationFactor = clamp((heightValue - seaLevel) * 2.6, 0, 1);
