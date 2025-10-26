@@ -1420,13 +1420,13 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: clamp(0.35rem, 1vw, 0.6rem);
-  width: min(100%, clamp(22rem, 36vw, 28rem));
-  max-width: clamp(22rem, 36vw, 28rem);
+  width: 100%;
+  max-width: 100%;
   border-radius: 18px;
   background: rgba(24, 18, 32, 0.55);
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18),
     0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
-  align-self: flex-end;
+  align-self: stretch;
 }
 
 .customizer-sidebar__name .dwarf-slot-info {
@@ -2054,7 +2054,7 @@ button:hover:not(:disabled) {
   align-items: flex-start;
   text-align: left;
   gap: 0.6rem;
-  margin-top: clamp(0.4rem, 1.2vw, 0.9rem);
+  margin-top: clamp(1rem, 2.5vw, 1.6rem);
 }
 
 .field-group--hair-colour .hair-colour-controls {
@@ -2177,7 +2177,9 @@ button:hover:not(:disabled) {
   }
 
   .customizer-sidebar__name.pixel-bar {
-    width: min(100%, 22rem);
+    width: 100%;
+    max-width: 22rem;
+    align-self: center;
   }
 
   .customizer-main {
@@ -2210,7 +2212,8 @@ button:hover:not(:disabled) {
 
 @media (max-width: 720px) {
   .customizer-sidebar__name.pixel-bar {
-    width: min(100%, 18.5rem);
+    width: 100%;
+    max-width: 18.5rem;
     padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.75rem, 4vw, 1rem);
   }
 
