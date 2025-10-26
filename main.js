@@ -64,6 +64,7 @@ const baseTileCoords = {
   MOUNTAIN_TOP_B: { row: 0, col: 5 },
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
+  DAM: { row: 1, col: 8 },
   MOUNTAIN_PEAK: { row: 0, col: 10 },
   STONE: { row: 0, col: 2 },
   DWARFHOLD: { row: 2, col: 9 },
@@ -11334,6 +11335,71 @@ function createWorld(seedString) {
 
         placed.push(candidate);
         hillholds.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const damKey = tileLookup.has('DAM') ? 'DAM' : null;
+  if (damKey && Array.isArray(dwarfholds) && dwarfholds.length > 0) {
+    const damRadius = 10;
+    const damRadiusSq = damRadius * damRadius;
+    const damChance = 0.35;
+    const damNoiseSeed = (seedNumber + 0x4b5f29d3) >>> 0;
+    const isMountainTile = (tile) =>
+      Boolean(tile) && (isMountainOverlay(tile.overlay) || isMountainOverlay(tile.hillOverlay));
+
+    for (let y = 1; y < height - 1; y += 1) {
+      const aboveRow = tiles[y - 1];
+      const row = tiles[y];
+      for (let x = 1; x < width - 1; x += 1) {
+        const tile = row && row[x];
+        if (!tile || tile.structure || !tile.river) {
+          continue;
+        }
+
+        const aboveIdx = (y - 1) * width + x;
+        const aboveTile = Array.isArray(aboveRow) ? aboveRow[x] : null;
+        const aboveIsWater =
+          (aboveIdx >= 0 && waterMask[aboveIdx]) ||
+          (aboveTile && waterTileKey && aboveTile.base === waterTileKey);
+        if (!aboveIsWater) {
+          continue;
+        }
+
+        const leftTile = row[x - 1];
+        const rightTile = row[x + 1];
+        if (!isMountainTile(leftTile) || !isMountainTile(rightTile)) {
+          continue;
+        }
+
+        const nearestHoldInfo = findNearestPointWithDetails(x, y, dwarfholds);
+        if (!nearestHoldInfo || nearestHoldInfo.distanceSq > damRadiusSq) {
+          continue;
+        }
+
+        const placementRoll = hashCoords(x, y, damNoiseSeed);
+        if (placementRoll >= damChance) {
+          continue;
+        }
+
+        const controllingHoldName =
+          typeof nearestHoldInfo.point?.name === 'string' && nearestHoldInfo.point.name.trim()
+            ? nearestHoldInfo.point.name.trim()
+            : null;
+        const damName = controllingHoldName ? `${controllingHoldName} Dam` : 'Dwarven Dam';
+
+        tile.structure = damKey;
+        tile.structureName = damName;
+        tile.structureDetails = {
+          type: 'dam',
+          displayType: 'Dam',
+          classification: 'Dwarven Works',
+          name: damName,
+          controllingHold: controllingHoldName,
+          description: controllingHoldName
+            ? `Engineers from ${controllingHoldName} raised a stone dam to harness the river.`
+            : 'Dwarven engineers raised a stone dam to harness the river.'
+        };
       }
     }
   }
