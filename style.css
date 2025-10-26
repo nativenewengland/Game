@@ -1118,11 +1118,12 @@ button:hover:not(:disabled) {
   margin-top: clamp(-1.75rem, calc(-0.6rem - 1.2vw), -0.85rem);
 }
 
+
 .customizer-sidebar {
   display: flex;
   flex-direction: column;
   gap: clamp(0.85rem, 2.3vw, 1.45rem);
-  align-items: center;
+  align-items: flex-end;
   justify-self: end;
 }
 
@@ -1130,11 +1131,13 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: clamp(0.35rem, 1vw, 0.6rem);
-  width: min(100%, clamp(18rem, 28vw, 24rem));
+  width: min(100%, clamp(22rem, 36vw, 28rem));
+  max-width: clamp(22rem, 36vw, 28rem);
   border-radius: 18px;
   background: rgba(24, 18, 32, 0.55);
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18),
     0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
+  align-self: flex-end;
 }
 
 .customizer-sidebar__name .dwarf-slot-info {
@@ -1154,7 +1157,7 @@ button:hover:not(:disabled) {
 }
 
 .customizer-sidebar__name .dwarf-name-field {
-  width: clamp(14.5rem, 24vw, 20.5rem);
+  width: clamp(17rem, 28vw, 24rem);
   margin: 0;
 }
 
@@ -1162,13 +1165,30 @@ button:hover:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.body-panel-frame {
+  position: relative;
+  width: clamp(220px, 24vw, 310px);
 }
 
 .body-panel-image {
   display: block;
   height: auto;
-  width: clamp(220px, 24vw, 310px);
+  width: 100%;
   image-rendering: pixelated;
+}
+
+.dwarf-body-portrait-canvas {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(195px, 21vw, 260px);
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
 }
 
 .customizer-sidebar__actions {
@@ -1742,6 +1762,7 @@ button:hover:not(:disabled) {
   align-items: flex-start;
   text-align: left;
   gap: 0.6rem;
+  margin-top: clamp(0.4rem, 1.2vw, 0.9rem);
 }
 
 .field-group--hair-colour .hair-colour-controls {
@@ -1787,6 +1808,7 @@ button:hover:not(:disabled) {
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: flex-start;
+  margin-top: clamp(0.2rem, 0.8vw, 0.45rem);
 }
 
 .gender-toggle-button {
