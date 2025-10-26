@@ -3938,6 +3938,12 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     if (!seed || !Number.isFinite(seed.x) || !Number.isFinite(seed.y)) {
       return;
     }
+    const normalizedType = typeof seed.type === 'string' ? seed.type.trim().toLowerCase() : '';
+    const normalizedKind =
+      typeof seed.settlementKind === 'string' ? seed.settlementKind.trim().toLowerCase() : '';
+    if (normalizedType === 'abandoneddwarfhold' || normalizedKind === 'abandoneddwarfhold') {
+      return;
+    }
     const key = toKey(seed.x, seed.y);
     if (seenSeeds.has(key)) {
       return;
