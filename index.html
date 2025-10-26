@@ -756,6 +756,37 @@
         <canvas id="world-canvas" width="6400" height="4800"></canvas>
         <div id="world-tooltip" class="map-tooltip" aria-hidden="true"></div>
       </main>
+      <aside
+        id="local-map-panel"
+        class="local-map-panel hidden"
+        aria-live="polite"
+        aria-hidden="true"
+      >
+        <div class="local-map-header">
+          <div class="local-map-header-text">
+            <h2 id="local-map-title">Local View</h2>
+            <p id="local-map-subtitle" class="local-map-subtitle">
+              Select a site to examine the surrounding terrain.
+            </p>
+          </div>
+          <button id="local-map-close" type="button" class="secondary" aria-label="Close local map">
+            Close
+          </button>
+        </div>
+        <canvas
+          id="local-map-canvas"
+          class="local-map-canvas"
+          width="320"
+          height="320"
+          role="img"
+          aria-hidden="true"
+          aria-label="Local map preview"
+        ></canvas>
+        <p id="local-map-coordinates" class="local-map-coordinates"></p>
+        <div id="local-map-details" class="local-map-details">
+          Click the world map to open a local preview.
+        </div>
+      </aside>
       <section
         id="structure-details"
         class="modal hidden"
