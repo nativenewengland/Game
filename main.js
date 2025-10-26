@@ -73,6 +73,8 @@ const baseTileCoords = {
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
+  HILLS_VARIANT_A: { row: 4, col: 4 },
+  HILLS_VARIANT_B: { row: 5, col: 2 },
   HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
@@ -417,7 +419,7 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
 
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
-const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
+const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW']);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
 
@@ -11431,12 +11433,30 @@ function createWorld(seedString) {
     }
   }
 
-  const hillOverlayKeys = ['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key));
-  const hillOverlayKeySet = new Set(hillOverlayKeys);
-  const hillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : hillOverlayKeys[0] || null;
-  const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : hillOverlayKey;
-  const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayKeySet.has(overlayKey);
-  if (hillOverlayKeySet.size > 0 && hillOverlayKey) {
+  const baseHillOverlayOptions = ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B'].filter((key) =>
+    tileLookup.has(key)
+  );
+  const primaryHillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : baseHillOverlayOptions[0] || null;
+  const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : primaryHillOverlayKey;
+  const hillOverlayPresenceKeys = [...baseHillOverlayOptions, snowHillOverlayKey].filter(Boolean);
+  const hillOverlayPresenceKeySet = new Set(hillOverlayPresenceKeys);
+  const hillVariantSelectionSeed = (seedNumber + 0x3ab41d7f) >>> 0;
+  const selectBaseHillOverlayKey = (x, y) => {
+    if (baseHillOverlayOptions.length === 0) {
+      return null;
+    }
+    if (baseHillOverlayOptions.length === 1) {
+      return baseHillOverlayOptions[0];
+    }
+    const noise = hashCoords(x, y, hillVariantSelectionSeed);
+    const index = Math.min(
+      Math.floor(noise * baseHillOverlayOptions.length),
+      baseHillOverlayOptions.length - 1
+    );
+    return baseHillOverlayOptions[index];
+  };
+  const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayPresenceKeySet.has(overlayKey);
+  if (hillOverlayPresenceKeySet.size > 0 && (primaryHillOverlayKey || snowHillOverlayKey)) {
     const hillUpperThreshold = hasMountainTile
       ? mountainBaseThreshold
       : Math.min(0.92, seaLevel + 0.32);
@@ -11521,7 +11541,7 @@ function createWorld(seedString) {
             noiseValue * 0.12;
           const threshold = 0.5 - mountainBonus * 0.18;
           if (compositeScore > threshold) {
-            const overlayKey = baseIsSnow ? snowHillOverlayKey : hillOverlayKey;
+            const overlayKey = baseIsSnow ? snowHillOverlayKey : selectBaseHillOverlayKey(x, y);
             if (overlayKey) {
               tile.hillOverlay = overlayKey;
               tile.overlay = overlayKey;
@@ -12540,7 +12560,9 @@ function createWorld(seedString) {
     ...towers,
     ...evilWizardTowers
   ];
-  const hillOverlayKeysForStructures = new Set(['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key)));
+  const hillOverlayKeysForStructures = new Set(
+    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW'].filter((key) => tileLookup.has(key))
+  );
   const isHillOverlayForStructures = (overlayKey) =>
     overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
   const mapArea = width * height;
