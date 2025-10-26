@@ -1274,13 +1274,13 @@ button:hover:not(:disabled) {
 
 .dwarf-name-field {
   position: relative;
-  width: clamp(16rem, 62vw, 28rem);
+  width: clamp(12rem, 45vw, 20rem);
   margin: clamp(-0.75rem, -1vh, -0.35rem) auto 0;
   aspect-ratio: 618 / 89;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  padding-inline: clamp(0.65rem, 1.8vw, 0.9rem);
+  padding-inline: clamp(0.5rem, 1.2vw, 0.75rem);
 }
 
 .dwarf-name-field::before {
@@ -1300,13 +1300,13 @@ button:hover:not(:disabled) {
   position: relative;
   width: 100%;
   min-width: 0;
-  padding: 0.35rem 0.6rem;
+  padding: 0.35rem 0.75rem;
   border: none;
   border-radius: 9px;
   background: rgba(24, 18, 32, 0.65);
   color: #f4ecdd;
   font-size: 1rem;
-  text-align: center;
+  text-align: left;
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18);
   z-index: 1;
 }
