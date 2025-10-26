@@ -265,6 +265,55 @@ function drawMonasteryStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const groundRadius = size * 0.46;
+  ctx.fillStyle = '#6a8c3a';
+  ctx.beginPath();
+  ctx.arc(size * 0.5, size * 0.58, groundRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  const hutWidth = size * 0.26;
+  const hutHeight = size * 0.2;
+
+  ctx.fillStyle = '#d2b48c';
+  ctx.fillRect(size * 0.18, size * 0.42, hutWidth, hutHeight);
+  ctx.fillRect(size * 0.56, size * 0.48, hutWidth, hutHeight);
+
+  ctx.fillStyle = '#8b5a2b';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.18, size * 0.42);
+  ctx.lineTo(size * 0.31, size * 0.3);
+  ctx.lineTo(size * 0.44, size * 0.42);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(size * 0.56, size * 0.48);
+  ctx.lineTo(size * 0.69, size * 0.36);
+  ctx.lineTo(size * 0.82, size * 0.48);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#c8c79b';
+  ctx.beginPath();
+  ctx.arc(size * 0.45, size * 0.66, size * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#3f2d16';
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  ctx.beginPath();
+  ctx.moveTo(size * 0.3, size * 0.52);
+  ctx.lineTo(size * 0.3, size * 0.62);
+  ctx.moveTo(size * 0.68, size * 0.56);
+  ctx.lineTo(size * 0.68, size * 0.66);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -516,6 +565,7 @@ registerCustomStructure('DUNGEON', (ctx, drawOptions) => drawDungeonStructure(ct
 registerCustomStructure('MONASTERY', (ctx, drawOptions) => drawMonasteryStructure(ctx, drawOptions));
 registerCustomStructure('CASTLE', (ctx, drawOptions) => drawCastleStructure(ctx, drawOptions));
 registerCustomStructure('SAINT_SHRINE', (ctx, drawOptions) => drawSaintShrineStructure(ctx, drawOptions));
+registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
 
 // The evil wizard tower sprite only shows up on some tilesheets. If the
 // currently loaded set does not define it, fall back to the generic tower so
@@ -2688,7 +2738,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
 
 function generateEvilWizardTowerDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const population = Math.max(40, Math.floor(80 + randomFn() * 520));
+  const population = Math.max(1, Math.floor(1 + randomFn() * 599));
   const wizardRoll = randomFn();
   const wizardCount =
     wizardRoll < 0.7
@@ -2756,13 +2806,13 @@ function generateTownName(random) {
 
 function generateTownDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const population = Math.max(120, Math.floor(220 + randomFn() * 6000));
+  const population = Math.max(20, Math.floor(20 + randomFn() * 6000));
   let classification = 'Village';
   if (population >= 6000) {
     classification = 'City';
   } else if (population >= 3600) {
     classification = 'Large Town';
-  } else if (population >= 1800) {
+  } else if (population >= 100) {
     classification = 'Town';
   }
 
@@ -10856,6 +10906,7 @@ function createWorld(seedString) {
 
   const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
   const portTownKey = tileLookup.has('PORT_TOWN') ? 'PORT_TOWN' : null;
+  const hamletKey = tileLookup.has('HAMLET') ? 'HAMLET' : null;
   if (townKey) {
     const townCandidates = [];
     for (let y = 0; y < height; y += 1) {
@@ -11045,6 +11096,9 @@ function createWorld(seedString) {
           if (touchesWater) {
             structureKey = portTownKey;
           }
+        }
+        if (hamletKey && details.type === 'village' && details.population < 100) {
+          structureKey = hamletKey;
         }
         tile.structure = structureKey;
         tile.structureName = name;
