@@ -6271,6 +6271,17 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
       if (dx * dx + dy * dy > maxDistanceSq) {
         continue;
       }
+      if (
+        doesDirectTownConnectionCrossWater(
+          townA,
+          townB,
+          mapWidth,
+          mapHeight,
+          waterMask
+        )
+      ) {
+        continue;
+      }
       carveRoadBetweenPoints(townA, townB, {
         tiles,
         overlayKey,
@@ -6286,6 +6297,64 @@ function connectTownsWithinRange(tiles, towns, options = {}) {
       });
     }
   }
+}
+
+function doesDirectTownConnectionCrossWater(start, end, width, height, waterMask) {
+  if (
+    !start ||
+    !end ||
+    !Number.isFinite(start.x) ||
+    !Number.isFinite(start.y) ||
+    !Number.isFinite(end.x) ||
+    !Number.isFinite(end.y)
+  ) {
+    return false;
+  }
+
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return false;
+  }
+
+  if (!waterMask || (!Array.isArray(waterMask) && !(waterMask instanceof Uint8Array))) {
+    return false;
+  }
+
+  const totalTiles = width * height;
+  if (!Number.isFinite(totalTiles) || totalTiles <= 0) {
+    return false;
+  }
+
+  let x0 = clamp(Math.round(start.x), 0, width - 1);
+  let y0 = clamp(Math.round(start.y), 0, height - 1);
+  const x1 = clamp(Math.round(end.x), 0, width - 1);
+  const y1 = clamp(Math.round(end.y), 0, height - 1);
+
+  const dx = Math.abs(x1 - x0);
+  const sx = x0 < x1 ? 1 : -1;
+  const dy = -Math.abs(y1 - y0);
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+
+  while (true) {
+    const index = y0 * width + x0;
+    if (index >= 0 && index < waterMask.length && waterMask[index]) {
+      return true;
+    }
+    if (x0 === x1 && y0 === y1) {
+      break;
+    }
+    const e2 = err * 2;
+    if (e2 >= dy) {
+      err += dy;
+      x0 += sx;
+    }
+    if (e2 <= dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+
+  return false;
 }
 
 function carveRoadBetweenPoints(start, end, options) {
