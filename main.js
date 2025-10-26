@@ -8795,6 +8795,8 @@ function createWorld(seedString) {
   const rng = mulberry32(seedNumber || 1);
   const width = state.settings.width;
   const height = state.settings.height;
+  const chronology = ensureChronology();
+  const isFirstAge = chronology && chronology.age === 1;
   const forestFrequencySetting = sanitizeFrequencyValue(
     state.settings.forestFrequency,
     defaultForestFrequency
@@ -11301,12 +11303,16 @@ function createWorld(seedString) {
   if (hasTreeTile) {
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
-    const treeBaseScale = 2.4 + rng() * 1.6;
-    const treeDetailScale = 6.6 + rng() * 4.6;
+    const treeBaseScale = (isFirstAge ? 2.4 : 3.3) + rng() * (isFirstAge ? 1.6 : 2.6);
+    const treeDetailScale = (isFirstAge ? 6.6 : 8.4) + rng() * (isFirstAge ? 4.6 : 5.6);
     const treeBaseOffsetX = rng() * 4096;
     const treeBaseOffsetY = rng() * 4096;
     const treeDetailOffsetX = rng() * 8192;
     const treeDetailOffsetY = rng() * 8192;
+    const treeClusterSeed = isFirstAge ? 0 : (seedNumber + 0x4f1bbcd1) >>> 0;
+    const treeClusterScale = isFirstAge ? 1 : 8.2 + rng() * 4.8;
+    const treeClusterOffsetX = isFirstAge ? 0 : rng() * 8192;
+    const treeClusterOffsetY = isFirstAge ? 0 : rng() * 8192;
     treeDensityField = new Float32Array(width * height);
     const treeMask = new Uint8Array(width * height);
     if (treeJungleOverlayKey) {
@@ -11397,25 +11403,53 @@ function createWorld(seedString) {
       [0, 1],
       [1, 1]
     ];
-    const baseSeedThreshold = 0.66;
-    const baseSoftSeedThreshold = 0.56;
-    const baseGrowthBaseline = 0.48;
-    const baseNeighborBonus = 0.08;
-    const baseDensityAlwaysAdd = 0.6;
-    const baseSoftSeedMultiplier = 1.8;
-    const growthSpeedModifier = clamp(0.45 + forestBias * 0.2, 0.35, 0.8);
-    const growthIterationModifier = clamp(0.5 + forestBias * 0.25, 0.5, 0.95);
-    const seedThreshold = clamp(baseSeedThreshold - forestBias * 0.18, 0.35, 0.9);
-    const softSeedThreshold = clamp(baseSoftSeedThreshold - forestBias * 0.16, 0.25, 0.85);
-    const growthBaseline = clamp(baseGrowthBaseline - forestBias * 0.14, 0.2, 0.7);
-    const neighborBonus = clamp(baseNeighborBonus + forestBias * 0.04, 0.02, 0.14);
-    const densityAlwaysAddThreshold = clamp(
-      baseDensityAlwaysAdd - forestBias * 0.12 + (1 - growthSpeedModifier) * 0.1,
-      0.45,
-      0.82
+    const baseSeedThreshold = isFirstAge ? 0.66 : 0.74;
+    const baseSoftSeedThreshold = isFirstAge ? 0.56 : 0.65;
+    const baseGrowthBaseline = isFirstAge ? 0.48 : 0.58;
+    const baseNeighborBonus = isFirstAge ? 0.08 : 0.06;
+    const baseDensityAlwaysAdd = isFirstAge ? 0.6 : 0.74;
+    const baseSoftSeedMultiplier = isFirstAge ? 1.8 : 1.35;
+    const growthSpeedModifier = clamp(
+      (isFirstAge ? 0.45 : 0.35) + forestBias * 0.2,
+      isFirstAge ? 0.35 : 0.28,
+      isFirstAge ? 0.8 : 0.65
     );
-    const softSeedMultiplier = clamp(baseSoftSeedMultiplier + forestBias * 0.6, 0.8, 2.6);
-    const maxGrowthIterations = Math.max(1, Math.round(2 * growthIterationModifier));
+    const growthIterationModifier = clamp(
+      (isFirstAge ? 0.5 : 0.38) + forestBias * 0.25,
+      isFirstAge ? 0.5 : 0.35,
+      isFirstAge ? 0.95 : 0.75
+    );
+    const seedThreshold = clamp(
+      baseSeedThreshold - forestBias * (isFirstAge ? 0.18 : 0.12),
+      0.35,
+      0.92
+    );
+    const softSeedThreshold = clamp(
+      baseSoftSeedThreshold - forestBias * (isFirstAge ? 0.16 : 0.1),
+      0.25,
+      0.88
+    );
+    const growthBaseline = clamp(
+      baseGrowthBaseline - forestBias * (isFirstAge ? 0.14 : 0.12),
+      0.2,
+      0.72
+    );
+    const neighborBonus = clamp(
+      baseNeighborBonus + forestBias * (isFirstAge ? 0.04 : 0.02),
+      0.02,
+      0.12
+    );
+    const densityAlwaysAddThreshold = clamp(
+      baseDensityAlwaysAdd - forestBias * (isFirstAge ? 0.12 : 0.08) + (1 - growthSpeedModifier) * 0.1,
+      0.45,
+      0.84
+    );
+    const softSeedMultiplier = clamp(
+      baseSoftSeedMultiplier + forestBias * (isFirstAge ? 0.6 : 0.4),
+      0.8,
+      2.2
+    );
+    const maxGrowthIterations = Math.max(1, Math.round((isFirstAge ? 2 : 1.5) * growthIterationModifier));
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -11444,7 +11478,20 @@ function createWorld(seedString) {
         density = clamp(density * 0.6 + elevationPreference * 0.4, 0, 1);
         const rainfallValue = rainfallField[idx];
         density = clamp(density * 0.55 + rainfallValue * 0.45, 0, 1);
-        density = clamp(density * (1 + forestBias * 0.25), 0, 1);
+        const biasMultiplier = isFirstAge ? 1 + forestBias * 0.25 : 0.85 + forestBias * 0.2;
+        density = clamp(density * biasMultiplier, 0, 1);
+        if (!isFirstAge) {
+          const clusterNoise = octaveNoise(
+            (normalizedX + treeClusterOffsetX) * treeClusterScale,
+            (normalizedY + treeClusterOffsetY) * treeClusterScale,
+            treeClusterSeed,
+            3,
+            0.55,
+            2.2
+          );
+          const clusterWeight = clamp((clusterNoise - 0.35) * 1.6, 0, 1);
+          density = clamp(density * (0.35 + clusterWeight * 0.85), 0, 1);
+        }
         treeDensityField[idx] = density;
       }
     }
