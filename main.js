@@ -11786,6 +11786,38 @@ function createWorld(seedString) {
 
     const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
     if (woodElfGroveKey) {
+      const isTileNearWater = (x, y) => {
+        if (x < 0 || y < 0 || x >= width || y >= height) {
+          return true;
+        }
+        const idx = y * width + x;
+        if (waterMask && waterMask[idx]) {
+          return true;
+        }
+        const tile = tiles[y][x];
+        if (tile && tile.river) {
+          return true;
+        }
+        if (!waterMask || waterMask.length !== width * height) {
+          return false;
+        }
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            return true;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (neighborTile && (neighborTile.base === waterTileKey || neighborTile.river)) {
+            return true;
+          }
+        }
+        return false;
+      };
       const groveCandidates = [];
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
@@ -11798,6 +11830,9 @@ function createWorld(seedString) {
             tile.structure ||
             (hasSnowTile && tile.base === snowTileKey)
           ) {
+            continue;
+          }
+          if (isTileNearWater(x, y)) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -11846,7 +11881,8 @@ function createWorld(seedString) {
             !tileHasTreeOverlay(tile) ||
             tileHasJungleOverlay(tile) ||
             tile.structure ||
-            (hasSnowTile && tile.base === snowTileKey)
+            (hasSnowTile && tile.base === snowTileKey) ||
+            isTileNearWater(candidate.x, candidate.y)
           ) {
             continue;
           }
