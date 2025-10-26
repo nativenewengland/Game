@@ -8464,6 +8464,7 @@ function buildRiverMap(
   const oceanDistance = new Float32Array(width * height);
   oceanDistance.fill(Number.POSITIVE_INFINITY);
   const oceanMask = new Uint8Array(width * height);
+  let hasOceanTiles = false;
   if (waterMask && typeof waterMask.length === 'number') {
     const queue = new Int32Array(width * height);
     let queueHead = 0;
@@ -8481,6 +8482,7 @@ function buildRiverMap(
         }
         if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
           oceanMask[idx] = 1;
+          hasOceanTiles = true;
           enqueue(idx);
         }
       }
@@ -8490,6 +8492,7 @@ function buildRiverMap(
       for (let i = 0; i < waterMask.length; i += 1) {
         if (waterMask[i]) {
           oceanMask[i] = 1;
+          hasOceanTiles = true;
           enqueue(i);
         }
       }
@@ -8521,6 +8524,7 @@ function buildRiverMap(
     for (let i = 0; i < oceanMask.length; i += 1) {
       if (oceanMask[i]) {
         oceanDistance[i] = 0;
+        hasOceanTiles = true;
         enqueue(i);
       }
     }
@@ -8529,6 +8533,7 @@ function buildRiverMap(
       for (let i = 0; i < waterMask.length; i += 1) {
         if (waterMask[i]) {
           oceanDistance[i] = 0;
+          hasOceanTiles = true;
           enqueue(i);
         }
       }
@@ -8613,6 +8618,170 @@ function buildRiverMap(
 
       if (riverMap[lowestIdx] > 0 && steps > 3) {
         break;
+      }
+    }
+  }
+
+  if (
+    hasOceanTiles &&
+    waterMask &&
+    typeof waterMask.length === 'number' &&
+    frequencyNormalized > 0.05
+  ) {
+    const coastalCandidates = [];
+    const coastalTaken = new Uint8Array(width * height);
+    const coastalRainThreshold = rainfallThreshold * 0.6;
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!oceanMask[idx]) {
+          continue;
+        }
+
+        for (let d = 0; d < directions.length; d += 1) {
+          const nx = x + directions[d][0];
+          const ny = y + directions[d][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx] || coastalTaken[nIdx]) {
+            continue;
+          }
+          if (elevation[nIdx] <= seaLevel) {
+            continue;
+          }
+          const rain = rainfall[nIdx];
+          if (rain < coastalRainThreshold) {
+            continue;
+          }
+          const sink = 1 - drainage[nIdx];
+          const lowlandBoost = Math.max(0, seaLevel + 0.12 - elevation[nIdx]);
+          const weight =
+            rain * (0.65 + sink * 0.35) * (1 + lowlandBoost * 3.2);
+          const strength = rain > rainfallThreshold * 1.1 ? 2 : 1;
+          coastalTaken[nIdx] = 1;
+          coastalCandidates.push({
+            x: nx,
+            y: ny,
+            weight,
+            strength,
+            idx: nIdx
+          });
+        }
+      }
+    }
+
+    coastalCandidates.sort((a, b) => b.weight - a.weight);
+    const oceanSourceFactor = lerp(0.18, 0.5, frequencyNormalized);
+    const maxOceanSources = Math.min(
+      coastalCandidates.length,
+      Math.max(0, Math.round(maxSources * oceanSourceFactor))
+    );
+
+    if (maxOceanSources > 0) {
+      const inlandInfluence = lerp(0.006, 0.018, frequencyNormalized);
+      const rainfallStopThreshold = rainfallThreshold * 0.4;
+      const maxReverseLength = Math.max(
+        6,
+        Math.round(
+          Math.sqrt(width * height) * lerp(0.32, 0.58, frequencyNormalized)
+        )
+      );
+
+      for (let i = 0; i < maxOceanSources; i += 1) {
+        const start = coastalCandidates[i];
+        if (!start || riverMap[start.idx] > 0) {
+          continue;
+        }
+
+        const pathIndices = [];
+        const localVisited = new Set();
+        let currentIdx = start.idx;
+
+        while (pathIndices.length < maxReverseLength) {
+          if (localVisited.has(currentIdx)) {
+            break;
+          }
+          localVisited.add(currentIdx);
+          pathIndices.push(currentIdx);
+
+          let bestIdx = -1;
+          let bestScore = Number.POSITIVE_INFINITY;
+          const cx = currentIdx % width;
+          const cy = Math.floor(currentIdx / width);
+          const currentDistance = oceanDistance[currentIdx];
+          const currentBaseValue = elevation[currentIdx] - drainage[currentIdx] * 0.02;
+
+          for (let d = 0; d < directions.length; d += 1) {
+            const nx = cx + directions[d][0];
+            const ny = cy + directions[d][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx] || localVisited.has(nIdx)) {
+              continue;
+            }
+            if (riverMap[nIdx] > 0 && pathIndices.length > 2) {
+              continue;
+            }
+            const neighborDistance = oceanDistance[nIdx];
+            const distanceDelta = neighborDistance - currentDistance;
+            if (distanceDelta < 0) {
+              continue;
+            }
+            if (distanceDelta === 0 && pathIndices.length > 4) {
+              continue;
+            }
+            const neighborBaseValue =
+              elevation[nIdx] - drainage[nIdx] * 0.02;
+            if (
+              neighborBaseValue - currentBaseValue >
+              0.22 + pathIndices.length * 0.015
+            ) {
+              continue;
+            }
+            const neighborRain = rainfall[nIdx];
+            if (neighborRain < rainfallStopThreshold && pathIndices.length > 4) {
+              continue;
+            }
+
+            let score = neighborBaseValue;
+            score -= distanceDelta * inlandInfluence;
+            score -= neighborRain * 0.02;
+
+            if (score < bestScore) {
+              bestScore = score;
+              bestIdx = nIdx;
+            }
+          }
+
+          if (bestIdx === -1) {
+            break;
+          }
+
+          const nextDistance = oceanDistance[bestIdx];
+          if (nextDistance <= currentDistance && pathIndices.length > 5) {
+            break;
+          }
+
+          currentIdx = bestIdx;
+        }
+
+        if (pathIndices.length >= 3) {
+          for (let p = 0; p < pathIndices.length; p += 1) {
+            const idx = pathIndices[p];
+            const t =
+              pathIndices.length <= 1 ? 0 : p / (pathIndices.length - 1);
+            const strengthAtTile = Math.max(
+              1,
+              Math.round(lerp(start.strength, 1, t))
+            );
+            riverMap[idx] = Math.max(riverMap[idx], strengthAtTile);
+          }
+        }
       }
     }
   }
