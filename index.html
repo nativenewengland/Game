@@ -290,9 +290,8 @@
         </header>
         <div class="customizer-layout">
           <section class="customizer-main" aria-live="polite">
-            <div class="customizer-main-card pixel-subpanel">
-              <div class="customizer-visuals" data-draggable-id="visuals-panel">
-                <div class="customizer-preview" role="group" aria-label="Appearance preview">
+            <div class="customizer-visuals" data-draggable-id="visuals-panel">
+              <div class="customizer-preview" role="group" aria-label="Appearance preview">
                   <h3 class="subpanel-title">Appearance</h3>
                   <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
                     <canvas
@@ -392,304 +391,304 @@
                   ></div>
                 </div>
               </div>
-              <div class="customizer-detail-panel">
-                <div class="customizer-top-bar pixel-bar">
-                  <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
-                    <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
-                    <label
-                      id="founder-name-label"
-                      class="field-label sr-only"
-                      for="dwarf-name-input"
-                      >Founder name</label
+            <div class="customizer-detail-panel">
+              <div class="customizer-top-bar pixel-bar">
+                <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
+                  <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
+                  <label
+                    id="founder-name-label"
+                    class="field-label sr-only"
+                    for="dwarf-name-input"
+                    >Founder name</label
+                  >
+                  <div class="dwarf-name-nav">
+                    <button
+                      type="button"
+                      id="dwarf-prev"
+                      class="secondary dwarf-nav-button dwarf-nav-button--prev"
+                      aria-label="Previous name"
                     >
-                    <div class="dwarf-name-nav">
-                      <button
-                        type="button"
-                        id="dwarf-prev"
-                        class="secondary dwarf-nav-button dwarf-nav-button--prev"
-                        aria-label="Previous name"
-                      >
-                        <span class="dwarf-nav-icon" aria-hidden="true"></span>
-                      </button>
-                      <div class="dwarf-name-field">
-                        <input
-                          type="text"
-                          id="dwarf-name-input"
-                          class="dwarf-name-input"
-                          maxlength="40"
-                          autocomplete="off"
-                          required
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        id="dwarf-next"
-                        class="secondary dwarf-nav-button dwarf-nav-button--next"
-                        aria-label="Next name"
-                      >
-                        <span class="dwarf-nav-icon" aria-hidden="true"></span>
-                      </button>
+                      <span class="dwarf-nav-icon" aria-hidden="true"></span>
+                    </button>
+                    <div class="dwarf-name-field">
+                      <input
+                        type="text"
+                        id="dwarf-name-input"
+                        class="dwarf-name-input"
+                        maxlength="40"
+                        autocomplete="off"
+                        required
+                      />
                     </div>
-                  </div>
-                  <div class="layout-edit-controls" role="group" aria-label="Layout editing controls">
                     <button
                       type="button"
-                      id="dwarf-layout-toggle"
-                      class="secondary layout-toggle-button"
-                      aria-pressed="false"
+                      id="dwarf-next"
+                      class="secondary dwarf-nav-button dwarf-nav-button--next"
+                      aria-label="Next name"
                     >
-                      Enable Layout Dragging
-                    </button>
-                    <button
-                      type="button"
-                      id="dwarf-layout-save"
-                      class="secondary layout-save-button"
-                      disabled
-                    >
-                      Download Layout
-                    </button>
-                    <button
-                      type="button"
-                      id="dwarf-layout-reset"
-                      class="secondary layout-reset-button"
-                      disabled
-                    >
-                      Reset Layout
+                      <span class="dwarf-nav-icon" aria-hidden="true"></span>
                     </button>
                   </div>
                 </div>
-                <div class="customizer-body">
-                  <div class="customizer-fields pixel-subpanel">
-                    <div class="field-group field-group--gender">
-                      <p id="dwarf-gender-label" class="field-label">Gender</p>
-                      <div class="gender-toggle-wrapper">
-                        <button
-                          type="button"
-                          id="dwarf-randomise"
-                          class="gender-toggle-randomise"
-                          aria-label="Randomise dwarf"
-                          data-draggable-id="randomise-button"
-                        >
-                          <span class="randomise-button__dice" aria-hidden="true"></span>
-                          <span class="sr-only">Randomise dwarf</span>
-                        </button>
-                        <div
-                          id="dwarf-gender-buttons"
-                          class="gender-toggle"
-                          role="radiogroup"
-                          aria-labelledby="dwarf-gender-label"
-                          data-draggable-id="gender-toggle"
-                        >
-                          <button
-                            type="button"
-                            class="gender-toggle-button gender-toggle-button--female"
-                            data-gender-value="female"
-                            role="radio"
-                            aria-checked="true"
-                          >
-                            <img
-                              src="tilesheet/gender-button-female.png"
-                              alt="Female"
-                              width="87"
-                              height="88"
-                              loading="lazy"
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            class="gender-toggle-button gender-toggle-button--male"
-                            data-gender-value="male"
-                            role="radio"
-                            aria-checked="false"
-                          >
-                            <img
-                              src="tilesheet/gender-button-male.png"
-                              alt="Male"
-                              width="87"
-                              height="88"
-                              loading="lazy"
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="field-group" data-draggable-id="field-clan">
-                      <label for="dwarf-clan-select" class="field-label">Clan</label>
-                      <select id="dwarf-clan-select" class="field-control">
-                        <option value="stonebeard">Stonebeard</option>
-                        <option value="ironfist">Ironfist</option>
-                        <option value="coppervein">Coppervein</option>
-                        <option value="graniteheart">Graniteheart</option>
-                        <option value="deepdelver">Deepdelver</option>
-                        <option value="amberpick">Amberpick</option>
-                        <option value="oakenshield">Oakenshield</option>
-                        <option value="frosthammer">Frosthammer</option>
-                        <option value="berylbraid">Berylbraid</option>
-                        <option value="silverhollow">Silverhollow</option>
-                      </select>
-                    </div>
-
-                    <div class="field-group" data-draggable-id="field-guild">
-                      <label for="dwarf-guild-select" class="field-label">Guild</label>
-                      <select id="dwarf-guild-select" class="field-control">
-                        <option value="miners-guild">Miners Guild</option>
-                        <option value="merchants-guild">Merchants Guild</option>
-                        <option value="commerce-guild">Commerce Guild</option>
-                        <option value="armourers-weaponsmiths-guild">Armourers and Weaponsmiths Guild</option>
-                        <option value="artisans-guild">Artisans Guild</option>
-                        <option value="bakers-guild">Bakers Guild</option>
-                        <option value="brewers-guild">Brewers Guild</option>
-                        <option value="carpenters-guild">Carpenters Guild</option>
-                        <option value="construction-guild">Construction Guild</option>
-                        <option value="corpsebinders-guild">Corpsebinders Guild</option>
-                        <option value="distiller-guild">Distiller Guild</option>
-                        <option value="dyers-guild">Dyers Guild</option>
-                        <option value="engineers-guild">Engineers Guild</option>
-                        <option value="farmers-herders-guild">Farmers and Herders Guild</option>
-                        <option value="gemcutters-guild">Gemcutters Guild</option>
-                        <option value="goldsmiths-guild">Goldsmiths Guild</option>
-                        <option value="guild-of-alchemists">Guild of Alchemists</option>
-                        <option value="jewelsmiths-guild">Jewelsmiths Guild</option>
-                        <option value="leatherworkers-guild">Leatherworkers Guild</option>
-                        <option value="metalsmiths-guild">Metalsmiths Guild</option>
-                        <option value="powdermakers-guild">Powdermakers Guild</option>
-                        <option value="saltworkers-guild">Saltworkers Guild</option>
-                        <option value="stonemasons-guild">Stonemasons Guild</option>
-                        <option value="runescribes-guild">Runescribes Guild</option>
-                        <option value="runesmiths">Runesmiths</option>
-                        <option value="warriors-guild">Warriors Guild</option>
-                        <option value="toolmakers-guild">Toolmakers' Guild</option>
-                        <option value="soapmakers-guild">Soapmakers Guild</option>
-                        <option value="candlelighters-guild">Candlelighters Guild</option>
-                        <option value="lamplighters-guild">Lamplighters Guild</option>
-                        <option value="butchers-guild">Butchers Guild</option>
-                        <option value="ropemakers-guild">Ropemakers Guild</option>
-                        <option value="cartwrights-wheelwrights-guild">Cartwrights &amp; Wheelwrights Guild</option>
-                        <option value="glassblowers-guild">Glassblowers Guild</option>
-                        <option value="millers-guild">Millers Guild</option>
-                        <option value="cobblers-guild">Cobblers Guild</option>
-                        <option value="cartographers-guild">Cartographers Guild</option>
-                        <option value="lorekeepers-guild">Lorekeepers Guild</option>
-                        <option value="tunnel-wardens-guild">Tunnel Wardens Guild</option>
-                        <option value="smelters-guild">Smelters Guild</option>
-                      </select>
-                    </div>
-
-                    <div class="field-group" data-draggable-id="field-profession">
-                      <label for="dwarf-profession-select" class="field-label">Profession</label>
-                      <select id="dwarf-profession-select" class="field-control">
-                        <option value="miner">Miner</option>
-                        <option value="mason">Master Mason</option>
-                        <option value="smith">Master Smith</option>
-                        <option value="brewer">Brewmaster</option>
-                        <option value="engineer">Chief Engineer</option>
-                        <option value="scholar">Lore Scholar</option>
-                        <option value="ranger">Ranger Captain</option>
-                        <option value="carpenter">Master Carpenter</option>
-                        <option value="jewelcrafter">Gemcutter</option>
-                      </select>
-                    </div>
-
-                    <div class="customizer-actions">
-                      <button
-                        type="button"
-                        id="dwarf-back"
-                        class="return-button"
-                        data-draggable-id="return-button"
-                      >
-                        <span class="sr-only">Back</span>
-                      </button>
-                      <button
-                        type="submit"
-                        class="create-button create-button--inline create-button--floating"
-                        data-draggable-id="create-button"
-                      >
-                        <span class="sr-only">Begin Expedition</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div
-                    class="trait-sliders-panel pixel-subpanel"
-                    aria-label="Appearance adjustments"
+                <div class="layout-edit-controls" role="group" aria-label="Layout editing controls">
+                  <button
+                    type="button"
+                    id="dwarf-layout-toggle"
+                    class="secondary layout-toggle-button"
+                    aria-pressed="false"
                   >
-                    <div class="field-group" data-draggable-id="trait-head-type">
-                        <label for="dwarf-head-slider" class="field-label">Head type</label>
-                        <div class="trait-slider">
-                          <div class="trait-slider-visual">
-                            <input
-                              id="dwarf-head-slider"
-                              class="trait-slider-input"
-                              type="range"
-                              min="0"
-                              max="0"
-                              step="1"
-                              value="0"
-                            />
-                          </div>
-                          <div
-                            id="dwarf-head-slider-value"
-                            class="trait-slider-value"
-                            aria-live="polite"
-                          >
-                            Head Type V
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="field-group" data-draggable-id="trait-eye-colour">
-                        <label for="dwarf-eye-slider" class="field-label">Eye colour</label>
-                        <div class="trait-slider">
-                          <div class="trait-slider-visual">
-                            <input
-                              id="dwarf-eye-slider"
-                              class="trait-slider-input"
-                              type="range"
-                              min="0"
-                              max="0"
-                              step="1"
-                              value="0"
-                            />
-                          </div>
-                          <div
-                            id="dwarf-eye-slider-value"
-                            class="trait-slider-value"
-                            aria-live="polite"
-                          >
-                            Amber
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="field-group" data-draggable-id="trait-hair-style">
-                        <label for="dwarf-hair-style-slider" class="field-label">Hair style</label>
-                        <div class="trait-slider">
-                          <div class="trait-slider-visual">
-                            <input
-                              id="dwarf-hair-style-slider"
-                              class="trait-slider-input"
-                              type="range"
-                              min="0"
-                              max="0"
-                              step="1"
-                              value="0"
-                            />
-                          </div>
-                          <div
-                            id="dwarf-hair-style-slider-value"
-                            class="trait-slider-value"
-                            aria-live="polite"
-                          >
-                            Straight — Shoulder Length
-                          </div>
-                        </div>
-                      </div>
-
-                      
-                  </div>
+                    Enable Layout Dragging
+                  </button>
+                  <button
+                    type="button"
+                    id="dwarf-layout-save"
+                    class="secondary layout-save-button"
+                    disabled
+                  >
+                    Download Layout
+                  </button>
+                  <button
+                    type="button"
+                    id="dwarf-layout-reset"
+                    class="secondary layout-reset-button"
+                    disabled
+                  >
+                    Reset Layout
+                  </button>
                 </div>
               </div>
+              <div class="customizer-body">
+                <div class="customizer-fields pixel-subpanel">
+                  <div class="field-group field-group--gender">
+                    <p id="dwarf-gender-label" class="field-label">Gender</p>
+                    <div class="gender-toggle-wrapper">
+                      <button
+                        type="button"
+                        id="dwarf-randomise"
+                        class="gender-toggle-randomise"
+                        aria-label="Randomise dwarf"
+                        data-draggable-id="randomise-button"
+                      >
+                        <span class="randomise-button__dice" aria-hidden="true"></span>
+                        <span class="sr-only">Randomise dwarf</span>
+                      </button>
+                      <div
+                        id="dwarf-gender-buttons"
+                        class="gender-toggle"
+                        role="radiogroup"
+                        aria-labelledby="dwarf-gender-label"
+                        data-draggable-id="gender-toggle"
+                      >
+                        <button
+                          type="button"
+                          class="gender-toggle-button gender-toggle-button--female"
+                          data-gender-value="female"
+                          role="radio"
+                          aria-checked="true"
+                        >
+                          <img
+                            src="tilesheet/gender-button-female.png"
+                            alt="Female"
+                            width="87"
+                            height="88"
+                            loading="lazy"
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          class="gender-toggle-button gender-toggle-button--male"
+                          data-gender-value="male"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <img
+                            src="tilesheet/gender-button-male.png"
+                            alt="Male"
+                            width="87"
+                            height="88"
+                            loading="lazy"
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field-group" data-draggable-id="field-clan">
+                    <label for="dwarf-clan-select" class="field-label">Clan</label>
+                    <select id="dwarf-clan-select" class="field-control">
+                      <option value="stonebeard">Stonebeard</option>
+                      <option value="ironfist">Ironfist</option>
+                      <option value="coppervein">Coppervein</option>
+                      <option value="graniteheart">Graniteheart</option>
+                      <option value="deepdelver">Deepdelver</option>
+                      <option value="amberpick">Amberpick</option>
+                      <option value="oakenshield">Oakenshield</option>
+                      <option value="frosthammer">Frosthammer</option>
+                      <option value="berylbraid">Berylbraid</option>
+                      <option value="silverhollow">Silverhollow</option>
+                    </select>
+                  </div>
+
+                  <div class="field-group" data-draggable-id="field-guild">
+                    <label for="dwarf-guild-select" class="field-label">Guild</label>
+                    <select id="dwarf-guild-select" class="field-control">
+                      <option value="miners-guild">Miners Guild</option>
+                      <option value="merchants-guild">Merchants Guild</option>
+                      <option value="commerce-guild">Commerce Guild</option>
+                      <option value="armourers-weaponsmiths-guild">Armourers and Weaponsmiths Guild</option>
+                      <option value="artisans-guild">Artisans Guild</option>
+                      <option value="bakers-guild">Bakers Guild</option>
+                      <option value="brewers-guild">Brewers Guild</option>
+                      <option value="carpenters-guild">Carpenters Guild</option>
+                      <option value="construction-guild">Construction Guild</option>
+                      <option value="corpsebinders-guild">Corpsebinders Guild</option>
+                      <option value="distiller-guild">Distiller Guild</option>
+                      <option value="dyers-guild">Dyers Guild</option>
+                      <option value="engineers-guild">Engineers Guild</option>
+                      <option value="farmers-herders-guild">Farmers and Herders Guild</option>
+                      <option value="gemcutters-guild">Gemcutters Guild</option>
+                      <option value="goldsmiths-guild">Goldsmiths Guild</option>
+                      <option value="guild-of-alchemists">Guild of Alchemists</option>
+                      <option value="jewelsmiths-guild">Jewelsmiths Guild</option>
+                      <option value="leatherworkers-guild">Leatherworkers Guild</option>
+                      <option value="metalsmiths-guild">Metalsmiths Guild</option>
+                      <option value="powdermakers-guild">Powdermakers Guild</option>
+                      <option value="saltworkers-guild">Saltworkers Guild</option>
+                      <option value="stonemasons-guild">Stonemasons Guild</option>
+                      <option value="runescribes-guild">Runescribes Guild</option>
+                      <option value="runesmiths">Runesmiths</option>
+                      <option value="warriors-guild">Warriors Guild</option>
+                      <option value="toolmakers-guild">Toolmakers' Guild</option>
+                      <option value="soapmakers-guild">Soapmakers Guild</option>
+                      <option value="candlelighters-guild">Candlelighters Guild</option>
+                      <option value="lamplighters-guild">Lamplighters Guild</option>
+                      <option value="butchers-guild">Butchers Guild</option>
+                      <option value="ropemakers-guild">Ropemakers Guild</option>
+                      <option value="cartwrights-wheelwrights-guild">Cartwrights &amp; Wheelwrights Guild</option>
+                      <option value="glassblowers-guild">Glassblowers Guild</option>
+                      <option value="millers-guild">Millers Guild</option>
+                      <option value="cobblers-guild">Cobblers Guild</option>
+                      <option value="cartographers-guild">Cartographers Guild</option>
+                      <option value="lorekeepers-guild">Lorekeepers Guild</option>
+                      <option value="tunnel-wardens-guild">Tunnel Wardens Guild</option>
+                      <option value="smelters-guild">Smelters Guild</option>
+                    </select>
+                  </div>
+
+                  <div class="field-group" data-draggable-id="field-profession">
+                    <label for="dwarf-profession-select" class="field-label">Profession</label>
+                    <select id="dwarf-profession-select" class="field-control">
+                      <option value="miner">Miner</option>
+                      <option value="mason">Master Mason</option>
+                      <option value="smith">Master Smith</option>
+                      <option value="brewer">Brewmaster</option>
+                      <option value="engineer">Chief Engineer</option>
+                      <option value="scholar">Lore Scholar</option>
+                      <option value="ranger">Ranger Captain</option>
+                      <option value="carpenter">Master Carpenter</option>
+                      <option value="jewelcrafter">Gemcutter</option>
+                    </select>
+                  </div>
+
+                  <div class="customizer-actions">
+                    <button
+                      type="button"
+                      id="dwarf-back"
+                      class="return-button"
+                      data-draggable-id="return-button"
+                    >
+                      <span class="sr-only">Back</span>
+                    </button>
+                    <button
+                      type="submit"
+                      class="create-button create-button--inline create-button--floating"
+                      data-draggable-id="create-button"
+                    >
+                      <span class="sr-only">Begin Expedition</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  class="trait-sliders-panel pixel-subpanel"
+                  aria-label="Appearance adjustments"
+                >
+                  <div class="field-group" data-draggable-id="trait-head-type">
+                      <label for="dwarf-head-slider" class="field-label">Head type</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-head-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-head-slider-value"
+                          class="trait-slider-value"
+                          aria-live="polite"
+                        >
+                          Head Type V
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="field-group" data-draggable-id="trait-eye-colour">
+                      <label for="dwarf-eye-slider" class="field-label">Eye colour</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-eye-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-eye-slider-value"
+                          class="trait-slider-value"
+                          aria-live="polite"
+                        >
+                          Amber
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="field-group" data-draggable-id="trait-hair-style">
+                      <label for="dwarf-hair-style-slider" class="field-label">Hair style</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-hair-style-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-hair-style-slider-value"
+                          class="trait-slider-value"
+                          aria-live="polite"
+                        >
+                          Straight — Shoulder Length
+                        </div>
+                      </div>
+                    </div>
+
+                    
+                </div>
+              </div>
+            </div>
           </section>
         </div>
       </form>
