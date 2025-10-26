@@ -14738,6 +14738,9 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
+        if (isTreeOverlayKey(tile.overlay)) {
+          continue;
+        }
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = tile.base === snowTileKey;
         if (!baseIsGrass && !baseIsSnow) {
@@ -14818,6 +14821,9 @@ function createWorld(seedString) {
         }
         const tile = tiles[candidate.y][candidate.x];
         if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (isTreeOverlayKey(tile.overlay)) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
