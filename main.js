@@ -52,6 +52,7 @@ const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
   BADLANDS: { row: 1, col: 2 },
+  MINE: { row: 1, col: 3 },
   MARSH: { row: 4, col: 2 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
@@ -82,6 +83,7 @@ const baseTileCoords = {
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
   CASTLE: { row: 4, col: 6 },
+  ROADSIDE_TAVERN: { row: 13, col: 1 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
@@ -168,6 +170,9 @@ const tileLookup = new Map();
 
 function registerCustomStructure(key, drawFn) {
   if (!key || typeof drawFn !== 'function') {
+    return;
+  }
+  if (tileLookup.has(key)) {
     return;
   }
   tileLookup.set(key, {
@@ -851,6 +856,102 @@ const dwarfholdExportOptions = [
   'Engraved jewelry and heirloom trinkets'
 ];
 
+const mineNamePrefixes = [
+  'Iron',
+  'Silver',
+  'Copper',
+  'Gold',
+  'Mithril',
+  'Coal',
+  'Gem',
+  'Obsidian',
+  'Crystal',
+  'Rune',
+  'Ember',
+  'Thunder',
+  'Star',
+  'Deep'
+];
+
+const mineNameSuffixes = [
+  'delve',
+  'reach',
+  'shaft',
+  'vein',
+  'hollow',
+  'works',
+  'forge',
+  'deep',
+  'spire',
+  'gate'
+];
+
+const mineNameDescriptors = ['Mine', 'Delve', 'Excavation', 'Works', 'Prospect'];
+
+const mineResourceProfiles = [
+  {
+    resource: 'iron ore',
+    export: 'pig iron billets',
+    description: 'Magnetite seams glow ember-red beneath rune lanterns.'
+  },
+  {
+    resource: 'silver ore',
+    export: 'refined silver ingots',
+    description: 'Silver veins lace the rock like moonlight trapped in stone.'
+  },
+  {
+    resource: 'gold ore',
+    export: 'gold dust and ingots',
+    description: 'Gold threads shimmer in quartz pockets with every pick strike.'
+  },
+  {
+    resource: 'mithril ore',
+    export: 'mithril flakes and bars',
+    description: 'Mithril filaments sing softly when teased free of the bedrock.'
+  },
+  {
+    resource: 'coal seams',
+    export: 'smokeless coke bricks',
+    description: 'Coal seams burn clean and hot, prized by deep forges.'
+  },
+  {
+    resource: 'gemstone geodes',
+    export: 'uncut gemstones',
+    description: 'Geodes crack open to reveal lantern-lit caverns of colour.'
+  },
+  {
+    resource: 'copper ore',
+    export: 'worked copper ingots',
+    description: 'Copper veins patina the tunnels with a verdant sheen.'
+  }
+];
+
+const mineHazardOptions = [
+  'sulfur vents that hiss until rune chimneys release the pressure',
+  'echo spirits that steal tools left unattended in dark galleries',
+  'shatterstone pockets that collapse without rune-braced timbers',
+  'flood-prone shafts kept dry by steam-powered pumps',
+  'tunnelwyrms that gnaw the deepest stopes if watchfires go dim',
+  'glittermote swarms that daze miners who forget their goggles'
+];
+
+const mineCrewNames = [
+  'Deepdelver Crew',
+  'Amberpick Syndicate',
+  'Runehammer Shift',
+  'Thunderpick Assembly',
+  'Glowforge Line',
+  'Stonebite League'
+];
+
+const mineSecondaryExports = [
+  'runed support struts',
+  'cut granite blocks',
+  'slagglass baubles',
+  'precision drill heads',
+  'barrels of blasting powder'
+];
+
 const hillholdNamePrefixes = [
   'Stone',
   'Amber',
@@ -1162,6 +1263,7 @@ const settlementDetailTypes = new Set([
   'dwarfhold',
   'greatDwarfhold',
   'abandonedDwarfhold',
+  'mine',
   'town',
   'city',
   'village',
@@ -2863,6 +2965,120 @@ function generateDwarfholdDetails(name, random, options = {}) {
     majorGuilds,
     majorExports,
     populationBreakdown
+  };
+}
+
+function generateMineName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(mineNamePrefixes, randomFn) || 'Iron';
+  const suffix = pickRandomFrom(mineNameSuffixes, randomFn) || 'delve';
+  const descriptor = pickRandomFrom(mineNameDescriptors, randomFn) || 'Mine';
+  const combinedSuffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
+  const style = randomFn();
+  if (style < 0.35) {
+    return `${prefix}${combinedSuffix} ${descriptor}`;
+  }
+  if (style < 0.65) {
+    return `${prefix} ${descriptor}`;
+  }
+  if (style < 0.85) {
+    return `${descriptor} of ${prefix}${combinedSuffix}`;
+  }
+  return `${prefix}${combinedSuffix}`;
+}
+
+function generateMineDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const profile = pickRandomFrom(mineResourceProfiles, randomFn) || mineResourceProfiles[0];
+  const hazard = pickRandomFrom(mineHazardOptions, randomFn) || mineHazardOptions[0];
+  const crew = pickRandomFrom(mineCrewNames, randomFn) || mineCrewNames[0];
+  const workforce = Math.max(28, Math.floor(60 + randomFn() * 220));
+  const overseerRoll = randomFn();
+  const overseerGender = overseerRoll < 0.6 ? 'male' : overseerRoll < 0.9 ? 'female' : 'male';
+  const overseerPool = dwarfNamePools[overseerGender] || dwarfNamePools.male;
+  const overseerFirst = pickRandomFrom(overseerPool, randomFn) || 'Urist';
+  const clanOption = pickRandomFrom(dwarfClanOptions, randomFn) || dwarfClanOptions[0];
+  const overseerClan = clanOption?.label || 'Stonebeard';
+  const overseerName = `${overseerFirst} ${overseerClan}`;
+  const foundedYearsAgo = Math.max(2, Math.floor(5 + randomFn() * 60));
+  const shiftCount = Math.max(2, Math.round(2 + randomFn() * 2));
+  const nearestHoldLabel = formatSettlementLabelForDetails(options?.nearestDwarfhold);
+  const nearestHoldDistance = Number.isFinite(options?.nearestHoldDistance)
+    ? Math.max(1, Math.round(options.nearestHoldDistance))
+    : null;
+
+  const guildSet = new Set(['Miners Guild']);
+  if (randomFn() < 0.65) {
+    guildSet.add('Smelters Guild');
+  }
+  if (randomFn() < 0.35) {
+    guildSet.add('Engineers Guild');
+  }
+  const majorGuilds = Array.from(guildSet);
+
+  const exports = [profile.export];
+  if (randomFn() < 0.45) {
+    exports.push(pickRandomFrom(mineSecondaryExports, randomFn) || mineSecondaryExports[0]);
+  }
+  const uniqueExports = Array.from(new Set(exports));
+
+  const hallmarkParts = [profile.description];
+  if (nearestHoldLabel) {
+    hallmarkParts.push(
+      `Ore caravans supply ${nearestHoldLabel}${
+        nearestHoldDistance ? ` after ${nearestHoldDistance} leagues through the passes` : ''
+      }.`
+    );
+  }
+  const hazardSentence = `Hazard: ${hazard.charAt(0).toUpperCase()}${hazard.slice(1)}.`;
+  hallmarkParts.push(hazardSentence);
+  const hallmark = hallmarkParts.join(' ');
+
+  const breakdownTemplate = [
+    { key: 'dwarves', label: 'Dwarves', percentage: 0.72, color: '#c08452' },
+    { key: 'humans', label: 'Humans', percentage: 0.1, color: '#d1b58f' },
+    { key: 'gnomes', label: 'Gnomes', percentage: 0.08, color: '#b8a7d9' },
+    { key: 'others', label: 'Others', percentage: 0.1, color: '#9e9e9e' }
+  ];
+
+  let assigned = 0;
+  const populationBreakdown = breakdownTemplate.map((entry, index) => {
+    let percentage = entry.percentage;
+    if (index === breakdownTemplate.length - 1) {
+      percentage = clamp(1 - assigned, 0, 1);
+    }
+    assigned += percentage;
+    return {
+      key: entry.key,
+      label: entry.label,
+      percentage,
+      color: entry.color,
+      population: Math.max(0, Math.round(workforce * percentage))
+    };
+  });
+
+  return {
+    type: 'mine',
+    classification: 'Mine',
+    name,
+    population: workforce,
+    populationLabel: 'Workforce',
+    populationDescriptor: 'miners',
+    isSettlement: true,
+    ruler: {
+      title: 'Overseer',
+      name: overseerName
+    },
+    foundedYearsAgo,
+    prominentGroup: `${crew} — Shift ${shiftCount}`,
+    prominentGroupLabel: 'Crew in Charge',
+    majorGuilds,
+    majorGuildsLabel: 'Guild Presence',
+    majorExports: uniqueExports,
+    majorExportsLabel: 'Primary Exports',
+    populationBreakdown,
+    hallmark,
+    hallmarkLabel: 'Notable Features'
   };
 }
 
@@ -9942,6 +10158,7 @@ function createWorld(seedString) {
       }))
   );
   const dwarfholds = [];
+  const mines = [];
   const hillholds = [];
   const towns = [];
   const towers = [];
@@ -11032,12 +11249,14 @@ function createWorld(seedString) {
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
-    if (dwarfholdKey) {
-      const fallbackMountainScoreThreshold =
+    const mineKey = tileLookup.has('MINE') ? 'MINE' : null;
+    let fallbackMountainScoreThreshold = 0.45;
+    const mountainSettlementCandidates = [];
+    if (dwarfholdKey || mineKey) {
+      fallbackMountainScoreThreshold =
         mountainScores && mountainCandidateThreshold !== null
           ? clamp(mountainCandidateThreshold * 0.85, 0.28, 0.62)
           : 0.45;
-      const dwarfholdCandidates = [];
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
@@ -11046,6 +11265,9 @@ function createWorld(seedString) {
           }
           const tile = tiles[y][x];
           if (!tile) {
+            continue;
+          }
+          if (tile.river) {
             continue;
           }
           const score = mountainScores ? mountainScores[idx] : 0;
@@ -11058,10 +11280,17 @@ function createWorld(seedString) {
           if (!isMountainTile && !fallbackEligible) {
             continue;
           }
-          dwarfholdCandidates.push({ x, y, score, isMountainTile });
+          mountainSettlementCandidates.push({ x, y, score, isMountainTile });
         }
       }
+    }
 
+    if (!dwarfholdKey && mineKey && mountainSettlementCandidates.length > 0) {
+      mountainSettlementCandidates.sort((a, b) => b.score - a.score);
+    }
+
+    if (dwarfholdKey) {
+      const dwarfholdCandidates = mountainSettlementCandidates;
       if (dwarfholdCandidates.length > 0) {
         dwarfholdCandidates.sort((a, b) => b.score - a.score);
         const baseTarget = Math.max(1, Math.round(dwarfholdCandidates.length / 500));
@@ -11175,6 +11404,97 @@ function createWorld(seedString) {
                 southPlaced += 1;
               }
             }
+          }
+        }
+      }
+    }
+
+    if (mineKey && mountainSettlementCandidates.length > 0) {
+      if (dwarfholdKey && mountainSettlementCandidates.length > 0) {
+        mountainSettlementCandidates.sort((a, b) => b.score - a.score);
+      }
+      const mineCandidates = mountainSettlementCandidates.filter(
+        (candidate) => candidate.isMountainTile && candidate.score >= 0.18
+      );
+      if (mineCandidates.length > 0) {
+        const baseTarget = Math.max(1, Math.round(mineCandidates.length / 420));
+        const maxMines = computeStructurePlacementLimit(baseTarget, 28, dwarfSettlementMultiplier);
+        const minDistanceBase = 3;
+        const minDistance = adjustMinDistance(minDistanceBase, dwarfSettlementFrequencyNormalized);
+        const minDistanceSq = minDistance * minDistance;
+        const placedMines = [];
+
+        for (let i = 0; i < mineCandidates.length && placedMines.length < maxMines; i += 1) {
+          const candidate = mineCandidates[i];
+          const tile = tiles[candidate.y][candidate.x];
+          if (!tile || tile.structure || tile.river) {
+            continue;
+          }
+          if (!isMountainOverlay(tile.overlay)) {
+            continue;
+          }
+          let tooClose = false;
+          for (let j = 0; j < placedMines.length; j += 1) {
+            const other = placedMines[j];
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (!tooClose) {
+            const distanceToHoldSq = computeNearestDistanceSq(candidate.x, candidate.y, dwarfholds);
+            if (distanceToHoldSq !== Infinity && distanceToHoldSq < 9) {
+              tooClose = true;
+            }
+          }
+          if (!tooClose) {
+            const distanceToHillholdSq = computeNearestDistanceSq(candidate.x, candidate.y, hillholds);
+            if (distanceToHillholdSq !== Infinity && distanceToHillholdSq < 9) {
+              tooClose = true;
+            }
+          }
+          if (tooClose) {
+            continue;
+          }
+
+          const name = generateMineName(rng);
+          const nearestHoldInfo = findNearestPointWithDetails(candidate.x, candidate.y, dwarfholds);
+          const details = generateMineDetails(name, rng, {
+            nearestDwarfhold: nearestHoldInfo ? nearestHoldInfo.point : null,
+            nearestHoldDistance: nearestHoldInfo ? nearestHoldInfo.distance : null
+          });
+
+          tile.structure = mineKey;
+          tile.structureName = name;
+          tile.structureDetails = details;
+
+          placedMines.push(candidate);
+          mines.push({ x: candidate.x, y: candidate.y, ...details });
+        }
+
+        if (placedMines.length === 0) {
+          for (let i = 0; i < mineCandidates.length; i += 1) {
+            const candidate = mineCandidates[i];
+            const tile = tiles[candidate.y][candidate.x];
+            if (!tile || tile.structure || tile.river) {
+              continue;
+            }
+            if (!isMountainOverlay(tile.overlay)) {
+              continue;
+            }
+            const name = generateMineName(rng);
+            const nearestHoldInfo = findNearestPointWithDetails(candidate.x, candidate.y, dwarfholds);
+            const details = generateMineDetails(name, rng, {
+              nearestDwarfhold: nearestHoldInfo ? nearestHoldInfo.point : null,
+              nearestHoldDistance: nearestHoldInfo ? nearestHoldInfo.distance : null
+            });
+            tile.structure = mineKey;
+            tile.structureName = name;
+            tile.structureDetails = details;
+            mines.push({ x: candidate.x, y: candidate.y, ...details });
+            break;
           }
         }
       }
@@ -13071,7 +13391,7 @@ function createWorld(seedString) {
     }
   }
 
-  const dwarvenSettlements = [...dwarfholds, ...hillholds];
+  const dwarvenSettlements = [...dwarfholds, ...hillholds, ...mines];
   const majorSettlementPoints = [
     ...dwarvenSettlements,
     ...towns,
@@ -14366,6 +14686,14 @@ function createWorld(seedString) {
       population: Number.isFinite(hold?.population) ? hold.population : null,
       settlementKind: typeof hold?.type === 'string' ? hold.type : null
     })),
+    ...mines.map((mine) => ({
+      x: mine.x,
+      y: mine.y,
+      label: mine.name || mine.structureName || 'Mine',
+      type: 'mine',
+      population: Number.isFinite(mine?.population) ? mine.population : null,
+      settlementKind: typeof mine?.type === 'string' ? mine.type : 'mine'
+    })),
     ...towns.map((town) => ({
       x: town.x,
       y: town.y,
@@ -14430,6 +14758,7 @@ function createWorld(seedString) {
     biomeField,
     seedString: finalSeed,
     dwarfholds,
+    mines,
     hillholds,
     towns,
     towers,
