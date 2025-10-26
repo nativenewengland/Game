@@ -1111,6 +1111,10 @@ button:hover:not(:disabled) {
   transition: box-shadow 0.2s ease;
 }
 
+#dwarf-customizer.layout-editing-active .layout-interaction-disabled {
+  pointer-events: none !important;
+}
+
 #dwarf-customizer.layout-editing-active [data-draggable-id]:hover {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
