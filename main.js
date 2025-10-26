@@ -2891,6 +2891,31 @@ function pickUniqueFrom(array, count, random) {
   return picks;
 }
 
+function formatListWithConjunction(items, conjunction = 'and') {
+  if (!Array.isArray(items)) {
+    return '';
+  }
+  const filtered = items
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter((item) => item.length > 0);
+
+  if (filtered.length === 0) {
+    return '';
+  }
+
+  if (filtered.length === 1) {
+    return filtered[0];
+  }
+
+  if (filtered.length === 2) {
+    return `${filtered[0]} ${conjunction} ${filtered[1]}`;
+  }
+
+  const parts = filtered.slice(0, -1);
+  const last = filtered[filtered.length - 1];
+  return `${parts.join(', ')}, ${conjunction} ${last}`;
+}
+
 function generateForestRegionName(random, context = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const prefix = pickRandomFrom(forestRegionNamePrefixes, randomFn) || 'Verdant';
@@ -3488,6 +3513,21 @@ function generateDwarfholdDetails(name, random, options = {}) {
   );
   const majorExportCount = clamp(Math.floor(2 + randomFn() * 2), 1, dwarfholdExportOptions.length);
   const majorExports = pickUniqueFrom(dwarfholdExportOptions, majorExportCount, randomFn);
+  const majorClanPool = Array.isArray(dwarfOptions?.clan)
+    ? dwarfOptions.clan.map((option) => option?.label).filter((label) => typeof label === 'string' && label.trim())
+    : [];
+  let majorClans = [];
+  if (majorClanPool.length > 0) {
+    const targetCount = clamp(Math.floor(2 + randomFn() * 3), 2, majorClanPool.length);
+    const available = majorClanPool.filter((label) => label !== prominentClan);
+    const additional = pickUniqueFrom(available, Math.max(0, targetCount - 1), randomFn);
+    majorClans = [prominentClan, ...additional];
+  }
+  if (majorClans.length > 0) {
+    majorClans = Array.from(new Set(majorClans));
+  }
+  const majorClansDescription = formatListWithConjunction(majorClans);
+  const description = majorClansDescription ? `Major clans represented: ${majorClansDescription}.` : null;
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn, {
     hasNearbyHumanSettlement: Boolean(options && options.hasNearbyHumanSettlement)
   });
@@ -3514,7 +3554,10 @@ function generateDwarfholdDetails(name, random, options = {}) {
     hallmark,
     majorGuilds,
     majorExports,
-    populationBreakdown
+    majorClans,
+    majorClansLabel: 'Major Clans',
+    populationBreakdown,
+    description
   };
 }
 
@@ -3677,6 +3720,19 @@ function generateHillholdDetails(name, random, options = {}) {
   const defensiveTrait = pickRandomFrom(hillholdDefensiveTraits, randomFn) || hillholdDefensiveTraits[0];
   const sentinelFocus = pickRandomFrom(hillholdSentinelFocuses, randomFn) || hillholdSentinelFocuses[0];
   const foundedYearsAgo = Math.max(18, Math.floor(40 + randomFn() * 260));
+  const majorClanPool = Array.isArray(dwarfOptions?.clan)
+    ? dwarfOptions.clan.map((option) => option?.label).filter((label) => typeof label === 'string' && label.trim())
+    : [];
+  let majorClans = [];
+  if (majorClanPool.length > 0) {
+    const targetCount = clamp(Math.floor(2 + randomFn() * 2), 2, majorClanPool.length);
+    const available = majorClanPool.filter((label) => label !== clanName);
+    const additional = pickUniqueFrom(available, Math.max(0, targetCount - 1), randomFn);
+    majorClans = [clanName, ...additional];
+  }
+  if (majorClans.length > 0) {
+    majorClans = Array.from(new Set(majorClans));
+  }
 
   const nearestHoldInfo = options?.nearestDwarfhold || null;
   const nearestHoldPoint = nearestHoldInfo?.point || null;
@@ -3697,7 +3753,14 @@ function generateHillholdDetails(name, random, options = {}) {
   const beaconSentence = mountainDistance
     ? `Beacon-crews report the nearest crags are only ${mountainDistance} leagues away.`
     : 'Beacon-crews keep sight on the surrounding crags.';
-  const description = `${watchOrder} keep watch here, ${sentinelFocus}. ${defensiveTrait} ${caravanSentence} ${beaconSentence}`.trim();
+  const descriptionParts = [
+    `${watchOrder} keep watch here, ${sentinelFocus}. ${defensiveTrait} ${caravanSentence} ${beaconSentence}`.trim()
+  ];
+  const majorClansDescription = formatListWithConjunction(majorClans);
+  if (majorClansDescription) {
+    descriptionParts.push(`Major clans present: ${majorClansDescription}.`);
+  }
+  const description = descriptionParts.join(' ').trim();
 
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn, {
     hasNearbyHumanSettlement: Boolean(options?.hasNearbyHumanSettlement)
@@ -3722,6 +3785,8 @@ function generateHillholdDetails(name, random, options = {}) {
     hallmarkLabel: 'Renowned For',
     majorExports: exports,
     majorExportsLabel: 'Exports',
+    majorClans,
+    majorClansLabel: 'Major Clans',
     populationBreakdown,
     description
   };
@@ -8673,6 +8738,14 @@ function buildStructureTooltipContent(tile) {
       entries.push({ label: prominentLabel, value: prominentGroup });
     }
 
+    if (Array.isArray(details.majorClans) && details.majorClans.length > 0) {
+      const formattedClans = formatListWithConjunction(details.majorClans);
+      if (formattedClans) {
+        const majorClansLabel = details.majorClansLabel || 'Major Clans';
+        entries.push({ label: majorClansLabel, value: formattedClans });
+      }
+    }
+
     if (Array.isArray(details.majorGuilds) && details.majorGuilds.length > 0) {
       const uniqueGuilds = Array.from(
         new Set(details.majorGuilds.filter((guild) => typeof guild === 'string' && guild.trim()))
@@ -9558,10 +9631,18 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     addOverviewEntry(prominentLabel, prominentGroup);
   }
 
+  if (Array.isArray(details.majorClans) && details.majorClans.length > 0) {
+    const formattedClans = formatListWithConjunction(details.majorClans);
+    if (formattedClans) {
+      const majorClansLabel = details.majorClansLabel || 'Major Clans';
+      addOverviewEntry(majorClansLabel, formattedClans);
+    }
+  }
+
   addListSection(details.majorGuilds, details.majorGuildsLabel || 'Major Guilds', 'majorGuilds');
   addListSection(details.majorExports, details.majorExportsLabel || 'Major Exports', 'majorExports');
 
-  const excludedArrayKeys = new Set(['populationBreakdown', 'majorGuilds', 'majorExports']);
+  const excludedArrayKeys = new Set(['populationBreakdown', 'majorGuilds', 'majorExports', 'majorClans']);
   Object.entries(details).forEach(([key, value]) => {
     if (!Array.isArray(value) || excludedArrayKeys.has(key)) {
       return;
