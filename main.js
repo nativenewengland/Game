@@ -14871,8 +14871,7 @@ function createWorld(seedString) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
-        const baseIsSnow = tile.base === snowTileKey;
-        if (!baseIsGrass && !baseIsSnow) {
+        if (!baseIsGrass) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -14951,8 +14950,7 @@ function createWorld(seedString) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
-        const baseIsSnow = tile.base === snowTileKey;
-        if (!baseIsGrass && !baseIsSnow) {
+        if (!baseIsGrass) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
