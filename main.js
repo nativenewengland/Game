@@ -3636,8 +3636,7 @@ const state = {
     active: false,
     centerX: null,
     centerY: null,
-    bounds: null,
-    detail: null
+    bounds: null
   }
 };
 
@@ -6325,10 +6324,9 @@ const viewState = {
 
 const localViewConfig = {
   radius: 4,
-  subdivisions: 8,
-  maxCanvasSize: 768,
-  baseCellSize: 12,
-  minCellSize: 4
+  baseScale: 3,
+  minScale: 2,
+  maxCanvasSize: 768
 };
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
@@ -6746,333 +6744,6 @@ function computeLocalViewBounds(tileX, tileY, width, height, radius) {
   };
 }
 
-function sampleFieldBilinear(field, width, height, x, y) {
-  if (!field || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return null;
-  }
-
-  const clampedX = clamp(x, 0, width - 1);
-  const clampedY = clamp(y, 0, height - 1);
-  const x0 = Math.floor(clampedX);
-  const y0 = Math.floor(clampedY);
-  const x1 = Math.min(x0 + 1, width - 1);
-  const y1 = Math.min(y0 + 1, height - 1);
-  const tx = clampedX - x0;
-  const ty = clampedY - y0;
-
-  const idx00 = y0 * width + x0;
-  const idx10 = y0 * width + x1;
-  const idx01 = y1 * width + x0;
-  const idx11 = y1 * width + x1;
-
-  const v00 = field[idx00];
-  const v10 = field[idx10];
-  const v01 = field[idx01];
-  const v11 = field[idx11];
-
-  const top = lerp(v00, v10, tx);
-  const bottom = lerp(v01, v11, tx);
-  return lerp(top, bottom, ty);
-}
-
-function gatherTileSamples(tiles, width, height, x, y) {
-  if (!Array.isArray(tiles) || height <= 0 || width <= 0) {
-    return [];
-  }
-
-  const clampedX = clamp(x, 0, width - 1);
-  const clampedY = clamp(y, 0, height - 1);
-  const x0 = Math.floor(clampedX);
-  const y0 = Math.floor(clampedY);
-  const x1 = Math.min(x0 + 1, width - 1);
-  const y1 = Math.min(y0 + 1, height - 1);
-  const tx = clampedX - x0;
-  const ty = clampedY - y0;
-
-  const samples = [];
-  const pushSample = (sx, sy, weight) => {
-    if (weight <= 0) {
-      return;
-    }
-    const row = tiles[sy];
-    if (!row) {
-      return;
-    }
-    samples.push({ tile: row[sx] || null, weight, x: sx, y: sy });
-  };
-
-  pushSample(x0, y0, (1 - tx) * (1 - ty));
-  pushSample(x1, y0, tx * (1 - ty));
-  pushSample(x0, y1, (1 - tx) * ty);
-  pushSample(x1, y1, tx * ty);
-  return samples;
-}
-
-function resolveDominantWeightedValue(samples, accessor) {
-  if (!Array.isArray(samples) || samples.length === 0 || typeof accessor !== 'function') {
-    return null;
-  }
-
-  const totals = new Map();
-  samples.forEach(({ tile, weight }) => {
-    if (!tile) {
-      return;
-    }
-    const value = accessor(tile);
-    if (value === null || value === undefined || value === '') {
-      return;
-    }
-    const safeWeight = Number.isFinite(weight) ? weight : 0;
-    totals.set(value, (totals.get(value) || 0) + safeWeight);
-  });
-
-  let bestValue = null;
-  let bestWeight = -Infinity;
-  totals.forEach((total, value) => {
-    if (total > bestWeight) {
-      bestWeight = total;
-      bestValue = value;
-    }
-  });
-  return bestValue;
-}
-
-function classifyLocalPreviewCell(options) {
-  const {
-    world,
-    samples,
-    elevation,
-    moisture,
-    temperature,
-    sampleX,
-    sampleY,
-    subdivisions,
-    seedNumber
-  } = options;
-
-  if (!world) {
-    return null;
-  }
-
-  const normalizedMoisture = Number.isFinite(moisture) ? clamp(moisture, 0, 1) : 0.5;
-  const normalizedTemperature = Number.isFinite(temperature) ? clamp(temperature, 0, 1) : 0.5;
-  const dryness = clamp(1 - normalizedMoisture, 0, 1);
-  const coldness = clamp(1 - normalizedTemperature, 0, 1);
-  const seaLevel = Number.isFinite(world.seaLevel) ? world.seaLevel : 0.42;
-  const waterTileKey = world.waterTileKey || resolveTileName('WATER');
-  const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
-
-  const elevationSeed = (seedNumber + 0x9e3779b9) >>> 0;
-  let effectiveElevation = elevation;
-  if (Number.isFinite(elevation)) {
-    const elevationJitter =
-      (valueNoise((sampleX + 17.31) * 2.7, (sampleY + 11.73) * 2.7, elevationSeed) - 0.5) * 0.04;
-    effectiveElevation = elevation + elevationJitter;
-  }
-
-  let isWater;
-  if (Number.isFinite(effectiveElevation)) {
-    isWater = effectiveElevation <= seaLevel;
-  } else {
-    const dominantBase = resolveDominantWeightedValue(samples, (tile) => tile?.base || null);
-    isWater = dominantBase === waterTileKey;
-  }
-
-  let baseKey;
-  const shorelineThreshold = seaLevel + 0.01;
-  if (isWater) {
-    baseKey = waterTileKey;
-  } else if (
-    Number.isFinite(effectiveElevation) &&
-    effectiveElevation <= shorelineThreshold &&
-    tileLookup.has('SAND')
-  ) {
-    baseKey = 'SAND';
-  } else {
-    const dominantLandBase = resolveDominantWeightedValue(samples, (tile) => {
-      if (!tile || tile.base === waterTileKey) {
-        return null;
-      }
-      return tile.base || null;
-    });
-    const normalizedElevation = Number.isFinite(effectiveElevation)
-      ? clamp((effectiveElevation - seaLevel) * 3.2, 0, 1)
-      : 0.5;
-    baseKey = dominantLandBase || grassTileKey;
-
-    if (
-      tileLookup.has('SNOW') &&
-      (coldness > 0.68 || (coldness > 0.55 && normalizedElevation > 0.55))
-    ) {
-      baseKey = 'SNOW';
-    } else if (
-      tileLookup.has('MARSH') &&
-      normalizedElevation < 0.35 &&
-      normalizedMoisture > 0.72
-    ) {
-      baseKey = 'MARSH';
-    } else if (
-      tileLookup.has('SAND') &&
-      dryness > 0.75 &&
-      normalizedElevation < 0.62
-    ) {
-      baseKey = 'SAND';
-    } else if (
-      tileLookup.has('BADLANDS') &&
-      dryness > 0.62 &&
-      normalizedElevation >= 0.35
-    ) {
-      baseKey = 'BADLANDS';
-    }
-  }
-
-  if (!tileLookup.has(baseKey)) {
-    baseKey = grassTileKey;
-  }
-
-  let overlayKey = resolveDominantWeightedValue(samples, (tile) => tile?.overlay || null);
-  let hillOverlayKey = resolveDominantWeightedValue(samples, (tile) => tile?.hillOverlay || null);
-  if (overlayKey === hillOverlayKey) {
-    hillOverlayKey = null;
-  }
-
-  if (!isWater && !overlayKey) {
-    const normalizedElevation = Number.isFinite(effectiveElevation)
-      ? clamp((effectiveElevation - seaLevel) * 3.4, 0, 1)
-      : 0.5;
-    const treeChance = clamp(normalizedMoisture * 0.75 - dryness * 0.2, 0, 1);
-    if (treeChance > 0) {
-      const treeSeed = (seedNumber + 0x1bf5c17d) >>> 0;
-      const treeNoise = valueNoise((sampleX + 5.37) * 1.9, (sampleY + 9.11) * 1.9, treeSeed);
-      if (treeNoise < treeChance) {
-        if (baseKey === 'SNOW' && tileLookup.has('TREE_SNOW')) {
-          overlayKey = 'TREE_SNOW';
-        } else if (normalizedTemperature > 0.68 && tileLookup.has('JUNGLE_TREE')) {
-          overlayKey = 'JUNGLE_TREE';
-        } else if (tileLookup.has('TREE')) {
-          overlayKey = 'TREE';
-        }
-      }
-    }
-
-    if (!overlayKey && normalizedElevation > 0.72) {
-      const ridgeSeed = (seedNumber + 0x5bf03635) >>> 0;
-      const ridgeNoise = valueNoise((sampleX + 21.77) * 2.8, (sampleY + 4.95) * 2.8, ridgeSeed);
-      if (ridgeNoise > 0.68) {
-        const mountainOverlay = resolveDominantWeightedValue(samples, (tile) => tile?.overlay || null);
-        if (mountainOverlay && tileLookup.has(mountainOverlay)) {
-          overlayKey = mountainOverlay;
-        } else if (hillOverlayKey && tileLookup.has(hillOverlayKey)) {
-          overlayKey = hillOverlayKey;
-          hillOverlayKey = null;
-        }
-      }
-    }
-  }
-
-  if (overlayKey && !tileLookup.has(overlayKey)) {
-    overlayKey = null;
-  }
-  if (hillOverlayKey && !tileLookup.has(hillOverlayKey)) {
-    hillOverlayKey = null;
-  }
-
-  let structureKey = null;
-  let structureSample = null;
-  let bestWeight = -Infinity;
-  samples.forEach((sample) => {
-    if (!sample.tile || !sample.tile.structure) {
-      return;
-    }
-    if (sample.weight > bestWeight) {
-      bestWeight = sample.weight;
-      structureSample = sample;
-    }
-  });
-  if (structureSample && structureSample.tile && structureSample.tile.structure) {
-    const tileCenterX = (structureSample.x || 0) + 0.5;
-    const tileCenterY = (structureSample.y || 0) + 0.5;
-    const distance = Math.hypot(sampleX - tileCenterX, sampleY - tileCenterY);
-    const maxDistance = Math.max(0.18, 0.45 / Math.max(1, subdivisions));
-    if (distance <= maxDistance) {
-      structureKey = structureSample.tile.structure;
-    }
-  }
-
-  return {
-    base: baseKey,
-    overlay: overlayKey,
-    hillOverlay: hillOverlayKey,
-    structure: structureKey,
-    isWater: Boolean(isWater)
-  };
-}
-
-function generateLocalPreviewDetail(world, bounds, subdivisions) {
-  if (!world || !bounds || !Array.isArray(world.tiles) || world.tiles.length === 0) {
-    return null;
-  }
-
-  const clampedSubdivisions = Math.max(2, Math.floor(subdivisions) || 2);
-  const worldHeight = world.tiles.length;
-  const worldWidth = Array.isArray(world.tiles[0]) ? world.tiles[0].length : 0;
-  if (worldWidth === 0) {
-    return null;
-  }
-
-  const widthCells = Math.max(1, bounds.width * clampedSubdivisions);
-  const heightCells = Math.max(1, bounds.height * clampedSubdivisions);
-  const cells = Array.from({ length: heightCells }, () => new Array(widthCells));
-  const seedNumber = stringToSeed(world.seedString || '');
-
-  for (let localY = 0; localY < heightCells; localY += 1) {
-    const sampleY = bounds.startY + (localY + 0.5) / clampedSubdivisions;
-    for (let localX = 0; localX < widthCells; localX += 1) {
-      const sampleX = bounds.startX + (localX + 0.5) / clampedSubdivisions;
-      const samples = gatherTileSamples(world.tiles, worldWidth, worldHeight, sampleX, sampleY);
-      const elevation = sampleFieldBilinear(
-        world.elevationField,
-        worldWidth,
-        worldHeight,
-        sampleX,
-        sampleY
-      );
-      const moisture = sampleFieldBilinear(
-        world.moistureField,
-        worldWidth,
-        worldHeight,
-        sampleX,
-        sampleY
-      );
-      const temperature = sampleFieldBilinear(
-        world.temperatureField,
-        worldWidth,
-        worldHeight,
-        sampleX,
-        sampleY
-      );
-      cells[localY][localX] = classifyLocalPreviewCell({
-        world,
-        samples,
-        elevation,
-        moisture,
-        temperature,
-        sampleX,
-        sampleY,
-        subdivisions: clampedSubdivisions,
-        seedNumber
-      });
-    }
-  }
-
-  return {
-    width: widthCells,
-    height: heightCells,
-    subdivisions: clampedSubdivisions,
-    cells
-  };
-}
-
 function resolveLocalSubtitle(tile) {
   if (!tile) {
     return 'Local terrain preview';
@@ -7160,6 +6831,12 @@ function refreshLocalMapPreview() {
     elements.localMapSubtitle.textContent = resolveLocalSubtitle(focusTile);
   }
 
+  if (elements.localMapCoordinates) {
+    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+      tileWidth
+    }×${tileHeight} tiles`;
+  }
+
   if (elements.localMapDetails) {
     const tooltipContent = buildStructureTooltipContent(focusTile);
     if (tooltipContent) {
@@ -7169,57 +6846,39 @@ function refreshLocalMapPreview() {
     }
   }
 
-  const detail =
-    localView.detail || generateLocalPreviewDetail(world, bounds, localViewConfig.subdivisions);
-  if (!detail) {
-    elements.localMapPanel.classList.add('hidden');
-    elements.localMapPanel.setAttribute('aria-hidden', 'true');
-    return;
-  }
-  state.localView.detail = detail;
-
-  if (elements.localMapCoordinates) {
-    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${
-      localView.centerY + 1
-    } — ${tileWidth}×${tileHeight} world tiles (${detail.width}×${detail.height} local tiles)`;
-  }
-
   const canvas = elements.localMapCanvas;
   const context = canvas ? canvas.getContext('2d') : null;
-  if (!canvas || !context) {
+  if (!canvas || !context || !elements.canvas) {
     return;
   }
 
+  const sourceX = bounds.startX * drawSize;
+  const sourceY = bounds.startY * drawSize;
+  const sourceWidth = tileWidth * drawSize;
+  const sourceHeight = tileHeight * drawSize;
+  const baseScale = localViewConfig.baseScale;
   const maxSize = localViewConfig.maxCanvasSize;
-  let cellPixelSize = Math.max(1, Math.floor(localViewConfig.baseCellSize));
-  if (!Number.isFinite(cellPixelSize) || cellPixelSize <= 0) {
-    cellPixelSize = 12;
-  }
-  let destWidth = detail.width * cellPixelSize;
-  let destHeight = detail.height * cellPixelSize;
-
-  if (destWidth > maxSize) {
-    const possible = Math.floor(maxSize / Math.max(1, detail.width));
-    cellPixelSize = Math.max(localViewConfig.minCellSize, possible);
-    destWidth = detail.width * cellPixelSize;
-    destHeight = detail.height * cellPixelSize;
-  }
-  if (destHeight > maxSize) {
-    const possible = Math.floor(maxSize / Math.max(1, detail.height));
-    cellPixelSize = Math.max(localViewConfig.minCellSize, possible);
-    destWidth = detail.width * cellPixelSize;
-    destHeight = detail.height * cellPixelSize;
+  const baseWidth = sourceWidth * baseScale;
+  let scale = baseScale;
+  if (baseWidth > maxSize) {
+    const possibleScale = Math.floor(maxSize / Math.max(1, sourceWidth));
+    scale = Math.max(localViewConfig.minScale, possibleScale);
+    if (!Number.isFinite(scale) || scale < 1) {
+      scale = 1;
+    }
   }
 
+  const destWidth = Math.max(1, Math.round(sourceWidth * scale));
+  const destHeight = Math.max(1, Math.round(sourceHeight * scale));
   canvas.width = destWidth;
   canvas.height = destHeight;
   canvas.style.width = '100%';
   canvas.style.height = 'auto';
   canvas.setAttribute(
     'aria-label',
-    `Local preview covering ${detail.width}×${detail.height} tiles (${tileWidth}×${tileHeight} world tiles) around world tile ${
-      localView.centerX + 1
-    }, ${localView.centerY + 1}.`
+    `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${
+      localView.centerY + 1
+    }.`
   );
   canvas.setAttribute('aria-hidden', 'false');
 
@@ -7227,83 +6886,13 @@ function refreshLocalMapPreview() {
   context.clearRect(0, 0, destWidth, destHeight);
   context.fillStyle = '#05060b';
   context.fillRect(0, 0, destWidth, destHeight);
+  context.drawImage(elements.canvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, destWidth, destHeight);
 
-  const drawScaledTile = (tileKey, x, y, size) => {
-    if (!tileKey) {
-      return false;
-    }
-    const definition = tileLookup.get(tileKey);
-    if (!definition) {
-      return false;
-    }
-    const sheet = state.tileSheets[definition.sheet];
-    if (!sheet || !sheet.image) {
-      return false;
-    }
-    context.drawImage(
-      sheet.image,
-      definition.sx,
-      definition.sy,
-      definition.size,
-      definition.size,
-      x,
-      y,
-      size,
-      size
-    );
-    return true;
-  };
-
-  for (let y = 0; y < detail.height; y += 1) {
-    for (let x = 0; x < detail.width; x += 1) {
-      const cell = detail.cells[y][x];
-      const px = x * cellPixelSize;
-      const py = y * cellPixelSize;
-      const baseKey = cell?.base || world.grassTileKey || resolveTileName('GRASS');
-      drawScaledTile(baseKey, px, py, cellPixelSize);
-    }
-  }
-
-  for (let y = 0; y < detail.height; y += 1) {
-    for (let x = 0; x < detail.width; x += 1) {
-      const cell = detail.cells[y][x];
-      if (!cell) {
-        continue;
-      }
-      const px = x * cellPixelSize;
-      const py = y * cellPixelSize;
-      if (cell.hillOverlay) {
-        drawScaledTile(cell.hillOverlay, px, py, cellPixelSize);
-      }
-      if (cell.overlay) {
-        drawScaledTile(cell.overlay, px, py, cellPixelSize);
-      }
-      if (cell.structure) {
-        const structureDefinition = tileLookup.get(cell.structure);
-        if (structureDefinition && structureDefinition.draw) {
-          const coarseX = bounds.startX + x / detail.subdivisions;
-          const coarseY = bounds.startY + y / detail.subdivisions;
-          structureDefinition.draw(context, {
-            x: coarseX,
-            y: coarseY,
-            pixelX: px,
-            pixelY: py,
-            size: cellPixelSize,
-            cell,
-            world
-          });
-        } else {
-          drawScaledTile(cell.structure, px, py, cellPixelSize);
-        }
-      }
-    }
-  }
-
-  const tilePixelWidth = detail.subdivisions * cellPixelSize;
-  const tilePixelHeight = detail.subdivisions * cellPixelSize;
+  const tilePixelWidth = destWidth / tileWidth;
+  const tilePixelHeight = destHeight / tileHeight;
 
   context.save();
-  context.strokeStyle = 'rgba(12, 14, 22, 0.45)';
+  context.strokeStyle = 'rgba(12, 14, 22, 0.6)';
   context.lineWidth = 1;
   for (let x = 1; x < tileWidth; x += 1) {
     const px = Math.round(x * tilePixelWidth) + 0.5;
@@ -7344,7 +6933,6 @@ function hideLocalView(options = {}) {
   state.localView.centerX = null;
   state.localView.centerY = null;
   state.localView.bounds = null;
-  state.localView.detail = null;
   if (elements.localMapPanel) {
     elements.localMapPanel.classList.add('hidden');
     elements.localMapPanel.setAttribute('aria-hidden', 'true');
@@ -7387,11 +6975,6 @@ function showLocalViewAt(tileX, tileY) {
   state.localView.centerX = clampedX;
   state.localView.centerY = clampedY;
   state.localView.bounds = bounds;
-  state.localView.detail = generateLocalPreviewDetail(
-    world,
-    bounds,
-    localViewConfig.subdivisions
-  );
   drawWorld(world, { preserveView: true });
 }
 
@@ -7793,6 +7376,10 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   }
 
+  if (breakdownSection) {
+    sections.push(breakdownSection);
+  }
+
   listSections.forEach((section) => {
     const items = section.items
       .map((item) => `<li>${escapeHtml(item)}</li>`)
@@ -7804,10 +7391,6 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
       </section>
     `);
   });
-
-  if (breakdownSection) {
-    sections.push(breakdownSection);
-  }
 
   narrativeSections.forEach((section) => {
     sections.push(`
