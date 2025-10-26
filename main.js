@@ -68,6 +68,7 @@ const baseTileCoords = {
   DWARFHOLD: { row: 2, col: 9 },
   ABANDONED_DWARFHOLD: { row: 2, col: 8 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
+  HILLHOLD: { row: 2, col: 9 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
@@ -497,11 +498,13 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
     (faction.capital && typeof faction.capital.type === 'string' && faction.capital.type) || 'settlement';
 
   switch (type) {
+    case 'hillhold':
     case 'dwarfhold': {
       if (
         tile.structure === 'DWARFHOLD' ||
         tile.structure === 'GREAT_DWARFHOLD' ||
-        tile.structure === 'ABANDONED_DWARFHOLD'
+        tile.structure === 'ABANDONED_DWARFHOLD' ||
+        tile.structure === 'HILLHOLD'
       ) {
         return 1;
       }
@@ -1021,6 +1024,114 @@ const dwarfholdExportOptions = [
   'Architectural plans and rune-etched stonework',
   'Highland woolens and leatherwork',
   'Engraved jewelry and heirloom trinkets'
+];
+
+const hillholdNamePrefixes = [
+  'Stone',
+  'Amber',
+  'Bronze',
+  'Granite',
+  'Cloud',
+  'Storm',
+  'Frost',
+  'Ember',
+  'Ridge',
+  'Hearth',
+  'Rune',
+  'Copper',
+  'Oak',
+  'Pine',
+  'Crown',
+  'Deep',
+  'Iron'
+];
+
+const hillholdNameSuffixes = [
+  'watch',
+  'guard',
+  'hold',
+  'fast',
+  'hearth',
+  'delve',
+  'gate',
+  'spire',
+  'tor',
+  'bastion'
+];
+
+const hillholdNameDescriptors = [
+  'Hill',
+  'Heights',
+  'Tor',
+  'Rise',
+  'Overlook',
+  'Sentinel',
+  'Cairn',
+  'Keep'
+];
+
+const hillholdHallmarks = [
+  'Terraced stone halls clutch the hillside with iron-rooted buttresses.',
+  'Signal beacons line the ridge, flaring to warn the mountain clans.',
+  'Stonecut breweries age ember-ale in vaults carved into the slope.',
+  'A ring of rune-warded cairns keeps avalanches at bay.',
+  'Watchful ballistae peer over the passes, ready for skyborne threats.',
+  'Ancestral murals glow softly where the hill meets the mountain.',
+  'Tunnel orchards cultivate silverleaf whose sap steeps hardy brews.',
+  'Gear-driven lifts ferry caravans up the steep approach roads.'
+];
+
+const hillholdWatchOrders = [
+  'Ridgeguard Brotherhood',
+  'Hearthward Sentinels',
+  'Torwatch Lodge',
+  'Amberhorn Vigil',
+  'Thunderpeak Watch',
+  'Mistveil Wardens',
+  'Stoneflare Rangers',
+  'Copper Torches'
+];
+
+const hillholdWardenTitles = [
+  'Holdthane',
+  'Ridgekeeper',
+  'Beacon Marshal',
+  'Hearthwarden',
+  'Overthane',
+  'Watch Captain',
+  'Stoneward',
+  'Beaconwarden'
+];
+
+const hillholdExports = [
+  'Granite keystones for mountain keeps',
+  'Casks of ember-aged hill ale',
+  'Runic beacons and signal braziers',
+  'Polished horn trumpets for war warnings',
+  'Refined copper filigree and fastenings',
+  'Carved cairn-stones blessed by runepriests',
+  'Seasoned pine from terraced groves',
+  'Skybridge chains and hoist mechanisms'
+];
+
+const hillholdDefensiveTraits = [
+  'Triple-beacon towers crown the ridgeline.',
+  'Hidden sally tunnels open behind the hill.',
+  'Rampart ballistae track the mountain pass day and night.',
+  'Iron portcullises seal the ascent at a gesture.',
+  'Seismic wards rumble whenever giants near.',
+  'Water-driven sirens wail when the beacons ignite.'
+];
+
+const hillholdSentinelFocuses = [
+  'guarding the trade-lanes that skirt the mountains',
+  'keeping troll warbands from spilling onto the plains',
+  'escorting caravans between hill clans and deep holds',
+  'tracking wyvern flights that nest in the cliffs',
+  'holding vigil for goblin raiders slipping through the passes',
+  'surveying avalanche-prone slopes for signs of collapse',
+  'maintaining the beacon-chain that links the northern holds',
+  'patrolling ancient roads carved before the age of kings'
 ];
 
 const dwarfholdPopulationRaceOptions = [
@@ -2930,6 +3041,101 @@ function generateDwarfholdDetails(name, random, options = {}) {
   };
 }
 
+function generateHillholdName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(hillholdNamePrefixes, randomFn) || 'Stone';
+  const suffix = pickRandomFrom(hillholdNameSuffixes, randomFn) || 'hold';
+  const descriptor = pickRandomFrom(hillholdNameDescriptors, randomFn);
+  const baseName = `${prefix}${suffix}`;
+  const style = randomFn();
+  if (style < 0.3 && descriptor) {
+    return `${baseName} ${descriptor}`;
+  }
+  if (style < 0.6 && descriptor) {
+    return `${descriptor} Hillhold`;
+  }
+  if (style < 0.85) {
+    return `${baseName} Hillhold`;
+  }
+  return `${baseName} Hold`;
+}
+
+function generateHillholdDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const population = Math.max(90, Math.floor(180 + randomFn() * 1600));
+  let classification = 'Hillhold Outpost';
+  if (population >= 1500) {
+    classification = 'Great Hillhold';
+  } else if (population >= 900) {
+    classification = 'Foothill Stronghold';
+  } else if (population >= 420) {
+    classification = 'Hillhold';
+  }
+
+  const genderRoll = randomFn();
+  const gender = genderRoll < 0.82 ? 'male' : genderRoll < 0.95 ? 'female' : 'neutral';
+  const namePool = dwarfNamePools[gender] || dwarfNamePools.male;
+  const firstName = pickRandomFrom(namePool, randomFn) || 'Urist';
+  const clanOption = pickRandomFrom(dwarfOptions.clan, randomFn) || dwarfOptions.clan?.[0];
+  const clanName = clanOption?.label || 'Stonebeard';
+  const wardenTitle = pickRandomFrom(hillholdWardenTitles, randomFn) || 'Holdthane';
+  const hallmark = pickRandomFrom(hillholdHallmarks, randomFn) || hillholdHallmarks[0];
+  const watchOrder = pickRandomFrom(hillholdWatchOrders, randomFn) || 'Ridgeguard Brotherhood';
+  const exportCount = clamp(Math.floor(1 + randomFn() * 2), 1, hillholdExports.length);
+  const exports = pickUniqueFrom(hillholdExports, exportCount, randomFn);
+  const defensiveTrait = pickRandomFrom(hillholdDefensiveTraits, randomFn) || hillholdDefensiveTraits[0];
+  const sentinelFocus = pickRandomFrom(hillholdSentinelFocuses, randomFn) || hillholdSentinelFocuses[0];
+  const foundedYearsAgo = Math.max(18, Math.floor(40 + randomFn() * 260));
+
+  const nearestHoldInfo = options?.nearestDwarfhold || null;
+  const nearestHoldPoint = nearestHoldInfo?.point || null;
+  const nearestHoldName =
+    nearestHoldPoint?.name ||
+    nearestHoldPoint?.structureName ||
+    (typeof nearestHoldPoint?.label === 'string' ? nearestHoldPoint.label : null);
+  const dwarfholdDistance = Number.isFinite(nearestHoldInfo?.distance)
+    ? Math.max(1, Math.round(nearestHoldInfo.distance))
+    : null;
+  const mountainDistance = Number.isFinite(options?.mountainDistance)
+    ? Math.max(1, Math.round(options.mountainDistance))
+    : null;
+
+  const caravanSentence = nearestHoldName
+    ? `Caravans from ${nearestHoldName} arrive after ${dwarfholdDistance || 'several'} leagues along the ridge paths.`
+    : 'It stands as an independent bastion for scattered hill clans.';
+  const beaconSentence = mountainDistance
+    ? `Beacon-crews report the nearest crags are only ${mountainDistance} leagues away.`
+    : 'Beacon-crews keep sight on the surrounding crags.';
+  const description = `${watchOrder} keep watch here, ${sentinelFocus}. ${defensiveTrait} ${caravanSentence} ${beaconSentence}`.trim();
+
+  const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn, {
+    hasNearbyHumanSettlement: Boolean(options?.hasNearbyHumanSettlement)
+  });
+
+  return {
+    type: 'hillhold',
+    classification,
+    name,
+    population,
+    populationLabel: 'Population',
+    populationDescriptor: 'dwarves',
+    isSettlement: true,
+    ruler: {
+      title: wardenTitle,
+      name: `${firstName} ${clanName}`
+    },
+    foundedYearsAgo,
+    prominentGroup: watchOrder,
+    prominentGroupLabel: 'Sentinel Order',
+    hallmark,
+    hallmarkLabel: 'Renowned For',
+    majorExports: exports,
+    majorExportsLabel: 'Exports',
+    populationBreakdown,
+    description
+  };
+}
+
 function generateEvilWizardTowerDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const population = Math.max(1, Math.floor(1 + randomFn() * 599));
@@ -3686,6 +3892,9 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       case 'dwarfhold':
         baseRadius = 36;
         break;
+      case 'hillhold':
+        baseRadius = 30;
+        break;
       case 'town':
         baseRadius = 32;
         break;
@@ -3718,6 +3927,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     switch (seed.type) {
       case 'dwarfhold':
         return `${label} Thanedom`;
+      case 'hillhold':
+        return `${label} Holdfast`;
       case 'woodElfGrove':
         return `${label} Canopy`;
       case 'lizardmenCity':
@@ -9760,6 +9971,7 @@ function createWorld(seedString) {
       }))
   );
   const dwarfholds = [];
+  const hillholds = [];
   const towns = [];
   const towers = [];
   const caves = [];
@@ -10994,6 +11206,184 @@ function createWorld(seedString) {
             }
           }
         }
+      }
+    }
+  }
+
+  const hillholdKey = tileLookup.has('HILLHOLD') ? 'HILLHOLD' : null;
+  if (hillholdKey) {
+    const hillholdNoiseSeed = (seedNumber + 0x9b17a4c3) >>> 0;
+    const hillholdCandidates = [];
+    const hillSearchRadius = 6;
+    const hillSearchRadiusSq = hillSearchRadius * hillSearchRadius;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+        if (!overlayIsHill) {
+          continue;
+        }
+        if (!isLandBaseTile(tile.base)) {
+          continue;
+        }
+
+        let bestMountainDistSq = Infinity;
+        outer: for (let dy = -hillSearchRadius; dy <= hillSearchRadius; dy += 1) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= height) {
+            continue;
+          }
+          for (let dx = -hillSearchRadius; dx <= hillSearchRadius; dx += 1) {
+            const nx = x + dx;
+            if (nx < 0 || nx >= width) {
+              continue;
+            }
+            const distSq = dx * dx + dy * dy;
+            if (distSq === 0 || distSq > hillSearchRadiusSq) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (mountainMask && mountainMask[nIdx]) {
+              if (distSq < bestMountainDistSq) {
+                bestMountainDistSq = distSq;
+              }
+              if (bestMountainDistSq <= 1) {
+                break outer;
+              }
+              continue;
+            }
+            const neighborRow = tiles[ny];
+            const neighborTile = neighborRow ? neighborRow[nx] : null;
+            if (neighborTile && (isMountainOverlay(neighborTile.overlay) || isMountainOverlay(neighborTile.hillOverlay))) {
+              if (distSq < bestMountainDistSq) {
+                bestMountainDistSq = distSq;
+              }
+              if (bestMountainDistSq <= 1) {
+                break outer;
+              }
+            }
+          }
+        }
+
+        if (!Number.isFinite(bestMountainDistSq) || bestMountainDistSq === Infinity) {
+          continue;
+        }
+
+        const mountainDistance = Math.sqrt(bestMountainDistSq);
+        const mountainProximity = clamp(1 - mountainDistance / (hillSearchRadius + 0.5), 0, 1);
+        const mountainScore = mountainScores ? mountainScores[idx] : 0;
+        const mountainAffinity = Math.max(mountainProximity, mountainScore * 0.6);
+        const heightValue = elevationField ? elevationField[idx] : seaLevel;
+
+        let slopeSum = 0;
+        let neighborCount = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          slopeSum += Math.abs(heightValue - elevationField[nIdx]);
+          neighborCount += 1;
+        }
+        const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+        const slopeScore = clamp(averageSlope * 32, 0, 0.25);
+        const elevationScore = clamp((heightValue - seaLevel + 0.08) * 1.3, 0, 0.22);
+        const baseIsSnow = tile.base === snowTileKey;
+        const climateBonus = baseIsSnow ? 0.1 : 0.16;
+        const holdDistanceSq = computeNearestDistanceSq(x, y, dwarfholds);
+        const holdBonus =
+          holdDistanceSq === Infinity ? 0.04 : clamp(1 - Math.sqrt(holdDistanceSq) / 24, 0, 0.15);
+        const noise = hashCoords(x, y, hillholdNoiseSeed) - 0.5;
+        const score =
+          climateBonus +
+          mountainAffinity * 0.45 +
+          slopeScore * 0.18 +
+          elevationScore * 0.18 +
+          holdBonus +
+          noise * 0.12;
+
+        if (score <= 0.22) {
+          continue;
+        }
+
+        hillholdCandidates.push({
+          x,
+          y,
+          score,
+          mountainDistance,
+          elevation: heightValue,
+          holdDistanceSq
+        });
+      }
+    }
+
+    if (hillholdCandidates.length > 0) {
+      hillholdCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(hillholdCandidates.length / 900));
+      const maxHillholds = computeStructurePlacementLimit(baseTarget, 18, dwarfSettlementMultiplier);
+      const minDistanceBase = 4;
+      const minDistance = adjustMinDistance(minDistanceBase, dwarfSettlementFrequencyNormalized);
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < hillholdCandidates.length && placed.length < maxHillholds; i += 1) {
+        const candidate = hillholdCandidates[i];
+        if (candidate.score < 0.24) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+        if (!overlayIsHill) {
+          continue;
+        }
+        const nearestHoldDistanceSq = computeNearestDistanceSq(candidate.x, candidate.y, dwarfholds);
+        if (nearestHoldDistanceSq !== Infinity && nearestHoldDistanceSq < 9) {
+          continue;
+        }
+
+        const name = generateHillholdName(rng);
+        const nearestHoldInfo = findNearestPointWithDetails(candidate.x, candidate.y, dwarfholds);
+        const details = generateHillholdDetails(name, rng, {
+          nearestDwarfhold: nearestHoldInfo,
+          mountainDistance: candidate.mountainDistance,
+          hasNearbyHumanSettlement: false
+        });
+
+        tile.structure = hillholdKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+
+        placed.push(candidate);
+        hillholds.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
   }
@@ -12606,8 +12996,9 @@ function createWorld(seedString) {
     }
   }
 
+  const dwarvenSettlements = [...dwarfholds, ...hillholds];
   const majorSettlementPoints = [
-    ...dwarfholds,
+    ...dwarvenSettlements,
     ...towns,
     ...woodElfGroves,
     ...lizardmenCities,
@@ -12889,7 +13280,7 @@ function createWorld(seedString) {
 
   const tavernKey = tileLookup.has('ROADSIDE_TAVERN') ? 'ROADSIDE_TAVERN' : null;
   if (tavernKey) {
-    const civilSettlements = [...towns, ...dwarfholds, ...woodElfGroves, ...castles];
+    const civilSettlements = [...towns, ...dwarfholds, ...hillholds, ...woodElfGroves, ...castles];
     const tavernCandidates = [];
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -13148,7 +13539,7 @@ function createWorld(seedString) {
           continue;
         }
         const distanceToTownSq = computeNearestDistanceSq(x, y, towns);
-        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarfholds);
+        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarvenSettlements);
         const settlementDistanceSq = Math.min(distanceToTownSq, distanceToHoldSq);
         if (settlementDistanceSq === Infinity) {
           continue;
@@ -13262,7 +13653,7 @@ function createWorld(seedString) {
         const hillBonus =
           isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.24 : 0;
         const distanceToTownSq = computeNearestDistanceSq(x, y, towns);
-        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarfholds);
+        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarvenSettlements);
         const settlementDistanceSq = Math.min(distanceToTownSq, distanceToHoldSq);
         if (settlementDistanceSq === Infinity) {
           continue;
@@ -13892,6 +14283,14 @@ function createWorld(seedString) {
       population: Number.isFinite(hold?.population) ? hold.population : null,
       settlementKind: typeof hold?.type === 'string' ? hold.type : null
     })),
+    ...hillholds.map((hold) => ({
+      x: hold.x,
+      y: hold.y,
+      label: hold.name || hold.structureName || 'Hillhold',
+      type: 'hillhold',
+      population: Number.isFinite(hold?.population) ? hold.population : null,
+      settlementKind: typeof hold?.type === 'string' ? hold.type : null
+    })),
     ...towns.map((town) => ({
       x: town.x,
       y: town.y,
@@ -13956,6 +14355,7 @@ function createWorld(seedString) {
     biomeField,
     seedString: finalSeed,
     dwarfholds,
+    hillholds,
     towns,
     towers,
     caves,
