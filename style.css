@@ -1555,8 +1555,9 @@ button:hover:not(:disabled) {
 
 .dwarf-portrait {
   position: relative;
-  width: 128px;
-  height: 128px;
+  width: min(424px, 100%);
+  aspect-ratio: 424 / 377;
+  height: auto;
   margin-inline: auto;
   border-radius: 18px;
   border: 4px solid rgba(48, 36, 60, 0.95);
@@ -1888,9 +1889,8 @@ button:hover:not(:disabled) {
   }
 
   .dwarf-portrait {
-    width: 128px;
-    height: 128px;
-    margin-inline: auto;
+    width: min(424px, 100%);
+    aspect-ratio: 424 / 377;
   }
 }
 
