@@ -5538,17 +5538,6 @@ const layoutEditorState = {
 
 const layoutPositionEpsilon = 0.01;
 const layoutInteractiveSelector = 'button, input, select, textarea';
-const defaultLayoutOffsets = new Map();
-const defaultLayoutConfigurationPath =
-  'tilesheet/dwarf-customizer-layout-2025-10-26T01-55-26-529Z.json';
-
-function getDefaultLayoutOffset(id) {
-  if (!id || !defaultLayoutOffsets.has(id)) {
-    return { x: 0, y: 0 };
-  }
-  const { x, y } = defaultLayoutOffsets.get(id);
-  return { x, y };
-}
 
 function getLayoutDraggableElements() {
   if (!elements.dwarfCustomizerForm) {
@@ -5601,12 +5590,7 @@ function applyLayoutOffset(element, x, y) {
 function layoutHasOffsets() {
   return getLayoutDraggableElements().some((element) => {
     const { x, y } = getLayoutOffsets(element);
-    const id = element.dataset.draggableId;
-    const defaults = getDefaultLayoutOffset(id);
-    return (
-      Math.abs(x - defaults.x) > layoutPositionEpsilon ||
-      Math.abs(y - defaults.y) > layoutPositionEpsilon
-    );
+    return Math.abs(x) > layoutPositionEpsilon || Math.abs(y) > layoutPositionEpsilon;
   });
 }
 
@@ -5724,48 +5708,9 @@ function setLayoutEditingActive(shouldActivate) {
 
 function resetLayoutOffsets() {
   getLayoutDraggableElements().forEach((element) => {
-    const id = element.dataset.draggableId;
-    const defaults = getDefaultLayoutOffset(id);
-    applyLayoutOffset(element, defaults.x, defaults.y);
+    applyLayoutOffset(element, 0, 0);
   });
   updateLayoutControlStates();
-}
-
-async function loadDefaultLayoutConfiguration() {
-  if (!elements.dwarfCustomizerForm) {
-    return;
-  }
-
-  try {
-    const response = await fetch(defaultLayoutConfigurationPath, {
-      cache: 'no-store'
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to load layout configuration: ${response.status}`);
-    }
-
-    const payload = await response.json();
-    if (!payload || typeof payload !== 'object' || typeof payload.positions !== 'object') {
-      throw new Error('Layout configuration missing positions');
-    }
-
-    defaultLayoutOffsets.clear();
-    for (const [id, coords] of Object.entries(payload.positions)) {
-      if (!id || typeof coords !== 'object') {
-        continue;
-      }
-      const x = Number.parseFloat(coords.x);
-      const y = Number.parseFloat(coords.y);
-      defaultLayoutOffsets.set(id, {
-        x: Number.isFinite(x) ? Math.round(x * 100) / 100 : 0,
-        y: Number.isFinite(y) ? Math.round(y * 100) / 100 : 0
-      });
-    }
-
-    resetLayoutOffsets();
-  } catch (error) {
-    console.warn('Unable to apply default dwarf customizer layout', error);
-  }
 }
 
 function downloadLayoutConfiguration() {
@@ -14118,4 +14063,3 @@ function initialise() {
 }
 
 initialise();
-loadDefaultLayoutConfiguration();
