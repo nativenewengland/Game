@@ -1,5 +1,5 @@
 const drawSize = 32;
-const defaultWorldGenerationType = 'major_continent';
+const defaultWorldGenerationType = 'normal';
 
 const tileSheets = {
   base: {
@@ -8099,7 +8099,11 @@ function getWorldGenerationProfile(key) {
 
 function getWorldGenerationProfileLabel(key) {
   const profile = getWorldGenerationProfile(key);
-  return profile && profile.label ? profile.label : 'Major Continent';
+  if (profile && profile.label) {
+    return profile.label;
+  }
+  const fallbackProfile = worldGenerationProfiles[defaultWorldGenerationType];
+  return fallbackProfile && fallbackProfile.label ? fallbackProfile.label : 'Normal';
 }
 
 function ensureLandMaskForProfile(profileKey) {
@@ -10191,6 +10195,18 @@ function createArchipelagoMask() {
 }
 
 const worldGenerationProfiles = {
+  normal: {
+    key: 'normal',
+    label: 'Normal',
+    baseNoiseScaleRange: [1.2, 2],
+    detailNoiseScaleRange: [3.6, 6.6],
+    ridgeNoiseScaleRange: [6.2, 10.2],
+    edgeTaperRange: [2.3, 3.1],
+    edgeDropRange: [0.26, 0.4],
+    maskInfluence: 0.48,
+    seaLevelShift: -0.01,
+    rainfallBias: 0
+  },
   major_continent: {
     key: 'major_continent',
     label: 'Major Continent',
