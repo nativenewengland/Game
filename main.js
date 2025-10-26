@@ -54,6 +54,11 @@ const characterCreatorPortraitAssets = {
     path: 'tilesheet/Character Creator/body_male.png',
     image: null
   },
+  femaleBody: {
+    key: 'femaleBody',
+    path: 'tilesheet/Character Creator/body_female.png',
+    image: null
+  },
   headDefault: {
     key: 'headDefault',
     path: 'tilesheet/Character Creator/head_default.png',
@@ -84,6 +89,46 @@ const characterCreatorPortraitAssets = {
     path: 'tilesheet/Character Creator/beard_5.png',
     image: null
   },
+  beard6: {
+    key: 'beard6',
+    path: 'tilesheet/Character Creator/beard_6.png',
+    image: null
+  },
+  beard7: {
+    key: 'beard7',
+    path: 'tilesheet/Character Creator/beard_7.png',
+    image: null
+  },
+  beardRinged: {
+    key: 'beardRinged',
+    path: 'tilesheet/Character Creator/7.png',
+    image: null
+  },
+  mustache: {
+    key: 'mustache',
+    path: 'tilesheet/Character Creator/mustache.png',
+    image: null
+  },
+  hairShort: {
+    key: 'hairShort',
+    path: 'tilesheet/Character Creator/hair_3.png',
+    image: null
+  },
+  hairMedium: {
+    key: 'hairMedium',
+    path: 'tilesheet/Character Creator/hair_1.png',
+    image: null
+  },
+  hairLong: {
+    key: 'hairLong',
+    path: 'tilesheet/Character Creator/hair_2.png',
+    image: null
+  },
+  hairBraided: {
+    key: 'hairBraided',
+    path: 'tilesheet/Character Creator/hair_4.png',
+    image: null
+  },
   nose: {
     key: 'nose',
     path: 'tilesheet/Character Creator/nose.png',
@@ -96,7 +141,40 @@ const characterCreatorBeardAssetMap = {
   full: 'beard2',
   braided: 'beard3',
   forked: 'beard4',
-  mutton: 'beard5'
+  mutton: 'beard5',
+  stubble: 'beard6',
+  trimmed: 'beard6',
+  goatee: 'beard6',
+  imperial: 'mustache',
+  wizard: 'beard7',
+  ringed: 'beardRinged'
+};
+
+const characterCreatorHairAssetMap = {
+  short: 'hairShort',
+  medium: 'hairMedium',
+  long: 'hairLong',
+  braided: 'hairBraided'
+};
+
+const characterCreatorHairStyleCategoryMap = {
+  bald: null,
+  straight_shoulder: 'medium',
+  straight_short: 'short',
+  straight_braided: 'braided',
+  curly_stubble: 'short',
+  curly_short_unkempt: 'short',
+  curly_mid_unkempt: 'medium',
+  curly_long_unkempt: 'long',
+  curly_short_combed: 'short',
+  curly_mid_combed: 'medium',
+  curly_long_combed: 'long',
+  curly_short_braided: 'braided',
+  curly_mid_braided: 'braided',
+  curly_long_braided: 'braided',
+  curly_short_double_braids: 'braided',
+  curly_mid_double_braids: 'braided',
+  curly_long_double_braids: 'braided'
 };
 
 const baseTileCoords = {
@@ -135,6 +213,11 @@ const baseTileCoords = {
   PORT_TOWN: { row: 4, col: 5 },
   CASTLE: { row: 4, col: 6 },
   ROADSIDE_TAVERN: { row: 1, col: 12 },
+  HAMLET: { row: 1, col: 13 },
+  ACTIVE_VOLCANO: { row: 2, col: 12 },
+  VOLCANO: { row: 2, col: 13 },
+  OASIS: { row: 0, col: 12 },
+  HAMLET_SNOW: { row: 0, col: 13 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
@@ -143,21 +226,41 @@ const baseTileCoords = {
   DUNGEON: { row: 2, col: 7 }
 };
 
-const roadTileVariantDefinitions = (() => {
+const ROAD_DIRECTION_BITS = {
+  NORTH: 1,
+  EAST: 2,
+  SOUTH: 4,
+  WEST: 8
+};
+
+const roadTileSpriteDefinitions = (() => {
   const sheet = tileSheets.base;
   if (!sheet) {
-    return [];
+    return null;
   }
   const tileSize = sheet.tileSize;
-  const startColumn = 7;
-  const variantCount = 8;
-  const row = 3;
-  return Array.from({ length: variantCount }, (_, index) => ({
+  const row = 5;
+  const makeDefinition = (column) => ({
     sheetKey: sheet.key,
-    sx: (startColumn + index) * tileSize,
+    sx: column * tileSize,
     sy: row * tileSize,
     size: tileSize
-  }));
+  });
+
+  return {
+    isolated: makeDefinition(18),
+    deadEndWest: makeDefinition(2),
+    straightEastWest: makeDefinition(8),
+    cornerNorthEast: makeDefinition(11),
+    cornerSouthEast: makeDefinition(9),
+    cornerSouthWest: makeDefinition(10),
+    cornerNorthWest: makeDefinition(12),
+    teeMissingWest: makeDefinition(7),
+    teeMissingEast: makeDefinition(1),
+    teeMissingNorth: makeDefinition(14),
+    teeMissingSouth: makeDefinition(15),
+    cross: makeDefinition(16)
+  };
 })();
 
 const riverTileCoords = {
@@ -362,7 +465,10 @@ const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B'
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
 
-const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
+const volcanoOverlayKeySet = new Set(['VOLCANO', 'ACTIVE_VOLCANO']);
+const isVolcanoOverlayKey = (key) => typeof key === 'string' && volcanoOverlayKeySet.has(key);
+const isMountainOverlayKey = (key) =>
+  typeof key === 'string' && (key.startsWith('MOUNTAIN') || isVolcanoOverlayKey(key));
 const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
 const isTreeOverlayKey = (key) => typeof key === 'string' && treeOverlayKeySet.has(key);
 const tileHasTreeOverlay = (tile) =>
@@ -3937,6 +4043,12 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     if (!seed || !Number.isFinite(seed.x) || !Number.isFinite(seed.y)) {
       return;
     }
+    const normalizedType = typeof seed.type === 'string' ? seed.type.trim().toLowerCase() : '';
+    const normalizedKind =
+      typeof seed.settlementKind === 'string' ? seed.settlementKind.trim().toLowerCase() : '';
+    if (normalizedType === 'abandoneddwarfhold' || normalizedKind === 'abandoneddwarfhold') {
+      return;
+    }
     const key = toKey(seed.x, seed.y);
     if (seenSeeds.has(key)) {
       return;
@@ -4684,12 +4796,12 @@ const dwarfOptions = {
     { value: 'braided', label: 'Braided Beard' },
     { value: 'forked', label: 'Forked Beard' },
     { value: 'mutton', label: 'Mutton Chops' },
-    { value: 'stubble', label: 'Stubble Beard (placeholder)' },
-    { value: 'trimmed', label: 'Trimmed Beard (placeholder)' },
-    { value: 'goatee', label: 'Goatee (placeholder)' },
-    { value: 'imperial', label: 'Imperial Beard (placeholder)' },
-    { value: 'wizard', label: 'Wizard Beard (placeholder)' },
-    { value: 'ringed', label: 'Ringed Beard (placeholder)' }
+    { value: 'stubble', label: 'Stubble Beard' },
+    { value: 'trimmed', label: 'Trimmed Beard' },
+    { value: 'goatee', label: 'Goatee' },
+    { value: 'imperial', label: 'Imperial Mustache' },
+    { value: 'wizard', label: 'Wizard Beard' },
+    { value: 'ringed', label: 'Ringed Beard' }
   ],
   clan: dwarfClanOptions,
   guild: dwarfGuildOptions,
@@ -6354,12 +6466,30 @@ function getBeardFrame(dwarf, hairOption) {
 }
 
 function shouldUseCharacterCreatorPortrait(dwarf) {
-  if (!dwarf || dwarf.gender !== 'male') {
+  if (!dwarf) {
     return false;
   }
-  const bodyImage = characterCreatorPortraitAssets.maleBody?.image || null;
+  const gender = dwarf.gender === 'female' ? 'female' : 'male';
+  const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
+  const bodyImage = characterCreatorPortraitAssets[bodyKey]?.image || null;
   const headImage = characterCreatorPortraitAssets.headDefault?.image || null;
   return Boolean(bodyImage && headImage);
+}
+
+function getCharacterCreatorHairImage(dwarf) {
+  if (!dwarf) {
+    return null;
+  }
+  const resolvedStyle = resolveHairStyleValue(dwarf.hairStyle);
+  const category = characterCreatorHairStyleCategoryMap[resolvedStyle];
+  if (!category) {
+    return null;
+  }
+  const assetKey = characterCreatorHairAssetMap[category];
+  if (!assetKey) {
+    return null;
+  }
+  return characterCreatorPortraitAssets[assetKey]?.image || null;
 }
 
 function getCharacterCreatorBeardImage(dwarf) {
@@ -6375,7 +6505,9 @@ function getCharacterCreatorBeardImage(dwarf) {
 }
 
 function renderCharacterCreatorPortrait(ctx, canvas, dwarf) {
-  const bodyImage = characterCreatorPortraitAssets.maleBody?.image;
+  const gender = dwarf?.gender === 'female' ? 'female' : 'male';
+  const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
+  const bodyImage = characterCreatorPortraitAssets[bodyKey]?.image;
   const headImage = characterCreatorPortraitAssets.headDefault?.image;
   if (!bodyImage || !headImage) {
     return;
@@ -6387,13 +6519,17 @@ function renderCharacterCreatorPortrait(ctx, canvas, dwarf) {
   const offsetY = Math.floor((canvas.height - drawHeight) / 2);
   ctx.drawImage(bodyImage, offsetX, offsetY, drawWidth, drawHeight);
   ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+  const hairImage = getCharacterCreatorHairImage(dwarf);
+  if (hairImage) {
+    ctx.drawImage(hairImage, offsetX, offsetY, drawWidth, drawHeight);
+  }
   const beardImage = getCharacterCreatorBeardImage(dwarf);
   if (beardImage) {
     ctx.drawImage(beardImage, offsetX, offsetY, drawWidth, drawHeight);
-    const noseImage = characterCreatorPortraitAssets.nose?.image;
-    if (noseImage) {
-      ctx.drawImage(noseImage, offsetX, offsetY, drawWidth, drawHeight);
-    }
+  }
+  const noseImage = characterCreatorPortraitAssets.nose?.image;
+  if (noseImage) {
+    ctx.drawImage(noseImage, offsetX, offsetY, drawWidth, drawHeight);
   }
 }
 
@@ -10114,6 +10250,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.waterDepth = 0;
     tile.coastProximity = 0;
     tile.desertProximity = 0;
+    tile.volcanoProximity = 0;
     waterMask[idx] = 1;
     return true;
   };
@@ -10442,6 +10579,7 @@ function createWorld(seedString) {
   const sandGenerationEnabled = true;
   const hasSandTile = sandGenerationEnabled && tileLookup.has('SAND');
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
+  const oasisTileKey = hasSandTile && tileLookup.has('OASIS') ? 'OASIS' : null;
   const hasBadlandsTile = sandGenerationEnabled && tileLookup.has('BADLANDS');
   const badlandsTileKey = hasBadlandsTile ? 'BADLANDS' : sandTileKey;
   const hasStoneTile = tileLookup.has('STONE');
@@ -10792,6 +10930,7 @@ function createWorld(seedString) {
         waterDepth: 0,
         coastProximity: 0,
         desertProximity: 0,
+        volcanoProximity: 0,
         elevation: 0,
         temperature: 0,
         moisture: 0
@@ -10870,6 +11009,11 @@ function createWorld(seedString) {
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
   const mountainPeakKey = hasMountainTile && tileLookup.has('MOUNTAIN_PEAK') ? 'MOUNTAIN_PEAK' : null;
+  const activeVolcanoKey = hasMountainTile && tileLookup.has('ACTIVE_VOLCANO') ? 'ACTIVE_VOLCANO' : null;
+  const dormantVolcanoKey = hasMountainTile && tileLookup.has('VOLCANO') ? 'VOLCANO' : null;
+  const volcanoOverlayKeys = hasMountainTile
+    ? [activeVolcanoKey, dormantVolcanoKey].filter(Boolean)
+    : [];
   const mountainPeakHeightThreshold = 0.97;
   const mountainTopVariantKeys = hasMountainTile
     ? ['MOUNTAIN_TOP_A', 'MOUNTAIN_TOP_B'].filter((key) => tileLookup.has(key))
@@ -10882,7 +11026,8 @@ function createWorld(seedString) {
         mountainOverlayKey,
         mountainPeakKey,
         ...mountainTopVariantKeys,
-        ...mountainBottomVariantKeys
+        ...mountainBottomVariantKeys,
+        ...volcanoOverlayKeys
       ].filter(Boolean))
     : new Set();
   const isMountainOverlay = (overlayKey) =>
@@ -10944,6 +11089,7 @@ function createWorld(seedString) {
       tile.waterDepth = 0;
       tile.coastProximity = 0;
       tile.desertProximity = 0;
+      tile.volcanoProximity = 0;
       tile.elevation = heightValue;
     }
   }
@@ -11486,6 +11632,54 @@ function createWorld(seedString) {
         }
       }
     }
+
+    if (oasisTileKey) {
+      const oasisBaseChance = 0.00025;
+      const oasisSuitabilityScale = 0.002;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!desertMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || tile.base !== sandTileKey) {
+            continue;
+          }
+          if (tile.overlay || tile.hillOverlay || tile.structure || tile.river) {
+            continue;
+          }
+          let hasNeighborOasis = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && neighborTile.overlay === oasisTileKey) {
+              hasNeighborOasis = true;
+              break;
+            }
+          }
+          if (hasNeighborOasis) {
+            continue;
+          }
+          const suitability = desertSuitabilityField ? desertSuitabilityField[idx] : 0;
+          const oasisChance = clamp(
+            oasisBaseChance + suitability * oasisSuitabilityScale,
+            0,
+            0.12
+          );
+          if (oasisChance <= 0) {
+            continue;
+          }
+          if (rng() < oasisChance) {
+            tile.overlay = oasisTileKey;
+          }
+        }
+      }
+    }
   }
 
   if (hasMarshTile) {
@@ -11610,6 +11804,40 @@ function createWorld(seedString) {
       if (tile) {
         tile.base = base;
       }
+    }
+  }
+
+  if (hasSnowTile) {
+    const surroundedGrassTiles = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const tile = tiles[y][x];
+        if (!tile || tile.base !== grassTileKey) {
+          continue;
+        }
+        let surroundedBySnow = true;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            surroundedBySnow = false;
+            break;
+          }
+          const neighbor = tiles[ny][nx];
+          if (!neighbor || neighbor.base !== snowTileKey) {
+            surroundedBySnow = false;
+            break;
+          }
+        }
+        if (surroundedBySnow) {
+          surroundedGrassTiles.push({ x, y });
+        }
+      }
+    }
+
+    for (let i = 0; i < surroundedGrassTiles.length; i += 1) {
+      const { x, y } = surroundedGrassTiles[i];
+      tiles[y][x].base = snowTileKey;
     }
   }
 
@@ -12104,6 +12332,106 @@ function createWorld(seedString) {
       }
     }
 
+    if (volcanoOverlayKeys.length > 0) {
+      const volcanoCandidates = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!mountainMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || tile.structure || tile.river) {
+            continue;
+          }
+          if (tile.overlay !== mountainOverlayKey && tile.overlay !== mountainPeakKey) {
+            continue;
+          }
+          const normalizedHeight = mountainHeightField ? mountainHeightField[idx] : 0;
+          const score = mountainScores ? mountainScores[idx] : 0;
+          volcanoCandidates.push({ x, y, idx, height: normalizedHeight, score });
+        }
+      }
+
+      if (volcanoCandidates.length > 0) {
+        volcanoCandidates.sort((a, b) => {
+          if (b.height !== a.height) {
+            return b.height - a.height;
+          }
+          return b.score - a.score;
+        });
+
+        const minVolcanoCount = Math.min(volcanoOverlayKeys.length, volcanoCandidates.length);
+        const baseVolcanoCount = Math.round(volcanoCandidates.length / 600);
+        const desiredVolcanoCount = clamp(
+          Math.max(minVolcanoCount, baseVolcanoCount),
+          minVolcanoCount,
+          Math.min(volcanoCandidates.length, 6)
+        );
+
+        if (desiredVolcanoCount > 0) {
+          const selectionPoolSize = Math.min(
+            volcanoCandidates.length,
+            Math.max(desiredVolcanoCount * 5, desiredVolcanoCount + 3)
+          );
+          const selectionPool = volcanoCandidates.slice(0, selectionPoolSize);
+          const placedVolcanoes = [];
+          const volcanoMinDistance = 6;
+          const volcanoMinDistanceSq = volcanoMinDistance * volcanoMinDistance;
+          let attempts = 0;
+          const maxAttempts = selectionPool.length * 3;
+
+          while (
+            selectionPool.length > 0 &&
+            placedVolcanoes.length < desiredVolcanoCount &&
+            attempts < maxAttempts
+          ) {
+            attempts += 1;
+            const pickIndex = Math.floor(rng() * selectionPool.length);
+            const candidate = selectionPool.splice(pickIndex, 1)[0];
+            if (!candidate) {
+              continue;
+            }
+
+            let tooClose = false;
+            for (let i = 0; i < placedVolcanoes.length; i += 1) {
+              const placed = placedVolcanoes[i];
+              const dx = candidate.x - placed.x;
+              const dy = candidate.y - placed.y;
+              if (dx * dx + dy * dy < volcanoMinDistanceSq) {
+                tooClose = true;
+                break;
+              }
+            }
+            if (tooClose) {
+              continue;
+            }
+
+            const tile = tiles[candidate.y][candidate.x];
+            if (!tile || tile.structure || tile.river) {
+              continue;
+            }
+
+            const overlayKey =
+              placedVolcanoes.length === 0 && activeVolcanoKey
+                ? activeVolcanoKey
+                : dormantVolcanoKey || activeVolcanoKey;
+
+            if (!overlayKey) {
+              break;
+            }
+
+            tile.overlay = overlayKey;
+            if (stoneTileKey && tile.base !== stoneTileKey) {
+              tile.base = stoneTileKey;
+            }
+
+            placedVolcanoes.push({ x: candidate.x, y: candidate.y, overlayKey });
+          }
+        }
+      }
+    }
+
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
@@ -12123,6 +12451,9 @@ function createWorld(seedString) {
           }
           const tile = tiles[y][x];
           if (!tile) {
+            continue;
+          }
+          if (isVolcanoOverlayKey(tile.overlay)) {
             continue;
           }
           if (tile.river) {
@@ -12716,6 +13047,8 @@ function createWorld(seedString) {
         tile.areaName = null;
         tile.waterDepth = 0;
         tile.coastProximity = 0;
+        tile.desertProximity = 0;
+        tile.volcanoProximity = 0;
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
@@ -12833,6 +13166,7 @@ function createWorld(seedString) {
           tile.waterDepth = clamp(depth * depthNormalization, 0, 1);
           tile.coastProximity = 0;
           tile.desertProximity = 0;
+          tile.volcanoProximity = 0;
         } else {
           const distanceToWater = Math.sqrt(landDistanceField[idx]);
           const proximity = clamp(1 - distanceToWater / coastlineFalloff, 0, 1);
@@ -12889,6 +13223,7 @@ function createWorld(seedString) {
   const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
   const portTownKey = tileLookup.has('PORT_TOWN') ? 'PORT_TOWN' : null;
   const hamletKey = tileLookup.has('HAMLET') ? 'HAMLET' : null;
+  const hamletSnowKey = tileLookup.has('HAMLET_SNOW') ? 'HAMLET_SNOW' : null;
   if (townKey) {
     const townCandidates = [];
     for (let y = 0; y < height; y += 1) {
@@ -12901,7 +13236,9 @@ function createWorld(seedString) {
         if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
-        if (tile.base !== grassTileKey) {
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
         const elevationValue = elevationField[idx];
@@ -12987,7 +13324,7 @@ function createWorld(seedString) {
         } else if (biomeTendency === 'tundra' || biomeTendency === 'badlands') {
           grassPreference *= 0.35;
         }
-        if (grassPreference < 0.22) {
+        if (!baseIsSnow && grassPreference < 0.22) {
           continue;
         }
         let riverAdjacency = 0;
@@ -13019,7 +13356,7 @@ function createWorld(seedString) {
           grassPreference * 0.32 -
           biomePenalty +
           rng() * 0.12;
-        townCandidates.push({ x, y, score, grassPreference });
+        townCandidates.push({ x, y, score, grassPreference, baseIsSnow });
       }
     }
 
@@ -13038,7 +13375,11 @@ function createWorld(seedString) {
           break;
         }
         const candidate = townCandidates[i];
-        if (candidate.grassPreference != null && candidate.grassPreference < 0.25) {
+        if (
+          !candidate.baseIsSnow &&
+          candidate.grassPreference != null &&
+          candidate.grassPreference < 0.25
+        ) {
           continue;
         }
         let tooClose = false;
@@ -13060,6 +13401,11 @@ function createWorld(seedString) {
         }
         const name = generateTownName(rng);
         const details = generateTownDetails(name, rng);
+        const baseIsSnowPlacement = hasSnowTile && tile.base === snowTileKey;
+        const isSmallVillage = details.type === 'village' && details.population < 100;
+        if (baseIsSnowPlacement && !isSmallVillage) {
+          continue;
+        }
         let structureKey = townKey;
         if (portTownKey) {
           let touchesWater = false;
@@ -13079,8 +13425,16 @@ function createWorld(seedString) {
             structureKey = portTownKey;
           }
         }
-        if (hamletKey && details.type === 'village' && details.population < 100) {
-          structureKey = hamletKey;
+        if (isSmallVillage) {
+          if (baseIsSnowPlacement) {
+            if (hamletSnowKey) {
+              structureKey = hamletSnowKey;
+            } else if (hamletKey) {
+              structureKey = hamletKey;
+            }
+          } else if (hamletKey) {
+            structureKey = hamletKey;
+          }
         }
         tile.structure = structureKey;
         tile.structureName = name;
@@ -14004,8 +14358,9 @@ function createWorld(seedString) {
     }
   }
 
+  const roadReplaceableOverlays = new Set([...treeOverlayKeys, ...hillOverlayKeys]);
+
   if (towns.length > 1) {
-    const roadReplaceableOverlays = new Set([...treeOverlayKeys, ...hillOverlayKeys]);
     connectTownsWithinRange(tiles, towns, {
       maxDistance: 25,
       overlayKey: TOWN_ROAD_OVERLAY_KEY,
@@ -14687,6 +15042,32 @@ function createWorld(seedString) {
     }
   }
 
+  const pathEligibleSettlements = [
+    ...towns,
+    ...castles,
+    ...roadsideTaverns,
+    ...travelerCamps,
+    ...orcCamps,
+    ...towers,
+    ...evilWizardTowers
+  ];
+
+  if (pathEligibleSettlements.length > 1) {
+    connectTownsWithinRange(tiles, pathEligibleSettlements, {
+      maxDistance: 25,
+      overlayKey: TOWN_ROAD_OVERLAY_KEY,
+      width,
+      height,
+      isLandBaseTile,
+      waterMask,
+      treeOverlayKey,
+      treeSnowOverlayKey,
+      treeOverlayKeys,
+      isMountainOverlay,
+      replaceableOverlays: roadReplaceableOverlays
+    });
+  }
+
   const dungeonKey = tileLookup.has('DUNGEON') ? 'DUNGEON' : null;
   if (dungeonKey) {
     const dungeonCandidates = [];
@@ -14814,8 +15195,7 @@ function createWorld(seedString) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
-        const baseIsSnow = tile.base === snowTileKey;
-        if (!baseIsGrass && !baseIsSnow) {
+        if (!baseIsGrass) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -14894,8 +15274,7 @@ function createWorld(seedString) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
-        const baseIsSnow = tile.base === snowTileKey;
-        if (!baseIsGrass && !baseIsSnow) {
+        if (!baseIsGrass) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -15165,6 +15544,9 @@ function createWorld(seedString) {
         }
         const tile = tiles[y][x];
         if (!tile || !isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        if (isVolcanoOverlayKey(tile.overlay)) {
           continue;
         }
         if (mountainPeakKey && tile.overlay === mountainPeakKey) {
@@ -15596,6 +15978,72 @@ function createWorld(seedString) {
     }
   }
 
+  if (volcanoOverlayKeys.length > 0) {
+    const volcanoMask = new Uint8Array(width * height);
+    let hasVolcanoTile = false;
+    const volcanoEligibleBases = new Set(
+      [grassTileKey, stoneTileKey, sandTileKey, snowTileKey].filter((key) => typeof key === 'string')
+    );
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        if (isVolcanoOverlayKey(tile.overlay)) {
+          volcanoMask[idx] = 1;
+          hasVolcanoTile = true;
+          tile.volcanoProximity = 1;
+        } else if (!volcanoEligibleBases.has(tile.base) || waterMask[idx]) {
+          tile.volcanoProximity = 0;
+        }
+      }
+    }
+
+    if (hasVolcanoTile) {
+      const volcanoDistanceField = computeEuclideanDistanceField(volcanoMask, width, height);
+      const volcanoFalloff = 5.2;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (volcanoMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || !volcanoEligibleBases.has(tile.base) || waterMask[idx]) {
+            if (tile) {
+              tile.volcanoProximity = 0;
+            }
+            continue;
+          }
+          const distanceToVolcano = Math.sqrt(volcanoDistanceField[idx]);
+          const proximity = clamp(1 - distanceToVolcano / volcanoFalloff, 0, 1);
+          tile.volcanoProximity = proximity;
+        }
+      }
+    } else {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const tile = tiles[y][x];
+          if (tile) {
+            tile.volcanoProximity = 0;
+          }
+        }
+      }
+    }
+  } else {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const tile = tiles[y][x];
+        if (tile) {
+          tile.volcanoProximity = 0;
+        }
+      }
+    }
+  }
+
   const finalSeed = seedString && seedString.trim().length ? seedString.trim() : generateSeedString(seedNumber);
   const settlementSeeds = [
     ...dwarfholds.map((hold) => ({
@@ -15734,40 +16182,171 @@ function drawRiverSegment(ctx, river, x, y) {
   );
 }
 
-function getRoadTileVariantDefinition(x, y) {
-  if (!Number.isFinite(x) || !Number.isFinite(y) || roadTileVariantDefinitions.length === 0) {
-    return null;
+function computeRoadNeighborMask(x, y, overlayKey = TOWN_ROAD_OVERLAY_KEY) {
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.tiles)) {
+    return 0;
   }
-  const hash = ((x + 1) * 73856093) ^ ((y + 1) * 19349663);
-  const index = Math.abs(hash) % roadTileVariantDefinitions.length;
-  return roadTileVariantDefinitions[index] || null;
+
+  const tiles = world.tiles;
+  const height = tiles.length;
+  if (!Number.isFinite(x) || !Number.isFinite(y) || y < 0 || y >= height) {
+    return 0;
+  }
+
+  const row = tiles[y];
+  if (!Array.isArray(row) || x < 0 || x >= row.length) {
+    return 0;
+  }
+
+  let mask = 0;
+  const directions = [
+    { bit: ROAD_DIRECTION_BITS.NORTH, dx: 0, dy: -1 },
+    { bit: ROAD_DIRECTION_BITS.EAST, dx: 1, dy: 0 },
+    { bit: ROAD_DIRECTION_BITS.SOUTH, dx: 0, dy: 1 },
+    { bit: ROAD_DIRECTION_BITS.WEST, dx: -1, dy: 0 }
+  ];
+
+  for (let i = 0; i < directions.length; i += 1) {
+    const { bit, dx, dy } = directions[i];
+    const nx = x + dx;
+    const ny = y + dy;
+    if (ny < 0 || ny >= height) {
+      continue;
+    }
+    const neighborRow = tiles[ny];
+    if (!Array.isArray(neighborRow) || nx < 0 || nx >= neighborRow.length) {
+      continue;
+    }
+    const neighbor = neighborRow[nx];
+    if (neighbor && neighbor.overlay === overlayKey) {
+      mask |= bit;
+    }
+  }
+
+  return mask;
 }
 
-function drawRoadOverlay(ctx, x, y) {
-  if (!ctx) {
+function selectRoadTileSprite(mask) {
+  if (!roadTileSpriteDefinitions) {
+    return null;
+  }
+
+  const { NORTH, EAST, SOUTH, WEST } = ROAD_DIRECTION_BITS;
+
+  if (mask === 0) {
+    return { definition: roadTileSpriteDefinitions.isolated, rotation: 0 };
+  }
+
+  const singleDirectionRotations = {
+    [WEST]: 0,
+    [NORTH]: 1,
+    [EAST]: 2,
+    [SOUTH]: 3
+  };
+  if (singleDirectionRotations[mask] !== undefined) {
+    return {
+      definition: roadTileSpriteDefinitions.deadEndWest,
+      rotation: singleDirectionRotations[mask]
+    };
+  }
+
+  if (mask === (EAST | WEST)) {
+    return { definition: roadTileSpriteDefinitions.straightEastWest, rotation: 0 };
+  }
+  if (mask === (NORTH | SOUTH)) {
+    return { definition: roadTileSpriteDefinitions.straightEastWest, rotation: 1 };
+  }
+
+  const cornerDefinition = {
+    [NORTH | EAST]: roadTileSpriteDefinitions.cornerNorthEast,
+    [EAST | SOUTH]: roadTileSpriteDefinitions.cornerSouthEast,
+    [SOUTH | WEST]: roadTileSpriteDefinitions.cornerSouthWest,
+    [WEST | NORTH]: roadTileSpriteDefinitions.cornerNorthWest
+  }[mask];
+  if (cornerDefinition) {
+    return { definition: cornerDefinition, rotation: 0 };
+  }
+
+  if (mask === (NORTH | EAST | SOUTH)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingWest, rotation: 0 };
+  }
+  if (mask === (EAST | SOUTH | WEST)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingNorth, rotation: 0 };
+  }
+  if (mask === (SOUTH | WEST | NORTH)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingEast, rotation: 0 };
+  }
+  if (mask === (WEST | NORTH | EAST)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingSouth, rotation: 0 };
+  }
+
+  if (mask === (NORTH | EAST | SOUTH | WEST)) {
+    return { definition: roadTileSpriteDefinitions.cross, rotation: 0 };
+  }
+
+  return { definition: roadTileSpriteDefinitions.cross, rotation: 0 };
+}
+
+function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
+  if (!ctx || !definition) {
     return false;
   }
-  const definition = getRoadTileVariantDefinition(x, y);
-  if (!definition) {
-    return false;
-  }
+
   const sheet = state.tileSheets[definition.sheetKey];
   if (!sheet || !sheet.image) {
     return false;
   }
 
+  const normalizedRotation = ((Number.isFinite(rotationSteps) ? rotationSteps : 0) % 4 + 4) % 4;
+  const pixelX = x * drawSize;
+  const pixelY = y * drawSize;
+
+  if (normalizedRotation === 0) {
+    ctx.drawImage(
+      sheet.image,
+      definition.sx,
+      definition.sy,
+      definition.size,
+      definition.size,
+      pixelX,
+      pixelY,
+      drawSize,
+      drawSize
+    );
+    return true;
+  }
+
+  ctx.save();
+  ctx.translate(pixelX + drawSize / 2, pixelY + drawSize / 2);
+  ctx.rotate((Math.PI / 2) * normalizedRotation);
   ctx.drawImage(
     sheet.image,
     definition.sx,
     definition.sy,
     definition.size,
     definition.size,
-    x * drawSize,
-    y * drawSize,
+    -drawSize / 2,
+    -drawSize / 2,
     drawSize,
     drawSize
   );
+  ctx.restore();
   return true;
+}
+
+function drawRoadOverlay(ctx, x, y) {
+  if (!ctx || !roadTileSpriteDefinitions) {
+    return false;
+  }
+
+  const mask = computeRoadNeighborMask(x, y, TOWN_ROAD_OVERLAY_KEY);
+  const selection = selectRoadTileSprite(mask);
+  if (!selection || !selection.definition) {
+    return false;
+  }
+
+  return drawRoadSprite(ctx, selection.definition, x, y, selection.rotation || 0);
 }
 
 function drawCustomOverlay(ctx, overlayKey, x, y) {
@@ -15906,6 +16485,23 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
   }
 }
 
+function applyVolcanoShading(ctx, cell, x, y) {
+  if (!ctx || !cell) {
+    return;
+  }
+
+  const proximity = clamp(Number.isFinite(cell.volcanoProximity) ? cell.volcanoProximity : 0, 0, 1);
+  if (proximity <= 0.01) {
+    return;
+  }
+
+  const pixelX = x * drawSize;
+  const pixelY = y * drawSize;
+  const alpha = proximity * 0.5;
+  ctx.fillStyle = `rgba(28, 14, 10, ${alpha})`;
+  ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+}
+
 function applyDesertMountainTint(ctx, cell, x, y) {
   if (!ctx || !cell) {
     return;
@@ -16015,6 +16611,7 @@ function drawWorld(world, options = {}) {
       );
 
       applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey);
+      applyVolcanoShading(ctx, cell, x, y);
 
       if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
         const hillDefinition = tileLookup.get(cell.hillOverlay);
