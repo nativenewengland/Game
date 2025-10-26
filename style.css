@@ -1185,7 +1185,7 @@ button:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.65rem, 1.8vw, 1rem);
+  gap: clamp(0.35rem, 1.2vw, 0.65rem);
 }
 
 .dwarf-nav-icon {
@@ -1200,9 +1200,9 @@ button:hover:not(:disabled) {
 }
 
 .dwarf-nav-button:focus-visible {
-  outline: 3px solid rgba(240, 198, 116, 0.8);
-  outline-offset: 4px;
-  border-radius: 12px;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.25), 0 0 0 2px rgba(240, 198, 116, 0.35),
+    0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
 }
 
 .dwarf-nav-button--next .dwarf-nav-icon {
