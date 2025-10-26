@@ -4934,6 +4934,7 @@ const elements = {
   dwarfBack: document.getElementById('dwarf-back'),
   dwarfPortrait: document.getElementById('dwarf-portrait'),
   dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
+  dwarfBodyPortraitCanvas: document.getElementById('dwarf-body-portrait-canvas'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary'),
   dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes')
 };
@@ -6234,6 +6235,31 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
   });
 }
 
+function syncBodyPanelPortrait() {
+  const sourceCanvas = elements.dwarfPortraitCanvas;
+  const targetCanvas = elements.dwarfBodyPortraitCanvas;
+  if (!sourceCanvas || !targetCanvas) {
+    return;
+  }
+  const targetCtx = targetCanvas.getContext('2d');
+  if (!targetCtx) {
+    return;
+  }
+  targetCtx.imageSmoothingEnabled = false;
+  targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+  targetCtx.drawImage(
+    sourceCanvas,
+    0,
+    0,
+    sourceCanvas.width,
+    sourceCanvas.height,
+    0,
+    0,
+    targetCanvas.width,
+    targetCanvas.height
+  );
+}
+
 function updateDwarfPortrait(dwarf) {
   if (!elements.dwarfPortrait || !dwarf) {
     return;
@@ -6245,6 +6271,7 @@ function updateDwarfPortrait(dwarf) {
   const headOption = getOptionByValue('head', dwarf.head);
 
   renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
+  syncBodyPanelPortrait();
 
   const beardValue = dwarf.beard || 'clean';
   const genderLabel = getOptionLabel('gender', dwarf.gender);
