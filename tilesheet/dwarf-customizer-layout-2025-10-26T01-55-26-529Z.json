@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2025-10-26T01:55:26.528Z",
+  "positions": {
+    "founder-title-image": {
+      "x": 3.75,
+      "y": -18.12
+    },
+    "visuals-panel": {
+      "x": 0.63,
+      "y": -48.74
+    },
+    "trait-skin-tone": {
+      "x": -496.23,
+      "y": 461.89
+    },
+    "trait-head-type": {
+      "x": -236.87,
+      "y": -82.49
+    },
+    "trait-eye-colour": {
+      "x": -236.87,
+      "y": -81.87
+    },
+    "trait-hair-style": {
+      "x": -244.37,
+      "y": -96.87
+    },
+    "trait-hair-colour": {
+      "x": -257.49,
+      "y": -107.49
+    },
+    "trait-beard-style": {
+      "x": -23.74,
+      "y": -643.74
+    },
+    "randomise-button": {
+      "x": 510.01,
+      "y": -494.99
+    },
+    "gender-toggle": {
+      "x": -140.62,
+      "y": -1000.62
+    },
+    "field-clan": {
+      "x": 603.13,
+      "y": -1096.87
+    },
+    "field-guild": {
+      "x": 336.26,
+      "y": -1005.62
+    },
+    "field-profession": {
+      "x": 66.88,
+      "y": -927.49
+    },
+    "return-button": {
+      "x": -841.24,
+      "y": -714.98
+    },
+    "create-button": {
+      "x": 76.88,
+      "y": -726.87
+    }
+  }
+}
