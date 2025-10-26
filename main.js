@@ -3967,6 +3967,28 @@ function generateTownDetails(name, random, options = {}) {
   };
 }
 
+function generateHamletDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const isSnowHamlet = Boolean(options.snowHamlet);
+  const baseDetails = generateTownDetails(name, randomFn, { snowVillage: isSnowHamlet });
+  const population = isSnowHamlet
+    ? Math.max(18, Math.floor(24 + randomFn() * 60))
+    : Math.max(22, Math.floor(28 + randomFn() * 140));
+  const hallmark = pickRandomFrom(townHallmarks, randomFn) || baseDetails.hallmark;
+  const exportCount = clamp(Math.floor(randomFn() * 2) + 1, 1, townExportOptions.length);
+  const majorExports = pickUniqueFrom(townExportOptions, exportCount, randomFn);
+  return {
+    ...baseDetails,
+    type: 'village',
+    classification: 'Village',
+    population,
+    populationDescriptor: 'villagers',
+    majorGuilds: [],
+    majorExports,
+    hallmark
+  };
+}
+
 function generateEvilWizardName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const givenName = pickRandomFrom(evilWizardGivenNames, randomFn) || 'Malachar';
@@ -12841,6 +12863,19 @@ function createWorld(seedString) {
   const castles = [];
   const saintShrines = [];
   const roadsideTaverns = [];
+  const hamletPoints = [];
+  const hamletPlacementStats = { grass: 0, snow: 0 };
+  const recordHamletPlacement = (x, y, isSnow) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return;
+    }
+    hamletPoints.push({ x, y });
+    if (isSnow) {
+      hamletPlacementStats.snow += 1;
+    } else {
+      hamletPlacementStats.grass += 1;
+    }
+  };
   const recordTowerProximityPoint = (x, y) => {
     if (Number.isFinite(x) && Number.isFinite(y)) {
       towerProximityPoints.push({ x, y });
@@ -15369,22 +15404,172 @@ function createWorld(seedString) {
             structureKey = portTownKey;
           }
         }
+        let isHamletStructure = false;
         if (isSmallVillage) {
           if (baseIsSnowPlacement) {
-            if (hamletSnowKey) {
+            const snowHamletChance = 0.5;
+            if (hamletSnowKey && rng() < snowHamletChance) {
               structureKey = hamletSnowKey;
-            } else if (hamletKey) {
+              isHamletStructure = true;
+            } else if (!hamletSnowKey && hamletKey && rng() < snowHamletChance) {
               structureKey = hamletKey;
+              isHamletStructure = true;
             }
           } else if (hamletKey) {
             structureKey = hamletKey;
+            isHamletStructure = true;
           }
         }
         tile.structure = structureKey;
         tile.structureName = name;
         tile.structureDetails = details;
         towns.push({ x: candidate.x, y: candidate.y, ...details });
+        if (isHamletStructure) {
+          recordHamletPlacement(candidate.x, candidate.y, baseIsSnowPlacement);
+        }
         placed.push(candidate);
+      }
+    }
+  }
+
+  if (hamletKey) {
+    const totalTiles = width * height;
+    const hamletExpansionNoiseSeed = (seedNumber + 0x62bd3e45) >>> 0;
+    const baseGrassHamlets = hamletPlacementStats.grass;
+    const desiredGrassHamlets = Math.max(
+      baseGrassHamlets * 6,
+      Math.round((totalTiles / 12000) * humanSettlementMultiplier)
+    );
+    const additionalHamletsNeeded = Math.max(0, desiredGrassHamlets - baseGrassHamlets);
+    if (additionalHamletsNeeded > 0) {
+      const hamletCandidates = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || tile.structure || tile.river) {
+            continue;
+          }
+          if (tile.base !== grassTileKey) {
+            continue;
+          }
+          if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+            continue;
+          }
+          if (isTreeOverlayKey(tile.overlay)) {
+            continue;
+          }
+          const settlementDistSq = computeNearestDistanceSq(x, y, towns);
+          if (settlementDistSq < 25) {
+            continue;
+          }
+          const hamletDistSq = computeNearestDistanceSq(x, y, hamletPoints);
+          if (hamletDistSq < 25) {
+            continue;
+          }
+          const rainfallValue = rainfallField[idx];
+          const drainageValue = drainageField[idx];
+          const moisture = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+          const moistureScore = clamp(1 - Math.abs(moisture - 0.55) * 2.2, 0, 1) * 0.24;
+          let grassNeighbors = 0;
+          let neighborSamples = 0;
+          let waterAdjacency = 0;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              waterAdjacency += 1;
+              continue;
+            }
+            const neighborTile = tiles[ny][nx];
+            if (!neighborTile) {
+              continue;
+            }
+            if (neighborTile.river) {
+              waterAdjacency += 1;
+            }
+            if (neighborTile.base === grassTileKey) {
+              grassNeighbors += 1;
+            }
+            neighborSamples += 1;
+          }
+          const adjacencyScore = neighborSamples > 0 ? (grassNeighbors / neighborSamples) * 0.18 : 0;
+          const waterScore = clamp(waterAdjacency * 0.04, 0, 0.18);
+          const settlementDistance = Number.isFinite(settlementDistSq)
+            ? Math.sqrt(settlementDistSq)
+            : Math.max(width, height);
+          const proximityScore = clamp((settlementDistance - 6) / 14, 0, 1) * 0.2;
+          const latitude = (y + 0.5) / height;
+          const latitudeWave = Math.sin((latitude + 0.15) * Math.PI * 2);
+          const latitudeScore = Math.abs(latitudeWave) * 0.08;
+          const noise = hashCoords(x, y, hamletExpansionNoiseSeed) - 0.5;
+          const score =
+            0.28 +
+            moistureScore +
+            adjacencyScore +
+            waterScore +
+            proximityScore +
+            latitudeScore +
+            noise * 0.18 +
+            rng() * 0.08;
+          hamletCandidates.push({ x, y, score });
+        }
+      }
+
+      if (hamletCandidates.length > 0) {
+        hamletCandidates.sort((a, b) => b.score - a.score);
+        const minDistance = 5;
+        const minDistanceSq = minDistance * minDistance;
+        let placed = 0;
+        for (let i = 0; i < hamletCandidates.length; i += 1) {
+          if (placed >= additionalHamletsNeeded) {
+            break;
+          }
+          const candidate = hamletCandidates[i];
+          if (candidate.score < 0.24) {
+            continue;
+          }
+          const distanceToExistingHamletSq = computeNearestDistanceSq(
+            candidate.x,
+            candidate.y,
+            hamletPoints
+          );
+          if (distanceToExistingHamletSq < minDistanceSq) {
+            continue;
+          }
+          const distanceToTownsSq = computeNearestDistanceSq(candidate.x, candidate.y, towns);
+          if (distanceToTownsSq < 20) {
+            continue;
+          }
+          const tile = tiles[candidate.y][candidate.x];
+          if (!tile || tile.structure || tile.river) {
+            continue;
+          }
+          if (tile.base !== grassTileKey) {
+            continue;
+          }
+          if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+            continue;
+          }
+          if (isTreeOverlayKey(tile.overlay)) {
+            continue;
+          }
+          const name = generateTownName(rng);
+          const details = generateHamletDetails(name, rng, { snowHamlet: false });
+          tile.structure = hamletKey;
+          tile.structureName = name;
+          tile.structureDetails = details;
+          towns.push({ x: candidate.x, y: candidate.y, ...details });
+          recordHamletPlacement(candidate.x, candidate.y, false);
+          placed += 1;
+        }
       }
     }
   }
@@ -16575,8 +16760,10 @@ function createWorld(seedString) {
   const travelerCampNoiseSeed = (seedNumber + 0x579c3d11) >>> 0;
   const dungeonNoiseSeed = (seedNumber + 0x5c8d3a1f) >>> 0;
   const monasteryNoiseSeed = (seedNumber + 0x6f12c43d) >>> 0;
+  const monasteryLatitudeSeed = (seedNumber + 0x71c2d9a7) >>> 0;
   const castleNoiseSeed = (seedNumber + 0x7be21a59) >>> 0;
   const shrineNoiseSeed = (seedNumber + 0x8cf43123) >>> 0;
+  const shrineLatitudeSeed = (seedNumber + 0x90a2f4c1) >>> 0;
   const tavernNoiseSeed = (seedNumber + 0x9324f8b1) >>> 0;
 
   const orcCampKey = tileLookup.has('ORC_CAMP') ? 'ORC_CAMP' : null;
@@ -17139,7 +17326,9 @@ function createWorld(seedString) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
-        if (!baseIsGrass) {
+        const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
+        const baseIsMarsh = hasMarshTile && tile.base === marshTileKey;
+        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -17178,8 +17367,22 @@ function createWorld(seedString) {
         const distanceScore = clamp((settlementDistance - 4) / 18, 0, 1) * 0.22;
         const elevationValue = elevationField[idx];
         const elevationScore = clamp((elevationValue - seaLevel) * 2, 0, 1) * 0.18;
+        const baseSuitability = baseIsGrass ? 0.18 : baseIsSnow ? 0.12 : 0.08;
+        const latitude = (y + 0.5) / height;
+        const latitudeNoise =
+          hashCoords(x, Math.floor(latitude * 1024), monasteryLatitudeSeed) - 0.5;
+        const latitudeWave = Math.sin((latitude + latitudeNoise * 0.35) * Math.PI * 2);
+        const latitudeScore = Math.abs(latitudeWave) * 0.14;
         const score =
-          0.28 + hillBonus + riverScore + distanceScore + elevationScore + noise * 0.2 + rng() * 0.12;
+          0.28 +
+          hillBonus +
+          riverScore +
+          distanceScore +
+          elevationScore +
+          baseSuitability +
+          latitudeScore +
+          noise * 0.2 +
+          rng() * 0.12;
         monasteryCandidates.push({ x, y, score });
       }
     }
@@ -17218,7 +17421,9 @@ function createWorld(seedString) {
           continue;
         }
         const baseIsGrass = tile.base === grassTileKey;
-        if (!baseIsGrass) {
+        const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
+        const baseIsMarsh = hasMarshTile && tile.base === marshTileKey;
+        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -17410,8 +17615,22 @@ function createWorld(seedString) {
         const monasteryDistance = Math.sqrt(distanceToMonasterySq);
         const devotionScore = clamp((monasteryDistance - 5) / 18, 0, 1) * 0.22;
         const noise = hashCoords(x, y, shrineNoiseSeed) - 0.5;
+        const baseSuitability = baseIsGrass ? 0.16 : baseIsSnow ? 0.12 : 0.1;
+        const latitude = (y + 0.5) / height;
+        const latitudeNoise =
+          hashCoords(x, Math.floor(latitude * 1024), shrineLatitudeSeed) - 0.5;
+        const latitudeWave = Math.sin((latitude + latitudeNoise * 0.3) * Math.PI * 2);
+        const latitudeScore = Math.abs(latitudeWave) * 0.12;
         const score =
-          0.25 + moistureScore + hillBonus + devotionScore + waterAdjacency * 0.05 + noise * 0.22 + rng() * 0.12;
+          0.25 +
+          moistureScore +
+          hillBonus +
+          devotionScore +
+          waterAdjacency * 0.05 +
+          baseSuitability +
+          latitudeScore +
+          noise * 0.22 +
+          rng() * 0.12;
         shrineCandidates.push({ x, y, score });
       }
     }
