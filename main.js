@@ -48,6 +48,19 @@ const dwarfSpriteSheets = {
   }
 };
 
+const characterCreatorPortraitAssets = {
+  maleBody: {
+    key: 'maleBody',
+    path: 'tilesheet/Character Creator/body_male.png',
+    image: null
+  },
+  headDefault: {
+    key: 'headDefault',
+    path: 'tilesheet/Character Creator/head_default.png',
+    image: null
+  }
+};
+
 const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
@@ -4811,6 +4824,11 @@ const dwarfPortraitState = {
   ctx: null
 };
 
+const dwarfBodyPortraitState = {
+  canvas: null,
+  ctx: null
+};
+
 const musicTracks = [
   { title: 'Another Year', src: 'sound/tracks/another_year/AY_Full.ogg' },
   { title: 'Craftsdwarfship', src: 'sound/tracks/craftsdwarfship/CS_Full.ogg' },
@@ -5079,9 +5097,23 @@ const dwarfSpriteSheetPromises = Object.values(dwarfSpriteSheets).map((sheet) =>
     })
 );
 
+const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitAssets).map((asset) =>
+  loadImage(asset.path)
+    .then((img) => {
+      asset.image = img;
+      return img;
+    })
+    .catch((error) => {
+      console.warn(`Failed to load character creator portrait asset at ${asset.path}`, error);
+      asset.image = null;
+      return null;
+    })
+);
+
 const assetPromises = Promise.all([
   ...tileSheetPromises,
   ...dwarfSpriteSheetPromises,
+  ...characterCreatorPortraitPromises,
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
 
@@ -6162,6 +6194,27 @@ function ensurePortraitContext() {
   return dwarfPortraitState.ctx;
 }
 
+function ensureBodyPortraitContext() {
+  const canvas = elements.dwarfBodyPortraitCanvas || null;
+  if (!canvas) {
+    dwarfBodyPortraitState.canvas = null;
+    dwarfBodyPortraitState.ctx = null;
+    return null;
+  }
+  if (canvas !== dwarfBodyPortraitState.canvas) {
+    const context = canvas.getContext('2d');
+    if (!context) {
+      dwarfBodyPortraitState.canvas = null;
+      dwarfBodyPortraitState.ctx = null;
+      return null;
+    }
+    context.imageSmoothingEnabled = false;
+    dwarfBodyPortraitState.canvas = canvas;
+    dwarfBodyPortraitState.ctx = context;
+  }
+  return dwarfBodyPortraitState.ctx;
+}
+
 function getBaseBodyFrame(dwarf) {
   const frames = dwarfPortraitConfig.baseFrames;
   const gender = dwarf?.gender;
@@ -6262,21 +6315,35 @@ function getBeardFrame(dwarf, hairOption) {
   };
 }
 
-function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
-  const ctx = ensurePortraitContext();
-  if (!ctx) {
+function shouldUseCharacterCreatorPortrait(dwarf) {
+  if (!dwarf || dwarf.gender !== 'male') {
+    return false;
+  }
+  const bodyImage = characterCreatorPortraitAssets.maleBody?.image || null;
+  const headImage = characterCreatorPortraitAssets.headDefault?.image || null;
+  return Boolean(bodyImage && headImage);
+}
+
+function renderCharacterCreatorPortrait(ctx, canvas) {
+  const bodyImage = characterCreatorPortraitAssets.maleBody?.image;
+  const headImage = characterCreatorPortraitAssets.headDefault?.image;
+  if (!bodyImage || !headImage) {
     return;
   }
-  const canvas = dwarfPortraitState.canvas;
-  if (!canvas) {
-    return;
-  }
+  const scale = Math.min(canvas.width / bodyImage.width, canvas.height / bodyImage.height);
+  const drawWidth = bodyImage.width * scale;
+  const drawHeight = bodyImage.height * scale;
+  const offsetX = Math.floor((canvas.width - drawWidth) / 2);
+  const offsetY = Math.floor((canvas.height - drawHeight) / 2);
+  ctx.drawImage(bodyImage, offsetX, offsetY, drawWidth, drawHeight);
+  ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+}
+
+function renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
   const { tileSize, scale, head, eyePositions, eyeSize } = dwarfPortraitConfig;
   const destSize = tileSize * scale;
   const baseX = Math.floor((canvas.width - destSize) / 2);
   const baseY = Math.floor((canvas.height - destSize) / 2);
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const baseFrame = getBaseBodyFrame(dwarf);
   if (baseFrame) {
@@ -6320,29 +6387,34 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
   });
 }
 
-function syncBodyPanelPortrait() {
-  const sourceCanvas = elements.dwarfPortraitCanvas;
-  const targetCanvas = elements.dwarfBodyPortraitCanvas;
-  if (!sourceCanvas || !targetCanvas) {
+function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
+  const ctx = ensurePortraitContext();
+  if (!ctx) {
     return;
   }
-  const targetCtx = targetCanvas.getContext('2d');
-  if (!targetCtx) {
+  const canvas = dwarfPortraitState.canvas;
+  if (!canvas) {
     return;
   }
-  targetCtx.imageSmoothingEnabled = false;
-  targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-  targetCtx.drawImage(
-    sourceCanvas,
-    0,
-    0,
-    sourceCanvas.width,
-    sourceCanvas.height,
-    0,
-    0,
-    targetCanvas.width,
-    targetCanvas.height
-  );
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (shouldUseCharacterCreatorPortrait(dwarf)) {
+    renderCharacterCreatorPortrait(ctx, canvas);
+    return;
+  }
+  renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
+}
+
+function renderBodyPanelPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
+  const ctx = ensureBodyPortraitContext();
+  if (!ctx) {
+    return;
+  }
+  const canvas = dwarfBodyPortraitState.canvas;
+  if (!canvas) {
+    return;
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
 }
 
 function updateDwarfPortrait(dwarf) {
@@ -6356,7 +6428,7 @@ function updateDwarfPortrait(dwarf) {
   const headOption = getOptionByValue('head', dwarf.head);
 
   renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
-  syncBodyPanelPortrait();
+  renderBodyPanelPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
 
   const beardValue = dwarf.beard || 'clean';
   const genderLabel = getOptionLabel('gender', dwarf.gender);
