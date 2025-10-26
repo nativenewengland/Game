@@ -143,21 +143,41 @@ const baseTileCoords = {
   DUNGEON: { row: 2, col: 7 }
 };
 
-const roadTileVariantDefinitions = (() => {
+const ROAD_DIRECTION_BITS = {
+  NORTH: 1,
+  EAST: 2,
+  SOUTH: 4,
+  WEST: 8
+};
+
+const roadTileSpriteDefinitions = (() => {
   const sheet = tileSheets.base;
   if (!sheet) {
-    return [];
+    return null;
   }
   const tileSize = sheet.tileSize;
-  const startColumn = 7;
-  const variantCount = 8;
-  const row = 3;
-  return Array.from({ length: variantCount }, (_, index) => ({
+  const row = 5;
+  const makeDefinition = (column) => ({
     sheetKey: sheet.key,
-    sx: (startColumn + index) * tileSize,
+    sx: column * tileSize,
     sy: row * tileSize,
     size: tileSize
-  }));
+  });
+
+  return {
+    isolated: makeDefinition(18),
+    deadEndWest: makeDefinition(2),
+    straightEastWest: makeDefinition(8),
+    cornerNorthEast: makeDefinition(11),
+    cornerSouthEast: makeDefinition(9),
+    cornerSouthWest: makeDefinition(10),
+    cornerNorthWest: makeDefinition(12),
+    teeMissingWest: makeDefinition(7),
+    teeMissingEast: makeDefinition(1),
+    teeMissingNorth: makeDefinition(14),
+    teeMissingSouth: makeDefinition(15),
+    cross: makeDefinition(16)
+  };
 })();
 
 const riverTileCoords = {
@@ -14004,8 +14024,9 @@ function createWorld(seedString) {
     }
   }
 
+  const roadReplaceableOverlays = new Set([...treeOverlayKeys, ...hillOverlayKeys]);
+
   if (towns.length > 1) {
-    const roadReplaceableOverlays = new Set([...treeOverlayKeys, ...hillOverlayKeys]);
     connectTownsWithinRange(tiles, towns, {
       maxDistance: 25,
       overlayKey: TOWN_ROAD_OVERLAY_KEY,
@@ -14685,6 +14706,32 @@ function createWorld(seedString) {
         }
       }
     }
+  }
+
+  const pathEligibleSettlements = [
+    ...towns,
+    ...castles,
+    ...roadsideTaverns,
+    ...travelerCamps,
+    ...orcCamps,
+    ...towers,
+    ...evilWizardTowers
+  ];
+
+  if (pathEligibleSettlements.length > 1) {
+    connectTownsWithinRange(tiles, pathEligibleSettlements, {
+      maxDistance: 25,
+      overlayKey: TOWN_ROAD_OVERLAY_KEY,
+      width,
+      height,
+      isLandBaseTile,
+      waterMask,
+      treeOverlayKey,
+      treeSnowOverlayKey,
+      treeOverlayKeys,
+      isMountainOverlay,
+      replaceableOverlays: roadReplaceableOverlays
+    });
   }
 
   const dungeonKey = tileLookup.has('DUNGEON') ? 'DUNGEON' : null;
@@ -15734,40 +15781,171 @@ function drawRiverSegment(ctx, river, x, y) {
   );
 }
 
-function getRoadTileVariantDefinition(x, y) {
-  if (!Number.isFinite(x) || !Number.isFinite(y) || roadTileVariantDefinitions.length === 0) {
-    return null;
+function computeRoadNeighborMask(x, y, overlayKey = TOWN_ROAD_OVERLAY_KEY) {
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.tiles)) {
+    return 0;
   }
-  const hash = ((x + 1) * 73856093) ^ ((y + 1) * 19349663);
-  const index = Math.abs(hash) % roadTileVariantDefinitions.length;
-  return roadTileVariantDefinitions[index] || null;
+
+  const tiles = world.tiles;
+  const height = tiles.length;
+  if (!Number.isFinite(x) || !Number.isFinite(y) || y < 0 || y >= height) {
+    return 0;
+  }
+
+  const row = tiles[y];
+  if (!Array.isArray(row) || x < 0 || x >= row.length) {
+    return 0;
+  }
+
+  let mask = 0;
+  const directions = [
+    { bit: ROAD_DIRECTION_BITS.NORTH, dx: 0, dy: -1 },
+    { bit: ROAD_DIRECTION_BITS.EAST, dx: 1, dy: 0 },
+    { bit: ROAD_DIRECTION_BITS.SOUTH, dx: 0, dy: 1 },
+    { bit: ROAD_DIRECTION_BITS.WEST, dx: -1, dy: 0 }
+  ];
+
+  for (let i = 0; i < directions.length; i += 1) {
+    const { bit, dx, dy } = directions[i];
+    const nx = x + dx;
+    const ny = y + dy;
+    if (ny < 0 || ny >= height) {
+      continue;
+    }
+    const neighborRow = tiles[ny];
+    if (!Array.isArray(neighborRow) || nx < 0 || nx >= neighborRow.length) {
+      continue;
+    }
+    const neighbor = neighborRow[nx];
+    if (neighbor && neighbor.overlay === overlayKey) {
+      mask |= bit;
+    }
+  }
+
+  return mask;
 }
 
-function drawRoadOverlay(ctx, x, y) {
-  if (!ctx) {
+function selectRoadTileSprite(mask) {
+  if (!roadTileSpriteDefinitions) {
+    return null;
+  }
+
+  const { NORTH, EAST, SOUTH, WEST } = ROAD_DIRECTION_BITS;
+
+  if (mask === 0) {
+    return { definition: roadTileSpriteDefinitions.isolated, rotation: 0 };
+  }
+
+  const singleDirectionRotations = {
+    [WEST]: 0,
+    [NORTH]: 1,
+    [EAST]: 2,
+    [SOUTH]: 3
+  };
+  if (singleDirectionRotations[mask] !== undefined) {
+    return {
+      definition: roadTileSpriteDefinitions.deadEndWest,
+      rotation: singleDirectionRotations[mask]
+    };
+  }
+
+  if (mask === (EAST | WEST)) {
+    return { definition: roadTileSpriteDefinitions.straightEastWest, rotation: 0 };
+  }
+  if (mask === (NORTH | SOUTH)) {
+    return { definition: roadTileSpriteDefinitions.straightEastWest, rotation: 1 };
+  }
+
+  const cornerDefinition = {
+    [NORTH | EAST]: roadTileSpriteDefinitions.cornerNorthEast,
+    [EAST | SOUTH]: roadTileSpriteDefinitions.cornerSouthEast,
+    [SOUTH | WEST]: roadTileSpriteDefinitions.cornerSouthWest,
+    [WEST | NORTH]: roadTileSpriteDefinitions.cornerNorthWest
+  }[mask];
+  if (cornerDefinition) {
+    return { definition: cornerDefinition, rotation: 0 };
+  }
+
+  if (mask === (NORTH | EAST | SOUTH)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingWest, rotation: 0 };
+  }
+  if (mask === (EAST | SOUTH | WEST)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingNorth, rotation: 0 };
+  }
+  if (mask === (SOUTH | WEST | NORTH)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingEast, rotation: 0 };
+  }
+  if (mask === (WEST | NORTH | EAST)) {
+    return { definition: roadTileSpriteDefinitions.teeMissingSouth, rotation: 0 };
+  }
+
+  if (mask === (NORTH | EAST | SOUTH | WEST)) {
+    return { definition: roadTileSpriteDefinitions.cross, rotation: 0 };
+  }
+
+  return { definition: roadTileSpriteDefinitions.cross, rotation: 0 };
+}
+
+function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
+  if (!ctx || !definition) {
     return false;
   }
-  const definition = getRoadTileVariantDefinition(x, y);
-  if (!definition) {
-    return false;
-  }
+
   const sheet = state.tileSheets[definition.sheetKey];
   if (!sheet || !sheet.image) {
     return false;
   }
 
+  const normalizedRotation = ((Number.isFinite(rotationSteps) ? rotationSteps : 0) % 4 + 4) % 4;
+  const pixelX = x * drawSize;
+  const pixelY = y * drawSize;
+
+  if (normalizedRotation === 0) {
+    ctx.drawImage(
+      sheet.image,
+      definition.sx,
+      definition.sy,
+      definition.size,
+      definition.size,
+      pixelX,
+      pixelY,
+      drawSize,
+      drawSize
+    );
+    return true;
+  }
+
+  ctx.save();
+  ctx.translate(pixelX + drawSize / 2, pixelY + drawSize / 2);
+  ctx.rotate((Math.PI / 2) * normalizedRotation);
   ctx.drawImage(
     sheet.image,
     definition.sx,
     definition.sy,
     definition.size,
     definition.size,
-    x * drawSize,
-    y * drawSize,
+    -drawSize / 2,
+    -drawSize / 2,
     drawSize,
     drawSize
   );
+  ctx.restore();
   return true;
+}
+
+function drawRoadOverlay(ctx, x, y) {
+  if (!ctx || !roadTileSpriteDefinitions) {
+    return false;
+  }
+
+  const mask = computeRoadNeighborMask(x, y, TOWN_ROAD_OVERLAY_KEY);
+  const selection = selectRoadTileSprite(mask);
+  if (!selection || !selection.definition) {
+    return false;
+  }
+
+  return drawRoadSprite(ctx, selection.definition, x, y, selection.rotation || 0);
 }
 
 function drawCustomOverlay(ctx, overlayKey, x, y) {
