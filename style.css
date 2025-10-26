@@ -1362,7 +1362,7 @@ button:hover:not(:disabled) {
 
 .body-panel-frame {
   position: relative;
-  width: clamp(220px, 24vw, 310px);
+  width: min(100%, 444px);
 }
 
 .body-panel-image {
@@ -1374,11 +1374,12 @@ button:hover:not(:disabled) {
 
 .dwarf-body-portrait-canvas {
   position: absolute;
-  top: 46%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: clamp(195px, 21vw, 260px);
-  height: auto;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  background-color: transparent;
   image-rendering: pixelated;
   pointer-events: none;
 }
@@ -2122,7 +2123,8 @@ button:hover:not(:disabled) {
   }
 
   .body-panel-image {
-    width: min(220px, 85vw);
+    width: 100%;
+    max-width: 444px;
   }
 
   .customizer-main {
