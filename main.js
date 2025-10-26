@@ -11376,6 +11376,67 @@ function createWorld(seedString) {
         }
       }
     }
+
+    const cardinalNeighborOffsets = [
+      [0, -1],
+      [1, 0],
+      [0, 1],
+      [-1, 0]
+    ];
+
+    const sandGrassConversions = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const baseKey = tiles[y][x].base;
+        if (baseKey !== sandTileKey && baseKey !== grassTileKey) {
+          continue;
+        }
+
+        let hasAllNeighbors = true;
+        let allGrass = true;
+        let allSand = true;
+        for (let i = 0; i < cardinalNeighborOffsets.length; i += 1) {
+          const nx = x + cardinalNeighborOffsets[i][0];
+          const ny = y + cardinalNeighborOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            hasAllNeighbors = false;
+            break;
+          }
+          const neighborBase = tiles[ny][nx].base;
+          if (neighborBase !== grassTileKey) {
+            allGrass = false;
+          }
+          if (neighborBase !== sandTileKey) {
+            allSand = false;
+          }
+          if (!allGrass && !allSand) {
+            break;
+          }
+        }
+
+        if (!hasAllNeighbors) {
+          continue;
+        }
+
+        if (baseKey === sandTileKey && allGrass) {
+          sandGrassConversions.push({ idx, x, y, target: grassTileKey });
+        } else if (baseKey === grassTileKey && allSand) {
+          sandGrassConversions.push({ idx, x, y, target: sandTileKey });
+        }
+      }
+    }
+
+    for (let i = 0; i < sandGrassConversions.length; i += 1) {
+      const { idx, x, y, target } = sandGrassConversions[i];
+      tiles[y][x].base = target;
+      if (desertMask) {
+        desertMask[idx] = target === sandTileKey ? 1 : 0;
+      }
+      if (badlandsMask) {
+        badlandsMask[idx] = 0;
+      }
+    }
   }
 
   if (hasSandTile) {
