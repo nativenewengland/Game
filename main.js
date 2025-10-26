@@ -1673,9 +1673,9 @@ const towerHallmarks = [
 ];
 
 const towerPopulationRaceOptions = [
+  { key: 'elves', label: 'Elves', color: '#6ecf85' },
   { key: 'humans', label: 'Humans', color: '#9bb6d8' },
   { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
-  { key: 'elves', label: 'Elves', color: '#6ecf85' },
   { key: 'halflings', label: 'Halflings', color: '#f7a072' },
   { key: 'dragonborn', label: 'Dragonborn', color: '#c16a6a' },
   { key: 'tieflings', label: 'Tieflings', color: '#b064b0' },
@@ -3210,7 +3210,7 @@ function generatePopulationBreakdownFromOptions(options, population, random, con
 function generateTowerPopulationBreakdown(population, random) {
   return generatePopulationBreakdownFromOptions(towerPopulationRaceOptions, population, random, {
     majorityIndex: 0,
-    majorityShareRange: [0.45, 0.7],
+    majorityShareRange: [0.9, 0.98],
     ensureMajority: true
   });
 }
