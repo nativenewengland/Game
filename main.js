@@ -16003,7 +16003,7 @@ function createWorld(seedString) {
   ].filter(
     (key, index, array) => key && array.indexOf(key) === index
   );
-  const isTreeOverlayKey = (overlayKey) =>
+  const isTreeOverlayKeyForGeneration = (overlayKey) =>
     hasTreeTile && overlayKey != null && treeOverlayKeys.includes(overlayKey);
   const isDesertBaseTile = (baseKey) =>
     hasSandTile && (baseKey === sandTileKey || (hasBadlandsTile && baseKey === badlandsTileKey));
@@ -16683,7 +16683,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKeyForGeneration(tile.overlay)) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -16765,7 +16765,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKeyForGeneration(tile.overlay)) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -16804,7 +16804,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKeyForGeneration(tile.overlay)) {
           continue;
         }
         if (tile.overlay) {
@@ -16883,7 +16883,7 @@ function createWorld(seedString) {
         if (!tile || tile.structure || tile.river) {
           continue;
         }
-        if (treeOverlayKeys.length > 0 && isTreeOverlayKey(tile.overlay)) {
+        if (treeOverlayKeys.length > 0 && isTreeOverlayKeyForGeneration(tile.overlay)) {
           continue;
         }
         if (tile.overlay) {
