@@ -1173,9 +1173,11 @@ button:hover:not(:disabled) {
 
 .customizer-sidebar__actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: clamp(0.75rem, 2vw, 1.25rem);
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .customizer-sidebar__actions .create-button--inline {
