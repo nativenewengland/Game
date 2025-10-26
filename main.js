@@ -14962,14 +14962,6 @@ function createWorld(seedString) {
       population: Number.isFinite(hold?.population) ? hold.population : null,
       settlementKind: typeof hold?.type === 'string' ? hold.type : null
     })),
-    ...mines.map((mine) => ({
-      x: mine.x,
-      y: mine.y,
-      label: mine.name || mine.structureName || 'Mine',
-      type: 'mine',
-      population: Number.isFinite(mine?.population) ? mine.population : null,
-      settlementKind: typeof mine?.type === 'string' ? mine.type : 'mine'
-    })),
     ...towns.map((town) => ({
       x: town.x,
       y: town.y,
@@ -15009,6 +15001,14 @@ function createWorld(seedString) {
       type: 'woodElfGrove',
       population: Number.isFinite(grove?.population) ? grove.population : null,
       settlementKind: typeof grove?.type === 'string' ? grove.type : null
+    })),
+    ...castles.map((castle) => ({
+      x: castle.x,
+      y: castle.y,
+      label: castle.name || castle.structureName || 'Castle',
+      type: 'castle',
+      population: Number.isFinite(castle?.garrison) ? castle.garrison : null,
+      settlementKind: typeof castle?.type === 'string' ? castle.type : null
     }))
   ];
 
