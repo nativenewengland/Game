@@ -136,6 +136,7 @@ const baseTileCoords = {
   CASTLE: { row: 4, col: 6 },
   ROADSIDE_TAVERN: { row: 1, col: 12 },
   OASIS: { row: 0, col: 12 },
+  HAMLET_SNOW: { row: 0, col: 13 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
@@ -12945,6 +12946,7 @@ function createWorld(seedString) {
   const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
   const portTownKey = tileLookup.has('PORT_TOWN') ? 'PORT_TOWN' : null;
   const hamletKey = tileLookup.has('HAMLET') ? 'HAMLET' : null;
+  const hamletSnowKey = tileLookup.has('HAMLET_SNOW') ? 'HAMLET_SNOW' : null;
   if (townKey) {
     const townCandidates = [];
     for (let y = 0; y < height; y += 1) {
@@ -12957,7 +12959,9 @@ function createWorld(seedString) {
         if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
-        if (tile.base !== grassTileKey) {
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
         const elevationValue = elevationField[idx];
@@ -13043,7 +13047,7 @@ function createWorld(seedString) {
         } else if (biomeTendency === 'tundra' || biomeTendency === 'badlands') {
           grassPreference *= 0.35;
         }
-        if (grassPreference < 0.22) {
+        if (!baseIsSnow && grassPreference < 0.22) {
           continue;
         }
         let riverAdjacency = 0;
@@ -13075,7 +13079,7 @@ function createWorld(seedString) {
           grassPreference * 0.32 -
           biomePenalty +
           rng() * 0.12;
-        townCandidates.push({ x, y, score, grassPreference });
+        townCandidates.push({ x, y, score, grassPreference, baseIsSnow });
       }
     }
 
@@ -13094,7 +13098,11 @@ function createWorld(seedString) {
           break;
         }
         const candidate = townCandidates[i];
-        if (candidate.grassPreference != null && candidate.grassPreference < 0.25) {
+        if (
+          !candidate.baseIsSnow &&
+          candidate.grassPreference != null &&
+          candidate.grassPreference < 0.25
+        ) {
           continue;
         }
         let tooClose = false;
@@ -13116,6 +13124,11 @@ function createWorld(seedString) {
         }
         const name = generateTownName(rng);
         const details = generateTownDetails(name, rng);
+        const baseIsSnowPlacement = hasSnowTile && tile.base === snowTileKey;
+        const isSmallVillage = details.type === 'village' && details.population < 100;
+        if (baseIsSnowPlacement && !isSmallVillage) {
+          continue;
+        }
         let structureKey = townKey;
         if (portTownKey) {
           let touchesWater = false;
@@ -13135,8 +13148,16 @@ function createWorld(seedString) {
             structureKey = portTownKey;
           }
         }
-        if (hamletKey && details.type === 'village' && details.population < 100) {
-          structureKey = hamletKey;
+        if (isSmallVillage) {
+          if (baseIsSnowPlacement) {
+            if (hamletSnowKey) {
+              structureKey = hamletSnowKey;
+            } else if (hamletKey) {
+              structureKey = hamletKey;
+            }
+          } else if (hamletKey) {
+            structureKey = hamletKey;
+          }
         }
         tile.structure = structureKey;
         tile.structureName = name;
