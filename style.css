@@ -2583,6 +2583,65 @@ button:hover:not(:disabled) {
   opacity: 1;
 }
 
+.context-menu {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(12, 14, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.45);
+  color: #f5f7ff;
+  font-size: 0.95rem;
+  min-width: 220px;
+  max-width: min(280px, 85vw);
+  opacity: 0;
+  transform: translate3d(0, 0, 0) scale(0.98);
+  transition: opacity 120ms ease, transform 120ms ease;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.context-menu.visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  pointer-events: auto;
+}
+
+.context-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: rgba(240, 198, 116, 0.14);
+  border: 1px solid rgba(240, 198, 116, 0.28);
+  border-radius: 8px;
+  color: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.context-menu__item:hover,
+.context-menu__item:focus-visible {
+  background: rgba(240, 198, 116, 0.3);
+  border-color: rgba(240, 198, 116, 0.6);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.context-menu__item:active {
+  background: rgba(240, 198, 116, 0.45);
+  border-color: rgba(240, 198, 116, 0.75);
+  transform: translateY(0);
+}
+
 .map-tooltip .tooltip-title {
   font-size: 1.05rem;
   font-weight: 700;

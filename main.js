@@ -6221,6 +6221,9 @@ const elements = {
   canvas: document.getElementById('world-canvas'),
   canvasWrapper: document.querySelector('.canvas-wrapper'),
   mapTooltip: document.getElementById('world-tooltip'),
+  structureContextMenu: document.getElementById('structure-context-menu'),
+  structureContextMenuBegin: document.getElementById('structure-context-menu-begin'),
+  structureContextMenuMoreInfo: document.getElementById('structure-context-menu-more-info'),
   localMapPanel: document.getElementById('local-map-panel'),
   localMapCanvas: document.getElementById('local-map-canvas'),
   localMapTitle: document.getElementById('local-map-title'),
@@ -8934,6 +8937,13 @@ const structureDetailsState = {
   visible: false
 };
 
+const structureContextMenuState = {
+  visible: false,
+  tile: null,
+  tileX: null,
+  tileY: null
+};
+
 function computeViewScales(wrapperWidth, wrapperHeight, worldWidth, worldHeight) {
   if (!worldWidth || !worldHeight || !wrapperWidth || !wrapperHeight) {
     return { contain: 1, cover: 1 };
@@ -8961,6 +8971,92 @@ function hideMapTooltip() {
   }
   elements.mapTooltip.classList.remove('visible');
   elements.mapTooltip.setAttribute('aria-hidden', 'true');
+}
+
+function hideStructureContextMenu() {
+  structureContextMenuState.visible = false;
+  structureContextMenuState.tile = null;
+  structureContextMenuState.tileX = null;
+  structureContextMenuState.tileY = null;
+
+  if (!elements.structureContextMenu) {
+    return;
+  }
+
+  elements.structureContextMenu.classList.remove('visible');
+  elements.structureContextMenu.setAttribute('aria-hidden', 'true');
+  elements.structureContextMenu.style.left = '';
+  elements.structureContextMenu.style.top = '';
+}
+
+function showStructureContextMenu(resolved) {
+  if (!resolved || !elements.structureContextMenu) {
+    hideStructureContextMenu();
+    return;
+  }
+
+  const { pointerX, pointerY, rect, tile, tileX, tileY } = resolved;
+  if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) {
+    hideStructureContextMenu();
+    return;
+  }
+
+  structureContextMenuState.tile = tile || null;
+  structureContextMenuState.tileX = Number.isFinite(tileX) ? tileX : null;
+  structureContextMenuState.tileY = Number.isFinite(tileY) ? tileY : null;
+
+  const menu = elements.structureContextMenu;
+  const margin = 16;
+  const boundsRect = rect || (elements.canvasWrapper ? elements.canvasWrapper.getBoundingClientRect() : null);
+  const menuWidth = menu.offsetWidth || 0;
+  const menuHeight = menu.offsetHeight || 0;
+  const fallbackWidth =
+    typeof window !== 'undefined' && Number.isFinite(window.innerWidth)
+      ? window.innerWidth
+      : menuWidth + margin * 2;
+  const fallbackHeight =
+    typeof window !== 'undefined' && Number.isFinite(window.innerHeight)
+      ? window.innerHeight
+      : menuHeight + margin * 2;
+  const containerWidth = boundsRect && Number.isFinite(boundsRect.width) ? boundsRect.width : fallbackWidth;
+  const containerHeight =
+    boundsRect && Number.isFinite(boundsRect.height) ? boundsRect.height : fallbackHeight;
+
+  let left = pointerX + margin;
+  if (left + menuWidth > containerWidth - margin) {
+    left = pointerX - menuWidth - margin;
+  }
+  if (left < margin) {
+    left = Math.max(margin, containerWidth - menuWidth - margin);
+  }
+
+  let top = pointerY + margin;
+  if (top + menuHeight > containerHeight - margin) {
+    top = pointerY - menuHeight - margin;
+  }
+  if (top < margin) {
+    top = Math.max(margin, containerHeight - menuHeight - margin);
+  }
+
+  menu.style.left = `${Math.round(left)}px`;
+  menu.style.top = `${Math.round(top)}px`;
+  menu.classList.add('visible');
+  menu.setAttribute('aria-hidden', 'false');
+  structureContextMenuState.visible = true;
+
+  const focusTarget = elements.structureContextMenuBegin;
+  if (focusTarget && typeof focusTarget.focus === 'function') {
+    const focusAction = () => {
+      if (structureContextMenuState.visible) {
+        focusTarget.focus();
+      }
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(focusAction);
+    } else {
+      focusAction();
+    }
+  }
 }
 
 function formatPercentageDisplay(value) {
@@ -10246,6 +10342,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
 }
 
 function showStructureDetails(tile, context = {}) {
+  hideStructureContextMenu();
   if (!elements.structureDetailsPanel) {
     return;
   }
@@ -10284,6 +10381,7 @@ function showStructureDetails(tile, context = {}) {
 }
 
 function hideStructureDetails(options = {}) {
+  hideStructureContextMenu();
   if (!elements.structureDetailsPanel) {
     return;
   }
@@ -10353,6 +10451,7 @@ function resetView(worldWidth, worldHeight) {
   applyViewTransform();
   hideStructureDetails();
   hideMapTooltip();
+  hideStructureContextMenu();
 }
 
 function handleResize() {
@@ -10460,6 +10559,9 @@ function setupMapInteractions() {
     if (!elements.canvasWrapper) {
       return;
     }
+    if (structureContextMenuState.visible) {
+      return;
+    }
     if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
       hideMapTooltip();
       return;
@@ -10486,6 +10588,7 @@ function setupMapInteractions() {
       return;
     }
     hideMapTooltip();
+    hideStructureContextMenu();
     hideStructureDetails();
     event.preventDefault();
     const rect = elements.canvasWrapper.getBoundingClientRect();
@@ -10512,6 +10615,7 @@ function setupMapInteractions() {
       event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch'
     );
     hideStructureDetails();
+    hideStructureContextMenu();
     if (!isPrimaryPointer) {
       return;
     }
@@ -10570,23 +10674,29 @@ function setupMapInteractions() {
     updateHover(event);
   };
 
+  const handlePointerLeave = () => {
+    hideMapTooltip();
+    hideStructureContextMenu();
+  };
+
   const handleDoubleClick = () => {
     if (!viewState.worldSize.width || !viewState.worldSize.height) {
       return;
     }
+    hideStructureContextMenu();
     hideStructureDetails();
     resetView(viewState.worldSize.width, viewState.worldSize.height);
   };
 
   const handleContextMenu = (event) => {
-    const resolved = resolveTileAtPointer(event);
-    if (!resolved || !resolved.tile || !resolved.tile.structureName) {
-      hideStructureDetails();
-      return;
-    }
     event.preventDefault();
     hideMapTooltip();
-    showStructureDetails(resolved.tile, { tileX: resolved.tileX, tileY: resolved.tileY });
+    const resolved = resolveTileAtPointer(event);
+    if (!resolved || !resolved.tile || !resolved.tile.structureName) {
+      hideStructureContextMenu();
+      return;
+    }
+    showStructureContextMenu(resolved);
   };
 
   elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
@@ -10595,7 +10705,7 @@ function setupMapInteractions() {
   elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
   elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
   elements.canvasWrapper.addEventListener('pointerenter', updateHover);
-  elements.canvasWrapper.addEventListener('pointerleave', hideMapTooltip);
+  elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
   elements.canvasWrapper.addEventListener('contextmenu', handleContextMenu);
   elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
   window.addEventListener('resize', handleResize);
@@ -19179,6 +19289,58 @@ function syncInputsWithSettings() {
 }
 
 function attachEvents() {
+  const dismissContextMenuOnPointerDown = (event) => {
+    if (!structureContextMenuState.visible) {
+      return;
+    }
+    if (event.button !== undefined && event.button !== 0) {
+      return;
+    }
+    const menu = elements.structureContextMenu;
+    if (menu && menu.contains(event.target)) {
+      return;
+    }
+    hideStructureContextMenu();
+  };
+
+  const dismissContextMenuOnKeyDown = (event) => {
+    if (!structureContextMenuState.visible) {
+      return;
+    }
+    if (event.key === 'Escape' || event.key === 'Esc') {
+      hideStructureContextMenu();
+    }
+  };
+
+  const dismissContextMenuOnScroll = () => {
+    if (structureContextMenuState.visible) {
+      hideStructureContextMenu();
+    }
+  };
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('pointerdown', dismissContextMenuOnPointerDown, true);
+    document.addEventListener('keydown', dismissContextMenuOnKeyDown, true);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        hideStructureContextMenu();
+      }
+    });
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('scroll', dismissContextMenuOnScroll, true);
+    window.addEventListener('blur', dismissContextMenuOnScroll);
+  }
+
+  if (elements.canvasWrapper) {
+    elements.canvasWrapper.addEventListener('focusout', () => {
+      if (structureContextMenuState.visible) {
+        hideStructureContextMenu();
+      }
+    });
+  }
+
   if (elements.optionsButton) {
     elements.optionsButton.addEventListener('click', () => {
       openOptionsScreen('title');
@@ -19200,6 +19362,26 @@ function attachEvents() {
   if (elements.structureDetailsClose) {
     elements.structureDetailsClose.addEventListener('click', () => {
       hideStructureDetails({ returnFocus: true });
+    });
+  }
+
+  if (elements.structureContextMenuBegin) {
+    elements.structureContextMenuBegin.addEventListener('click', () => {
+      const { tileX, tileY } = structureContextMenuState;
+      hideStructureContextMenu();
+      if (Number.isInteger(tileX) && Number.isInteger(tileY)) {
+        showLocalViewAt(tileX, tileY);
+      }
+    });
+  }
+
+  if (elements.structureContextMenuMoreInfo) {
+    elements.structureContextMenuMoreInfo.addEventListener('click', () => {
+      const { tile, tileX, tileY } = structureContextMenuState;
+      hideStructureContextMenu();
+      if (tile && tile.structureName) {
+        showStructureDetails(tile, { tileX, tileY });
+      }
     });
   }
 
