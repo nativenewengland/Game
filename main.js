@@ -64,6 +64,7 @@ const baseTileCoords = {
   MOUNTAIN_TOP_B: { row: 0, col: 5 },
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
+  DAM: { row: 1, col: 8 },
   MOUNTAIN_PEAK: { row: 0, col: 10 },
   STONE: { row: 0, col: 2 },
   DWARFHOLD: { row: 2, col: 9 },
@@ -3628,6 +3629,16 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     [0, 1],
     [0, -1]
   ];
+  const surroundingNeighborOffsets = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1]
+  ];
   let hasLand = false;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -3948,7 +3959,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         continue;
       }
 
-      const effectiveClaimRadius = bestFaction.claimRadius * Math.max(bestSuitability, 0.0001);
+      const suitabilityRadiusFactor = clamp(0.55 + bestSuitability * 0.45, 0.55, 1);
+      const effectiveClaimRadius = bestFaction.claimRadius * suitabilityRadiusFactor;
 
       if (bestDistance > effectiveClaimRadius) {
         tile.factionId = null;
@@ -3971,6 +3983,121 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
   }
 
+  const fillUnclaimedEnclaves = () => {
+    const visited = new Set();
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const row = tiles[y];
+        const tile = row ? row[x] : null;
+        if (!tile) {
+          continue;
+        }
+        if (waterMask && waterMask[idx]) {
+          continue;
+        }
+        if (tile.factionId !== null && tile.factionId !== undefined) {
+          continue;
+        }
+
+        const key = toKey(x, y);
+        if (visited.has(key)) {
+          continue;
+        }
+
+        const component = [];
+        const queue = [[x, y]];
+        let queueIndex = 0;
+        let touchesEdge = false;
+        const borderingFactions = new Set();
+        visited.add(key);
+
+        while (queueIndex < queue.length) {
+          const [cx, cy] = queue[queueIndex];
+          queueIndex += 1;
+          component.push([cx, cy]);
+
+          for (let i = 0; i < cardinalNeighborOffsets.length; i += 1) {
+            const [ox, oy] = cardinalNeighborOffsets[i];
+            const nx = cx + ox;
+            const ny = cy + oy;
+
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              touchesEdge = true;
+              continue;
+            }
+
+            const nIdx = ny * width + nx;
+            const neighborRow = tiles[ny];
+            const neighborTile = neighborRow ? neighborRow[nx] : null;
+            if (!neighborTile) {
+              touchesEdge = true;
+              continue;
+            }
+            if (waterMask && waterMask[nIdx]) {
+              touchesEdge = true;
+              continue;
+            }
+
+            if (neighborTile.factionId === null || neighborTile.factionId === undefined) {
+              const neighborKey = toKey(nx, ny);
+              if (!visited.has(neighborKey)) {
+                visited.add(neighborKey);
+                queue.push([nx, ny]);
+              }
+              continue;
+            }
+
+            borderingFactions.add(neighborTile.factionId);
+          }
+
+          if (touchesEdge) {
+            continue;
+          }
+
+          for (let i = 0; i < surroundingNeighborOffsets.length; i += 1) {
+            const [ox, oy] = surroundingNeighborOffsets[i];
+            const nx = cx + ox;
+            const ny = cy + oy;
+
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              touchesEdge = true;
+              continue;
+            }
+
+            const neighborRow = tiles[ny];
+            const neighborTile = neighborRow ? neighborRow[nx] : null;
+            if (!neighborTile) {
+              touchesEdge = true;
+              continue;
+            }
+            if (neighborTile.factionId !== null && neighborTile.factionId !== undefined) {
+              borderingFactions.add(neighborTile.factionId);
+            }
+          }
+        }
+
+        if (touchesEdge || borderingFactions.size !== 1) {
+          continue;
+        }
+
+        const [factionId] = borderingFactions;
+        if (!factionById.has(factionId)) {
+          continue;
+        }
+
+        for (let i = 0; i < component.length; i += 1) {
+          const [cx, cy] = component[i];
+          const componentTile = tiles[cy][cx];
+          componentTile.factionId = factionId;
+          componentTile.factionInfluence = Math.max(componentTile.factionInfluence || 0, 0.2);
+        }
+      }
+    }
+  };
+
+  fillUnclaimedEnclaves();
   enforceFactionConnectivity();
 
   return { factions };
@@ -11208,6 +11335,71 @@ function createWorld(seedString) {
 
         placed.push(candidate);
         hillholds.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const damKey = tileLookup.has('DAM') ? 'DAM' : null;
+  if (damKey && Array.isArray(dwarfholds) && dwarfholds.length > 0) {
+    const damRadius = 10;
+    const damRadiusSq = damRadius * damRadius;
+    const damChance = 0.35;
+    const damNoiseSeed = (seedNumber + 0x4b5f29d3) >>> 0;
+    const isMountainTile = (tile) =>
+      Boolean(tile) && (isMountainOverlay(tile.overlay) || isMountainOverlay(tile.hillOverlay));
+
+    for (let y = 1; y < height - 1; y += 1) {
+      const aboveRow = tiles[y - 1];
+      const row = tiles[y];
+      for (let x = 1; x < width - 1; x += 1) {
+        const tile = row && row[x];
+        if (!tile || tile.structure || !tile.river) {
+          continue;
+        }
+
+        const aboveIdx = (y - 1) * width + x;
+        const aboveTile = Array.isArray(aboveRow) ? aboveRow[x] : null;
+        const aboveIsWater =
+          (aboveIdx >= 0 && waterMask[aboveIdx]) ||
+          (aboveTile && waterTileKey && aboveTile.base === waterTileKey);
+        if (!aboveIsWater) {
+          continue;
+        }
+
+        const leftTile = row[x - 1];
+        const rightTile = row[x + 1];
+        if (!isMountainTile(leftTile) || !isMountainTile(rightTile)) {
+          continue;
+        }
+
+        const nearestHoldInfo = findNearestPointWithDetails(x, y, dwarfholds);
+        if (!nearestHoldInfo || nearestHoldInfo.distanceSq > damRadiusSq) {
+          continue;
+        }
+
+        const placementRoll = hashCoords(x, y, damNoiseSeed);
+        if (placementRoll >= damChance) {
+          continue;
+        }
+
+        const controllingHoldName =
+          typeof nearestHoldInfo.point?.name === 'string' && nearestHoldInfo.point.name.trim()
+            ? nearestHoldInfo.point.name.trim()
+            : null;
+        const damName = controllingHoldName ? `${controllingHoldName} Dam` : 'Dwarven Dam';
+
+        tile.structure = damKey;
+        tile.structureName = damName;
+        tile.structureDetails = {
+          type: 'dam',
+          displayType: 'Dam',
+          classification: 'Dwarven Works',
+          name: damName,
+          controllingHold: controllingHoldName,
+          description: controllingHoldName
+            ? `Engineers from ${controllingHoldName} raised a stone dam to harness the river.`
+            : 'Dwarven engineers raised a stone dam to harness the river.'
+        };
       }
     }
   }
