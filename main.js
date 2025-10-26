@@ -5249,6 +5249,429 @@ function describeInfluenceStrength(value) {
   return 'Faint Influence';
 }
 
+const defaultCultureColorByKey = {
+  dwarves: '#f4c069',
+  humans: '#9bb6d8',
+  elves: '#6ecf85',
+  halflings: '#f7a072',
+  gnomes: '#c9a3e6',
+  goblins: '#7f8c4d',
+  kobolds: '#b1c8ff',
+  dragonborn: '#c16a6a',
+  tieflings: '#b064b0',
+  orcs: '#556b2f',
+  satyrs: '#c18c5d',
+  nymphs: '#9bd4a9',
+  ents: '#8bbbcf',
+  skinks: '#6bd38f',
+  saurus: '#3a9f68',
+  priests: '#8cd1c6',
+  beastmasters: '#b0f0d0',
+  wizards: '#9c5cff',
+  apprentices: '#b389ff',
+  thralls: '#646e78',
+  summoned: '#ff8ba7',
+  guards: '#f2cd5c',
+  others: '#9e9e9e'
+};
+
+function normaliseCultureKey(key, fallbackLabel) {
+  if (typeof key === 'string' && key.trim()) {
+    return key.trim().toLowerCase();
+  }
+  if (typeof fallbackLabel === 'string' && fallbackLabel.trim()) {
+    return fallbackLabel
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+  return null;
+}
+
+function formatCultureLabel(key) {
+  if (typeof key !== 'string' || key.trim().length === 0) {
+    return 'Unknown';
+  }
+  return key
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .filter((part) => part.length > 0)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function resolveCultureColor(color, key) {
+  if (typeof color === 'string' && color.trim()) {
+    return color;
+  }
+  if (typeof key === 'string' && key) {
+    const normalised = key.trim().toLowerCase();
+    if (defaultCultureColorByKey[normalised]) {
+      return defaultCultureColorByKey[normalised];
+    }
+  }
+  return '#9e9e9e';
+}
+
+function getDefaultCulturalBreakdownForSettlement(settlement) {
+  const type = typeof settlement?.type === 'string' ? settlement.type.trim() : '';
+  if (type === 'orcCamp') {
+    return [
+      {
+        key: 'orcs',
+        label: 'Orcs',
+        percentage: 100,
+        color: defaultCultureColorByKey.orcs
+      }
+    ];
+  }
+  if (type === 'castle') {
+    return [
+      {
+        key: 'humans',
+        label: 'Humans',
+        percentage: 85,
+        color: defaultCultureColorByKey.humans
+      },
+      {
+        key: 'dwarves',
+        label: 'Dwarves',
+        percentage: 15,
+        color: defaultCultureColorByKey.dwarves
+      }
+    ];
+  }
+  return null;
+}
+
+function resolveFallbackClaimRadius(type) {
+  switch (type) {
+    case 'dwarfhold':
+      return 34;
+    case 'hillhold':
+      return 30;
+    case 'town':
+      return 32;
+    case 'tower':
+    case 'evilWizardTower':
+      return 28;
+    case 'lizardmenCity':
+      return 36;
+    case 'woodElfGrove':
+      return 30;
+    case 'mine':
+      return 26;
+    case 'orcCamp':
+      return 28;
+    default:
+      return 24;
+  }
+}
+
+function resolveCulturalRadiusMultiplier(type) {
+  switch (type) {
+    case 'dwarfhold':
+      return 2;
+    case 'hillhold':
+      return 1.9;
+    case 'town':
+      return 1.85;
+    case 'tower':
+      return 1.6;
+    case 'evilWizardTower':
+      return 1.7;
+    case 'lizardmenCity':
+      return 2.1;
+    case 'woodElfGrove':
+      return 1.8;
+    case 'mine':
+      return 1.55;
+    case 'orcCamp':
+      return 1.75;
+    default:
+      return 1.6;
+  }
+}
+
+function resolveCulturalFalloffPower(type) {
+  switch (type) {
+    case 'dwarfhold':
+    case 'lizardmenCity':
+      return 1.25;
+    case 'hillhold':
+    case 'town':
+      return 1.28;
+    case 'woodElfGrove':
+      return 1.3;
+    case 'tower':
+    case 'evilWizardTower':
+      return 1.36;
+    case 'mine':
+      return 1.42;
+    case 'orcCamp':
+      return 1.3;
+    default:
+      return 1.35;
+  }
+}
+
+function applyCulturalInfluence({
+  width,
+  height,
+  tiles,
+  settlements,
+  factions,
+  isLandBaseTile
+}) {
+  if (!Array.isArray(tiles) || tiles.length === 0) {
+    return;
+  }
+
+  const mapHeight = Number.isFinite(height) ? Math.max(0, Math.floor(height)) : tiles.length;
+  const mapWidth = Number.isFinite(width) ? Math.max(0, Math.floor(width)) : tiles[0]?.length || 0;
+  if (mapWidth <= 0 || mapHeight <= 0) {
+    return;
+  }
+
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!row) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile) {
+        continue;
+      }
+      tile.culturalInfluence = null;
+      if (tile.culturalInfluenceScores) {
+        delete tile.culturalInfluenceScores;
+      }
+    }
+  }
+
+  const radiusByLocation = new Map();
+  if (Array.isArray(factions)) {
+    factions.forEach((faction) => {
+      const capitalX = Number.isFinite(faction?.capital?.x) ? Math.floor(faction.capital.x) : null;
+      const capitalY = Number.isFinite(faction?.capital?.y) ? Math.floor(faction.capital.y) : null;
+      if (capitalX === null || capitalY === null) {
+        return;
+      }
+      const claimRadius = Number.isFinite(faction?.claimRadius) ? faction.claimRadius : null;
+      if (claimRadius === null) {
+        return;
+      }
+      const key = `${capitalX},${capitalY}`;
+      radiusByLocation.set(key, claimRadius);
+    });
+  }
+
+  const raceMetadata = new Map();
+  const culturalSources = [];
+
+  if (Array.isArray(settlements)) {
+    settlements.forEach((settlement) => {
+      const rawX = Number.isFinite(settlement?.x) ? Math.floor(settlement.x) : null;
+      const rawY = Number.isFinite(settlement?.y) ? Math.floor(settlement.y) : null;
+      if (rawX === null || rawY === null) {
+        return;
+      }
+      if (rawX < 0 || rawY < 0 || rawX >= mapWidth || rawY >= mapHeight) {
+        return;
+      }
+
+      const breakdownSource = Array.isArray(settlement?.populationBreakdown)
+        ? settlement.populationBreakdown
+        : getDefaultCulturalBreakdownForSettlement(settlement);
+      if (!Array.isArray(breakdownSource) || breakdownSource.length === 0) {
+        return;
+      }
+
+      const entries = breakdownSource
+        .map((entry) => {
+          const key = normaliseCultureKey(entry?.key, entry?.label);
+          const share = clamp(Number(entry?.percentage) / 100, 0, 1);
+          if (!key || share <= 0) {
+            return null;
+          }
+          const label =
+            typeof entry?.label === 'string' && entry.label.trim()
+              ? entry.label.trim()
+              : formatCultureLabel(key);
+          const color = resolveCultureColor(entry?.color, key);
+          return { key, share, label, color };
+        })
+        .filter(Boolean);
+
+      if (entries.length === 0) {
+        return;
+      }
+
+      entries.forEach((entry) => {
+        if (!raceMetadata.has(entry.key)) {
+          raceMetadata.set(entry.key, { label: entry.label, color: entry.color });
+        }
+      });
+
+      const type = typeof settlement?.type === 'string' ? settlement.type : null;
+      const locationKey = `${rawX},${rawY}`;
+      const baseClaimRadius = radiusByLocation.get(locationKey) || resolveFallbackClaimRadius(type);
+      const multiplier = resolveCulturalRadiusMultiplier(type);
+      const radius = Math.max(8, baseClaimRadius * multiplier);
+      const falloff = resolveCulturalFalloffPower(type);
+
+      culturalSources.push({
+        x: rawX,
+        y: rawY,
+        radius,
+        entries,
+        falloff: falloff > 0 ? falloff : 1.35
+      });
+    });
+  }
+
+  if (culturalSources.length === 0) {
+    return;
+  }
+
+  const isLandFn = typeof isLandBaseTile === 'function' ? isLandBaseTile : null;
+
+  for (let i = 0; i < culturalSources.length; i += 1) {
+    const { x, y, radius, entries, falloff } = culturalSources[i];
+    const minX = Math.max(0, Math.floor(x - radius));
+    const maxX = Math.min(mapWidth - 1, Math.ceil(x + radius));
+    const minY = Math.max(0, Math.floor(y - radius));
+    const maxY = Math.min(mapHeight - 1, Math.ceil(y + radius));
+
+    for (let ty = minY; ty <= maxY; ty += 1) {
+      const row = tiles[ty];
+      if (!row) {
+        continue;
+      }
+      for (let tx = minX; tx <= maxX; tx += 1) {
+        const tile = row[tx];
+        if (!tile) {
+          continue;
+        }
+        if (isLandFn && !isLandFn(tile.base)) {
+          continue;
+        }
+        const dx = tx - x;
+        const dy = ty - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > radius) {
+          continue;
+        }
+        const proximity = clamp(1 - distance / radius, 0, 1);
+        if (proximity <= 0) {
+          continue;
+        }
+        const influenceFactor = Math.pow(proximity, falloff);
+        if (influenceFactor <= 0) {
+          continue;
+        }
+        let store = tile.culturalInfluenceScores;
+        if (!store) {
+          store = Object.create(null);
+          tile.culturalInfluenceScores = store;
+        }
+        for (let j = 0; j < entries.length; j += 1) {
+          const entry = entries[j];
+          const contribution = entry.share * influenceFactor;
+          if (contribution <= 0) {
+            continue;
+          }
+          store[entry.key] = (store[entry.key] || 0) + contribution;
+        }
+      }
+    }
+  }
+
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!row) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile) {
+        continue;
+      }
+      const scores = tile.culturalInfluenceScores;
+      if (!scores) {
+        tile.culturalInfluence = null;
+        continue;
+      }
+      const keys = Object.keys(scores);
+      if (keys.length === 0) {
+        tile.culturalInfluence = null;
+        delete tile.culturalInfluenceScores;
+        continue;
+      }
+      let bestKey = null;
+      let bestScore = 0;
+      let totalScore = 0;
+      const breakdown = [];
+
+      for (let i = 0; i < keys.length; i += 1) {
+        const key = keys[i];
+        const score = Number(scores[key]) || 0;
+        if (score <= 0) {
+          continue;
+        }
+        totalScore += score;
+        breakdown.push({ key, score });
+        if (score > bestScore) {
+          bestScore = score;
+          bestKey = key;
+        }
+      }
+
+      if (!bestKey || bestScore <= 0) {
+        tile.culturalInfluence = null;
+        delete tile.culturalInfluenceScores;
+        continue;
+      }
+
+      breakdown.sort((a, b) => b.score - a.score);
+      const dominantMeta = raceMetadata.get(bestKey) || {
+        label: formatCultureLabel(bestKey),
+        color: resolveCultureColor(null, bestKey)
+      };
+      const dominantStrength = clamp(bestScore, 0, 1);
+      const normalizedBreakdown =
+        totalScore > 0
+          ? breakdown.map((entry) => {
+              const meta = raceMetadata.get(entry.key) || {
+                label: formatCultureLabel(entry.key),
+                color: resolveCultureColor(null, entry.key)
+              };
+              return {
+                key: entry.key,
+                label: meta.label,
+                color: meta.color,
+                strength: clamp(entry.score, 0, 1),
+                share: clamp(entry.score / totalScore, 0, 1)
+              };
+            })
+          : [];
+
+      tile.culturalInfluence = {
+        key: bestKey,
+        label: dominantMeta.label,
+        color: dominantMeta.color,
+        strength: dominantStrength,
+        breakdown: normalizedBreakdown
+      };
+
+      delete tile.culturalInfluenceScores;
+    }
+  }
+}
+
 function resolveTileName(baseKey) {
   return tileLookup.has(baseKey) ? baseKey : 'GRASS';
 }
@@ -8655,6 +9078,27 @@ function getFactionForTile(tile) {
   return world.factions[factionIndex] || null;
 }
 
+function getDominantCulturalInfluence(tile) {
+  if (!tile || !tile.culturalInfluence) {
+    return null;
+  }
+  const { key, label, color, strength, breakdown } = tile.culturalInfluence;
+  if (!key) {
+    return null;
+  }
+  const resolvedLabel =
+    typeof label === 'string' && label.trim() ? label.trim() : formatCultureLabel(key);
+  const resolvedColor = resolveCultureColor(color, key);
+  const resolvedStrength = clamp(Number(strength) || 0, 0, 1);
+  return {
+    key,
+    label: resolvedLabel,
+    color: resolvedColor,
+    strength: resolvedStrength,
+    breakdown: Array.isArray(breakdown) ? breakdown : []
+  };
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile) {
     return null;
@@ -8697,10 +9141,15 @@ function buildStructureTooltipContent(tile) {
     const faction = getFactionForTile(tile);
     if (faction && faction.name) {
       entries.push({ label: 'Realm', value: faction.name });
-      const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
-      if (influenceDescription) {
-        entries.push({ label: 'Territorial Hold', value: influenceDescription });
-      }
+    }
+
+    const dominantCulture = getDominantCulturalInfluence(tile);
+    if (dominantCulture) {
+      const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
+      const value = influenceDescription
+        ? `${dominantCulture.label} — ${influenceDescription}`
+        : dominantCulture.label;
+      entries.push({ label: 'Cultural Influence', value });
     }
 
     if (details.classification) {
@@ -8807,10 +9256,15 @@ function buildStructureTooltipContent(tile) {
   const faction = getFactionForTile(tile);
   if (faction && faction.name) {
     entries.push({ label: 'Realm', value: faction.name });
-    const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
-    if (influenceDescription) {
-      entries.push({ label: 'Territorial Hold', value: influenceDescription });
-    }
+  }
+
+  const dominantCulture = getDominantCulturalInfluence(tile);
+  if (dominantCulture) {
+    const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
+    const value = influenceDescription
+      ? `${dominantCulture.label} — ${influenceDescription}`
+      : dominantCulture.label;
+    entries.push({ label: 'Cultural Influence', value });
   }
 
   if (details) {
@@ -9536,9 +9990,13 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   if (faction && faction.name) {
     addOverviewEntry('Realm', faction.name);
   }
-  const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
-  if (influenceDescription) {
-    addOverviewEntry('Territorial Hold', influenceDescription);
+  const dominantCulture = getDominantCulturalInfluence(tile);
+  if (dominantCulture) {
+    const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
+    const value = influenceDescription
+      ? `${dominantCulture.label} — ${influenceDescription}`
+      : dominantCulture.label;
+    addOverviewEntry('Cultural Influence', value);
   }
 
   if (details.population !== null && details.population !== undefined) {
@@ -17390,6 +17848,25 @@ function createWorld(seedString) {
     settlements: settlementSeeds
   });
   const factions = politicalData.factions || [];
+  applyCulturalInfluence({
+    width,
+    height,
+    tiles,
+    settlements: [
+      ...dwarfholds,
+      ...hillholds,
+      ...towns,
+      ...towers,
+      ...evilWizardTowers,
+      ...lizardmenCities,
+      ...woodElfGroves,
+      ...mines,
+      ...castles,
+      ...orcCamps
+    ],
+    factions,
+    isLandBaseTile
+  });
   return {
     tiles,
     grassTileKey,
@@ -17854,7 +18331,7 @@ function drawWorld(world, options = {}) {
   const elevationField = showElevation && world.elevationField ? world.elevationField : null;
   const temperatureField = showTemperature && world.temperatureField ? world.temperatureField : null;
   const seaLevel = Number.isFinite(world.seaLevel) ? world.seaLevel : null;
-  const hasPoliticalOverlay = (showPoliticalBorders || showPoliticalInfluence) && factions.length > 0;
+  const hasBorderOverlay = showPoliticalBorders && factions.length > 0;
   const waterTileKey = world.waterTileKey || resolveTileName('WATER');
   const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
   hideStructureDetails();
@@ -18033,7 +18510,18 @@ function drawWorld(world, options = {}) {
         }
       }
 
-      if (hasPoliticalOverlay && cell && cell.factionId !== null && cell.factionId !== undefined) {
+      if (showPoliticalInfluence && cell && cell.culturalInfluence && cell.culturalInfluence.color) {
+        const culture = cell.culturalInfluence;
+        const influenceStrength = clamp(Number(culture.strength) || 0, 0, 1);
+        const overlayAlpha = clamp(0.24 + influenceStrength * 0.45, 0.2, 0.75);
+        ctx.save();
+        ctx.fillStyle = culture.color;
+        ctx.globalAlpha = overlayAlpha;
+        ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+        ctx.restore();
+      }
+
+      if (hasBorderOverlay && cell && cell.factionId !== null && cell.factionId !== undefined) {
         const factionIndex = Number(cell.factionId);
         const safeIndex = Number.isFinite(factionIndex) ? Math.floor(factionIndex) : NaN;
         const faction =
@@ -18043,11 +18531,11 @@ function drawWorld(world, options = {}) {
         if (faction && faction.color) {
           const influenceStrength = clamp(Number(cell.factionInfluence) || 0, 0, 1);
           const overlayAlphaBase = showPoliticalInfluence
-            ? clamp(0.18 + influenceStrength * 0.35, 0.12, 0.6)
+            ? clamp(0.1 + influenceStrength * 0.2, 0.08, 0.25)
             : 0.2;
           ctx.save();
           ctx.fillStyle = faction.color;
-          ctx.globalAlpha = Math.min(0.6, overlayAlphaBase);
+          ctx.globalAlpha = Math.min(0.35, overlayAlphaBase);
           ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
           ctx.restore();
 
@@ -18157,8 +18645,8 @@ function refreshOverlayToggleButtons() {
     inactive: 'Show Borders'
   });
   updateOverlayToggleButton(elements.politicalInfluenceToggle, showInfluence, {
-    active: 'Hide Influence',
-    inactive: 'Show Influence'
+    active: 'Hide Cultural Influence',
+    inactive: 'Show Cultural Influence'
   });
   updateOverlayToggleButton(elements.elevationToggle, showElevation, {
     active: 'Hide Elevation',
