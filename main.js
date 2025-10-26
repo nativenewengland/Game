@@ -5627,15 +5627,55 @@ function setLayoutInteractivityDisabled(shouldDisable) {
 
     if (shouldDisable) {
       element.dataset.layoutWasDisabled = element.disabled ? 'true' : 'false';
-      element.disabled = true;
+      if (!element.disabled) {
+        element.setAttribute('aria-disabled', 'true');
+      }
       element.classList.add('layout-interaction-disabled');
     } else {
       const wasDisabled = element.dataset.layoutWasDisabled === 'true';
+      if (!wasDisabled) {
+        element.removeAttribute('aria-disabled');
+      }
       element.disabled = wasDisabled;
       delete element.dataset.layoutWasDisabled;
       element.classList.remove('layout-interaction-disabled');
     }
   });
+}
+
+function shouldSuppressLayoutInteraction(target) {
+  if (!layoutEditorState.isActive || !(target instanceof Element)) {
+    return false;
+  }
+
+  const interactiveElement = target.closest(layoutInteractiveSelector);
+  if (!interactiveElement) {
+    return false;
+  }
+
+  if (interactiveElement.closest('.layout-edit-controls')) {
+    return false;
+  }
+
+  return interactiveElement.classList.contains('layout-interaction-disabled');
+}
+
+function handleLayoutClickCapture(event) {
+  if (shouldSuppressLayoutInteraction(event.target)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
+function handleLayoutKeydownCapture(event) {
+  if (!['Enter', ' ', 'Spacebar'].includes(event.key)) {
+    return;
+  }
+
+  if (shouldSuppressLayoutInteraction(event.target)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
 }
 
 function setLayoutEditingActive(shouldActivate) {
@@ -13863,6 +13903,8 @@ function attachEvents() {
     elements.dwarfCustomizerForm.addEventListener('pointermove', handleLayoutPointerMove);
     elements.dwarfCustomizerForm.addEventListener('pointerup', handleLayoutPointerUp);
     elements.dwarfCustomizerForm.addEventListener('pointercancel', handleLayoutPointerUp);
+    elements.dwarfCustomizerForm.addEventListener('click', handleLayoutClickCapture, true);
+    elements.dwarfCustomizerForm.addEventListener('keydown', handleLayoutKeydownCapture, true);
   }
 
   if (elements.dwarfLayoutToggle) {
