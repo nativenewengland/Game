@@ -216,7 +216,9 @@ function hexToRgb(hex) {
 }
 
 const characterCreatorSkinTintCache = new Map();
+const characterCreatorHairTintCache = new Map();
 const characterCreatorDefaultSkinColor = '#c47231';
+const characterCreatorDefaultHairColor = '#141015';
 const characterCreatorSkinBaseRgb = hexToRgb(characterCreatorDefaultSkinColor);
 const characterCreatorSkinBaseColorSum = Math.max(
   characterCreatorSkinBaseRgb.r + characterCreatorSkinBaseRgb.g + characterCreatorSkinBaseRgb.b,
@@ -371,6 +373,145 @@ function getCharacterCreatorSkinTintLayers(assetKey, tintColor) {
   let tintedCanvas = analysis.tinted.get(colourKey);
   if (!tintedCanvas) {
     tintedCanvas = createCharacterCreatorSkinTintCanvas(analysis, colourKey);
+    if (tintedCanvas) {
+      analysis.tinted.set(colourKey, tintedCanvas);
+    }
+  }
+  if (!tintedCanvas) {
+    return null;
+  }
+  return {
+    baseCanvas: analysis.baseCanvas,
+    tintedCanvas
+  };
+}
+
+function analyseCharacterCreatorHairAsset(assetKey) {
+  if (characterCreatorHairTintCache.has(assetKey)) {
+    return characterCreatorHairTintCache.get(assetKey);
+  }
+  const asset = characterCreatorPortraitAssets[assetKey];
+  const image = asset?.image;
+  if (!image || !image.width || !image.height) {
+    const fallback = {
+      hasHair: false,
+      baseCanvas: null,
+      tinted: new Map()
+    };
+    characterCreatorHairTintCache.set(assetKey, fallback);
+    return fallback;
+  }
+  const width = image.width;
+  const height = image.height;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    const fallback = {
+      hasHair: false,
+      baseCanvas: null,
+      tinted: new Map()
+    };
+    characterCreatorHairTintCache.set(assetKey, fallback);
+    return fallback;
+  }
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(image, 0, 0, width, height);
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const { data } = imageData;
+  const pixelCount = width * height;
+  const mask = new Uint8Array(pixelCount);
+  const alpha = new Uint8Array(pixelCount);
+  const multiplierR = new Float32Array(pixelCount);
+  const multiplierG = new Float32Array(pixelCount);
+  const multiplierB = new Float32Array(pixelCount);
+  let hasHair = false;
+  for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
+    const a = data[i + 3];
+    if (a < 8) {
+      continue;
+    }
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    if (r + g + b <= 0) {
+      continue;
+    }
+    mask[p] = 1;
+    alpha[p] = a;
+    multiplierR[p] = clamp(r / 255, 0.05, 1.2);
+    multiplierG[p] = clamp(g / 255, 0.05, 1.2);
+    multiplierB[p] = clamp(b / 255, 0.05, 1.2);
+    data[i] = 0;
+    data[i + 1] = 0;
+    data[i + 2] = 0;
+    data[i + 3] = 0;
+    hasHair = true;
+  }
+  if (hasHair) {
+    ctx.putImageData(imageData, 0, 0);
+  }
+  const analysis = {
+    hasHair,
+    baseCanvas: canvas,
+    mask,
+    alpha,
+    multiplierR,
+    multiplierG,
+    multiplierB,
+    tinted: new Map()
+  };
+  characterCreatorHairTintCache.set(assetKey, analysis);
+  return analysis;
+}
+
+function createCharacterCreatorHairTintCanvas(analysis, colorHex) {
+  const { baseCanvas, mask, alpha, multiplierR, multiplierG, multiplierB } = analysis;
+  if (!baseCanvas || !mask || !alpha || !multiplierR || !multiplierG || !multiplierB) {
+    return null;
+  }
+  const tint = hexToRgb(colorHex);
+  const width = baseCanvas.width;
+  const height = baseCanvas.height;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return null;
+  }
+  const imageData = ctx.createImageData(width, height);
+  const { data } = imageData;
+  for (let i = 0, p = 0; p < mask.length; i += 4, p += 1) {
+    if (!mask[p]) {
+      continue;
+    }
+    const alphaValue = alpha[p];
+    if (alphaValue <= 0) {
+      continue;
+    }
+    data[i] = clamp(Math.round(tint.r * multiplierR[p]), 0, 255);
+    data[i + 1] = clamp(Math.round(tint.g * multiplierG[p]), 0, 255);
+    data[i + 2] = clamp(Math.round(tint.b * multiplierB[p]), 0, 255);
+    data[i + 3] = alphaValue;
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+function getCharacterCreatorHairTintLayers(assetKey, tintColor) {
+  if (!assetKey) {
+    return null;
+  }
+  const analysis = analyseCharacterCreatorHairAsset(assetKey);
+  if (!analysis || !analysis.hasHair || !analysis.baseCanvas) {
+    return null;
+  }
+  const colourKey = normaliseHexColor(tintColor || characterCreatorDefaultHairColor);
+  let tintedCanvas = analysis.tinted.get(colourKey);
+  if (!tintedCanvas) {
+    tintedCanvas = createCharacterCreatorHairTintCanvas(analysis, colourKey);
     if (tintedCanvas) {
       analysis.tinted.set(colourKey, tintedCanvas);
     }
@@ -6931,7 +7072,7 @@ function shouldUseCharacterCreatorPortrait(dwarf) {
   return Boolean(bodyImage && headImage);
 }
 
-function getCharacterCreatorHairImage(dwarf) {
+function getCharacterCreatorHairAssetKey(dwarf) {
   if (!dwarf) {
     return null;
   }
@@ -6941,10 +7082,7 @@ function getCharacterCreatorHairImage(dwarf) {
     return null;
   }
   const assetKey = characterCreatorHairAssetMap[category];
-  if (!assetKey) {
-    return null;
-  }
-  return characterCreatorPortraitAssets[assetKey]?.image || null;
+  return assetKey || null;
 }
 
 function getCharacterCreatorBeardImage(dwarf) {
@@ -6959,7 +7097,7 @@ function getCharacterCreatorBeardImage(dwarf) {
   return characterCreatorPortraitAssets[assetKey]?.image || null;
 }
 
-function renderCharacterCreatorPortrait(ctx, canvas, dwarf) {
+function renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption) {
   const gender = dwarf?.gender === 'female' ? 'female' : 'male';
   const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
   const bodyImage = characterCreatorPortraitAssets[bodyKey]?.image;
@@ -6989,9 +7127,19 @@ function renderCharacterCreatorPortrait(ctx, canvas, dwarf) {
   } else {
     ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
   }
-  const hairImage = getCharacterCreatorHairImage(dwarf);
-  if (hairImage) {
-    ctx.drawImage(hairImage, offsetX, offsetY, drawWidth, drawHeight);
+  const hairAssetKey = getCharacterCreatorHairAssetKey(dwarf);
+  const hairTintLayers = getCharacterCreatorHairTintLayers(
+    hairAssetKey,
+    hairOption?.color || characterCreatorDefaultHairColor
+  );
+  if (hairTintLayers) {
+    ctx.drawImage(hairTintLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
+    ctx.drawImage(hairTintLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
+  } else {
+    const hairImage = hairAssetKey ? characterCreatorPortraitAssets[hairAssetKey]?.image : null;
+    if (hairImage) {
+      ctx.drawImage(hairImage, offsetX, offsetY, drawWidth, drawHeight);
+    }
   }
   const beardImage = getCharacterCreatorBeardImage(dwarf);
   if (beardImage) {
@@ -7062,7 +7210,7 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
   }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (shouldUseCharacterCreatorPortrait(dwarf)) {
-    renderCharacterCreatorPortrait(ctx, canvas, dwarf);
+    renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption);
     return;
   }
   renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
