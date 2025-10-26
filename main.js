@@ -336,6 +336,85 @@ function drawSaintShrineStructure(ctx, { pixelX, pixelY, size }) {
   ctx.fill();
   ctx.restore();
 }
+function drawTravelerCampStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const groundRadius = size * 0.46;
+  ctx.fillStyle = '#ad8b55';
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, groundRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#5f3d21';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.2, size * 0.74);
+  ctx.lineTo(size * 0.34, size * 0.34);
+  ctx.lineTo(size * 0.46, size * 0.74);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#7d4f2c';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.58, size * 0.78);
+  ctx.lineTo(size * 0.72, size * 0.42);
+  ctx.lineTo(size * 0.84, size * 0.78);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#362417';
+  ctx.beginPath();
+  ctx.arc(size * 0.5, size * 0.58, size * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ef7b2d';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5, size * 0.44);
+  ctx.quadraticCurveTo(size * 0.54, size * 0.52, size * 0.5, size * 0.6);
+  ctx.quadraticCurveTo(size * 0.46, size * 0.52, size * 0.5, size * 0.44);
+  ctx.fill();
+
+  ctx.fillStyle = '#f6d284';
+  ctx.beginPath();
+  ctx.arc(size * 0.5, size * 0.54, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const baseWidth = size * 0.74;
+  const baseHeight = size * 0.44;
+  const baseX = (size - baseWidth) / 2;
+  const baseY = size * 0.38;
+
+  ctx.fillStyle = '#c7a06b';
+  ctx.fillRect(baseX, baseY, baseWidth, baseHeight);
+
+  ctx.fillStyle = '#854c30';
+  ctx.beginPath();
+  ctx.moveTo(baseX - size * 0.04, baseY);
+  ctx.lineTo(size / 2, size * 0.18);
+  ctx.lineTo(baseX + baseWidth + size * 0.04, baseY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#56311f';
+  ctx.fillRect(baseX + baseWidth * 0.36, baseY + baseHeight * 0.38, baseWidth * 0.16, baseHeight * 0.62);
+
+  ctx.fillStyle = '#f1d8a5';
+  ctx.fillRect(baseX + baseWidth * 0.14, baseY + baseHeight * 0.28, baseWidth * 0.16, baseHeight * 0.32);
+  ctx.fillRect(baseX + baseWidth * 0.7, baseY + baseHeight * 0.28, baseWidth * 0.16, baseHeight * 0.32);
+
+  ctx.fillStyle = '#d27d2c';
+  ctx.fillRect(baseX + baseWidth * 0.82, baseY + baseHeight * 0.1, baseWidth * 0.14, baseHeight * 0.28);
+
+  ctx.fillStyle = '#311a10';
+  ctx.fillRect(baseX + baseWidth * 0.86, baseY + baseHeight * 0.24, baseWidth * 0.06, baseHeight * 0.18);
+
+  ctx.restore();
+}
+
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
@@ -516,6 +595,12 @@ registerCustomStructure('DUNGEON', (ctx, drawOptions) => drawDungeonStructure(ct
 registerCustomStructure('MONASTERY', (ctx, drawOptions) => drawMonasteryStructure(ctx, drawOptions));
 registerCustomStructure('CASTLE', (ctx, drawOptions) => drawCastleStructure(ctx, drawOptions));
 registerCustomStructure('SAINT_SHRINE', (ctx, drawOptions) => drawSaintShrineStructure(ctx, drawOptions));
+registerCustomStructure('TRAVELERS_CAMP', (ctx, drawOptions) =>
+  drawTravelerCampStructure(ctx, drawOptions)
+);
+registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) =>
+  drawRoadsideTavernStructure(ctx, drawOptions)
+);
 
 // The evil wizard tower sprite only shows up on some tilesheets. If the
 // currently loaded set does not define it, fall back to the generic tower so
@@ -1920,9 +2005,116 @@ const orcWarLeaders = [
   'Thura Ironhide',
   'Balgrom Spinebreaker',
   'Igra Wildfang',
-  'Vorgh the Thunderer'
+  'Vorgh the Thunderer',
+  'Sagra the Ember Fist',
+  'Druza Stormchant'
 ];
 const orcThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Menacing'];
+const travelerCampHosts = [
+  'the Emberlane siblings',
+  'Matron Heila Oakshaw',
+  'a circle of veteran rangers',
+  'Quartermaster Brond of the West March',
+  'the caravan guild of Lanterntrail',
+  'Scoutmaster Vessa Quillsong'
+];
+const travelerCampFocuses = [
+  'guiding caravans through the border wilds',
+  'trading maps and rumours for supplies',
+  'harbouring refugees bound for safer lands',
+  'drilling outriders to patrol the marches',
+  'stockpiling goods for a distant expedition',
+  'watching the roads for bandit movement'
+];
+const travelerCampSupplies = [
+  'fresh water skins, smoked meats, and wagon grease',
+  'oiled cloaks, mended harnesses, and hardy ponies',
+  'herbal poultices, coil rope, and trimmed torches',
+  'arrow sheaves, spare axles, and starlight charts',
+  'travel bread, pitch tarps, and finely balanced spears'
+];
+const travelerCampAtmospheres = [
+  'Lanterns sway from tall poles, casting amber halos across the tents.',
+  'A cookfire crackles beside a ring of storytellers comparing pathfinding lore.',
+  'Watchmen pace the palisade while scouts tally the night sky.',
+  'Scribes annotate trail ledgers by the glow of rune-lit stones.',
+  'Children chase one another between carts while lookouts scan the horizon.'
+];
+const travelerCampServices = [
+  'fresh mounts for weary outriders',
+  'hireling guards to bolster caravan ranks',
+  'trail wardens who escort pilgrims between towns',
+  'medics stitching wounds earned on the road',
+  'scouts selling the latest safe passage reports'
+];
+
+const tavernAdjectives = ['Golden', 'Starlit', 'Roaring', 'Whispering', 'Copper', 'Moonlit', 'Wandering'];
+const tavernNouns = ['Hearth', 'Steed', 'Keg', 'Anvil', 'Lantern', 'Drum', 'Oak'];
+const tavernDescriptors = [
+  'Crossroads Inn',
+  'Wayside Rest',
+  'Taphouse',
+  'Roadhouse',
+  "Pilgrim's Lodge",
+  'Caravan Hostel'
+];
+const tavernInnkeepers = [
+  'Innkeep Mara Hearthspoon',
+  'Old Rulfen Barrelhelm',
+  'Mistress Sera Dawnsong',
+  'Tarin Embercoat and his wife Lysa',
+  'The twins Peira and Pell',
+  'Guilder Hask of the Wayfarer League'
+];
+const tavernSpecialties = [
+  'cinder-spiced stout poured over hot stones',
+  'wildberry mead and cedar-smoked trout',
+  'poppyseed bread with cavern cheese',
+  'applejack mulled with sprig-mint',
+  'honey-glazed boar shanks carved tableside'
+];
+const tavernReputations = [
+  'favoured by caravan guards trading tall tales',
+  'famed for calming border disputes over shared cups',
+  'whispered about by merchants chasing lucky omens',
+  'beloved by pilgrims making the long journey north',
+  'a trusted muster point for royal couriers'
+];
+const tavernAmenities = [
+  'a roaring hearth and slate-tiled baths',
+  'private loft bunks lined with fleece blankets',
+  'secure stables tended through the night',
+  'a stage for bards and a loft for dice games',
+  'a stocked cellar with rare vintages on tap'
+];
+const tavernAtmospheres = [
+  'Music drifts into the road while travellers warm chilled hands.',
+  'Lantern light spills across wagon ruts like melted gold.',
+  'Scented smoke and laughter mingle beneath the eaves.',
+  'Patrons cluster around maps pinned to the main beam.',
+  'Night watch bells hang ready beside the doorway.'
+];
+const tavernServices = [
+  'message runners willing to brave the moonlit pass',
+  'guides charting quick routes between duchies',
+  'lockboxes for merchant tithes and purses',
+  'farriers who shoe beasts while you dine',
+  'scribes drafting contracts over candlelight'
+];
+const tavernRatePhrases = [
+  'four silver a room with hearth-warmed blankets',
+  "a single gold buys a week's board and fodder",
+  'two silver a night, breakfast and stall included',
+  'one silver for the common loft, five for a private suite',
+  'coin or fresh news accepted for a bed and a meal'
+];
+const tavernSpecialGuests = [
+  'wandering magi swapping spellcraft rumours',
+  'dwarven merchants peddling gem-cut curios',
+  'elves mapping safe shadow crossings',
+  'lancers offering escort to the next hold',
+  'minstrels composing sagas for generous patrons'
+];
 
 const dungeonNamePrefixes = [
   'Whispering',
@@ -3082,6 +3274,127 @@ function generateOrcCampDetails(name, random) {
     description: `${tribeName} raiders gather here, their sights set on ${raidingFocus || 'nearby lands'}. ${feature}`,
     banner: pickRandomFrom(orcTribeAdjectives, randomFn) || 'Rageborn',
     vow: 'Blood Oaths'
+  };
+}
+
+function generateTravelerCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjectives = ['Lantern', 'Amber', 'Star', 'Frontier', 'Drift', 'Iron', 'Wayfarer', 'Cedar'];
+  const landmarks = ['Crossing', 'Hollow', 'Trail', 'Fork', 'Pass', 'Fields', 'Meadow'];
+  const nouns = ['Camp', 'Encampment', 'Outpost', 'Commons', 'Waystation'];
+  const adjective = pickRandomFrom(adjectives, randomFn) || 'Lantern';
+  const noun = pickRandomFrom(nouns, randomFn) || 'Camp';
+  const landmark = pickRandomFrom(landmarks, randomFn);
+  const style = randomFn();
+  if (style < 0.35 && landmark) {
+    return `${adjective} ${landmark} ${noun}`;
+  }
+  if (style < 0.7) {
+    return `${adjective} ${noun}`;
+  }
+  return `${noun} of the ${adjective} Road`;
+}
+
+function formatSettlementLabelForDetails(settlement) {
+  if (!settlement) {
+    return null;
+  }
+  if (typeof settlement.name === 'string' && settlement.name) {
+    return settlement.name;
+  }
+  if (typeof settlement.structureName === 'string' && settlement.structureName) {
+    return settlement.structureName;
+  }
+  if (typeof settlement.displayType === 'string' && settlement.displayType) {
+    return settlement.displayType;
+  }
+  if (typeof settlement.type === 'string' && settlement.type) {
+    return formatStructureDetailLabel(settlement.type);
+  }
+  return null;
+}
+
+function generateTravelerCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const host = pickRandomFrom(travelerCampHosts, randomFn) || 'the Emberlane siblings';
+  const focus = pickRandomFrom(travelerCampFocuses, randomFn) || 'guiding caravans through the border wilds';
+  const supplies = pickRandomFrom(travelerCampSupplies, randomFn) ||
+    'fresh water skins, smoked meats, and wagon grease';
+  const atmosphere = pickRandomFrom(travelerCampAtmospheres, randomFn) ||
+    'Lanterns sway from tall poles, casting amber halos across the tents.';
+  const service = pickRandomFrom(travelerCampServices, randomFn) || 'fresh mounts for weary outriders';
+  const settlementLabel = formatSettlementLabelForDetails(options?.nearbySettlement);
+  const settlementDistance = Number.isFinite(options?.settlementDistance)
+    ? Math.max(1, Math.round(options.settlementDistance))
+    : null;
+  const settlementSentence = settlementLabel
+    ? `Caravans from ${settlementLabel} often rest here${
+        settlementDistance ? ` after ${settlementDistance} leagues on the road` : ''
+      }.`
+    : 'Wayfarers raise their tents where trade paths converge.';
+
+  return {
+    type: 'travelerCamp',
+    name,
+    displayType: 'Frontier Camp',
+    hosts: host.charAt(0).toUpperCase() + host.slice(1),
+    campFocus: focus.charAt(0).toUpperCase() + focus.slice(1),
+    supplies: supplies.charAt(0).toUpperCase() + supplies.slice(1),
+    services: service.charAt(0).toUpperCase() + service.slice(1),
+    description: `${settlementSentence} ${atmosphere}`
+  };
+}
+
+function generateRoadsideTavernName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(tavernAdjectives, randomFn) || 'Golden';
+  const noun = pickRandomFrom(tavernNouns, randomFn) || 'Hearth';
+  const descriptor = pickRandomFrom(tavernDescriptors, randomFn) || 'Roadhouse';
+  const style = randomFn();
+  if (style < 0.45) {
+    return `The ${adjective} ${noun}`;
+  }
+  if (style < 0.75) {
+    return `${adjective} ${noun} ${descriptor}`;
+  }
+  return `${descriptor} of the ${adjective} ${noun}`;
+}
+
+function generateRoadsideTavernDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const innkeeper = pickRandomFrom(tavernInnkeepers, randomFn) || 'Innkeep Mara Hearthspoon';
+  const specialty = pickRandomFrom(tavernSpecialties, randomFn) || 'cinder-spiced stout poured over hot stones';
+  const reputation = pickRandomFrom(tavernReputations, randomFn) || 'favoured by caravan guards trading tall tales';
+  const amenities = pickRandomFrom(tavernAmenities, randomFn) || 'a roaring hearth and slate-tiled baths';
+  const service = pickRandomFrom(tavernServices, randomFn) || 'guides charting quick routes between duchies';
+  const rate = pickRandomFrom(tavernRatePhrases, randomFn) || 'two silver a night, breakfast and stall included';
+  const notableGuests = pickRandomFrom(tavernSpecialGuests, randomFn) || 'wandering magi swapping spellcraft rumours';
+  const rooms = Math.max(6, Math.floor(8 + randomFn() * 6));
+  const settlementLabel = formatSettlementLabelForDetails(options?.nearbySettlement);
+  const settlementDistance = Number.isFinite(options?.settlementDistance)
+    ? Math.max(1, Math.round(options.settlementDistance))
+    : null;
+  const atmosphere = pickRandomFrom(tavernAtmospheres, randomFn) ||
+    'Lantern light spills across wagon ruts like melted gold.';
+  const settlementSentence = settlementLabel
+    ? `Caravans bound for ${settlementLabel} pause here${
+        settlementDistance ? ` after ${settlementDistance} leagues on the road` : ''
+      }.`
+    : 'Travellers on the long road gather here to rest and trade news.';
+
+  return {
+    type: 'roadsideTavern',
+    name,
+    displayType: 'Roadside Tavern',
+    innkeeper,
+    specialty,
+    reputation,
+    amenities,
+    services: service,
+    rooms: `${rooms} rooms prepared for weary guests`,
+    rates: rate,
+    notableGuests,
+    description: `${settlementSentence} ${atmosphere}`
   };
 }
 
@@ -6740,6 +7053,18 @@ function buildStructureTooltipContent(tile) {
     if (details.displayType) {
       entries.push({ label: 'Type', value: details.displayType });
     }
+    if (details.hosts) {
+      entries.push({ label: 'Hosts', value: details.hosts });
+    }
+    if (details.campFocus) {
+      entries.push({ label: 'Focus', value: details.campFocus });
+    }
+    if (details.supplies) {
+      entries.push({ label: 'Provisions', value: details.supplies });
+    }
+    if (details.services) {
+      entries.push({ label: 'Services', value: details.services });
+    }
     if (details.tribe) {
       entries.push({ label: 'Tribe', value: details.tribe });
     }
@@ -6766,6 +7091,27 @@ function buildStructureTooltipContent(tile) {
     }
     if (details.caretaker) {
       entries.push({ label: 'Caretaker', value: details.caretaker });
+    }
+    if (details.innkeeper) {
+      entries.push({ label: 'Innkeeper', value: details.innkeeper });
+    }
+    if (details.specialty) {
+      entries.push({ label: 'House Specialty', value: details.specialty });
+    }
+    if (details.reputation) {
+      entries.push({ label: 'Reputation', value: details.reputation });
+    }
+    if (details.amenities) {
+      entries.push({ label: 'Amenities', value: details.amenities });
+    }
+    if (details.rooms) {
+      entries.push({ label: 'Rooms', value: details.rooms });
+    }
+    if (details.rates) {
+      entries.push({ label: 'Rates', value: details.rates });
+    }
+    if (details.notableGuests) {
+      entries.push({ label: 'Notable Patrons', value: details.notableGuests });
     }
     if (details.rulingHouse) {
       entries.push({ label: 'Ruling House', value: details.rulingHouse });
@@ -9655,10 +10001,12 @@ function createWorld(seedString) {
   const woodElfGroves = [];
   const lizardmenCities = [];
   const orcCamps = [];
+  const travelerCamps = [];
   const dungeons = [];
   const monasteries = [];
   const castles = [];
   const saintShrines = [];
+  const roadsideTaverns = [];
   const recordTowerProximityPoint = (x, y) => {
     if (Number.isFinite(x) && Number.isFinite(y)) {
       towerProximityPoints.push({ x, y });
@@ -9682,6 +10030,34 @@ function createWorld(seedString) {
       }
     }
     return best;
+  };
+  const findNearestPointWithDetails = (x, y, points) => {
+    if (!Array.isArray(points) || points.length === 0) {
+      return null;
+    }
+    let bestPoint = null;
+    let bestDistanceSq = Infinity;
+    for (let i = 0; i < points.length; i += 1) {
+      const point = points[i];
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+        continue;
+      }
+      const dx = x - point.x;
+      const dy = y - point.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < bestDistanceSq) {
+        bestDistanceSq = distSq;
+        bestPoint = point;
+      }
+    }
+    if (bestPoint === null) {
+      return null;
+    }
+    return {
+      point: bestPoint,
+      distanceSq: bestDistanceSq,
+      distance: Math.sqrt(bestDistanceSq)
+    };
   };
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
@@ -12409,10 +12785,12 @@ function createWorld(seedString) {
     overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
   const mapArea = width * height;
   const orcCampNoiseSeed = (seedNumber + 0x4a1d2b7f) >>> 0;
+  const travelerCampNoiseSeed = (seedNumber + 0x579c3d11) >>> 0;
   const dungeonNoiseSeed = (seedNumber + 0x5c8d3a1f) >>> 0;
   const monasteryNoiseSeed = (seedNumber + 0x6f12c43d) >>> 0;
   const castleNoiseSeed = (seedNumber + 0x7be21a59) >>> 0;
   const shrineNoiseSeed = (seedNumber + 0x8cf43123) >>> 0;
+  const tavernNoiseSeed = (seedNumber + 0x9324f8b1) >>> 0;
 
   const orcCampKey = tileLookup.has('ORC_CAMP') ? 'ORC_CAMP' : null;
   if (orcCampKey) {
@@ -12539,6 +12917,262 @@ function createWorld(seedString) {
         tile.structureDetails = details;
         placed.push(candidate);
         orcCamps.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const travelerCampKey = tileLookup.has('TRAVELERS_CAMP') ? 'TRAVELERS_CAMP' : null;
+  if (travelerCampKey) {
+    const travelerCampCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSand = tile.base === sandTileKey;
+        const baseIsBadlands = hasBadlandsTile && tile.base === badlandsTileKey;
+        const baseIsMarsh = tile.base === marshTileKey;
+        if (!baseIsGrass && !baseIsSand && !baseIsBadlands && !baseIsMarsh) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const nearestSettlement = findNearestPointWithDetails(x, y, majorSettlementPoints);
+        if (!nearestSettlement || !Number.isFinite(nearestSettlement.distance)) {
+          continue;
+        }
+        const distance = nearestSettlement.distance;
+        if (distance < 4 || distance > 26) {
+          continue;
+        }
+        const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+        if (distanceToOrcsSq < 49) {
+          continue;
+        }
+        let waterAdjacency = 0;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            waterAdjacency += 1;
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (neighborTile && neighborTile.river) {
+            waterAdjacency += 1;
+          }
+        }
+        const rainfallValue = rainfallField[idx];
+        const drainageValue = drainageField[idx];
+        const dryness = clamp(1 - rainfallValue, 0, 1);
+        const soilSoftness = clamp(1 - drainageValue, 0, 1);
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.08 : 0;
+        const distanceScore = clamp(1 - Math.abs(distance - 10) / 9, 0, 1) * 0.32;
+        const waterScore = clamp(waterAdjacency * 0.07, 0, 0.2);
+        const drynessScore = dryness * 0.18;
+        const comfortScore = soilSoftness * 0.12;
+        const noise = hashCoords(x, y, travelerCampNoiseSeed) - 0.5;
+        const score =
+          0.24 +
+          distanceScore +
+          hillBonus +
+          waterScore +
+          drynessScore +
+          comfortScore +
+          noise * 0.18 +
+          rng() * 0.12;
+        if (score > 0.3) {
+          travelerCampCandidates.push({ x, y, score, nearestSettlement });
+        }
+      }
+    }
+
+    if (travelerCampCandidates.length > 0) {
+      travelerCampCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 20000));
+      const maxCamps = computeStructurePlacementLimit(baseTarget, 14, 1);
+      const minDistance = 7;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < travelerCampCandidates.length; i += 1) {
+        if (placed.length >= maxCamps) {
+          break;
+        }
+        const candidate = travelerCampCandidates[i];
+        if (candidate.score < 0.31) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const nearest =
+          candidate.nearestSettlement || findNearestPointWithDetails(candidate.x, candidate.y, majorSettlementPoints);
+        const name = generateTravelerCampName(rng);
+        const details = generateTravelerCampDetails(name, rng, {
+          nearbySettlement: nearest ? nearest.point : null,
+          settlementDistance: nearest ? nearest.distance : null
+        });
+        tile.structure = travelerCampKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        travelerCamps.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const tavernKey = tileLookup.has('ROADSIDE_TAVERN') ? 'ROADSIDE_TAVERN' : null;
+  if (tavernKey) {
+    const civilSettlements = [...towns, ...dwarfholds, ...woodElfGroves, ...castles];
+    const tavernCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSand = tile.base === sandTileKey;
+        const baseIsBadlands = hasBadlandsTile && tile.base === badlandsTileKey;
+        if (!baseIsGrass && !baseIsSand && !baseIsBadlands) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const nearestCivil = findNearestPointWithDetails(x, y, civilSettlements);
+        if (!nearestCivil || !Number.isFinite(nearestCivil.distance)) {
+          continue;
+        }
+        const distance = nearestCivil.distance;
+        if (distance < 3 || distance > 20) {
+          continue;
+        }
+        let riverAdjacency = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            riverAdjacency += 1;
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (neighborTile && neighborTile.river) {
+            riverAdjacency += 1;
+          }
+        }
+        const rainfallValue = rainfallField[idx];
+        const drainageValue = drainageField[idx];
+        const fertility = clamp(rainfallValue * 0.6 + (1 - drainageValue) * 0.4, 0, 1);
+        const distanceScore = clamp(1 - Math.abs(distance - 8) / 6.5, 0, 1) * 0.36;
+        const riverScore = clamp(riverAdjacency * 0.09, 0, 0.24);
+        const fertilityScore = fertility * 0.18;
+        const noise = hashCoords(x, y, tavernNoiseSeed) - 0.5;
+        const score = 0.26 + distanceScore + riverScore + fertilityScore + noise * 0.18 + rng() * 0.1;
+        if (score > 0.32) {
+          tavernCandidates.push({ x, y, score, nearestCivil });
+        }
+      }
+    }
+
+    if (tavernCandidates.length > 0) {
+      tavernCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 18000));
+      const maxTaverns = computeStructurePlacementLimit(baseTarget, 12, 1);
+      const minDistance = 6;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < tavernCandidates.length; i += 1) {
+        if (placed.length >= maxTaverns) {
+          break;
+        }
+        const candidate = tavernCandidates[i];
+        if (candidate.score < 0.33) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (!tooClose) {
+          const distanceToCampSq = computeNearestDistanceSq(candidate.x, candidate.y, travelerCamps);
+          if (distanceToCampSq < 25) {
+            tooClose = true;
+          }
+        }
+        if (!tooClose) {
+          const distanceToOrcSq = computeNearestDistanceSq(candidate.x, candidate.y, orcCamps);
+          if (distanceToOrcSq < 64) {
+            tooClose = true;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const nearest =
+          candidate.nearestCivil || findNearestPointWithDetails(candidate.x, candidate.y, civilSettlements);
+        const name = generateRoadsideTavernName(rng);
+        const details = generateRoadsideTavernDetails(name, rng, {
+          nearbySettlement: nearest ? nearest.point : null,
+          settlementDistance: nearest ? nearest.distance : null
+        });
+        tile.structure = tavernKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        roadsideTaverns.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
   }
@@ -13493,10 +14127,12 @@ function createWorld(seedString) {
     lizardmenCities,
     woodElfGroves,
     orcCamps,
+    travelerCamps,
     dungeons,
     monasteries,
     castles,
     saintShrines,
+    roadsideTaverns,
     factions
   };
 }
