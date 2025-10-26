@@ -471,10 +471,8 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
 
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
-const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
-const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW']);
-const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
+const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
 
 const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
