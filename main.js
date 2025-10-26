@@ -3631,7 +3631,13 @@ const state = {
     showBiomes: false,
     showTemperature: false
   },
-  currentWorld: null
+  currentWorld: null,
+  localView: {
+    active: false,
+    centerX: null,
+    centerY: null,
+    bounds: null
+  }
 };
 
 const defaultDwarfCount = 1;
@@ -4086,6 +4092,13 @@ const elements = {
   canvas: document.getElementById('world-canvas'),
   canvasWrapper: document.querySelector('.canvas-wrapper'),
   mapTooltip: document.getElementById('world-tooltip'),
+  localMapPanel: document.getElementById('local-map-panel'),
+  localMapCanvas: document.getElementById('local-map-canvas'),
+  localMapTitle: document.getElementById('local-map-title'),
+  localMapSubtitle: document.getElementById('local-map-subtitle'),
+  localMapCoordinates: document.getElementById('local-map-coordinates'),
+  localMapClose: document.getElementById('local-map-close'),
+  localMapDetails: document.getElementById('local-map-details'),
   structureDetailsPanel: document.getElementById('structure-details'),
   structureDetailsTitle: document.getElementById('structure-details-title'),
   structureDetailsSubtitle: document.getElementById('structure-details-subtitle'),
@@ -6309,6 +6322,15 @@ const viewState = {
   hasInteracted: false
 };
 
+const localViewConfig = {
+  radius: 4,
+  baseScale: 3,
+  minScale: 2,
+  maxCanvasSize: 768
+};
+
+const localMapDefaultMessage = 'Click the world map to open a local preview.';
+
 const structureDetailsState = {
   visible: false
 };
@@ -6704,6 +6726,284 @@ function buildStructureTooltipContent(tile) {
   }
 
   return sections.join('');
+}
+
+function computeLocalViewBounds(tileX, tileY, width, height, radius) {
+  const clampedRadius = Math.max(0, Math.floor(radius));
+  const startX = Math.max(0, tileX - clampedRadius);
+  const endX = Math.min(width - 1, tileX + clampedRadius);
+  const startY = Math.max(0, tileY - clampedRadius);
+  const endY = Math.min(height - 1, tileY + clampedRadius);
+  return {
+    startX,
+    startY,
+    endX,
+    endY,
+    width: endX - startX + 1,
+    height: endY - startY + 1
+  };
+}
+
+function resolveLocalSubtitle(tile) {
+  if (!tile) {
+    return 'Local terrain preview';
+  }
+  const subtitleParts = [];
+  const details = tile.structureDetails;
+  if (details) {
+    if (details.displayType) {
+      subtitleParts.push(details.displayType);
+    }
+    if (details.classification && !subtitleParts.includes(details.classification)) {
+      subtitleParts.push(details.classification);
+    }
+  }
+  if (subtitleParts.length === 0 && tile.biomeType) {
+    const definition = biomeTypeDefinitions[tile.biomeType];
+    if (definition && definition.label) {
+      subtitleParts.push(definition.label);
+    } else {
+      subtitleParts.push(tile.biomeType.charAt(0).toUpperCase() + tile.biomeType.slice(1));
+    }
+  }
+  return subtitleParts.length > 0 ? subtitleParts.join(' • ') : 'Local terrain preview';
+}
+
+function refreshLocalMapPreview() {
+  if (!elements.localMapPanel || !elements.localMapCanvas) {
+    return;
+  }
+  const world = state.currentWorld;
+  const localView = state.localView;
+  if (
+    !world ||
+    !localView ||
+    !localView.active ||
+    localView.centerX === null ||
+    localView.centerY === null ||
+    !localView.bounds
+  ) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+    if (elements.localMapCanvas) {
+      elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    }
+    if (elements.localMapTitle) {
+      elements.localMapTitle.textContent = 'Local View';
+    }
+    if (elements.localMapSubtitle) {
+      elements.localMapSubtitle.textContent = 'Select a site to examine the surrounding terrain.';
+    }
+    if (elements.localMapDetails) {
+      elements.localMapDetails.textContent = localMapDefaultMessage;
+    }
+    if (elements.localMapCoordinates) {
+      elements.localMapCoordinates.textContent = '';
+    }
+    return;
+  }
+
+  const tiles = Array.isArray(world.tiles) ? world.tiles : null;
+  if (!tiles || tiles.length === 0) {
+    return;
+  }
+
+  const centerRow = tiles[localView.centerY];
+  if (!Array.isArray(centerRow)) {
+    return;
+  }
+
+  const focusTile = centerRow[localView.centerX] || null;
+  const bounds = localView.bounds;
+  const tileWidth = Math.max(1, bounds.width);
+  const tileHeight = Math.max(1, bounds.height);
+
+  elements.localMapPanel.classList.remove('hidden');
+  elements.localMapPanel.setAttribute('aria-hidden', 'false');
+
+  if (elements.localMapTitle) {
+    elements.localMapTitle.textContent = focusTile
+      ? focusTile.structureName || focusTile.areaName || 'Local View'
+      : 'Local View';
+  }
+
+  if (elements.localMapSubtitle) {
+    elements.localMapSubtitle.textContent = resolveLocalSubtitle(focusTile);
+  }
+
+  if (elements.localMapCoordinates) {
+    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+      tileWidth
+    }×${tileHeight} tiles`;
+  }
+
+  if (elements.localMapDetails) {
+    const tooltipContent = buildStructureTooltipContent(focusTile);
+    if (tooltipContent) {
+      elements.localMapDetails.innerHTML = tooltipContent;
+    } else {
+      elements.localMapDetails.textContent = localMapDefaultMessage;
+    }
+  }
+
+  const canvas = elements.localMapCanvas;
+  const context = canvas ? canvas.getContext('2d') : null;
+  if (!canvas || !context || !elements.canvas) {
+    return;
+  }
+
+  const sourceX = bounds.startX * drawSize;
+  const sourceY = bounds.startY * drawSize;
+  const sourceWidth = tileWidth * drawSize;
+  const sourceHeight = tileHeight * drawSize;
+  const baseScale = localViewConfig.baseScale;
+  const maxSize = localViewConfig.maxCanvasSize;
+  const baseWidth = sourceWidth * baseScale;
+  let scale = baseScale;
+  if (baseWidth > maxSize) {
+    const possibleScale = Math.floor(maxSize / Math.max(1, sourceWidth));
+    scale = Math.max(localViewConfig.minScale, possibleScale);
+    if (!Number.isFinite(scale) || scale < 1) {
+      scale = 1;
+    }
+  }
+
+  const destWidth = Math.max(1, Math.round(sourceWidth * scale));
+  const destHeight = Math.max(1, Math.round(sourceHeight * scale));
+  canvas.width = destWidth;
+  canvas.height = destHeight;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  canvas.setAttribute(
+    'aria-label',
+    `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${
+      localView.centerY + 1
+    }.`
+  );
+  canvas.setAttribute('aria-hidden', 'false');
+
+  context.imageSmoothingEnabled = false;
+  context.clearRect(0, 0, destWidth, destHeight);
+  context.fillStyle = '#05060b';
+  context.fillRect(0, 0, destWidth, destHeight);
+  context.drawImage(elements.canvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, destWidth, destHeight);
+
+  const tilePixelWidth = destWidth / tileWidth;
+  const tilePixelHeight = destHeight / tileHeight;
+
+  context.save();
+  context.strokeStyle = 'rgba(12, 14, 22, 0.6)';
+  context.lineWidth = 1;
+  for (let x = 1; x < tileWidth; x += 1) {
+    const px = Math.round(x * tilePixelWidth) + 0.5;
+    context.beginPath();
+    context.moveTo(px, 0);
+    context.lineTo(px, destHeight);
+    context.stroke();
+  }
+  for (let y = 1; y < tileHeight; y += 1) {
+    const py = Math.round(y * tilePixelHeight) + 0.5;
+    context.beginPath();
+    context.moveTo(0, py);
+    context.lineTo(destWidth, py);
+    context.stroke();
+  }
+  context.restore();
+
+  const highlightX = (localView.centerX - bounds.startX) * tilePixelWidth;
+  const highlightY = (localView.centerY - bounds.startY) * tilePixelHeight;
+  context.save();
+  const minTileSize = Math.max(1, Math.min(tilePixelWidth, tilePixelHeight));
+  const lineWidth = Math.max(2, Math.round(minTileSize * 0.12));
+  context.lineWidth = lineWidth;
+  context.strokeStyle = 'rgba(240, 198, 116, 0.9)';
+  context.fillStyle = 'rgba(240, 198, 116, 0.12)';
+  context.fillRect(highlightX, highlightY, tilePixelWidth, tilePixelHeight);
+  context.strokeRect(
+    highlightX + lineWidth / 2,
+    highlightY + lineWidth / 2,
+    tilePixelWidth - lineWidth,
+    tilePixelHeight - lineWidth
+  );
+  context.restore();
+}
+
+function hideLocalView(options = {}) {
+  state.localView.active = false;
+  state.localView.centerX = null;
+  state.localView.centerY = null;
+  state.localView.bounds = null;
+  if (elements.localMapPanel) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.localMapCanvas) {
+    elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    elements.localMapCanvas.setAttribute('aria-label', 'Local map preview');
+  }
+  if (elements.localMapTitle) {
+    elements.localMapTitle.textContent = 'Local View';
+  }
+  if (elements.localMapSubtitle) {
+    elements.localMapSubtitle.textContent = 'Select a site to examine the surrounding terrain.';
+  }
+  if (elements.localMapDetails) {
+    elements.localMapDetails.textContent = localMapDefaultMessage;
+  }
+  if (elements.localMapCoordinates) {
+    elements.localMapCoordinates.textContent = '';
+  }
+  if (!options.suppressRedraw && state.currentWorld) {
+    drawWorld(state.currentWorld, { preserveView: true });
+  }
+}
+
+function showLocalViewAt(tileX, tileY) {
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return;
+  }
+  const height = world.tiles.length;
+  const width = Array.isArray(world.tiles[0]) ? world.tiles[0].length : 0;
+  if (width === 0) {
+    return;
+  }
+  const clampedX = clamp(tileX, 0, width - 1);
+  const clampedY = clamp(tileY, 0, height - 1);
+  const bounds = computeLocalViewBounds(clampedX, clampedY, width, height, localViewConfig.radius);
+  state.localView.active = true;
+  state.localView.centerX = clampedX;
+  state.localView.centerY = clampedY;
+  state.localView.bounds = bounds;
+  drawWorld(world, { preserveView: true });
+}
+
+function drawLocalSelectionOverlay(ctx) {
+  if (!ctx || !state.localView || !state.localView.active || !state.localView.bounds) {
+    return;
+  }
+  const bounds = state.localView.bounds;
+  const widthTiles = Math.max(1, bounds.endX - bounds.startX + 1);
+  const heightTiles = Math.max(1, bounds.endY - bounds.startY + 1);
+  const pixelX = bounds.startX * drawSize;
+  const pixelY = bounds.startY * drawSize;
+  const pixelWidth = widthTiles * drawSize;
+  const pixelHeight = heightTiles * drawSize;
+  const lineWidth = Math.max(2, Math.round(drawSize * 0.18));
+  ctx.save();
+  ctx.fillStyle = 'rgba(240, 198, 116, 0.12)';
+  ctx.fillRect(pixelX, pixelY, pixelWidth, pixelHeight);
+  ctx.strokeStyle = 'rgba(240, 198, 116, 0.85)';
+  ctx.lineWidth = lineWidth;
+  const dash = Math.max(4, Math.round(drawSize * 0.6));
+  ctx.setLineDash([dash, dash]);
+  ctx.strokeRect(
+    pixelX + lineWidth / 2,
+    pixelY + lineWidth / 2,
+    Math.max(0, pixelWidth - lineWidth),
+    Math.max(0, pixelHeight - lineWidth)
+  );
+  ctx.restore();
 }
 
 function formatStructureDetailLabel(value) {
@@ -7274,6 +7574,8 @@ function setupMapInteractions() {
   let isPanning = false;
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
+  const initialPosition = { x: 0, y: 0 };
+  let pointerMovedDuringPan = false;
 
   const resolveTileAtPointer = (event) => {
     if (!elements.canvasWrapper) {
@@ -7386,6 +7688,9 @@ function setupMapInteractions() {
     activePointerId = event.pointerId;
     lastPosition.x = event.clientX;
     lastPosition.y = event.clientY;
+    initialPosition.x = event.clientX;
+    initialPosition.y = event.clientY;
+    pointerMovedDuringPan = false;
     elements.canvasWrapper.setPointerCapture(event.pointerId);
   };
 
@@ -7397,6 +7702,14 @@ function setupMapInteractions() {
     event.preventDefault();
     const dx = event.clientX - lastPosition.x;
     const dy = event.clientY - lastPosition.y;
+    if (!pointerMovedDuringPan) {
+      const totalDx = event.clientX - initialPosition.x;
+      const totalDy = event.clientY - initialPosition.y;
+      const distance = Math.hypot(totalDx, totalDy);
+      if (distance > 3) {
+        pointerMovedDuringPan = true;
+      }
+    }
     lastPosition.x = event.clientX;
     lastPosition.y = event.clientY;
     viewState.translateX += dx;
@@ -7406,11 +7719,19 @@ function setupMapInteractions() {
   };
 
   const handlePointerUp = (event) => {
-    if (event.pointerId === activePointerId) {
+    const wasActivePointer = event.pointerId === activePointerId;
+    if (wasActivePointer) {
       elements.canvasWrapper.releasePointerCapture(event.pointerId);
       isPanning = false;
       activePointerId = null;
-      updateHover(event);
+      if (!pointerMovedDuringPan) {
+        const resolved = resolveTileAtPointer(event);
+        if (resolved) {
+          showLocalViewAt(resolved.tileX, resolved.tileY);
+        }
+      } else {
+        updateHover(event);
+      }
       return;
     }
     updateHover(event);
@@ -12788,7 +13109,8 @@ function applyDesertMountainTint(ctx, cell, x, y) {
   ctx.restore();
 }
 
-function drawWorld(world) {
+function drawWorld(world, options = {}) {
+  const { preserveView = false } = options;
   const { tiles, seedString } = world;
   const factions = Array.isArray(world.factions) ? world.factions : [];
   const showPoliticalBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
@@ -12807,6 +13129,15 @@ function drawWorld(world) {
   hideMapTooltip();
   const height = tiles.length;
   const width = tiles[0].length;
+  const previousView = preserveView
+    ? {
+        scale: viewState.scale,
+        translateX: viewState.translateX,
+        translateY: viewState.translateY,
+        hasInteracted: viewState.hasInteracted
+      }
+    : null;
+
   const ctx = elements.canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
@@ -12817,7 +13148,24 @@ function drawWorld(world) {
   elements.canvas.style.width = `${pixelWidth}px`;
   elements.canvas.style.height = `${pixelHeight}px`;
 
-  resetView(pixelWidth, pixelHeight);
+  if (preserveView && elements.canvasWrapper) {
+    const rect = elements.canvasWrapper.getBoundingClientRect();
+    viewState.wrapperSize = { width: rect.width, height: rect.height };
+    viewState.worldSize = { width: pixelWidth, height: pixelHeight };
+    const { contain, cover } = computeViewScales(rect.width, rect.height, pixelWidth, pixelHeight);
+    viewState.containScale = contain;
+    viewState.coverScale = cover;
+    viewState.minScale = Math.min(0.25, contain);
+    viewState.maxScale = Math.max(6, cover * 4);
+    const targetScale = previousView ? previousView.scale : viewState.scale;
+    viewState.scale = clamp(targetScale, viewState.minScale, viewState.maxScale);
+    viewState.translateX = previousView ? previousView.translateX : viewState.translateX;
+    viewState.translateY = previousView ? previousView.translateY : viewState.translateY;
+    viewState.hasInteracted = previousView ? previousView.hasInteracted : viewState.hasInteracted;
+    applyViewTransform();
+  } else {
+    resetView(pixelWidth, pixelHeight);
+  }
   refreshOverlayToggleButtons();
 
   for (let y = 0; y < height; y += 1) {
@@ -13007,6 +13355,9 @@ function drawWorld(world) {
     }
   }
 
+  drawLocalSelectionOverlay(ctx);
+  refreshLocalMapPreview();
+
   state.settings.lastSeedString = seedString;
   state.settings.seedString = seedString;
   if (elements.worldSeedInput) {
@@ -13038,6 +13389,7 @@ function beginGame() {
 function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
   hideMapTooltip();
+  hideLocalView({ suppressRedraw: true });
   const world = createWorld(seedToUse);
   state.currentWorld = world;
   drawWorld(world);
@@ -13176,6 +13528,15 @@ function attachEvents() {
   if (elements.structureDetailsClose) {
     elements.structureDetailsClose.addEventListener('click', () => {
       hideStructureDetails({ returnFocus: true });
+    });
+  }
+
+  if (elements.localMapClose) {
+    elements.localMapClose.addEventListener('click', () => {
+      hideLocalView();
+      if (elements.canvasWrapper) {
+        elements.canvasWrapper.focus();
+      }
     });
   }
 
@@ -13586,6 +13947,10 @@ function attachEvents() {
     }
 
     if (event.key === 'Escape') {
+      if (state.localView && state.localView.active) {
+        hideLocalView();
+        return;
+      }
       if (structureDetailsState.visible) {
         hideStructureDetails({ returnFocus: true });
         return;
