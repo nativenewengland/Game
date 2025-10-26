@@ -11793,6 +11793,40 @@ function createWorld(seedString) {
     }
   }
 
+  if (hasSnowTile) {
+    const surroundedGrassTiles = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const tile = tiles[y][x];
+        if (!tile || tile.base !== grassTileKey) {
+          continue;
+        }
+        let surroundedBySnow = true;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            surroundedBySnow = false;
+            break;
+          }
+          const neighbor = tiles[ny][nx];
+          if (!neighbor || neighbor.base !== snowTileKey) {
+            surroundedBySnow = false;
+            break;
+          }
+        }
+        if (surroundedBySnow) {
+          surroundedGrassTiles.push({ x, y });
+        }
+      }
+    }
+
+    for (let i = 0; i < surroundedGrassTiles.length; i += 1) {
+      const { x, y } = surroundedGrassTiles[i];
+      tiles[y][x].base = snowTileKey;
+    }
+  }
+
   if (hasMountainTile) {
     mountainScores = new Float32Array(width * height);
     mountainHeightField = new Float32Array(width * height);
