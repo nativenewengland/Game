@@ -7085,12 +7085,17 @@ function getCharacterCreatorHairAssetKey(dwarf) {
   return assetKey || null;
 }
 
-function getCharacterCreatorBeardImage(dwarf) {
+function getCharacterCreatorBeardAssetKey(dwarf) {
   if (!dwarf || dwarf.gender !== 'male') {
     return null;
   }
   const beardValue = dwarf.beard || 'clean';
   const assetKey = characterCreatorBeardAssetMap[beardValue];
+  return assetKey || null;
+}
+
+function getCharacterCreatorBeardImage(dwarf) {
+  const assetKey = getCharacterCreatorBeardAssetKey(dwarf);
   if (!assetKey) {
     return null;
   }
@@ -7141,9 +7146,21 @@ function renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption) {
       ctx.drawImage(hairImage, offsetX, offsetY, drawWidth, drawHeight);
     }
   }
-  const beardImage = getCharacterCreatorBeardImage(dwarf);
-  if (beardImage) {
-    ctx.drawImage(beardImage, offsetX, offsetY, drawWidth, drawHeight);
+  const beardAssetKey = getCharacterCreatorBeardAssetKey(dwarf);
+  if (beardAssetKey) {
+    const beardTintLayers = getCharacterCreatorHairTintLayers(
+      beardAssetKey,
+      hairOption?.color || characterCreatorDefaultHairColor
+    );
+    if (beardTintLayers) {
+      ctx.drawImage(beardTintLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.drawImage(beardTintLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
+    } else {
+      const beardImage = characterCreatorPortraitAssets[beardAssetKey]?.image;
+      if (beardImage) {
+        ctx.drawImage(beardImage, offsetX, offsetY, drawWidth, drawHeight);
+      }
+    }
   }
   const noseImage = characterCreatorPortraitAssets.nose?.image;
   if (noseImage) {
