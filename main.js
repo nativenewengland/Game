@@ -5538,17 +5538,6 @@ const layoutEditorState = {
 
 const layoutPositionEpsilon = 0.01;
 const layoutInteractiveSelector = 'button, input, select, textarea';
-const defaultLayoutOffsets = new Map();
-const defaultLayoutConfigurationPath =
-  'tilesheet/dwarf-customizer-layout-2025-10-26T01-55-26-529Z.json';
-
-function getDefaultLayoutOffset(id) {
-  if (!id || !defaultLayoutOffsets.has(id)) {
-    return { x: 0, y: 0 };
-  }
-  const { x, y } = defaultLayoutOffsets.get(id);
-  return { x, y };
-}
 
 function getLayoutDraggableElements() {
   if (!elements.dwarfCustomizerForm) {
@@ -5601,12 +5590,7 @@ function applyLayoutOffset(element, x, y) {
 function layoutHasOffsets() {
   return getLayoutDraggableElements().some((element) => {
     const { x, y } = getLayoutOffsets(element);
-    const id = element.dataset.draggableId;
-    const defaults = getDefaultLayoutOffset(id);
-    return (
-      Math.abs(x - defaults.x) > layoutPositionEpsilon ||
-      Math.abs(y - defaults.y) > layoutPositionEpsilon
-    );
+    return Math.abs(x) > layoutPositionEpsilon || Math.abs(y) > layoutPositionEpsilon;
   });
 }
 
@@ -5724,48 +5708,9 @@ function setLayoutEditingActive(shouldActivate) {
 
 function resetLayoutOffsets() {
   getLayoutDraggableElements().forEach((element) => {
-    const id = element.dataset.draggableId;
-    const defaults = getDefaultLayoutOffset(id);
-    applyLayoutOffset(element, defaults.x, defaults.y);
+    applyLayoutOffset(element, 0, 0);
   });
   updateLayoutControlStates();
-}
-
-async function loadDefaultLayoutConfiguration() {
-  if (!elements.dwarfCustomizerForm) {
-    return;
-  }
-
-  try {
-    const response = await fetch(defaultLayoutConfigurationPath, {
-      cache: 'no-store'
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to load layout configuration: ${response.status}`);
-    }
-
-    const payload = await response.json();
-    if (!payload || typeof payload !== 'object' || typeof payload.positions !== 'object') {
-      throw new Error('Layout configuration missing positions');
-    }
-
-    defaultLayoutOffsets.clear();
-    for (const [id, coords] of Object.entries(payload.positions)) {
-      if (!id || typeof coords !== 'object') {
-        continue;
-      }
-      const x = Number.parseFloat(coords.x);
-      const y = Number.parseFloat(coords.y);
-      defaultLayoutOffsets.set(id, {
-        x: Number.isFinite(x) ? Math.round(x * 100) / 100 : 0,
-        y: Number.isFinite(y) ? Math.round(y * 100) / 100 : 0
-      });
-    }
-
-    resetLayoutOffsets();
-  } catch (error) {
-    console.warn('Unable to apply default dwarf customizer layout', error);
-  }
 }
 
 function downloadLayoutConfiguration() {
@@ -7481,7 +7426,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
 
   const breakdownSection = buildPopulationBreakdownPanelSection(resolvedName, details.populationBreakdown);
 
-  const sections = [];
+  const columnSections = [[], [], []];
 
   if (overviewEntries.length > 0) {
     const overviewItems = overviewEntries
@@ -7494,7 +7439,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
         `
       )
       .join('');
-    sections.push(`
+    columnSections[0].push(`
       <section class="structure-details-section structure-details-section--overview">
         <h3 class="structure-details-heading">Overview</h3>
         <dl class="structure-details-list">${overviewItems}</dl>
@@ -7503,7 +7448,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   }
 
   if (breakdownSection) {
-    sections.push(breakdownSection);
+    columnSections[1].push(breakdownSection);
   }
 
   if (listSections.length > 0) {
@@ -7520,7 +7465,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
         `;
       })
       .join('');
-    sections.push(`
+    columnSections[2].push(`
       <section class="structure-details-section structure-details-section--collections">
         <h3 class="structure-details-heading">Notable Groups &amp; Orders</h3>
         <div class="structure-details-collections-grid">${collections}</div>
@@ -7529,7 +7474,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   }
 
   narrativeSections.forEach((section) => {
-    sections.push(`
+    columnSections[2].push(`
       <section class="structure-details-section structure-details-section--narrative">
         <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
         <p class="structure-details-paragraph">${escapeHtml(section.text)}</p>
@@ -7537,14 +7482,29 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   });
 
-  if (sections.length === 0) {
-    sections.push('<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>');
-  }
+  const populatedColumns = columnSections
+    .map((items, index) => {
+      if (items.length === 0) {
+        return '';
+      }
+      const columnNames = ['primary', 'secondary', 'tertiary'];
+      const columnClass = columnNames[index] || `col-${index + 1}`;
+      return `
+        <div class="structure-details-column structure-details-column--${columnClass}">
+          ${items.join('')}
+        </div>
+      `;
+    })
+    .filter(Boolean);
+
+  const body = populatedColumns.length > 0
+    ? populatedColumns.join('')
+    : '<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>';
 
   return {
     title: resolvedName,
     subtitle,
-    body: sections.join('')
+    body
   };
 }
 
@@ -8462,9 +8422,14 @@ function buildRiverMap(
     1
   );
   const frequencyMultiplier = lerp(0.45, 1.75, frequencyNormalized);
-  const rainfallThreshold = lerp(0.6, 0.35, frequencyNormalized);
   const weightThreshold = 0.12 * lerp(1.45, 0.45, frequencyNormalized);
   const majorRiverThreshold = lerp(0.45, 0.28, frequencyNormalized);
+  const randomFn =
+    typeof options.random === 'function'
+      ? options.random
+      : typeof options.rng === 'function'
+      ? options.rng
+      : Math.random;
 
   const riverMap = new Uint8Array(width * height);
   const candidates = [];
@@ -8475,12 +8440,10 @@ function buildRiverMap(
       if (elev <= seaLevel + 0.02) {
         continue;
       }
-      const rain = rainfall[idx];
-      if (rain < rainfallThreshold) {
-        continue;
-      }
       const sink = 1 - drainage[idx];
-      const weight = rain * rain * (elev - seaLevel) * (0.5 + sink * 0.5);
+      const heightFactor = Math.max(0, elev - seaLevel);
+      const randomness = 0.35 + randomFn() * 0.65;
+      const weight = (heightFactor * 0.7 + sink * 0.3) * randomness;
       if (weight > weightThreshold) {
         candidates.push({ x, y, weight });
       }
@@ -8504,6 +8467,7 @@ function buildRiverMap(
   const oceanDistance = new Float32Array(width * height);
   oceanDistance.fill(Number.POSITIVE_INFINITY);
   const oceanMask = new Uint8Array(width * height);
+  let hasOceanTiles = false;
   if (waterMask && typeof waterMask.length === 'number') {
     const queue = new Int32Array(width * height);
     let queueHead = 0;
@@ -8521,6 +8485,7 @@ function buildRiverMap(
         }
         if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
           oceanMask[idx] = 1;
+          hasOceanTiles = true;
           enqueue(idx);
         }
       }
@@ -8530,6 +8495,7 @@ function buildRiverMap(
       for (let i = 0; i < waterMask.length; i += 1) {
         if (waterMask[i]) {
           oceanMask[i] = 1;
+          hasOceanTiles = true;
           enqueue(i);
         }
       }
@@ -8561,6 +8527,7 @@ function buildRiverMap(
     for (let i = 0; i < oceanMask.length; i += 1) {
       if (oceanMask[i]) {
         oceanDistance[i] = 0;
+        hasOceanTiles = true;
         enqueue(i);
       }
     }
@@ -8569,6 +8536,7 @@ function buildRiverMap(
       for (let i = 0; i < waterMask.length; i += 1) {
         if (waterMask[i]) {
           oceanDistance[i] = 0;
+          hasOceanTiles = true;
           enqueue(i);
         }
       }
@@ -8653,6 +8621,165 @@ function buildRiverMap(
 
       if (riverMap[lowestIdx] > 0 && steps > 3) {
         break;
+      }
+    }
+  }
+
+  if (
+    hasOceanTiles &&
+    waterMask &&
+    typeof waterMask.length === 'number' &&
+    frequencyNormalized > 0.05
+  ) {
+    const coastalCandidates = [];
+    const coastalTaken = new Uint8Array(width * height);
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!oceanMask[idx]) {
+          continue;
+        }
+
+        for (let d = 0; d < directions.length; d += 1) {
+          const nx = x + directions[d][0];
+          const ny = y + directions[d][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx] || coastalTaken[nIdx]) {
+            continue;
+          }
+          if (elevation[nIdx] <= seaLevel) {
+            continue;
+          }
+          const sink = 1 - drainage[nIdx];
+          const lowlandBoost = Math.max(0, seaLevel + 0.12 - elevation[nIdx]);
+          const randomness = 0.4 + randomFn() * 0.6;
+          const basePotential = Math.max(0, elevation[nIdx] - seaLevel) * 0.5 + sink * 0.5;
+          const weight = (basePotential + lowlandBoost * 3.2) * randomness;
+          const strength = weight > majorRiverThreshold ? 2 : 1;
+          coastalTaken[nIdx] = 1;
+          coastalCandidates.push({
+            x: nx,
+            y: ny,
+            weight,
+            strength,
+            idx: nIdx
+          });
+        }
+      }
+    }
+
+    coastalCandidates.sort((a, b) => b.weight - a.weight);
+    const oceanSourceFactor = lerp(0.18, 0.5, frequencyNormalized);
+    const maxOceanSources = Math.min(
+      coastalCandidates.length,
+      Math.max(0, Math.round(maxSources * oceanSourceFactor))
+    );
+
+    if (maxOceanSources > 0) {
+      const inlandInfluence = lerp(0.006, 0.018, frequencyNormalized);
+      const maxReverseLength = Math.max(
+        6,
+        Math.round(
+          Math.sqrt(width * height) * lerp(0.32, 0.58, frequencyNormalized)
+        )
+      );
+      const detourProbability = lerp(0.08, 0.22, frequencyNormalized);
+
+      for (let i = 0; i < maxOceanSources; i += 1) {
+        const start = coastalCandidates[i];
+        if (!start || riverMap[start.idx] > 0) {
+          continue;
+        }
+
+        const pathIndices = [];
+        const localVisited = new Set();
+        let currentIdx = start.idx;
+
+        while (pathIndices.length < maxReverseLength) {
+          if (localVisited.has(currentIdx)) {
+            break;
+          }
+          localVisited.add(currentIdx);
+          pathIndices.push(currentIdx);
+
+          let bestIdx = -1;
+          let bestScore = Number.POSITIVE_INFINITY;
+          const cx = currentIdx % width;
+          const cy = Math.floor(currentIdx / width);
+          const currentDistance = oceanDistance[currentIdx];
+          const currentBaseValue = elevation[currentIdx] - drainage[currentIdx] * 0.02;
+
+          for (let d = 0; d < directions.length; d += 1) {
+            const nx = cx + directions[d][0];
+            const ny = cy + directions[d][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx] || localVisited.has(nIdx)) {
+              continue;
+            }
+            if (riverMap[nIdx] > 0 && pathIndices.length > 2) {
+              continue;
+            }
+            const neighborDistance = oceanDistance[nIdx];
+            const distanceDelta = neighborDistance - currentDistance;
+            if (distanceDelta < 0) {
+              continue;
+            }
+            if (distanceDelta === 0 && pathIndices.length > 4) {
+              continue;
+            }
+            const neighborBaseValue =
+              elevation[nIdx] - drainage[nIdx] * 0.02;
+            if (
+              neighborBaseValue - currentBaseValue >
+              0.22 + pathIndices.length * 0.015
+            ) {
+              continue;
+            }
+            if (pathIndices.length > 4 && randomFn() < detourProbability) {
+              continue;
+            }
+
+            let score = neighborBaseValue;
+            score -= distanceDelta * inlandInfluence;
+            score -= randomFn() * 0.02;
+
+            if (score < bestScore) {
+              bestScore = score;
+              bestIdx = nIdx;
+            }
+          }
+
+          if (bestIdx === -1) {
+            break;
+          }
+
+          const nextDistance = oceanDistance[bestIdx];
+          if (nextDistance <= currentDistance && pathIndices.length > 5) {
+            break;
+          }
+
+          currentIdx = bestIdx;
+        }
+
+        if (pathIndices.length >= 3) {
+          for (let p = 0; p < pathIndices.length; p += 1) {
+            const idx = pathIndices[p];
+            const t =
+              pathIndices.length <= 1 ? 0 : p / (pathIndices.length - 1);
+            const strengthAtTile = Math.max(
+              1,
+              Math.round(lerp(start.strength, 1, t))
+            );
+            riverMap[idx] = Math.max(riverMap[idx], strengthAtTile);
+          }
+        }
       }
     }
   }
@@ -9208,6 +9335,7 @@ function createWorld(seedString) {
   const desertSuitabilityField = hasSandTile ? new Float32Array(width * height) : null;
   const desertHeatField = hasSandTile ? new Float32Array(width * height) : null;
   const desertMask = hasSandTile ? new Uint8Array(width * height) : null;
+  const badlandsMask = hasBadlandsTile ? new Uint8Array(width * height) : null;
   const desertBadlandsSeed = hasBadlandsTile ? (seedNumber + 0x428a2f98) >>> 0 : 0;
   const desertBadlandsScale = hasBadlandsTile ? 3.4 + rng() * 3.6 : 1;
   const desertBadlandsOffsetX = hasBadlandsTile ? rng() * 4096 : 0;
@@ -9675,12 +9803,46 @@ function createWorld(seedString) {
           desertMask[verticalIsolation[i]] = 0;
         }
       }
+
+      const isolatedSingles = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!desertMask[idx]) {
+            continue;
+          }
+          let hasDesertNeighbor = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (desertMask[nIdx]) {
+              hasDesertNeighbor = true;
+              break;
+            }
+          }
+          if (!hasDesertNeighbor) {
+            isolatedSingles.push(idx);
+          }
+        }
+      }
+      if (isolatedSingles.length > 0) {
+        for (let i = 0; i < isolatedSingles.length; i += 1) {
+          desertMask[isolatedSingles[i]] = 0;
+        }
+      }
     }
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
         if (waterMask[idx]) {
+          if (badlandsMask) {
+            badlandsMask[idx] = 0;
+          }
           continue;
         }
         if (desertMask[idx]) {
@@ -9706,8 +9868,85 @@ function createWorld(seedString) {
             }
           }
           tiles[y][x].base = baseTileName;
+          if (badlandsMask) {
+            badlandsMask[idx] = baseTileName === badlandsTileKey ? 1 : 0;
+          }
         } else if (tiles[y][x].base === sandTileKey || (hasBadlandsTile && tiles[y][x].base === badlandsTileKey)) {
           tiles[y][x].base = grassTileKey;
+          if (badlandsMask) {
+            badlandsMask[idx] = 0;
+          }
+        }
+      }
+    }
+
+    if (badlandsMask) {
+      const badlandsFillRadius = 2;
+      const badlandsFillOffsets = [];
+      for (let dy = -badlandsFillRadius; dy <= badlandsFillRadius; dy += 1) {
+        for (let dx = -badlandsFillRadius; dx <= badlandsFillRadius; dx += 1) {
+          if (dx === 0 && dy === 0) {
+            continue;
+          }
+          if (Math.max(Math.abs(dx), Math.abs(dy)) > badlandsFillRadius) {
+            continue;
+          }
+          badlandsFillOffsets.push([dx, dy]);
+        }
+      }
+      const badlandsFillIterations = 2;
+      for (let iteration = 0; iteration < badlandsFillIterations; iteration += 1) {
+        const additions = [];
+        for (let y = 0; y < height; y += 1) {
+          for (let x = 0; x < width; x += 1) {
+            const idx = y * width + x;
+            if (!desertMask[idx] || badlandsMask[idx]) {
+              continue;
+            }
+            let neighborCount = 0;
+            let hasLeft = false;
+            let hasRight = false;
+            let hasUp = false;
+            let hasDown = false;
+            for (let i = 0; i < badlandsFillOffsets.length; i += 1) {
+              const offset = badlandsFillOffsets[i];
+              const nx = x + offset[0];
+              const ny = y + offset[1];
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              const nIdx = ny * width + nx;
+              if (!badlandsMask[nIdx]) {
+                continue;
+              }
+              neighborCount += 1;
+              if (offset[0] < 0) {
+                hasLeft = true;
+              } else if (offset[0] > 0) {
+                hasRight = true;
+              }
+              if (offset[1] < 0) {
+                hasUp = true;
+              } else if (offset[1] > 0) {
+                hasDown = true;
+              }
+            }
+            const hasHorizontalBridge = hasLeft && hasRight;
+            const hasVerticalBridge = hasUp && hasDown;
+            const hasCrossBridge =
+              (hasLeft || hasRight) && (hasUp || hasDown) && neighborCount >= 3;
+            if (neighborCount >= 2 && (hasHorizontalBridge || hasVerticalBridge || hasCrossBridge)) {
+              additions.push({ idx, x, y });
+            }
+          }
+        }
+        if (additions.length === 0) {
+          break;
+        }
+        for (let i = 0; i < additions.length; i += 1) {
+          const { idx, x, y } = additions[i];
+          badlandsMask[idx] = 1;
+          tiles[y][x].base = badlandsTileKey;
         }
       }
     }
@@ -9744,6 +9983,9 @@ function createWorld(seedString) {
           if (nearSnow) {
             tiles[y][x].base = grassTileKey;
             desertMask[idx] = 0;
+            if (badlandsMask) {
+              badlandsMask[idx] = 0;
+            }
           }
         }
       }
@@ -10706,7 +10948,8 @@ function createWorld(seedString) {
     seaLevel,
     waterMask,
     {
-      frequencyNormalized: riverFrequencyNormalized
+      frequencyNormalized: riverFrequencyNormalized,
+      random: rng
     }
   );
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
@@ -11220,6 +11463,8 @@ function createWorld(seedString) {
   );
   const isTreeOverlayKey = (overlayKey) =>
     hasTreeTile && overlayKey != null && treeOverlayKeys.includes(overlayKey);
+  const isDesertBaseTile = (baseKey) =>
+    hasSandTile && (baseKey === sandTileKey || (hasBadlandsTile && baseKey === badlandsTileKey));
   const selectTreeOverlayForTile = (tile, idx) => {
     if (!tile || !treeOverlayKey) {
       return treeOverlayKey;
@@ -11399,7 +11644,7 @@ function createWorld(seedString) {
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
-          (hasSandTile && tile.base === sandTileKey)
+          isDesertBaseTile(tile.base)
         ) {
           continue;
         }
@@ -11441,7 +11686,7 @@ function createWorld(seedString) {
             !isLandBaseTile(tile.base) ||
             tile.structure ||
             tile.river ||
-            (hasSandTile && tile.base === sandTileKey)
+            isDesertBaseTile(tile.base)
           ) {
             continue;
           }
@@ -11492,7 +11737,7 @@ function createWorld(seedString) {
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
-          (hasSandTile && tile.base === sandTileKey)
+          isDesertBaseTile(tile.base)
         ) {
           continue;
         }
@@ -11512,7 +11757,7 @@ function createWorld(seedString) {
       }
     }
 
-    if (hasSandTile && treeOverlayKeys.length > 0) {
+    if ((hasSandTile || hasBadlandsTile) && treeOverlayKeys.length > 0) {
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
@@ -11523,7 +11768,7 @@ function createWorld(seedString) {
           if (!tile || !isTreeOverlayKey(tile.overlay)) {
             continue;
           }
-          let adjacentToSand = false;
+          let adjacentToDesert = false;
           for (let i = 0; i < neighborOffsets8.length; i += 1) {
             const nx = x + neighborOffsets8[i][0];
             const ny = y + neighborOffsets8[i][1];
@@ -11531,12 +11776,12 @@ function createWorld(seedString) {
               continue;
             }
             const neighborTile = tiles[ny][nx];
-            if (neighborTile && neighborTile.base === sandTileKey) {
-              adjacentToSand = true;
+            if (neighborTile && isDesertBaseTile(neighborTile.base)) {
+              adjacentToDesert = true;
               break;
             }
           }
-          if (!adjacentToSand) {
+          if (!adjacentToDesert) {
             continue;
           }
           treeMask[idx] = 0;
@@ -12858,6 +13103,44 @@ function createWorld(seedString) {
     }
   }
 
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    if (cluster.type !== 'grassland') {
+      continue;
+    }
+    let hasDesertNeighbor = false;
+    let hasBlockingNeighbor = false;
+    for (let j = 0; j < cluster.indices.length && !hasBlockingNeighbor; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      const cx = clusterIdx % width;
+      const cy = Math.floor(clusterIdx / width);
+      for (let k = 0; k < neighborOffsets8.length; k += 1) {
+        const nx = cx + neighborOffsets8[k][0];
+        const ny = cy + neighborOffsets8[k][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const neighborType = biomeField[ny * width + nx];
+        if (!neighborType || neighborType === 'grassland') {
+          continue;
+        }
+        if (neighborType === 'desert') {
+          hasDesertNeighbor = true;
+        } else {
+          hasBlockingNeighbor = true;
+          break;
+        }
+      }
+    }
+    if (hasDesertNeighbor && !hasBlockingNeighbor) {
+      cluster.type = 'desert';
+      for (let j = 0; j < cluster.indices.length; j += 1) {
+        const clusterIdx = cluster.indices[j];
+        biomeField[clusterIdx] = 'desert';
+      }
+    }
+  }
+
   const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
 
   for (let i = 0; i < biomeClusters.length; i += 1) {
@@ -14118,4 +14401,3 @@ function initialise() {
 }
 
 initialise();
-loadDefaultLayoutConfiguration();
