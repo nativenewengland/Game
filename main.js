@@ -83,7 +83,7 @@ const baseTileCoords = {
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
   CASTLE: { row: 4, col: 6 },
-  ROADSIDE_TAVERN: { row: 13, col: 1 },
+  ROADSIDE_TAVERN: { row: 1, col: 12 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
@@ -14205,7 +14205,7 @@ function createWorld(seedString) {
         const fertilityScore = fertility * 0.18;
         const noise = hashCoords(x, y, tavernNoiseSeed) - 0.5;
         const score = 0.26 + distanceScore + riverScore + fertilityScore + noise * 0.18 + rng() * 0.1;
-        if (score > 0.32) {
+        if (score > 0.24) {
           tavernCandidates.push({ x, y, score, nearestCivil });
         }
       }
@@ -14215,7 +14215,7 @@ function createWorld(seedString) {
       tavernCandidates.sort((a, b) => b.score - a.score);
       const baseTarget = Math.max(1, Math.round(mapArea / 18000));
       const maxTaverns = computeStructurePlacementLimit(baseTarget, 12, 1);
-      const minDistance = 6;
+      const minDistance = 4;
       const minDistanceSq = minDistance * minDistance;
       const placed = [];
 
@@ -14224,7 +14224,7 @@ function createWorld(seedString) {
           break;
         }
         const candidate = tavernCandidates[i];
-        if (candidate.score < 0.33) {
+        if (candidate.score < 0.26) {
           continue;
         }
         let tooClose = false;
@@ -14271,6 +14271,28 @@ function createWorld(seedString) {
         tile.structureDetails = details;
         placed.push(candidate);
         roadsideTaverns.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+
+      if (placed.length === 0) {
+        const fallbackCandidate = tavernCandidates[0];
+        const tile = tiles[fallbackCandidate.y][fallbackCandidate.x];
+        if (tile && !tile.structure && !tile.river) {
+          if (!(mountainOverlayKey && isMountainOverlay(tile.overlay))) {
+            const nearest =
+              fallbackCandidate.nearestCivil ||
+              findNearestPointWithDetails(fallbackCandidate.x, fallbackCandidate.y, civilSettlements);
+            const name = generateRoadsideTavernName(rng);
+            const details = generateRoadsideTavernDetails(name, rng, {
+              nearbySettlement: nearest ? nearest.point : null,
+              settlementDistance: nearest ? nearest.distance : null
+            });
+            tile.structure = tavernKey;
+            tile.structureName = name;
+            tile.structureDetails = details;
+            placed.push(fallbackCandidate);
+            roadsideTaverns.push({ x: fallbackCandidate.x, y: fallbackCandidate.y, ...details });
+          }
+        }
       }
     }
   }
