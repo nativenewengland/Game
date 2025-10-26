@@ -6915,6 +6915,20 @@ function reconstructRoadPath(cameFrom, currentIndex, width, offsetX, offsetY) {
   return path;
 }
 
+function computeDwarfholdDistributionAdjustment(x, y, height, seed) {
+  if (!Number.isFinite(y) || !Number.isFinite(height) || height <= 1) {
+    return 0;
+  }
+
+  const normalizedLatitude = clamp(y / (height - 1), 0, 1);
+  const centerLift = Math.max(0, 0.5 - Math.abs(normalizedLatitude - 0.5)) * 0.12;
+  const southernBoost = Math.max(0, normalizedLatitude - 0.45) * 0.08;
+  const northernPenalty = Math.max(0, 0.38 - normalizedLatitude) * 0.12;
+  const jitter = (hashCoords(x, y, seed >>> 0) - 0.5) * 0.06;
+
+  return centerLift + southernBoost - northernPenalty + jitter;
+}
+
 function tryPlaceDwarfhold(candidate, options) {
   if (!candidate || !options) {
     return false;
@@ -13707,6 +13721,8 @@ function createWorld(seedString) {
     const mineKey = tileLookup.has('MINE') ? 'MINE' : null;
     let fallbackMountainScoreThreshold = 0.45;
     const mountainSettlementCandidates = [];
+    const dwarfholdDistributionSeed = dwarfholdKey ? (seedNumber + 0x3bd39e8f) >>> 0 : 0;
+
     if (dwarfholdKey || mineKey) {
       fallbackMountainScoreThreshold =
         mountainScores && mountainCandidateThreshold !== null
@@ -13738,7 +13754,23 @@ function createWorld(seedString) {
           if (!isMountainTile && !fallbackEligible) {
             continue;
           }
-          mountainSettlementCandidates.push({ x, y, score, isMountainTile });
+          const dwarfholdPriority = dwarfholdKey
+            ? score +
+              computeDwarfholdDistributionAdjustment(
+                x,
+                y,
+                height,
+                dwarfholdDistributionSeed
+              )
+            : score;
+
+          mountainSettlementCandidates.push({
+            x,
+            y,
+            score,
+            isMountainTile,
+            dwarfholdPriority
+          });
         }
       }
     }
@@ -13750,7 +13782,19 @@ function createWorld(seedString) {
     if (dwarfholdKey) {
       const dwarfholdCandidates = mountainSettlementCandidates;
       if (dwarfholdCandidates.length > 0) {
-        dwarfholdCandidates.sort((a, b) => b.score - a.score);
+        dwarfholdCandidates.sort((a, b) => {
+          const aPriority = Number.isFinite(a.dwarfholdPriority)
+            ? a.dwarfholdPriority
+            : a.score;
+          const bPriority = Number.isFinite(b.dwarfholdPriority)
+            ? b.dwarfholdPriority
+            : b.score;
+          const diff = bPriority - aPriority;
+          if (Math.abs(diff) > 1e-6) {
+            return diff;
+          }
+          return b.score - a.score;
+        });
         const baseTarget = Math.max(1, Math.round(dwarfholdCandidates.length / 500));
         const maxDwarfholds = computeStructurePlacementLimit(
           baseTarget,
@@ -13760,7 +13804,7 @@ function createWorld(seedString) {
         const abandonedDwarfholdChance = computeAbandonedDwarfholdChance(
           dwarfSettlementFrequencyNormalized
         );
-        const minDistanceBase = 5;
+        const minDistanceBase = 6;
         const minDistance = adjustMinDistance(minDistanceBase, dwarfSettlementFrequencyNormalized);
         const minDistanceSq = minDistance * minDistance;
         const placed = [];
