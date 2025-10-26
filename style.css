@@ -1303,11 +1303,11 @@ button:hover:not(:disabled) {
   padding: 0.35rem 0.75rem;
   border: none;
   border-radius: 9px;
-  background: rgba(24, 18, 32, 0.65);
+  background: transparent;
   color: #f4ecdd;
   font-size: 1rem;
   text-align: left;
-  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18);
+  box-shadow: none;
   z-index: 1;
 }
 
@@ -1339,8 +1339,8 @@ button:hover:not(:disabled) {
 .dwarf-name-input:focus {
   outline: 2px solid rgba(240, 198, 116, 0.7);
   outline-offset: 2px;
-  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.35), 0 0.75rem 1.5rem rgba(0, 0, 0, 0.45);
-  background: rgba(24, 18, 32, 0.85);
+  box-shadow: none;
+  background: transparent;
 }
 
 .trait-slider {
