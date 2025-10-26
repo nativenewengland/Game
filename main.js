@@ -549,7 +549,7 @@ const baseTileCoords = {
   DWARFHOLD: { row: 2, col: 9 },
   ABANDONED_DWARFHOLD: { row: 2, col: 8 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
-  HILLHOLD: { row: 2, col: 9 },
+  HILLHOLD: { row: 2, col: 10 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
