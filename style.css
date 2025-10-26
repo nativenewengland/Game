@@ -63,15 +63,29 @@ select,
 .embark-backdrop {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(8, 9, 15, 0.85), rgba(8, 9, 15, 0.6)),
-    url('titlescreen/Titlescreen image.png') center/cover no-repeat;
-  filter: saturate(110%);
-  transform: scale(1.05);
+  overflow: hidden;
+  pointer-events: none;
 }
 
-#dwarf-customizer .embark-backdrop {
-  background: linear-gradient(135deg, rgba(8, 9, 15, 0.85), rgba(8, 9, 15, 0.6)),
-    url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+.embark-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -6%;
+  background: url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+  filter: blur(8px) saturate(110%);
+  transform: scale(1.08);
+  animation: panDown 28s linear infinite;
+}
+
+.embark-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(8, 9, 15, 0.85), rgba(8, 9, 15, 0.6));
+}
+
+#dwarf-customizer .embark-backdrop::after {
+  background: linear-gradient(135deg, rgba(8, 9, 15, 0.85), rgba(8, 9, 15, 0.6));
 }
 
 .embark-panel {
@@ -235,12 +249,13 @@ select,
 .title-background {
   position: absolute;
   inset: 0;
-  background-image: url("titlescreen/Titlescreen image.png");
-  background-size: cover;
-  background-position: center;
-  filter: blur(8px) saturate(110%);
-  transform: scale(1.08);
-  animation: panDown 28s linear infinite;
+  background:
+      radial-gradient(circle at 24% 18%, rgba(36, 32, 44, 0.4), transparent 58%),
+      radial-gradient(circle at 78% 24%, rgba(54, 36, 22, 0.32), transparent 62%),
+      linear-gradient(172deg, rgba(6, 8, 16, 0.96), rgba(8, 9, 15, 0.98)),
+      url("titlescreen/Titlescreen image.png") center/cover no-repeat;
+  filter: saturate(70%);
+  transform: none;
 }
 
 @keyframes panDown {
