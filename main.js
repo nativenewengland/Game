@@ -54,6 +54,11 @@ const characterCreatorPortraitAssets = {
     path: 'tilesheet/Character Creator/body_male.png',
     image: null
   },
+  femaleBody: {
+    key: 'femaleBody',
+    path: 'tilesheet/Character Creator/body_female.png',
+    image: null
+  },
   headDefault: {
     key: 'headDefault',
     path: 'tilesheet/Character Creator/head_default.png',
@@ -84,6 +89,46 @@ const characterCreatorPortraitAssets = {
     path: 'tilesheet/Character Creator/beard_5.png',
     image: null
   },
+  beard6: {
+    key: 'beard6',
+    path: 'tilesheet/Character Creator/beard_6.png',
+    image: null
+  },
+  beard7: {
+    key: 'beard7',
+    path: 'tilesheet/Character Creator/beard_7.png',
+    image: null
+  },
+  beardRinged: {
+    key: 'beardRinged',
+    path: 'tilesheet/Character Creator/7.png',
+    image: null
+  },
+  mustache: {
+    key: 'mustache',
+    path: 'tilesheet/Character Creator/mustache.png',
+    image: null
+  },
+  hairShort: {
+    key: 'hairShort',
+    path: 'tilesheet/Character Creator/hair_3.png',
+    image: null
+  },
+  hairMedium: {
+    key: 'hairMedium',
+    path: 'tilesheet/Character Creator/hair_1.png',
+    image: null
+  },
+  hairLong: {
+    key: 'hairLong',
+    path: 'tilesheet/Character Creator/hair_2.png',
+    image: null
+  },
+  hairBraided: {
+    key: 'hairBraided',
+    path: 'tilesheet/Character Creator/hair_4.png',
+    image: null
+  },
   nose: {
     key: 'nose',
     path: 'tilesheet/Character Creator/nose.png',
@@ -96,7 +141,40 @@ const characterCreatorBeardAssetMap = {
   full: 'beard2',
   braided: 'beard3',
   forked: 'beard4',
-  mutton: 'beard5'
+  mutton: 'beard5',
+  stubble: 'beard6',
+  trimmed: 'beard6',
+  goatee: 'beard6',
+  imperial: 'mustache',
+  wizard: 'beard7',
+  ringed: 'beardRinged'
+};
+
+const characterCreatorHairAssetMap = {
+  short: 'hairShort',
+  medium: 'hairMedium',
+  long: 'hairLong',
+  braided: 'hairBraided'
+};
+
+const characterCreatorHairStyleCategoryMap = {
+  bald: null,
+  straight_shoulder: 'medium',
+  straight_short: 'short',
+  straight_braided: 'braided',
+  curly_stubble: 'short',
+  curly_short_unkempt: 'short',
+  curly_mid_unkempt: 'medium',
+  curly_long_unkempt: 'long',
+  curly_short_combed: 'short',
+  curly_mid_combed: 'medium',
+  curly_long_combed: 'long',
+  curly_short_braided: 'braided',
+  curly_mid_braided: 'braided',
+  curly_long_braided: 'braided',
+  curly_short_double_braids: 'braided',
+  curly_mid_double_braids: 'braided',
+  curly_long_double_braids: 'braided'
 };
 
 const baseTileCoords = {
@@ -4713,12 +4791,12 @@ const dwarfOptions = {
     { value: 'braided', label: 'Braided Beard' },
     { value: 'forked', label: 'Forked Beard' },
     { value: 'mutton', label: 'Mutton Chops' },
-    { value: 'stubble', label: 'Stubble Beard (placeholder)' },
-    { value: 'trimmed', label: 'Trimmed Beard (placeholder)' },
-    { value: 'goatee', label: 'Goatee (placeholder)' },
-    { value: 'imperial', label: 'Imperial Beard (placeholder)' },
-    { value: 'wizard', label: 'Wizard Beard (placeholder)' },
-    { value: 'ringed', label: 'Ringed Beard (placeholder)' }
+    { value: 'stubble', label: 'Stubble Beard' },
+    { value: 'trimmed', label: 'Trimmed Beard' },
+    { value: 'goatee', label: 'Goatee' },
+    { value: 'imperial', label: 'Imperial Mustache' },
+    { value: 'wizard', label: 'Wizard Beard' },
+    { value: 'ringed', label: 'Ringed Beard' }
   ],
   clan: dwarfClanOptions,
   guild: dwarfGuildOptions,
@@ -6383,12 +6461,30 @@ function getBeardFrame(dwarf, hairOption) {
 }
 
 function shouldUseCharacterCreatorPortrait(dwarf) {
-  if (!dwarf || dwarf.gender !== 'male') {
+  if (!dwarf) {
     return false;
   }
-  const bodyImage = characterCreatorPortraitAssets.maleBody?.image || null;
+  const gender = dwarf.gender === 'female' ? 'female' : 'male';
+  const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
+  const bodyImage = characterCreatorPortraitAssets[bodyKey]?.image || null;
   const headImage = characterCreatorPortraitAssets.headDefault?.image || null;
   return Boolean(bodyImage && headImage);
+}
+
+function getCharacterCreatorHairImage(dwarf) {
+  if (!dwarf) {
+    return null;
+  }
+  const resolvedStyle = resolveHairStyleValue(dwarf.hairStyle);
+  const category = characterCreatorHairStyleCategoryMap[resolvedStyle];
+  if (!category) {
+    return null;
+  }
+  const assetKey = characterCreatorHairAssetMap[category];
+  if (!assetKey) {
+    return null;
+  }
+  return characterCreatorPortraitAssets[assetKey]?.image || null;
 }
 
 function getCharacterCreatorBeardImage(dwarf) {
@@ -6404,7 +6500,9 @@ function getCharacterCreatorBeardImage(dwarf) {
 }
 
 function renderCharacterCreatorPortrait(ctx, canvas, dwarf) {
-  const bodyImage = characterCreatorPortraitAssets.maleBody?.image;
+  const gender = dwarf?.gender === 'female' ? 'female' : 'male';
+  const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
+  const bodyImage = characterCreatorPortraitAssets[bodyKey]?.image;
   const headImage = characterCreatorPortraitAssets.headDefault?.image;
   if (!bodyImage || !headImage) {
     return;
@@ -6416,13 +6514,17 @@ function renderCharacterCreatorPortrait(ctx, canvas, dwarf) {
   const offsetY = Math.floor((canvas.height - drawHeight) / 2);
   ctx.drawImage(bodyImage, offsetX, offsetY, drawWidth, drawHeight);
   ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+  const hairImage = getCharacterCreatorHairImage(dwarf);
+  if (hairImage) {
+    ctx.drawImage(hairImage, offsetX, offsetY, drawWidth, drawHeight);
+  }
   const beardImage = getCharacterCreatorBeardImage(dwarf);
   if (beardImage) {
     ctx.drawImage(beardImage, offsetX, offsetY, drawWidth, drawHeight);
-    const noseImage = characterCreatorPortraitAssets.nose?.image;
-    if (noseImage) {
-      ctx.drawImage(noseImage, offsetX, offsetY, drawWidth, drawHeight);
-    }
+  }
+  const noseImage = characterCreatorPortraitAssets.nose?.image;
+  if (noseImage) {
+    ctx.drawImage(noseImage, offsetX, offsetY, drawWidth, drawHeight);
   }
 }
 
