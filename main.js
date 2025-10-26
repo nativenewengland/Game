@@ -51,6 +51,7 @@ const dwarfSpriteSheets = {
 const baseTileCoords = {
   SAND: { row: 0, col: 0 },
   GRASS: { row: 0, col: 1 },
+  BADLANDS: { row: 1, col: 2 },
   MARSH: { row: 4, col: 2 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
@@ -62,8 +63,10 @@ const baseTileCoords = {
   MOUNTAIN_TOP_B: { row: 0, col: 5 },
   MOUNTAIN_BOTTOM_A: { row: 0, col: 7 },
   MOUNTAIN_BOTTOM_B: { row: 0, col: 8 },
-  STONE: { row: 0, col: 3 },
-  DWARFHOLD: { row: 1, col: 7 },
+  MOUNTAIN_PEAK: { row: 0, col: 10 },
+  STONE: { row: 0, col: 2 },
+  DWARFHOLD: { row: 2, col: 9 },
+  ABANDONED_DWARFHOLD: { row: 2, col: 8 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
@@ -73,7 +76,7 @@ const baseTileCoords = {
   HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
-  LIZARDMEN_CITY: { row: 5, col: 1 }
+  LIZARDMEN_CITY: { row: 2, col: 11 }
 };
 
 const roadTileVariantDefinitions = (() => {
@@ -151,6 +154,188 @@ const icebergTileCoords = (() => {
 })();
 
 const tileLookup = new Map();
+
+function registerCustomStructure(key, drawFn) {
+  if (!key || typeof drawFn !== 'function') {
+    return;
+  }
+  tileLookup.set(key, {
+    sheet: null,
+    sx: 0,
+    sy: 0,
+    size: drawSize,
+    draw: drawFn
+  });
+}
+
+function drawOrcCampStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const radius = size * 0.48;
+  ctx.fillStyle = '#2c4d2f';
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#50321f';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.18, size * 0.78);
+  ctx.lineTo(size * 0.34, size * 0.26);
+  ctx.lineTo(size * 0.5, size * 0.78);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#6b4226';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.54, size * 0.82);
+  ctx.lineTo(size * 0.72, size * 0.32);
+  ctx.lineTo(size * 0.86, size * 0.82);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(size * 0.33, size * 0.52, size * 0.08, size * 0.2);
+  ctx.fillRect(size * 0.66, size * 0.54, size * 0.09, size * 0.22);
+
+  ctx.fillStyle = '#c13f1a';
+  ctx.beginPath();
+  ctx.arc(size * 0.25, size * 0.62, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawDungeonStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const wallRadius = size * 0.16;
+  ctx.fillStyle = '#1f2330';
+  ctx.fillRect(size * 0.12, size * 0.18, size * 0.76, size * 0.66);
+  ctx.fillStyle = '#353a4a';
+  ctx.fillRect(size * 0.16, size * 0.24, size * 0.68, size * 0.54);
+
+  ctx.fillStyle = '#111317';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.38, size * 0.78);
+  ctx.lineTo(size * 0.5, size * 0.48);
+  ctx.lineTo(size * 0.62, size * 0.78);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#202633';
+  ctx.lineWidth = Math.max(1, size * 0.05);
+  ctx.strokeRect(size * 0.12 + ctx.lineWidth / 2, size * 0.18 + ctx.lineWidth / 2, size * 0.76 - ctx.lineWidth, size * 0.66 - ctx.lineWidth);
+
+  ctx.fillStyle = '#9f874a';
+  ctx.beginPath();
+  ctx.arc(size * 0.5, size * 0.42, wallRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMonasteryStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  ctx.fillStyle = '#f1f0e6';
+  ctx.fillRect(size * 0.18, size * 0.32, size * 0.64, size * 0.46);
+  ctx.fillStyle = '#d9d4bf';
+  ctx.fillRect(size * 0.22, size * 0.36, size * 0.56, size * 0.34);
+
+  ctx.fillStyle = '#c58d1d';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.14, size * 0.32);
+  ctx.lineTo(size * 0.5, size * 0.14);
+  ctx.lineTo(size * 0.86, size * 0.32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#a5690f';
+  ctx.fillRect(size * 0.44, size * 0.16, size * 0.12, size * 0.28);
+
+  ctx.strokeStyle = '#fff7ce';
+  ctx.lineWidth = Math.max(1, size * 0.04);
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5, size * 0.18);
+  ctx.lineTo(size * 0.5, size * 0.34);
+  ctx.moveTo(size * 0.44, size * 0.26);
+  ctx.lineTo(size * 0.56, size * 0.26);
+  ctx.stroke();
+
+  ctx.fillStyle = '#7a7263';
+  ctx.fillRect(size * 0.46, size * 0.54, size * 0.08, size * 0.24);
+  ctx.restore();
+}
+
+function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  ctx.fillStyle = '#5b666f';
+  ctx.fillRect(size * 0.12, size * 0.3, size * 0.76, size * 0.5);
+  ctx.fillStyle = '#77828b';
+  ctx.fillRect(size * 0.18, size * 0.36, size * 0.64, size * 0.38);
+
+  ctx.fillStyle = '#4a545c';
+  const towerWidth = size * 0.2;
+  ctx.fillRect(size * 0.12, size * 0.18, towerWidth, size * 0.42);
+  ctx.fillRect(size * 0.68, size * 0.18, towerWidth, size * 0.42);
+
+  ctx.fillStyle = '#2a2f33';
+  ctx.fillRect(size * 0.44, size * 0.54, size * 0.12, size * 0.26);
+
+  ctx.fillStyle = '#c7352d';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5, size * 0.18);
+  ctx.lineTo(size * 0.6, size * 0.32);
+  ctx.lineTo(size * 0.4, size * 0.32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#32393f';
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  ctx.beginPath();
+  const merlonCount = 4;
+  for (let i = 0; i < merlonCount; i += 1) {
+    const startX = size * 0.22 + (size * 0.56 * i) / merlonCount;
+    ctx.moveTo(startX, size * 0.32);
+    ctx.lineTo(startX + size * 0.08, size * 0.32);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSaintShrineStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  const centerX = size / 2;
+  const centerY = size * 0.52;
+  ctx.fillStyle = '#d5ecff';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, size * 0.46, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f6f0d0';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, size * 0.34, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#b49a2a';
+  ctx.fillRect(size * 0.42, size * 0.26, size * 0.16, size * 0.44);
+  ctx.fillRect(size * 0.35, size * 0.58, size * 0.3, size * 0.16);
+
+  ctx.strokeStyle = '#fff6ba';
+  ctx.lineWidth = Math.max(1, size * 0.04);
+  ctx.beginPath();
+  ctx.moveTo(centerX, size * 0.18);
+  ctx.lineTo(centerX, size * 0.42);
+  ctx.moveTo(size * 0.4, size * 0.3);
+  ctx.lineTo(size * 0.6, size * 0.3);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, size * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
@@ -165,6 +350,13 @@ const tileHasTreeOverlay = (tile) =>
 const isJungleOverlayKey = (key) => typeof key === 'string' && key === jungleOverlayKey;
 const tileHasJungleOverlay = (tile) =>
   Boolean(tile) && (isJungleOverlayKey(tile.overlay) || isJungleOverlayKey(tile.hillOverlay));
+const townSettlementTypes = new Set(['town', 'city', 'village']);
+const isTownSettlementDetails = (details) =>
+  Boolean(details) &&
+  details.isSettlement === true &&
+  typeof details.type === 'string' &&
+  townSettlementTypes.has(details.type);
+const tileHasTownSettlement = (tile) => isTownSettlementDetails(tile?.structureDetails);
 
 function evaluateFactionTileSuitability(faction, tile, x, y) {
   if (!faction || !tile) {
@@ -176,7 +368,11 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
 
   switch (type) {
     case 'dwarfhold': {
-      if (tile.structure === 'DWARFHOLD' || tile.structure === 'GREAT_DWARFHOLD') {
+      if (
+        tile.structure === 'DWARFHOLD' ||
+        tile.structure === 'GREAT_DWARFHOLD' ||
+        tile.structure === 'ABANDONED_DWARFHOLD'
+      ) {
         return 1;
       }
       if (isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay)) {
@@ -271,6 +467,29 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
 
       return suitability;
     }
+    case 'town': {
+      if (tile.base === 'WATER') {
+        return 0;
+      }
+
+      const overlayIsMountain = isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+      const overlayIsHill = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+      const overlayIsForest = isTreeOverlayKey(tile.overlay);
+
+      let suitability = 1;
+
+      if (overlayIsMountain) {
+        suitability *= 0.3;
+      } else if (overlayIsHill) {
+        suitability *= 0.6;
+      }
+
+      if (overlayIsForest) {
+        suitability *= 0.75;
+      }
+
+      return suitability;
+    }
     default:
       return 1;
   }
@@ -291,6 +510,12 @@ function registerTiles(sheetKey, coordMap) {
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
+
+registerCustomStructure('ORC_CAMP', (ctx, drawOptions) => drawOrcCampStructure(ctx, drawOptions));
+registerCustomStructure('DUNGEON', (ctx, drawOptions) => drawDungeonStructure(ctx, drawOptions));
+registerCustomStructure('MONASTERY', (ctx, drawOptions) => drawMonasteryStructure(ctx, drawOptions));
+registerCustomStructure('CASTLE', (ctx, drawOptions) => drawCastleStructure(ctx, drawOptions));
+registerCustomStructure('SAINT_SHRINE', (ctx, drawOptions) => drawSaintShrineStructure(ctx, drawOptions));
 
 // The evil wizard tower sprite only shows up on some tilesheets. If the
 // currently loaded set does not define it, fall back to the generic tower so
@@ -863,6 +1088,7 @@ const townFirstNamePools = {
 const settlementDetailTypes = new Set([
   'dwarfhold',
   'greatDwarfhold',
+  'abandonedDwarfhold',
   'town',
   'city',
   'village',
@@ -1362,6 +1588,45 @@ const grasslandNameMotifs = [
   'Dreams'
 ];
 
+const jungleNameDescriptors = [
+  'Emerald',
+  'Verdant',
+  'Sun-dappled',
+  'Obsidian',
+  'Mist-shrouded',
+  'Ancient',
+  'Thundering',
+  'Canopy',
+  'Moonlit',
+  'Serpent'
+];
+
+const jungleNameNouns = [
+  'Jungle',
+  'Wilds',
+  'Canopy',
+  'Rainforest',
+  'Tangle',
+  'Deepwood',
+  'Labyrinth',
+  'Greenway',
+  'Expanse',
+  'Verdure'
+];
+
+const jungleNameMotifs = [
+  'Serpents',
+  'Drums',
+  'Monsoons',
+  'Spirits',
+  'Cenotes',
+  'Orchids',
+  'Tempests',
+  'Roots',
+  'Jaguar Spirits',
+  'Emerald Dawn'
+];
+
 const marshNameDescriptors = [
   'Glimmer',
   'Mire',
@@ -1399,6 +1664,45 @@ const marshNameMotifs = [
   'Moss',
   'Shadows',
   'Frogs'
+];
+
+const badlandsNameDescriptors = [
+  'Shattered',
+  'Redstone',
+  'Sundered',
+  'Dustfallen',
+  'Sunblasted',
+  'Windswept',
+  'Bleached',
+  'Broken',
+  'Scorched',
+  'Cracked'
+];
+
+const badlandsNameNouns = [
+  'Badlands',
+  'Wastes',
+  'Breaks',
+  'Barrens',
+  'Tablelands',
+  'Escarpment',
+  'Canyons',
+  'Bluffs',
+  'Ridges',
+  'Maze'
+];
+
+const badlandsNameMotifs = [
+  'Bones',
+  'Dust',
+  'Echoes',
+  'Thunderheads',
+  'Vultures',
+  'Ash',
+  'Mirages',
+  'Sunstorms',
+  'Ruins',
+  'Storms'
 ];
 
 const oceanNameDescriptors = [
@@ -1579,6 +1883,153 @@ const lizardmenCityExports = [
   'Glittering shell mosaics'
 ];
 
+const orcTribeAdjectives = [
+  'Ironjaw',
+  'Bloodfang',
+  'Stormhide',
+  'Ashen',
+  'Bonegnaw',
+  'Thunderhoof',
+  'Grimgaze',
+  'Skullsplitter',
+  'Nightscar',
+  'Rageborn'
+];
+const orcTribeNouns = [
+  'Clan',
+  'Warband',
+  'Legion',
+  'Brood',
+  'Horde',
+  'Reavers',
+  'Marauders',
+  'Prowlers'
+];
+const orcCampFeatures = [
+  'War drums thunder at dusk from within the palisade.',
+  'Spiked palisades bear trophies from raided caravans.',
+  'Tattered war banners crackle in the smoky wind.',
+  'An arena of packed earth hosts nightly combat rites.',
+  'Blacksmith forges belch sparks as crude blades are hammered.',
+  'Watchfires burn green with alchemical fumes.',
+  'Captured standards hang as warnings to intruders.'
+];
+const orcWarLeaders = [
+  'Gorath the Red',
+  'Mazrak One-Eye',
+  'Thura Ironhide',
+  'Balgrom Spinebreaker',
+  'Igra Wildfang',
+  'Vorgh the Thunderer'
+];
+const orcThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Menacing'];
+
+const dungeonNamePrefixes = [
+  'Whispering',
+  'Sunken',
+  'Forsaken',
+  'Crumbling',
+  'Midnight',
+  'Shrouded',
+  'Veiled',
+  'Obsidian'
+];
+const dungeonNameSuffixes = [
+  'Vault',
+  'Depths',
+  'Catacomb',
+  'Sepulchre',
+  'Labyrinth',
+  'Halls',
+  'Crypt'
+];
+const dungeonPerils = [
+  'echo with restless spirits',
+  'are laced with shifting stonework traps',
+  'are patrolled by tireless constructs',
+  'hide relics bound with cursed wards',
+  'are veiled in ever-burning witchfire',
+  'conceal a slumbering wyrm'
+];
+const dungeonDepths = ['three', 'five', 'seven', 'nine'];
+
+const monasteryOrders = [
+  'Order of the Dawn Lantern',
+  'Order of Silent Rivers',
+  'Brotherhood of the Verdant Star',
+  'Scribes of the Hidden Song',
+  'Wardens of the Azure Flame',
+  'Sisters of the Gentle Bell'
+];
+const monasteryVirtues = [
+  'contemplation',
+  'vigilance',
+  'compassion',
+  'illumination',
+  'endurance',
+  'harmony'
+];
+const monasteryRelics = [
+  'a saintly bell that rings without wind',
+  'scrolls penned in starlight ink',
+  'the Ember Chalice of first dawn',
+  'a reliquary of luminous feathers',
+  'a mirror that remembers forgotten hymns'
+];
+
+const castleHouseNames = [
+  'House Blackthorn',
+  'House Rivenshield',
+  'House Cindergate',
+  'House Frostmere',
+  'House Dawnspear',
+  'House Emberhall'
+];
+const castleDefensiveTraits = [
+  'Commands a triple-ring curtain wall.',
+  'Boasts arrow-slitted towers overlooking the vale.',
+  'Is girded by rune-carved gatehouses.',
+  'Holds a hidden sally tunnel for swift sorties.',
+  'Is anchored to living stone by dwarven masonry.'
+];
+const castleBanners = [
+  'a silver gryphon on midnight blue',
+  'twin suns over a crimson field',
+  'a sable stag wreathed in ivy',
+  'interlocked hammers upon gold',
+  'a white phoenix rising from ash'
+];
+
+const saintlyNames = [
+  'Saint Elowen',
+  'Saint Calder',
+  'Saint Miriel',
+  'Saint Tharan',
+  'Saint Ysoria',
+  'Saint Brannoc'
+];
+const saintMiracles = [
+  'calmed a wildfire with a whispered prayer',
+  'healed an entire plague-struck village',
+  'turned back a tide of marauding spirits',
+  'walked across a frozen sea to guide refugees',
+  'struck down a demon with a blade of light'
+];
+const shrineOfferings = [
+  'garlands of moonpetals',
+  'etched votive coins',
+  'bottled starlight dew',
+  'hand-carved icons',
+  'woven prayer cords'
+];
+const shrinePilgrims = [
+  'penitents seeking absolution',
+  'knights pledging holy vows',
+  'healers learning forgotten benedictions',
+  'pilgrims chasing whispered visions',
+  'shepherds praying for gentle winters'
+];
+
 function pickRandomFrom(array, random) {
   if (!Array.isArray(array) || array.length === 0) {
     return '';
@@ -1669,6 +2120,20 @@ function generateGrasslandName(random, context = {}) {
   return `${descriptor} ${noun}`;
 }
 
+function generateJungleName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(jungleNameDescriptors, randomFn) || 'Emerald';
+  const noun = pickRandomFrom(jungleNameNouns, randomFn) || 'Jungle';
+  const motif = pickRandomFrom(jungleNameMotifs, randomFn);
+  if (motif && randomFn() < 0.65) {
+    return `${noun} of the ${motif}`;
+  }
+  if (randomFn() < 0.45) {
+    return `The ${descriptor} ${noun}`;
+  }
+  return `${descriptor} ${noun}`;
+}
+
 function generateMarshlandName(random, context = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const descriptor = pickRandomFrom(marshNameDescriptors, randomFn) || 'Sunken';
@@ -1678,6 +2143,20 @@ function generateMarshlandName(random, context = {}) {
     return `${descriptor} ${noun} of the ${motif}`;
   }
   return `The ${descriptor} ${noun}`;
+}
+
+function generateBadlandsName(random, context = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const descriptor = pickRandomFrom(badlandsNameDescriptors, randomFn) || 'Shattered';
+  const noun = pickRandomFrom(badlandsNameNouns, randomFn) || 'Badlands';
+  const motif = pickRandomFrom(badlandsNameMotifs, randomFn);
+  if (motif && randomFn() < 0.55) {
+    return `${noun} of the ${motif}`;
+  }
+  if (randomFn() < 0.35) {
+    return `The ${descriptor} ${noun}`;
+  }
+  return `${descriptor} ${noun}`;
 }
 
 function generateOceanName(random, context = {}) {
@@ -1714,8 +2193,10 @@ function generateLakeName(random, context = {}) {
 
 const biomeTypeDefinitions = {
   forest: { label: 'Forest', generator: generateForestRegionName },
+  jungle: { label: 'Jungle', generator: generateJungleName },
   mountain: { label: 'Mountain Range', generator: generateMountainRangeName },
   desert: { label: 'Desert', generator: generateDesertName },
+  badlands: { label: 'Badlands', generator: generateBadlandsName },
   tundra: { label: 'Tundra', generator: generateTundraName },
   grassland: { label: 'Grassland', generator: generateGrasslandName },
   marsh: { label: 'Marsh', generator: generateMarshlandName },
@@ -2124,6 +2605,29 @@ function generateDwarfholdName(random) {
 
 function generateDwarfholdDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
+  const isAbandoned = Boolean(options && options.isAbandoned);
+
+  if (isAbandoned) {
+    return {
+      type: 'abandonedDwarfhold',
+      classification: 'Ruined Dwarfhold',
+      name,
+      population: 0,
+      populationLabel: 'Population',
+      populationDescriptor: 'dwarves',
+      isSettlement: true,
+      ruler: null,
+      foundedYearsAgo: null,
+      prominentClan: null,
+      prominentGroup: null,
+      prominentGroupLabel: null,
+      hallmark: null,
+      majorGuilds: [],
+      majorExports: [],
+      populationBreakdown: []
+    };
+  }
+
   const population = Math.max(120, Math.floor(450 + randomFn() * 4200));
   const genderRoll = randomFn();
   const gender = genderRoll < 0.9 ? 'male' : 'female';
@@ -2542,6 +3046,180 @@ function generateLizardmenCityDetails(name, random) {
   };
 }
 
+function generateOrcCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(orcTribeAdjectives, randomFn) || 'Ironjaw';
+  const noun = pickRandomFrom(orcTribeNouns, randomFn) || 'Clan';
+  const style = randomFn();
+  if (style < 0.35) {
+    return `${adjective} ${noun} Camp`;
+  }
+  if (style < 0.7) {
+    return `${adjective} ${noun} Warcamp`;
+  }
+  return `Camp of the ${adjective} ${noun}`;
+}
+
+function generateOrcCampDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(orcTribeAdjectives, randomFn) || 'Ironjaw';
+  const noun = pickRandomFrom(orcTribeNouns, randomFn) || 'Clan';
+  const tribeName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(orcWarLeaders, randomFn) || 'Gorath the Red';
+  const feature = pickRandomFrom(orcCampFeatures, randomFn) ||
+    'War drums thunder at dusk from within the palisade.';
+  const threatLevel = pickRandomFrom(orcThreatDescriptors, randomFn) || 'Severe';
+  const raidingFocus = pickRandomFrom(['plundered caravans', 'frontier villages', 'wandering merchants', 'remote farmsteads'], randomFn);
+
+  return {
+    type: 'orcCamp',
+    name,
+    displayType: 'Orc War Camp',
+    tribe: tribeName,
+    warLeader,
+    threatLevel,
+    inhabitants: `${tribeName} warriors`,
+    description: `${tribeName} raiders gather here, their sights set on ${raidingFocus || 'nearby lands'}. ${feature}`,
+    banner: pickRandomFrom(orcTribeAdjectives, randomFn) || 'Rageborn',
+    vow: 'Blood Oaths'
+  };
+}
+
+function generateDungeonName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(dungeonNamePrefixes, randomFn) || 'Sunken';
+  const suffix = pickRandomFrom(dungeonNameSuffixes, randomFn) || 'Vault';
+  const style = randomFn();
+  if (style < 0.4) {
+    return `${prefix} ${suffix}`;
+  }
+  if (style < 0.75) {
+    return `${suffix} of ${prefix} Echoes`;
+  }
+  return `${prefix} ${suffix} of Dread`;
+}
+
+function generateDungeonDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const peril = pickRandomFrom(dungeonPerils, randomFn) || 'echo with restless spirits';
+  const depth = pickRandomFrom(dungeonDepths, randomFn) || 'five';
+  const guardian = pickRandomFrom(
+    [
+      'bone sentries',
+      'arcane sentinels',
+      'chittering horrors',
+      'shadow-haunting spectres',
+      'oozing slimes'
+    ],
+    randomFn
+  ) || 'ancient wardens';
+
+  return {
+    type: 'dungeon',
+    name,
+    displayType: 'Ancient Dungeon',
+    threatLevel: 'High',
+    guardians: guardian,
+    depth: `${depth} levels`,
+    description: `Rumoured to ${peril}, the ${name} descends ${depth} levels where ${guardian} stalk forgotten halls.`
+  };
+}
+
+function generateMonasteryName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const orderName = pickRandomFrom(monasteryOrders, randomFn) || 'Order of the Dawn Lantern';
+  const virtue = pickRandomFrom(monasteryVirtues, randomFn) || 'contemplation';
+  const virtueName = virtue.charAt(0).toUpperCase() + virtue.slice(1);
+  if (randomFn() < 0.5) {
+    const trimmedOrder = orderName.toLowerCase().includes('monastery')
+      ? orderName
+      : `${orderName} Monastery`;
+    return trimmedOrder;
+  }
+  return `Monastery of ${virtueName}`;
+}
+
+function generateMonasteryDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const orderName = pickRandomFrom(monasteryOrders, randomFn) || 'Order of the Dawn Lantern';
+  const virtue = pickRandomFrom(monasteryVirtues, randomFn) || 'contemplation';
+  const virtueName = virtue.charAt(0).toUpperCase() + virtue.slice(1);
+  const relic = pickRandomFrom(monasteryRelics, randomFn) || 'a saintly bell that rings without wind';
+  const caretakerTitle = randomFn() < 0.5 ? 'Abbot' : 'Abbess';
+  const caretakerName = pickRandomFrom(
+    [...(townFirstNamePools.male || []), ...(townFirstNamePools.female || []), ...(townFirstNamePools.neutral || [])],
+    randomFn
+  ) || 'Seren';
+
+  return {
+    type: 'monastery',
+    name,
+    displayType: 'Sacred Monastery',
+    order: orderName,
+    devotion: `Vow of ${virtueName}`,
+    caretaker: `${caretakerTitle} ${caretakerName}`,
+    description: `${orderName} keep solemn watch here, dedicated to ${virtue}. Their cloisters guard ${relic}.`
+  };
+}
+
+function generateCastleName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const house = pickRandomFrom(castleHouseNames, randomFn) || 'House Blackthorn';
+  const base = house.replace(/^House\s+/i, '') || 'Blackthorn';
+  const style = randomFn();
+  if (style < 0.4) {
+    return `Castle ${base}`;
+  }
+  if (style < 0.7) {
+    return `${base} Keep`;
+  }
+  return `${base} Holdfast`;
+}
+
+function generateCastleDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const house = pickRandomFrom(castleHouseNames, randomFn) || 'House Blackthorn';
+  const banner = pickRandomFrom(castleBanners, randomFn) || 'a silver gryphon on midnight blue';
+  const trait = pickRandomFrom(castleDefensiveTraits, randomFn) || 'Commands a triple-ring curtain wall.';
+  const garrison = Math.max(60, Math.floor(120 + randomFn() * 380));
+
+  return {
+    type: 'castle',
+    name,
+    displayType: 'Fortified Castle',
+    rulingHouse: house,
+    banner,
+    garrison,
+    description: `${name} stands loyal to ${house}, its banner of ${banner}. ${trait}`
+  };
+}
+
+function generateSaintShrineName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const saint = pickRandomFrom(saintlyNames, randomFn) || 'Saint Elowen';
+  if (randomFn() < 0.5) {
+    return `Shrine of ${saint}`;
+  }
+  return `${saint}'s Shrine`;
+}
+
+function generateSaintShrineDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const saint = pickRandomFrom(saintlyNames, randomFn) || 'Saint Elowen';
+  const miracle = pickRandomFrom(saintMiracles, randomFn) || 'calmed a wildfire with a whispered prayer';
+  const offerings = pickRandomFrom(shrineOfferings, randomFn) || 'garlands of moonpetals';
+  const pilgrims = pickRandomFrom(shrinePilgrims, randomFn) || 'penitents seeking absolution';
+
+  return {
+    type: 'saintShrine',
+    name,
+    displayType: 'Saintly Shrine',
+    patronSaint: saint,
+    devotion: `Honours the miracle that ${saint.toLowerCase().includes('saint') ? '' : 'Saint '}${saint} ${miracle}.`,
+    description: `${name} marks where ${saint} ${miracle}. Pilgrims leave ${offerings}, and ${pilgrims} gather in hushed prayer.`
+  };
+}
+
 function generatePoliticalLandscape({ width, height, tiles, waterMask, random, settlements }) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   if (!Array.isArray(tiles) || tiles.length === 0 || width <= 0 || height <= 0) {
@@ -2620,12 +3298,18 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
 
     const minPopulation = 120;
     const fullPopulation = 2000;
-    const minMultiplierBase = seed.settlementKind === 'village' ? 0.32 : 0.4;
+    const isVillage = seed.settlementKind === 'village';
+    const minMultiplierBase = isVillage ? 0.24 : 0.4;
     const minMultiplier = clamp(minMultiplierBase, 0.1, 0.99);
     const normalized = clamp((population - minPopulation) / (fullPopulation - minPopulation), 0, 1);
     const multiplier = minMultiplier + normalized * (1 - minMultiplier);
     const scaledRadius = baseRadius * multiplier;
-    return Math.max(8, scaledRadius);
+    let adjustedRadius = Math.max(8, scaledRadius);
+    if (isVillage) {
+      const maxVillageRadius = Math.max(12, baseRadius * 0.7);
+      adjustedRadius = Math.min(adjustedRadius, maxVillageRadius);
+    }
+    return adjustedRadius;
   };
 
   const resolveClaimRadius = (seed) => {
@@ -2684,9 +3368,12 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
   };
 
+  const claimRadiusScale = 0.25; // shrink territorial growth range by 75%
+
   const shuffledSeeds = shuffleArray(uniqueSeeds, randomFn);
   const factions = shuffledSeeds.map((seed, index) => {
     const claimRadius = resolveClaimRadius(seed);
+    const scaledClaimRadius = Math.max(1, claimRadius * claimRadiusScale);
     return {
       id: index,
       name: resolveFactionName(seed),
@@ -2698,8 +3385,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         type: seed.settlementKind || seed.type || 'settlement'
       },
       territory: 0,
-      claimRadius,
-      contestScale: Math.max(4, claimRadius * 0.6)
+      claimRadius: scaledClaimRadius,
+      contestScale: Math.max(4, scaledClaimRadius * 0.6)
     };
   });
 
@@ -2939,9 +3626,18 @@ const state = {
   },
   ui: {
     showPoliticalBorders: false,
-    showPoliticalInfluence: false
+    showPoliticalInfluence: false,
+    showElevation: false,
+    showBiomes: false,
+    showTemperature: false
   },
-  currentWorld: null
+  currentWorld: null,
+  localView: {
+    active: false,
+    centerX: null,
+    centerY: null,
+    bounds: null
+  }
 };
 
 const defaultDwarfCount = 1;
@@ -3396,9 +4092,24 @@ const elements = {
   canvas: document.getElementById('world-canvas'),
   canvasWrapper: document.querySelector('.canvas-wrapper'),
   mapTooltip: document.getElementById('world-tooltip'),
+  localMapPanel: document.getElementById('local-map-panel'),
+  localMapCanvas: document.getElementById('local-map-canvas'),
+  localMapTitle: document.getElementById('local-map-title'),
+  localMapSubtitle: document.getElementById('local-map-subtitle'),
+  localMapCoordinates: document.getElementById('local-map-coordinates'),
+  localMapClose: document.getElementById('local-map-close'),
+  localMapDetails: document.getElementById('local-map-details'),
+  structureDetailsPanel: document.getElementById('structure-details'),
+  structureDetailsTitle: document.getElementById('structure-details-title'),
+  structureDetailsSubtitle: document.getElementById('structure-details-subtitle'),
+  structureDetailsContent: document.getElementById('structure-details-content'),
+  structureDetailsClose: document.getElementById('structure-details-close'),
   seedDisplay: document.querySelector('.seed-display'),
   politicalBordersToggle: document.getElementById('toggle-political-borders'),
   politicalInfluenceToggle: document.getElementById('toggle-political-influence'),
+  elevationToggle: document.getElementById('toggle-elevation'),
+  biomeToggle: document.getElementById('toggle-biomes'),
+  temperatureToggle: document.getElementById('toggle-temperature'),
   mapSizeSelect: document.getElementById('map-size'),
   seedInput: document.getElementById('world-seed'),
   worldMapSizeSelect: document.getElementById('world-map-size-select'),
@@ -3461,7 +4172,10 @@ const elements = {
   dwarfPortrait: document.getElementById('dwarf-portrait'),
   dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary'),
-  dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes')
+  dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes'),
+  dwarfLayoutToggle: document.getElementById('dwarf-layout-toggle'),
+  dwarfLayoutSave: document.getElementById('dwarf-layout-save'),
+  dwarfLayoutReset: document.getElementById('dwarf-layout-reset')
 };
 
 function createSoundEffect(src, options = {}) {
@@ -3877,6 +4591,11 @@ function adjustMinDistance(baseDistance, normalized) {
   return Math.max(2, Math.round(baseDistance * scale));
 }
 
+function computeAbandonedDwarfholdChance(normalizedFrequency) {
+  const scarcity = 1 - clamp(normalizedFrequency, 0, 1);
+  return clamp(lerp(0.08, 0.28, scarcity), 0, 1);
+}
+
 function connectTownsWithinRange(tiles, towns, options = {}) {
   if (!Array.isArray(tiles) || !Array.isArray(towns) || towns.length < 2) {
     return;
@@ -4072,6 +4791,8 @@ function tryPlaceDwarfhold(candidate, options) {
     mountainOverlayKey,
     dwarfholdKey,
     greatDwarfholdKey,
+    abandonedDwarfholdKey,
+    abandonedDwarfholdChance,
     rng,
     dwarfholds,
     towns,
@@ -4149,12 +4870,24 @@ function tryPlaceDwarfhold(candidate, options) {
       return false;
     });
 
-  const name = generateDwarfholdName(rng);
-  const details = generateDwarfholdDetails(name, rng, { hasNearbyHumanSettlement });
-  const structureKey =
-    details.type === 'greatDwarfhold' && greatDwarfholdKey
-      ? greatDwarfholdKey
-      : dwarfholdKey;
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const resolvedAbandonedChance = clamp(
+    Number.isFinite(abandonedDwarfholdChance) ? abandonedDwarfholdChance : 0,
+    0,
+    1
+  );
+  const isAbandoned = resolvedAbandonedChance > 0 && randomFn() < resolvedAbandonedChance;
+  const name = generateDwarfholdName(randomFn);
+  const details = generateDwarfholdDetails(name, randomFn, {
+    hasNearbyHumanSettlement,
+    isAbandoned
+  });
+  let structureKey = dwarfholdKey;
+  if (details.type === 'abandonedDwarfhold') {
+    structureKey = abandonedDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
+  } else if (details.type === 'greatDwarfhold') {
+    structureKey = greatDwarfholdKey || dwarfholdKey || null;
+  }
 
   tile.structure = structureKey;
   tile.structureName = name;
@@ -4795,6 +5528,289 @@ function setupTraitSliderControl(trait, sliderElement, valueElement) {
   updateDisplay();
 }
 
+const layoutEditorState = {
+  isActive: false,
+  activeElement: null,
+  pointerId: null,
+  startPointer: { x: 0, y: 0 },
+  startOffset: { x: 0, y: 0 }
+};
+
+const layoutPositionEpsilon = 0.01;
+const layoutInteractiveSelector = 'button, input, select, textarea';
+
+function getLayoutDraggableElements() {
+  if (!elements.dwarfCustomizerForm) {
+    return [];
+  }
+  return Array.from(elements.dwarfCustomizerForm.querySelectorAll('[data-draggable-id]'));
+}
+
+function parseLayoutOffset(value) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getLayoutOffsets(element) {
+  if (!element) {
+    return { x: 0, y: 0 };
+  }
+  return {
+    x: parseLayoutOffset(element.dataset.layoutTranslateX),
+    y: parseLayoutOffset(element.dataset.layoutTranslateY)
+  };
+}
+
+function applyLayoutOffset(element, x, y) {
+  if (!element) {
+    return;
+  }
+  const normalizedX = Number.isFinite(x) ? Math.round(x * 100) / 100 : 0;
+  const normalizedY = Number.isFinite(y) ? Math.round(y * 100) / 100 : 0;
+
+  if (Math.abs(normalizedX) <= layoutPositionEpsilon) {
+    delete element.dataset.layoutTranslateX;
+  } else {
+    element.dataset.layoutTranslateX = normalizedX.toString();
+  }
+
+  if (Math.abs(normalizedY) <= layoutPositionEpsilon) {
+    delete element.dataset.layoutTranslateY;
+  } else {
+    element.dataset.layoutTranslateY = normalizedY.toString();
+  }
+
+  if (Math.abs(normalizedX) <= layoutPositionEpsilon && Math.abs(normalizedY) <= layoutPositionEpsilon) {
+    element.style.removeProperty('transform');
+  } else {
+    element.style.transform = `translate3d(${normalizedX}px, ${normalizedY}px, 0)`;
+  }
+}
+
+function layoutHasOffsets() {
+  return getLayoutDraggableElements().some((element) => {
+    const { x, y } = getLayoutOffsets(element);
+    return Math.abs(x) > layoutPositionEpsilon || Math.abs(y) > layoutPositionEpsilon;
+  });
+}
+
+function updateLayoutControlStates() {
+  if (elements.dwarfLayoutToggle) {
+    elements.dwarfLayoutToggle.textContent = layoutEditorState.isActive
+      ? 'Disable Layout Dragging'
+      : 'Enable Layout Dragging';
+    elements.dwarfLayoutToggle.setAttribute('aria-pressed', layoutEditorState.isActive ? 'true' : 'false');
+  }
+
+  if (elements.dwarfLayoutSave) {
+    elements.dwarfLayoutSave.disabled = !layoutEditorState.isActive;
+  }
+
+  if (elements.dwarfLayoutReset) {
+    elements.dwarfLayoutReset.disabled = !layoutHasOffsets();
+  }
+}
+
+function setLayoutInteractivityDisabled(shouldDisable) {
+  if (!elements.dwarfCustomizerForm) {
+    return;
+  }
+
+  const interactiveElements = Array.from(
+    elements.dwarfCustomizerForm.querySelectorAll(layoutInteractiveSelector)
+  ).filter((element) => !element.closest('.layout-edit-controls'));
+
+  interactiveElements.forEach((element) => {
+    if (!(element instanceof HTMLElement)) {
+      return;
+    }
+
+    if (shouldDisable) {
+      element.dataset.layoutWasDisabled = element.disabled ? 'true' : 'false';
+      if (!element.disabled) {
+        element.setAttribute('aria-disabled', 'true');
+      }
+      element.classList.add('layout-interaction-disabled');
+    } else {
+      const wasDisabled = element.dataset.layoutWasDisabled === 'true';
+      if (!wasDisabled) {
+        element.removeAttribute('aria-disabled');
+      }
+      element.disabled = wasDisabled;
+      delete element.dataset.layoutWasDisabled;
+      element.classList.remove('layout-interaction-disabled');
+    }
+  });
+}
+
+function shouldSuppressLayoutInteraction(target) {
+  if (!layoutEditorState.isActive || !(target instanceof Element)) {
+    return false;
+  }
+
+  const interactiveElement = target.closest(layoutInteractiveSelector);
+  if (!interactiveElement) {
+    return false;
+  }
+
+  if (interactiveElement.closest('.layout-edit-controls')) {
+    return false;
+  }
+
+  return interactiveElement.classList.contains('layout-interaction-disabled');
+}
+
+function handleLayoutClickCapture(event) {
+  if (shouldSuppressLayoutInteraction(event.target)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
+function handleLayoutKeydownCapture(event) {
+  if (!['Enter', ' ', 'Spacebar'].includes(event.key)) {
+    return;
+  }
+
+  if (shouldSuppressLayoutInteraction(event.target)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
+function setLayoutEditingActive(shouldActivate) {
+  const isActive = Boolean(shouldActivate);
+  if (layoutEditorState.isActive === isActive) {
+    setLayoutInteractivityDisabled(isActive);
+    updateLayoutControlStates();
+    return;
+  }
+
+  layoutEditorState.isActive = isActive;
+  layoutEditorState.activeElement = null;
+  layoutEditorState.pointerId = null;
+
+  if (elements.dwarfCustomizer) {
+    elements.dwarfCustomizer.classList.toggle('layout-editing-active', isActive);
+  }
+
+  setLayoutInteractivityDisabled(isActive);
+
+  if (!isActive) {
+    getLayoutDraggableElements().forEach((element) => {
+      element.classList.remove('layout-element--dragging');
+      element.style.willChange = '';
+    });
+  }
+
+  updateLayoutControlStates();
+}
+
+function resetLayoutOffsets() {
+  getLayoutDraggableElements().forEach((element) => {
+    applyLayoutOffset(element, 0, 0);
+  });
+  updateLayoutControlStates();
+}
+
+function downloadLayoutConfiguration() {
+  const draggables = getLayoutDraggableElements();
+  if (draggables.length === 0) {
+    return;
+  }
+
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    positions: {}
+  };
+
+  draggables.forEach((element) => {
+    const id = element.dataset.draggableId;
+    if (!id) {
+      return;
+    }
+    const { x, y } = getLayoutOffsets(element);
+    payload.positions[id] = { x, y };
+  });
+
+  const contents = `${JSON.stringify(payload, null, 2)}\n`;
+  const blob = new Blob([contents], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `dwarf-customizer-layout-${timestamp}.json`;
+  anchor.rel = 'noopener';
+  anchor.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
+function handleLayoutPointerDown(event) {
+  if (!layoutEditorState.isActive || event.button !== 0) {
+    return;
+  }
+
+  const target = event.target.closest('[data-draggable-id]');
+  if (!target || !elements.dwarfCustomizerForm || !elements.dwarfCustomizerForm.contains(target)) {
+    return;
+  }
+
+  event.preventDefault();
+  layoutEditorState.activeElement = target;
+  layoutEditorState.pointerId = event.pointerId;
+  layoutEditorState.startPointer = { x: event.clientX, y: event.clientY };
+  layoutEditorState.startOffset = getLayoutOffsets(target);
+  target.classList.add('layout-element--dragging');
+  target.style.willChange = 'transform';
+  if (typeof target.setPointerCapture === 'function') {
+    try {
+      target.setPointerCapture(event.pointerId);
+    } catch (error) {
+      console.warn('Failed to capture pointer for layout editing', error);
+    }
+  }
+}
+
+function handleLayoutPointerMove(event) {
+  if (!layoutEditorState.isActive) {
+    return;
+  }
+  const { activeElement, pointerId, startPointer, startOffset } = layoutEditorState;
+  if (!activeElement || pointerId !== event.pointerId) {
+    return;
+  }
+
+  const deltaX = event.clientX - startPointer.x;
+  const deltaY = event.clientY - startPointer.y;
+  applyLayoutOffset(activeElement, startOffset.x + deltaX, startOffset.y + deltaY);
+}
+
+function handleLayoutPointerUp(event) {
+  if (!layoutEditorState.isActive) {
+    return;
+  }
+  const { activeElement, pointerId } = layoutEditorState;
+  if (!activeElement || pointerId !== event.pointerId) {
+    return;
+  }
+
+  if (typeof activeElement.releasePointerCapture === 'function') {
+    try {
+      activeElement.releasePointerCapture(event.pointerId);
+    } catch (error) {
+      console.warn('Failed to release pointer capture for layout editing', error);
+    }
+  }
+
+  activeElement.classList.remove('layout-element--dragging');
+  activeElement.style.willChange = '';
+  layoutEditorState.activeElement = null;
+  layoutEditorState.pointerId = null;
+  updateLayoutControlStates();
+}
+
 function updateGenderButtonsUI(selectedValue) {
   const container = elements.dwarfGenderButtons;
   if (!container) {
@@ -5377,6 +6393,19 @@ const viewState = {
   hasInteracted: false
 };
 
+const localViewConfig = {
+  radius: 4,
+  baseScale: 3,
+  minScale: 2,
+  maxCanvasSize: 768
+};
+
+const localMapDefaultMessage = 'Click the world map to open a local preview.';
+
+const structureDetailsState = {
+  visible: false
+};
+
 function computeViewScales(wrapperWidth, wrapperHeight, worldWidth, worldHeight) {
   if (!worldWidth || !worldHeight || !wrapperWidth || !wrapperHeight) {
     return { contain: 1, cover: 1 };
@@ -5696,13 +6725,66 @@ function buildStructureTooltipContent(tile) {
   }
 
   const fallbackTitle = `<div class="tooltip-title">${escapeHtml(tile.structureName)}</div>`;
+  const sections = [fallbackTitle];
+  const entries = [];
   const faction = getFactionForTile(tile);
   if (faction && faction.name) {
-    const entries = [{ label: 'Realm', value: faction.name }];
+    entries.push({ label: 'Realm', value: faction.name });
     const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
     if (influenceDescription) {
       entries.push({ label: 'Territorial Hold', value: influenceDescription });
     }
+  }
+
+  if (details) {
+    if (details.displayType) {
+      entries.push({ label: 'Type', value: details.displayType });
+    }
+    if (details.tribe) {
+      entries.push({ label: 'Tribe', value: details.tribe });
+    }
+    if (details.threatLevel) {
+      entries.push({ label: 'Threat Level', value: details.threatLevel });
+    }
+    if (details.inhabitants) {
+      entries.push({ label: 'Inhabitants', value: details.inhabitants });
+    }
+    if (details.warLeader) {
+      entries.push({ label: 'Warlord', value: details.warLeader });
+    }
+    if (details.guardians) {
+      entries.push({ label: 'Guardians', value: details.guardians });
+    }
+    if (details.depth) {
+      entries.push({ label: 'Depth', value: details.depth });
+    }
+    if (details.order) {
+      entries.push({ label: 'Order', value: details.order });
+    }
+    if (details.devotion) {
+      entries.push({ label: 'Devotion', value: details.devotion });
+    }
+    if (details.caretaker) {
+      entries.push({ label: 'Caretaker', value: details.caretaker });
+    }
+    if (details.rulingHouse) {
+      entries.push({ label: 'Ruling House', value: details.rulingHouse });
+    }
+    if (details.banner) {
+      entries.push({ label: 'Banner', value: details.banner });
+    }
+    if (Number.isFinite(details.garrison)) {
+      entries.push({ label: 'Garrison', value: Math.max(0, Math.round(details.garrison)).toLocaleString('en-US') });
+    }
+    if (details.patronSaint) {
+      entries.push({ label: 'Patron Saint', value: details.patronSaint });
+    }
+    if (details.description) {
+      sections.push(`<p class="tooltip-note">${escapeHtml(details.description)}</p>`);
+    }
+  }
+
+  if (entries.length > 0) {
     const listItems = entries
       .map(
         ({ label, value }) =>
@@ -5711,9 +6793,759 @@ function buildStructureTooltipContent(tile) {
           )}</span></li>`
       )
       .join('');
-    return `${fallbackTitle}<ul class="tooltip-list">${listItems}</ul>`;
+    sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
   }
-  return fallbackTitle;
+
+  return sections.join('');
+}
+
+function computeLocalViewBounds(tileX, tileY, width, height, radius) {
+  const clampedRadius = Math.max(0, Math.floor(radius));
+  const startX = Math.max(0, tileX - clampedRadius);
+  const endX = Math.min(width - 1, tileX + clampedRadius);
+  const startY = Math.max(0, tileY - clampedRadius);
+  const endY = Math.min(height - 1, tileY + clampedRadius);
+  return {
+    startX,
+    startY,
+    endX,
+    endY,
+    width: endX - startX + 1,
+    height: endY - startY + 1
+  };
+}
+
+function resolveLocalSubtitle(tile) {
+  if (!tile) {
+    return 'Local terrain preview';
+  }
+  const subtitleParts = [];
+  const details = tile.structureDetails;
+  if (details) {
+    if (details.displayType) {
+      subtitleParts.push(details.displayType);
+    }
+    if (details.classification && !subtitleParts.includes(details.classification)) {
+      subtitleParts.push(details.classification);
+    }
+  }
+  if (subtitleParts.length === 0 && tile.biomeType) {
+    const definition = biomeTypeDefinitions[tile.biomeType];
+    if (definition && definition.label) {
+      subtitleParts.push(definition.label);
+    } else {
+      subtitleParts.push(tile.biomeType.charAt(0).toUpperCase() + tile.biomeType.slice(1));
+    }
+  }
+  return subtitleParts.length > 0 ? subtitleParts.join(' • ') : 'Local terrain preview';
+}
+
+function refreshLocalMapPreview() {
+  if (!elements.localMapPanel || !elements.localMapCanvas) {
+    return;
+  }
+  const world = state.currentWorld;
+  const localView = state.localView;
+  if (
+    !world ||
+    !localView ||
+    !localView.active ||
+    localView.centerX === null ||
+    localView.centerY === null ||
+    !localView.bounds
+  ) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+    if (elements.localMapCanvas) {
+      elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    }
+    if (elements.localMapTitle) {
+      elements.localMapTitle.textContent = 'Local View';
+    }
+    if (elements.localMapSubtitle) {
+      elements.localMapSubtitle.textContent = 'Select a site to examine the surrounding terrain.';
+    }
+    if (elements.localMapDetails) {
+      elements.localMapDetails.textContent = localMapDefaultMessage;
+    }
+    if (elements.localMapCoordinates) {
+      elements.localMapCoordinates.textContent = '';
+    }
+    return;
+  }
+
+  const tiles = Array.isArray(world.tiles) ? world.tiles : null;
+  if (!tiles || tiles.length === 0) {
+    return;
+  }
+
+  const centerRow = tiles[localView.centerY];
+  if (!Array.isArray(centerRow)) {
+    return;
+  }
+
+  const focusTile = centerRow[localView.centerX] || null;
+  const bounds = localView.bounds;
+  const tileWidth = Math.max(1, bounds.width);
+  const tileHeight = Math.max(1, bounds.height);
+
+  elements.localMapPanel.classList.remove('hidden');
+  elements.localMapPanel.setAttribute('aria-hidden', 'false');
+
+  if (elements.localMapTitle) {
+    elements.localMapTitle.textContent = focusTile
+      ? focusTile.structureName || focusTile.areaName || 'Local View'
+      : 'Local View';
+  }
+
+  if (elements.localMapSubtitle) {
+    elements.localMapSubtitle.textContent = resolveLocalSubtitle(focusTile);
+  }
+
+  if (elements.localMapCoordinates) {
+    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+      tileWidth
+    }×${tileHeight} tiles`;
+  }
+
+  if (elements.localMapDetails) {
+    const tooltipContent = buildStructureTooltipContent(focusTile);
+    if (tooltipContent) {
+      elements.localMapDetails.innerHTML = tooltipContent;
+    } else {
+      elements.localMapDetails.textContent = localMapDefaultMessage;
+    }
+  }
+
+  const canvas = elements.localMapCanvas;
+  const context = canvas ? canvas.getContext('2d') : null;
+  if (!canvas || !context || !elements.canvas) {
+    return;
+  }
+
+  const sourceX = bounds.startX * drawSize;
+  const sourceY = bounds.startY * drawSize;
+  const sourceWidth = tileWidth * drawSize;
+  const sourceHeight = tileHeight * drawSize;
+  const baseScale = localViewConfig.baseScale;
+  const maxSize = localViewConfig.maxCanvasSize;
+  const baseWidth = sourceWidth * baseScale;
+  let scale = baseScale;
+  if (baseWidth > maxSize) {
+    const possibleScale = Math.floor(maxSize / Math.max(1, sourceWidth));
+    scale = Math.max(localViewConfig.minScale, possibleScale);
+    if (!Number.isFinite(scale) || scale < 1) {
+      scale = 1;
+    }
+  }
+
+  const destWidth = Math.max(1, Math.round(sourceWidth * scale));
+  const destHeight = Math.max(1, Math.round(sourceHeight * scale));
+  canvas.width = destWidth;
+  canvas.height = destHeight;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  canvas.setAttribute(
+    'aria-label',
+    `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${
+      localView.centerY + 1
+    }.`
+  );
+  canvas.setAttribute('aria-hidden', 'false');
+
+  context.imageSmoothingEnabled = false;
+  context.clearRect(0, 0, destWidth, destHeight);
+  context.fillStyle = '#05060b';
+  context.fillRect(0, 0, destWidth, destHeight);
+  context.drawImage(elements.canvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, destWidth, destHeight);
+
+  const tilePixelWidth = destWidth / tileWidth;
+  const tilePixelHeight = destHeight / tileHeight;
+
+  context.save();
+  context.strokeStyle = 'rgba(12, 14, 22, 0.6)';
+  context.lineWidth = 1;
+  for (let x = 1; x < tileWidth; x += 1) {
+    const px = Math.round(x * tilePixelWidth) + 0.5;
+    context.beginPath();
+    context.moveTo(px, 0);
+    context.lineTo(px, destHeight);
+    context.stroke();
+  }
+  for (let y = 1; y < tileHeight; y += 1) {
+    const py = Math.round(y * tilePixelHeight) + 0.5;
+    context.beginPath();
+    context.moveTo(0, py);
+    context.lineTo(destWidth, py);
+    context.stroke();
+  }
+  context.restore();
+
+  const highlightX = (localView.centerX - bounds.startX) * tilePixelWidth;
+  const highlightY = (localView.centerY - bounds.startY) * tilePixelHeight;
+  context.save();
+  const minTileSize = Math.max(1, Math.min(tilePixelWidth, tilePixelHeight));
+  const lineWidth = Math.max(2, Math.round(minTileSize * 0.12));
+  context.lineWidth = lineWidth;
+  context.strokeStyle = 'rgba(240, 198, 116, 0.9)';
+  context.fillStyle = 'rgba(240, 198, 116, 0.12)';
+  context.fillRect(highlightX, highlightY, tilePixelWidth, tilePixelHeight);
+  context.strokeRect(
+    highlightX + lineWidth / 2,
+    highlightY + lineWidth / 2,
+    tilePixelWidth - lineWidth,
+    tilePixelHeight - lineWidth
+  );
+  context.restore();
+}
+
+function hideLocalView(options = {}) {
+  state.localView.active = false;
+  state.localView.centerX = null;
+  state.localView.centerY = null;
+  state.localView.bounds = null;
+  if (elements.localMapPanel) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.localMapCanvas) {
+    elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    elements.localMapCanvas.setAttribute('aria-label', 'Local map preview');
+  }
+  if (elements.localMapTitle) {
+    elements.localMapTitle.textContent = 'Local View';
+  }
+  if (elements.localMapSubtitle) {
+    elements.localMapSubtitle.textContent = 'Select a site to examine the surrounding terrain.';
+  }
+  if (elements.localMapDetails) {
+    elements.localMapDetails.textContent = localMapDefaultMessage;
+  }
+  if (elements.localMapCoordinates) {
+    elements.localMapCoordinates.textContent = '';
+  }
+  if (!options.suppressRedraw && state.currentWorld) {
+    drawWorld(state.currentWorld, { preserveView: true });
+  }
+}
+
+function showLocalViewAt(tileX, tileY) {
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return;
+  }
+  const height = world.tiles.length;
+  const width = Array.isArray(world.tiles[0]) ? world.tiles[0].length : 0;
+  if (width === 0) {
+    return;
+  }
+  const clampedX = clamp(tileX, 0, width - 1);
+  const clampedY = clamp(tileY, 0, height - 1);
+  const bounds = computeLocalViewBounds(clampedX, clampedY, width, height, localViewConfig.radius);
+  state.localView.active = true;
+  state.localView.centerX = clampedX;
+  state.localView.centerY = clampedY;
+  state.localView.bounds = bounds;
+  drawWorld(world, { preserveView: true });
+}
+
+function drawLocalSelectionOverlay(ctx) {
+  if (!ctx || !state.localView || !state.localView.active || !state.localView.bounds) {
+    return;
+  }
+  const bounds = state.localView.bounds;
+  const widthTiles = Math.max(1, bounds.endX - bounds.startX + 1);
+  const heightTiles = Math.max(1, bounds.endY - bounds.startY + 1);
+  const pixelX = bounds.startX * drawSize;
+  const pixelY = bounds.startY * drawSize;
+  const pixelWidth = widthTiles * drawSize;
+  const pixelHeight = heightTiles * drawSize;
+  const lineWidth = Math.max(2, Math.round(drawSize * 0.18));
+  ctx.save();
+  ctx.fillStyle = 'rgba(240, 198, 116, 0.12)';
+  ctx.fillRect(pixelX, pixelY, pixelWidth, pixelHeight);
+  ctx.strokeStyle = 'rgba(240, 198, 116, 0.85)';
+  ctx.lineWidth = lineWidth;
+  const dash = Math.max(4, Math.round(drawSize * 0.6));
+  ctx.setLineDash([dash, dash]);
+  ctx.strokeRect(
+    pixelX + lineWidth / 2,
+    pixelY + lineWidth / 2,
+    Math.max(0, pixelWidth - lineWidth),
+    Math.max(0, pixelHeight - lineWidth)
+  );
+  ctx.restore();
+}
+
+function formatStructureDetailLabel(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const stringValue = String(value)
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim();
+  if (!stringValue) {
+    return null;
+  }
+  return stringValue
+    .split(' ')
+    .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+    .join(' ');
+}
+
+function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) {
+    return '';
+  }
+
+  const resolvedEntries = breakdown
+    .filter((entry) => Number.isFinite(entry?.percentage) && entry.percentage > 0)
+    .map((entry) => {
+      const rawPercentage = Number(entry.percentage);
+      const safePercentage = Number.isFinite(rawPercentage) ? Math.max(0, rawPercentage) : 0;
+      const roundedPercentage = Math.round(safePercentage * 100) / 100;
+      return {
+        key: typeof entry.key === 'string' && entry.key ? entry.key : null,
+        label: entry.label || entry.key || 'Unknown',
+        percentage: roundedPercentage,
+        color: entry.color || '#999999',
+        population:
+          Number.isFinite(entry.population) && entry.population > 0
+            ? Math.max(0, Math.round(entry.population))
+            : null
+      };
+    });
+
+  const priorityEntries = [];
+  const majorEntries = [];
+  let otherPercentage = 0;
+  let otherPopulation = 0;
+  let otherPopulationKnown = true;
+
+  resolvedEntries.forEach((entry) => {
+    if (entry.key === 'wizards') {
+      priorityEntries.push(entry);
+      return;
+    }
+
+    if (entry.percentage < 0.5) {
+      otherPercentage += entry.percentage;
+      if (entry.population === null) {
+        otherPopulationKnown = false;
+      } else if (otherPopulationKnown) {
+        otherPopulation += entry.population;
+      }
+    } else {
+      majorEntries.push(entry);
+    }
+  });
+
+  const combinedEntries = [...priorityEntries, ...majorEntries];
+
+  if (otherPercentage > 0) {
+    const roundedOtherPercentage = Math.round(otherPercentage * 100) / 100;
+    combinedEntries.push({
+      label: 'Other',
+      percentage: roundedOtherPercentage,
+      color: '#666666',
+      population: otherPopulationKnown ? otherPopulation : null
+    });
+  }
+
+  const displayEntries = combinedEntries.length > 0 ? combinedEntries : resolvedEntries;
+
+  if (displayEntries.length === 0) {
+    return '';
+  }
+
+  let cumulative = 0;
+  const stops = displayEntries.map((entry, index) => {
+    const start = Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    cumulative = Math.round((cumulative + entry.percentage) * 100) / 100;
+    const end =
+      index === displayEntries.length - 1
+        ? 100
+        : Math.min(100, Math.max(0, Math.round(cumulative * 100) / 100));
+    return `${entry.color} ${formatGradientPercentage(start)}% ${formatGradientPercentage(end)}%`;
+  });
+
+  if (stops.length === 0) {
+    return '';
+  }
+
+  const pieStyle = `background: conic-gradient(${stops.join(', ')});`;
+  const ariaLabelParts = ['Population breakdown'];
+  if (resolvedName) {
+    ariaLabelParts.push(`for ${resolvedName}`);
+  }
+  const ariaLabel = ariaLabelParts.join(' ');
+
+  const legendItems = displayEntries
+    .map((entry) => {
+      const valueParts = [`${formatPercentageDisplay(entry.percentage)}%`];
+      if (entry.population !== null) {
+        valueParts.push(`(${entry.population.toLocaleString('en-US')})`);
+      }
+      return `
+        <li>
+          <span class="structure-details-legend-swatch" style="background:${escapeHtml(entry.color)}"></span>
+          <span class="structure-details-legend-label">${escapeHtml(entry.label)}</span>
+          <span class="structure-details-legend-value">${escapeHtml(valueParts.join(' '))}</span>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <section class="structure-details-section structure-details-section--chart">
+      <h3 class="structure-details-heading">Population Breakdown</h3>
+      <div class="structure-details-chart">
+        <div
+          class="structure-details-chart-pie"
+          role="img"
+          aria-label="${escapeHtml(ariaLabel)}"
+          style="${escapeHtml(pieStyle)}"
+        ></div>
+        <ul class="structure-details-chart-legend">${legendItems}</ul>
+      </div>
+    </section>
+  `;
+}
+
+function buildStructureDetailsPanelContent(tile, context = {}) {
+  if (!tile || !tile.structureName) {
+    return null;
+  }
+
+  const details = tile.structureDetails || {};
+  const resolvedName = details.name || tile.structureName;
+  const subtitleParts = [];
+  if (details.classification) {
+    subtitleParts.push(details.classification);
+  }
+  const typeLabel = details.displayType || formatStructureDetailLabel(details.type);
+  if (typeLabel) {
+    subtitleParts.push(typeLabel);
+  }
+  const subtitle = subtitleParts.join(' • ') || null;
+
+  const overviewEntries = [];
+  const addOverviewEntry = (label, value) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+    const isNumber = typeof value === 'number';
+    const stringValue = isNumber
+      ? value.toLocaleString('en-US')
+      : typeof value === 'string'
+      ? value.trim()
+      : String(value).trim();
+    if (!stringValue) {
+      return;
+    }
+    overviewEntries.push({ label, value: stringValue });
+  };
+
+  const listSections = [];
+  const listSectionKeys = new Set();
+  const addListSection = (items, label, key) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return;
+    }
+    const uniqueItems = Array.from(
+      new Set(
+        items
+          .map((item) => (typeof item === 'string' ? item.trim() : ''))
+          .filter((item) => item.length > 0)
+      )
+    );
+    if (uniqueItems.length === 0) {
+      return;
+    }
+    const sectionKey = key || label;
+    if (sectionKey && listSectionKeys.has(sectionKey)) {
+      return;
+    }
+    if (sectionKey) {
+      listSectionKeys.add(sectionKey);
+    }
+    listSections.push({ label, items: uniqueItems });
+  };
+
+  const narrativeSections = [];
+  const addNarrativeSection = (label, text) => {
+    if (!text) {
+      return;
+    }
+    narrativeSections.push({ label, text });
+  };
+
+  const mapX = Number(context.tileX);
+  const mapY = Number(context.tileY);
+  if (Number.isFinite(mapX) && Number.isFinite(mapY)) {
+    addOverviewEntry('Map Coordinates', `${mapX + 1}, ${mapY + 1}`);
+  }
+
+  if (tile.areaName) {
+    addOverviewEntry('Region', tile.areaName);
+  }
+
+  if (tile.biomeType) {
+    const definition = biomeTypeDefinitions[tile.biomeType];
+    let biomeLabel = definition && definition.label ? definition.label : null;
+    if (!biomeLabel) {
+      biomeLabel = formatStructureDetailLabel(tile.biomeType);
+    }
+    if (biomeLabel) {
+      addOverviewEntry('Biome', biomeLabel);
+    }
+  }
+
+  const faction = getFactionForTile(tile);
+  if (faction && faction.name) {
+    addOverviewEntry('Realm', faction.name);
+  }
+  const influenceDescription = describeInfluenceStrength(tile.factionInfluence);
+  if (influenceDescription) {
+    addOverviewEntry('Territorial Hold', influenceDescription);
+  }
+
+  if (details.population !== null && details.population !== undefined) {
+    const roundedPopulation = Math.max(0, Math.round(Number(details.population)));
+    if (Number.isFinite(roundedPopulation)) {
+      const formattedPopulation = roundedPopulation.toLocaleString('en-US');
+      const populationLabel = details.populationLabel || 'Population';
+      const descriptor = details.populationDescriptor || null;
+      const populationDisplay = descriptor
+        ? `${formattedPopulation} ${descriptor}`
+        : formattedPopulation;
+      addOverviewEntry(populationLabel, populationDisplay);
+    }
+  }
+
+  if (details.classification && !subtitleParts.includes(details.classification)) {
+    addOverviewEntry('Classification', details.classification);
+  }
+
+  if (details.displayType) {
+    addOverviewEntry('Type', details.displayType);
+  } else if (!details.displayType && details.type) {
+    const formattedType = formatStructureDetailLabel(details.type);
+    if (formattedType) {
+      addOverviewEntry('Type', formattedType);
+    }
+  }
+
+  if (details.tribe) {
+    addOverviewEntry('Tribe', details.tribe);
+  }
+  if (details.threatLevel) {
+    addOverviewEntry('Threat Level', details.threatLevel);
+  }
+  if (details.inhabitants) {
+    addOverviewEntry('Inhabitants', details.inhabitants);
+  }
+  if (details.warLeader) {
+    addOverviewEntry('Warlord', details.warLeader);
+  }
+  if (details.guardians) {
+    addOverviewEntry('Guardians', details.guardians);
+  }
+  if (details.depth) {
+    addOverviewEntry('Depth', details.depth);
+  }
+  if (details.order) {
+    addOverviewEntry('Order', details.order);
+  }
+  if (details.devotion) {
+    addOverviewEntry('Devotion', details.devotion);
+  }
+  if (details.caretaker) {
+    addOverviewEntry('Caretaker', details.caretaker);
+  }
+  if (details.rulingHouse) {
+    addOverviewEntry('Ruling House', details.rulingHouse);
+  }
+  if (details.banner) {
+    addOverviewEntry('Banner', details.banner);
+  }
+  if (Number.isFinite(details.garrison)) {
+    addOverviewEntry('Garrison', Math.max(0, Math.round(details.garrison)).toLocaleString('en-US'));
+  }
+  if (details.patronSaint) {
+    addOverviewEntry('Patron Saint', details.patronSaint);
+  }
+  if (details.vow) {
+    addOverviewEntry('Vow', details.vow);
+  }
+
+  if (details.ruler && (details.ruler.title || details.ruler.name)) {
+    const rulerTitle = details.ruler.title ? `${details.ruler.title} ` : '';
+    const rulerName = details.ruler.name || '';
+    const combined = `${rulerTitle}${rulerName}`.trim();
+    if (combined) {
+      const rulerLabel = details.ruler.label || 'Ruler';
+      addOverviewEntry(rulerLabel, combined);
+    }
+  }
+
+  if (Number.isFinite(details.foundedYearsAgo)) {
+    const foundedValue = Math.max(1, Math.round(details.foundedYearsAgo));
+    addOverviewEntry('Founded', `${foundedValue} years ago`);
+  }
+
+  const prominentGroup = details.prominentGroup || details.prominentClan;
+  if (prominentGroup) {
+    const prominentLabel =
+      details.prominentGroupLabel || (details.prominentClan ? 'Prominent Clan' : 'Prominent Group');
+    addOverviewEntry(prominentLabel, prominentGroup);
+  }
+
+  addListSection(details.majorGuilds, details.majorGuildsLabel || 'Major Guilds', 'majorGuilds');
+  addListSection(details.majorExports, details.majorExportsLabel || 'Major Exports', 'majorExports');
+
+  const excludedArrayKeys = new Set(['populationBreakdown', 'majorGuilds', 'majorExports']);
+  Object.entries(details).forEach(([key, value]) => {
+    if (!Array.isArray(value) || excludedArrayKeys.has(key)) {
+      return;
+    }
+    const label = formatStructureDetailLabel(key);
+    if (label) {
+      addListSection(value, label, key);
+    }
+  });
+
+  if (details.description) {
+    addNarrativeSection('Description', details.description);
+  }
+  if (details.hallmark) {
+    const hallmarkLabel = details.hallmarkLabel || 'Hallmark';
+    addNarrativeSection(hallmarkLabel, details.hallmark);
+  }
+
+  const breakdownSection = buildPopulationBreakdownPanelSection(resolvedName, details.populationBreakdown);
+
+  const sections = [];
+
+  if (overviewEntries.length > 0) {
+    const overviewItems = overviewEntries
+      .map(
+        (entry) => `
+          <div>
+            <dt>${escapeHtml(entry.label)}</dt>
+            <dd>${escapeHtml(entry.value)}</dd>
+          </div>
+        `
+      )
+      .join('');
+    sections.push(`
+      <section class="structure-details-section structure-details-section--overview">
+        <h3 class="structure-details-heading">Overview</h3>
+        <dl class="structure-details-list">${overviewItems}</dl>
+      </section>
+    `);
+  }
+
+  if (breakdownSection) {
+    sections.push(breakdownSection);
+  }
+
+  if (listSections.length > 0) {
+    const collections = listSections
+      .map((section) => {
+        const items = section.items
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join('');
+        return `
+          <article class="structure-details-collection">
+            <h4 class="structure-details-collection-title">${escapeHtml(section.label)}</h4>
+            <ul class="structure-details-collection-list">${items}</ul>
+          </article>
+        `;
+      })
+      .join('');
+    sections.push(`
+      <section class="structure-details-section structure-details-section--collections">
+        <h3 class="structure-details-heading">Notable Groups &amp; Orders</h3>
+        <div class="structure-details-collections-grid">${collections}</div>
+      </section>
+    `);
+  }
+
+  narrativeSections.forEach((section) => {
+    sections.push(`
+      <section class="structure-details-section structure-details-section--narrative">
+        <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
+        <p class="structure-details-paragraph">${escapeHtml(section.text)}</p>
+      </section>
+    `);
+  });
+
+  if (sections.length === 0) {
+    sections.push('<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>');
+  }
+
+  return {
+    title: resolvedName,
+    subtitle,
+    body: sections.join('')
+  };
+}
+
+function showStructureDetails(tile, context = {}) {
+  if (!elements.structureDetailsPanel) {
+    return;
+  }
+
+  const content = buildStructureDetailsPanelContent(tile, context);
+  if (!content) {
+    hideStructureDetails();
+    return;
+  }
+
+  structureDetailsState.visible = true;
+  elements.structureDetailsPanel.classList.remove('hidden');
+  elements.structureDetailsPanel.setAttribute('aria-hidden', 'false');
+
+  if (elements.structureDetailsTitle) {
+    elements.structureDetailsTitle.textContent = content.title || tile.structureName;
+  }
+
+  if (elements.structureDetailsSubtitle) {
+    if (content.subtitle) {
+      elements.structureDetailsSubtitle.textContent = content.subtitle;
+      elements.structureDetailsSubtitle.classList.remove('hidden');
+    } else {
+      elements.structureDetailsSubtitle.textContent = '';
+      elements.structureDetailsSubtitle.classList.add('hidden');
+    }
+  }
+
+  if (elements.structureDetailsContent) {
+    elements.structureDetailsContent.innerHTML = content.body;
+  }
+
+  if (elements.structureDetailsClose && typeof elements.structureDetailsClose.focus === 'function') {
+    elements.structureDetailsClose.focus();
+  }
+}
+
+function hideStructureDetails(options = {}) {
+  if (!elements.structureDetailsPanel) {
+    return;
+  }
+
+  elements.structureDetailsPanel.classList.add('hidden');
+  elements.structureDetailsPanel.setAttribute('aria-hidden', 'true');
+  if (elements.structureDetailsContent) {
+    elements.structureDetailsContent.innerHTML = '';
+  }
+  structureDetailsState.visible = false;
+
+  if (options.returnFocus && elements.canvasWrapper && typeof elements.canvasWrapper.focus === 'function') {
+    elements.canvasWrapper.focus();
+  }
 }
 
 function showMapTooltip(content, pointerX, pointerY, boundsRect) {
@@ -5767,6 +7599,7 @@ function resetView(worldWidth, worldHeight) {
   viewState.translateY = (rect.height - worldHeight * viewState.scale) / 2;
   viewState.hasInteracted = false;
   applyViewTransform();
+  hideStructureDetails();
   hideMapTooltip();
 }
 
@@ -5822,34 +7655,26 @@ function setupMapInteractions() {
   let isPanning = false;
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
+  const initialPosition = { x: 0, y: 0 };
+  let pointerMovedDuringPan = false;
 
-  const updateHover = (event) => {
+  const resolveTileAtPointer = (event) => {
     if (!elements.canvasWrapper) {
-      return;
+      return null;
     }
-    const tiles = state.currentWorld ? state.currentWorld.tiles : null;
-    if (!Array.isArray(tiles) || tiles.length === 0) {
-      hideMapTooltip();
-      return;
-    }
-    if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
-      hideMapTooltip();
-      return;
-    }
-    if (isPanning && event.pointerId === activePointerId) {
-      hideMapTooltip();
-      return;
+    const world = state.currentWorld;
+    const tiles = world && Array.isArray(world.tiles) ? world.tiles : null;
+    if (!tiles || tiles.length === 0) {
+      return null;
     }
     const rect = elements.canvasWrapper.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
     const pointerY = event.clientY - rect.top;
     if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     if (pointerX < 0 || pointerY < 0 || pointerX > rect.width || pointerY > rect.height) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const worldPixelX = (pointerX - viewState.translateX) / viewState.scale;
     const worldPixelY = (pointerY - viewState.translateY) / viewState.scale;
@@ -5861,31 +7686,47 @@ function setupMapInteractions() {
       worldPixelX >= viewState.worldSize.width ||
       worldPixelY >= viewState.worldSize.height
     ) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const tileX = Math.floor(worldPixelX / drawSize);
     const tileY = Math.floor(worldPixelY / drawSize);
     if (tileY < 0 || tileY >= tiles.length) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const row = tiles[tileY];
     if (!Array.isArray(row) || tileX < 0 || tileX >= row.length) {
-      hideMapTooltip();
-      return;
+      return null;
     }
     const tile = row[tileX];
     if (!tile) {
+      return null;
+    }
+    return { tile, tileX, tileY, pointerX, pointerY, rect };
+  };
+
+  const updateHover = (event) => {
+    if (!elements.canvasWrapper) {
+      return;
+    }
+    if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
       hideMapTooltip();
       return;
     }
-    const tooltipContent = buildStructureTooltipContent(tile);
+    if (isPanning && event.pointerId === activePointerId) {
+      hideMapTooltip();
+      return;
+    }
+    const resolved = resolveTileAtPointer(event);
+    if (!resolved) {
+      hideMapTooltip();
+      return;
+    }
+    const tooltipContent = buildStructureTooltipContent(resolved.tile);
     if (!tooltipContent) {
       hideMapTooltip();
       return;
     }
-    showMapTooltip(tooltipContent, pointerX, pointerY, rect);
+    showMapTooltip(tooltipContent, resolved.pointerX, resolved.pointerY, resolved.rect);
   };
 
   const handleWheel = (event) => {
@@ -5893,6 +7734,7 @@ function setupMapInteractions() {
       return;
     }
     hideMapTooltip();
+    hideStructureDetails();
     event.preventDefault();
     const rect = elements.canvasWrapper.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
@@ -5914,7 +7756,11 @@ function setupMapInteractions() {
     if (activePointerId !== null) {
       return;
     }
-    if (event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch') {
+    const isPrimaryPointer = !(
+      event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch'
+    );
+    hideStructureDetails();
+    if (!isPrimaryPointer) {
       return;
     }
     hideMapTooltip();
@@ -5923,6 +7769,9 @@ function setupMapInteractions() {
     activePointerId = event.pointerId;
     lastPosition.x = event.clientX;
     lastPosition.y = event.clientY;
+    initialPosition.x = event.clientX;
+    initialPosition.y = event.clientY;
+    pointerMovedDuringPan = false;
     elements.canvasWrapper.setPointerCapture(event.pointerId);
   };
 
@@ -5934,6 +7783,14 @@ function setupMapInteractions() {
     event.preventDefault();
     const dx = event.clientX - lastPosition.x;
     const dy = event.clientY - lastPosition.y;
+    if (!pointerMovedDuringPan) {
+      const totalDx = event.clientX - initialPosition.x;
+      const totalDy = event.clientY - initialPosition.y;
+      const distance = Math.hypot(totalDx, totalDy);
+      if (distance > 3) {
+        pointerMovedDuringPan = true;
+      }
+    }
     lastPosition.x = event.clientX;
     lastPosition.y = event.clientY;
     viewState.translateX += dx;
@@ -5943,11 +7800,19 @@ function setupMapInteractions() {
   };
 
   const handlePointerUp = (event) => {
-    if (event.pointerId === activePointerId) {
+    const wasActivePointer = event.pointerId === activePointerId;
+    if (wasActivePointer) {
       elements.canvasWrapper.releasePointerCapture(event.pointerId);
       isPanning = false;
       activePointerId = null;
-      updateHover(event);
+      if (!pointerMovedDuringPan) {
+        const resolved = resolveTileAtPointer(event);
+        if (resolved) {
+          showLocalViewAt(resolved.tileX, resolved.tileY);
+        }
+      } else {
+        updateHover(event);
+      }
       return;
     }
     updateHover(event);
@@ -5957,7 +7822,19 @@ function setupMapInteractions() {
     if (!viewState.worldSize.width || !viewState.worldSize.height) {
       return;
     }
+    hideStructureDetails();
     resetView(viewState.worldSize.width, viewState.worldSize.height);
+  };
+
+  const handleContextMenu = (event) => {
+    const resolved = resolveTileAtPointer(event);
+    if (!resolved || !resolved.tile || !resolved.tile.structureName) {
+      hideStructureDetails();
+      return;
+    }
+    event.preventDefault();
+    hideMapTooltip();
+    showStructureDetails(resolved.tile, { tileX: resolved.tileX, tileY: resolved.tileY });
   };
 
   elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
@@ -5967,6 +7844,7 @@ function setupMapInteractions() {
   elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
   elements.canvasWrapper.addEventListener('pointerenter', updateHover);
   elements.canvasWrapper.addEventListener('pointerleave', hideMapTooltip);
+  elements.canvasWrapper.addEventListener('contextmenu', handleContextMenu);
   elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
   window.addEventListener('resize', handleResize);
 }
@@ -6520,6 +8398,7 @@ function buildRiverMap(
   width,
   height,
   seaLevel,
+  waterMask,
   options = {}
 ) {
   const frequencyNormalized = clamp(
@@ -6567,6 +8446,105 @@ function buildRiverMap(
     [-1, 0]
   ];
 
+  const oceanDistance = new Float32Array(width * height);
+  oceanDistance.fill(Number.POSITIVE_INFINITY);
+  const oceanMask = new Uint8Array(width * height);
+  if (waterMask && typeof waterMask.length === 'number') {
+    const queue = new Int32Array(width * height);
+    let queueHead = 0;
+    let queueTail = 0;
+    const enqueue = (value) => {
+      queue[queueTail] = value;
+      queueTail += 1;
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!waterMask[idx]) {
+          continue;
+        }
+        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
+          oceanMask[idx] = 1;
+          enqueue(idx);
+        }
+      }
+    }
+
+    if (queueTail === 0) {
+      for (let i = 0; i < waterMask.length; i += 1) {
+        if (waterMask[i]) {
+          oceanMask[i] = 1;
+          enqueue(i);
+        }
+      }
+    }
+
+    while (queueHead < queueTail) {
+      const current = queue[queueHead];
+      queueHead += 1;
+      const cx = current % width;
+      const cy = Math.floor(current / width);
+      for (let d = 0; d < directions.length; d += 1) {
+        const nx = cx + directions[d][0];
+        const ny = cy + directions[d][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        if (!waterMask[nIdx] || oceanMask[nIdx]) {
+          continue;
+        }
+        oceanMask[nIdx] = 1;
+        enqueue(nIdx);
+      }
+    }
+
+    queueHead = 0;
+    queueTail = 0;
+
+    for (let i = 0; i < oceanMask.length; i += 1) {
+      if (oceanMask[i]) {
+        oceanDistance[i] = 0;
+        enqueue(i);
+      }
+    }
+
+    if (queueTail === 0) {
+      for (let i = 0; i < waterMask.length; i += 1) {
+        if (waterMask[i]) {
+          oceanDistance[i] = 0;
+          enqueue(i);
+        }
+      }
+    }
+
+    while (queueHead < queueTail) {
+      const current = queue[queueHead];
+      queueHead += 1;
+      const cx = current % width;
+      const cy = Math.floor(current / width);
+      const baseDistance = oceanDistance[current];
+      for (let d = 0; d < directions.length; d += 1) {
+        const nx = cx + directions[d][0];
+        const ny = cy + directions[d][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        const nextDistance = baseDistance + 1;
+        if (nextDistance < oceanDistance[nIdx]) {
+          oceanDistance[nIdx] = nextDistance;
+          enqueue(nIdx);
+        }
+      }
+    }
+  } else {
+    oceanDistance.fill(width + height);
+  }
+
+  const oceanInfluence = lerp(0.008, 0.02, frequencyNormalized);
+
   for (let i = 0; i < candidates.length && i < maxSources; i += 1) {
     let { x, y } = candidates[i];
     let steps = 0;
@@ -6577,7 +8555,10 @@ function buildRiverMap(
       steps += 1;
 
       let lowestIdx = idx;
-      let lowestValue = elevation[idx];
+      const currentBaseValue = elevation[idx] - drainage[idx] * 0.02;
+      let lowestScore = currentBaseValue;
+      let lowestBaseValue = currentBaseValue;
+      const currentOceanDistance = oceanDistance[idx];
       for (let d = 0; d < directions.length; d += 1) {
         const nx = x + directions[d][0];
         const ny = y + directions[d][1];
@@ -6585,9 +8566,18 @@ function buildRiverMap(
           continue;
         }
         const nIdx = ny * width + nx;
-        const value = elevation[nIdx] - drainage[nIdx] * 0.02;
-        if (value < lowestValue) {
-          lowestValue = value;
+        const neighborBaseValue = elevation[nIdx] - drainage[nIdx] * 0.02;
+        let score = neighborBaseValue;
+        if (Number.isFinite(currentOceanDistance) && Number.isFinite(oceanDistance[nIdx])) {
+          const distanceDelta = oceanDistance[nIdx] - currentOceanDistance;
+          score += distanceDelta * oceanInfluence;
+        }
+        if (score < lowestScore - 1e-6) {
+          lowestScore = score;
+          lowestBaseValue = neighborBaseValue;
+          lowestIdx = nIdx;
+        } else if (Math.abs(score - lowestScore) <= 1e-6 && neighborBaseValue < lowestBaseValue) {
+          lowestBaseValue = neighborBaseValue;
           lowestIdx = nIdx;
         }
       }
@@ -6741,6 +8731,9 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.river = null;
     tile.biomeType = null;
     tile.areaName = null;
+    tile.waterDepth = 0;
+    tile.coastProximity = 0;
+    tile.desertProximity = 0;
     waterMask[idx] = 1;
     return true;
   };
@@ -7061,12 +9054,22 @@ function createWorld(seedString) {
   const sandGenerationEnabled = true;
   const hasSandTile = sandGenerationEnabled && tileLookup.has('SAND');
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
+  const hasBadlandsTile = sandGenerationEnabled && tileLookup.has('BADLANDS');
+  const badlandsTileKey = hasBadlandsTile ? 'BADLANDS' : sandTileKey;
+  const hasStoneTile = tileLookup.has('STONE');
+  const stoneTileKey = hasStoneTile ? 'STONE' : grassTileKey;
   const landBaseKeys = new Set([grassTileKey]);
   if (hasSnowTile) {
     landBaseKeys.add(snowTileKey);
   }
   if (hasSandTile) {
     landBaseKeys.add(sandTileKey);
+  }
+  if (hasBadlandsTile) {
+    landBaseKeys.add(badlandsTileKey);
+  }
+  if (hasStoneTile) {
+    landBaseKeys.add(stoneTileKey);
   }
   if (hasMarshTile) {
     landBaseKeys.add(marshTileKey);
@@ -7110,7 +9113,7 @@ function createWorld(seedString) {
   let snowDistanceField = null;
 
   const marshNoiseSeed = hasMarshTile ? (seedNumber + 0x1922b3a5) >>> 0 : 0;
-  const marshNoiseScale = hasMarshTile ? 3.9 + rng() * 3 : 1;
+  const marshNoiseScale = hasMarshTile ? 2.2 + rng() * 1.6 : 1;
   const marshNoiseOffsetX = hasMarshTile ? rng() * 4096 : 0;
   const marshNoiseOffsetY = hasMarshTile ? rng() * 4096 : 0;
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
@@ -7148,42 +9151,82 @@ function createWorld(seedString) {
   const desertVariationOffsetY = hasSandTile ? rng() * 4096 : 0;
   const desertVariationStrength = hasSandTile ? 0.08 + rng() * 0.07 : 0;
   const desertSuitabilityField = hasSandTile ? new Float32Array(width * height) : null;
+  const desertHeatField = hasSandTile ? new Float32Array(width * height) : null;
   const desertMask = hasSandTile ? new Uint8Array(width * height) : null;
+  const desertBadlandsSeed = hasBadlandsTile ? (seedNumber + 0x428a2f98) >>> 0 : 0;
+  const desertBadlandsScale = hasBadlandsTile ? 3.4 + rng() * 3.6 : 1;
+  const desertBadlandsOffsetX = hasBadlandsTile ? rng() * 4096 : 0;
+  const desertBadlandsOffsetY = hasBadlandsTile ? rng() * 4096 : 0;
+
+  const sampleLatitudeWarp = (normalizedX, normalizedY, latitude) => {
+    if (!hasSandTile || desertWarpStrength <= 0) {
+      return { warpX: 0, warpY: 0, warpedLatitude: latitude };
+    }
+    const warpSampleX = octaveNoise(
+      (normalizedX + desertWarpOffsetX) * desertWarpScale,
+      (normalizedY + desertWarpOffsetY) * desertWarpScale,
+      desertWarpSeedX,
+      3,
+      0.55,
+      2.05
+    );
+    const warpSampleY = octaveNoise(
+      (normalizedX + desertWarpOffsetX + 37.71) * (desertWarpScale * 1.1),
+      (normalizedY + desertWarpOffsetY + 11.53) * (desertWarpScale * 0.92),
+      desertWarpSeedY,
+      3,
+      0.55,
+      2.05
+    );
+    const warpX = (warpSampleX * 2 - 1) * desertWarpStrength;
+    const warpY = (warpSampleY * 2 - 1) * desertWarpStrength;
+    return { warpX, warpY, warpedLatitude: clamp(latitude + warpY * 0.8, 0, 1) };
+  };
+
+  const computeMarshSuitabilityScore = (x, y, heightValue) => {
+    if (!hasMarshTile || heightValue <= seaLevel) {
+      return -Infinity;
+    }
+    const idx = y * width + x;
+    const normalizedX = (x + 0.5) / width;
+    const normalizedY = (y + 0.5) / height;
+    const latitude = 1 - normalizedY;
+    const { warpedLatitude } = sampleLatitudeWarp(normalizedX, normalizedY, latitude);
+    const rainfallValue = rainfallField[idx];
+    const drainageValue = drainageField[idx];
+    const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
+    const elevationAboveSea = heightValue - seaLevel;
+    const elevationHeatPenalty = clamp(elevationAboveSea * 3.6, 0, 1);
+    const heat = clamp(equatorialAlignment * 0.65 + (1 - elevationHeatPenalty) * 0.35, 0, 1);
+    const wetness = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+    const lowlandFactor = clamp(1 - Math.max(0, elevationAboveSea) * 5.2, 0, 1);
+    if (wetness <= 0.68 || heat <= 0.58 || lowlandFactor <= 0.35) {
+      return -Infinity;
+    }
+    const marshNoise =
+      octaveNoise(
+        (normalizedX + marshNoiseOffsetX) * marshNoiseScale,
+        (normalizedY + marshNoiseOffsetY) * marshNoiseScale,
+        marshNoiseSeed,
+        3,
+        0.55,
+        2.15
+      ) *
+        2 -
+      1;
+    return wetness * 0.6 + lowlandFactor * 0.25 + marshNoise * 0.15;
+  };
 
   const determineLandBaseTile = (x, y, heightValue) => {
     const normalizedX = (x + 0.5) / width;
     const normalizedY = (y + 0.5) / height;
     const latitude = 1 - normalizedY;
-    let warpedLatitude = latitude;
-    let warpX = 0;
-    let warpY = 0;
+    const { warpX, warpY, warpedLatitude } = sampleLatitudeWarp(normalizedX, normalizedY, latitude);
     const idx = y * width + x;
 
     if (hasSandTile) {
       desertSuitabilityField[idx] = 0;
       desertMask[idx] = 0;
-    }
-
-    if (hasSandTile && desertWarpStrength > 0) {
-      const warpSampleX = octaveNoise(
-        (normalizedX + desertWarpOffsetX) * desertWarpScale,
-        (normalizedY + desertWarpOffsetY) * desertWarpScale,
-        desertWarpSeedX,
-        3,
-        0.55,
-        2.05
-      );
-      const warpSampleY = octaveNoise(
-        (normalizedX + desertWarpOffsetX + 37.71) * (desertWarpScale * 1.1),
-        (normalizedY + desertWarpOffsetY + 11.53) * (desertWarpScale * 0.92),
-        desertWarpSeedY,
-        3,
-        0.55,
-        2.05
-      );
-      warpX = (warpSampleX * 2 - 1) * desertWarpStrength;
-      warpY = (warpSampleY * 2 - 1) * desertWarpStrength;
-      warpedLatitude = clamp(latitude + warpY * 0.8, 0, 1);
     }
 
     if (hasSnowTile && computeSnowPresence(normalizedX, normalizedY, heightValue)) {
@@ -7192,30 +9235,9 @@ function createWorld(seedString) {
 
     const rainfallValue = rainfallField[idx];
     const drainageValue = drainageField[idx];
-    if (hasMarshTile) {
-      const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
-      const elevationAboveSea = heightValue - seaLevel;
-      const elevationHeatPenalty = clamp(elevationAboveSea * 3.6, 0, 1);
-      const heat = clamp(equatorialAlignment * 0.65 + (1 - elevationHeatPenalty) * 0.35, 0, 1);
-      const wetness = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
-      const lowlandFactor = clamp(1 - Math.max(0, elevationAboveSea) * 5.2, 0, 1);
-      if (wetness > 0.68 && heat > 0.58 && lowlandFactor > 0.35) {
-        const marshNoise =
-          octaveNoise(
-            (normalizedX + marshNoiseOffsetX) * marshNoiseScale,
-            (normalizedY + marshNoiseOffsetY) * marshNoiseScale,
-            marshNoiseSeed,
-            3,
-            0.55,
-            2.15
-          ) *
-            2 -
-          1;
-        const marshScore = wetness * 0.6 + lowlandFactor * 0.25 + marshNoise * 0.15;
-        if (marshScore > 0.62) {
-          return marshTileKey;
-        }
-      }
+    const marshScore = computeMarshSuitabilityScore(x, y, heightValue);
+    if (marshScore > 0.62) {
+      return marshTileKey;
     }
 
     if (hasSandTile) {
@@ -7247,6 +9269,9 @@ function createWorld(seedString) {
           1) *
         0.25;
       const heat = clamp(equatorialAlignment * 0.55 + (1 - elevationFactor) * 0.3 + desertHeatNoise, 0, 1);
+      if (desertHeatField) {
+        desertHeatField[idx] = heat;
+      }
       let suitability = clamp(aridity * 0.68 + heat * 0.42, 0, 1);
       if (desertSuitabilityStrength > 0) {
         const suitabilityNoise =
@@ -7337,7 +9362,13 @@ function createWorld(seedString) {
         structureDetails: null,
         river: null,
         biomeType: null,
-        areaName: null
+        areaName: null,
+        waterDepth: 0,
+        coastProximity: 0,
+        desertProximity: 0,
+        elevation: 0,
+        temperature: 0,
+        moisture: 0
       }))
   );
   const dwarfholds = [];
@@ -7345,11 +9376,43 @@ function createWorld(seedString) {
   const towers = [];
   const caves = [];
   const evilWizardTowers = [];
+  const towerProximityPoints = [];
   const woodElfGroves = [];
   const lizardmenCities = [];
+  const orcCamps = [];
+  const dungeons = [];
+  const monasteries = [];
+  const castles = [];
+  const saintShrines = [];
+  const recordTowerProximityPoint = (x, y) => {
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      towerProximityPoints.push({ x, y });
+    }
+  };
+  const computeNearestDistanceSq = (x, y, points) => {
+    if (!Array.isArray(points) || points.length === 0) {
+      return Infinity;
+    }
+    let best = Infinity;
+    for (let i = 0; i < points.length; i += 1) {
+      const point = points[i];
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+        continue;
+      }
+      const dx = x - point.x;
+      const dy = y - point.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < best) {
+        best = distSq;
+      }
+    }
+    return best;
+  };
   const waterMask = new Uint8Array(width * height);
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
+  const mountainPeakKey = hasMountainTile && tileLookup.has('MOUNTAIN_PEAK') ? 'MOUNTAIN_PEAK' : null;
+  const mountainPeakHeightThreshold = 0.97;
   const mountainTopVariantKeys = hasMountainTile
     ? ['MOUNTAIN_TOP_A', 'MOUNTAIN_TOP_B'].filter((key) => tileLookup.has(key))
     : [];
@@ -7359,6 +9422,7 @@ function createWorld(seedString) {
   const mountainOverlayKeySet = hasMountainTile
     ? new Set([
         mountainOverlayKey,
+        mountainPeakKey,
         ...mountainTopVariantKeys,
         ...mountainBottomVariantKeys
       ].filter(Boolean))
@@ -7385,6 +9449,7 @@ function createWorld(seedString) {
   let mountainScores = null;
   let mountainCandidateThreshold = null;
   let mountainMask = null;
+  let mountainHeightField = null;
   const cardinalOffsets = [
     [0, -1],
     [1, 0],
@@ -7418,6 +9483,10 @@ function createWorld(seedString) {
       tile.river = null;
       tile.biomeType = null;
       tile.areaName = null;
+      tile.waterDepth = 0;
+      tile.coastProximity = 0;
+      tile.desertProximity = 0;
+      tile.elevation = heightValue;
     }
   }
 
@@ -7529,6 +9598,30 @@ function createWorld(seedString) {
 
     desertMask.set(updatedMask);
 
+    if (hasSandTile) {
+      const verticalIsolation = [];
+      for (let y = 1; y < height - 1; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!desertMask[idx]) {
+            continue;
+          }
+          const aboveIdx = idx - width;
+          const belowIdx = idx + width;
+          const aboveIsDesert = desertMask[aboveIdx] === 1;
+          const belowIsDesert = desertMask[belowIdx] === 1;
+          if (!aboveIsDesert && !belowIsDesert) {
+            verticalIsolation.push(idx);
+          }
+        }
+      }
+      if (verticalIsolation.length > 0) {
+        for (let i = 0; i < verticalIsolation.length; i += 1) {
+          desertMask[verticalIsolation[i]] = 0;
+        }
+      }
+    }
+
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
@@ -7536,8 +9629,29 @@ function createWorld(seedString) {
           continue;
         }
         if (desertMask[idx]) {
-          tiles[y][x].base = sandTileKey;
-        } else if (tiles[y][x].base === sandTileKey) {
+          let baseTileName = sandTileKey;
+          if (hasBadlandsTile) {
+            const heatValue = desertHeatField ? desertHeatField[idx] : 1;
+            const dryness = desertSuitabilityField ? desertSuitabilityField[idx] : heatValue;
+            if (heatValue > 0.58 && dryness > 0.5) {
+              const normalizedX = (x + 0.5) / width;
+              const normalizedY = (y + 0.5) / height;
+              const badlandsNoise = octaveNoise(
+                (normalizedX + desertBadlandsOffsetX) * desertBadlandsScale,
+                (normalizedY + desertBadlandsOffsetY) * desertBadlandsScale,
+                desertBadlandsSeed,
+                3,
+                0.55,
+                2.15
+              );
+              const badlandsLikelihood = clamp((heatValue - 0.58) * 1.25 + (dryness - 0.5) * 0.85, 0, 1);
+              if (badlandsNoise < badlandsLikelihood) {
+                baseTileName = badlandsTileKey;
+              }
+            }
+          }
+          tiles[y][x].base = baseTileName;
+        } else if (tiles[y][x].base === sandTileKey || (hasBadlandsTile && tiles[y][x].base === badlandsTileKey)) {
           tiles[y][x].base = grassTileKey;
         }
       }
@@ -7548,7 +9662,10 @@ function createWorld(seedString) {
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
-          if (tiles[y][x].base !== sandTileKey) {
+          if (
+            tiles[y][x].base !== sandTileKey &&
+            (!hasBadlandsTile || tiles[y][x].base !== badlandsTileKey)
+          ) {
             continue;
           }
           let nearSnow = false;
@@ -7578,9 +9695,137 @@ function createWorld(seedString) {
     }
   }
 
+  if (hasSandTile) {
+    const desertMaskForDistance = new Uint8Array(width * height);
+    let desertTileCount = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        const baseKey = tile.base;
+        const isDesertTile =
+          baseKey === sandTileKey || (hasBadlandsTile && baseKey === badlandsTileKey);
+        if (isDesertTile) {
+          desertMaskForDistance[idx] = 1;
+          desertTileCount += 1;
+          tile.desertProximity = 0;
+        } else {
+          desertMaskForDistance[idx] = 0;
+        }
+      }
+    }
+
+    if (desertTileCount > 0) {
+      const desertDistanceField = computeEuclideanDistanceField(
+        desertMaskForDistance,
+        width,
+        height
+      );
+      const desertTransitionFalloff = 4.5;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (!tile || desertMaskForDistance[idx]) {
+            continue;
+          }
+          if (tile.base === grassTileKey) {
+            const distanceToDesert = Math.sqrt(desertDistanceField[idx]);
+            const proximity = clamp(1 - distanceToDesert / desertTransitionFalloff, 0, 1);
+            tile.desertProximity = proximity;
+          } else {
+            tile.desertProximity = 0;
+          }
+        }
+      }
+    }
+  }
+
+  if (hasMarshTile) {
+    const marshMask = new Uint8Array(width * height);
+    const marshBuffer = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        marshMask[idx] = tiles[y][x].base === marshTileKey ? 1 : 0;
+      }
+    }
+    const marshIterations = 2;
+    for (let iteration = 0; iteration < marshIterations; iteration += 1) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            marshBuffer[idx] = 0;
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile) {
+            marshBuffer[idx] = 0;
+            continue;
+          }
+          const currentIsMarsh = marshMask[idx] === 1;
+          let marshNeighbors = 0;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (waterMask[nIdx]) {
+              continue;
+            }
+            if (marshMask[nIdx]) {
+              marshNeighbors += 1;
+            }
+          }
+          const heightValue = elevationField[idx];
+          const marshScore = computeMarshSuitabilityScore(x, y, heightValue);
+          let nextIsMarsh = currentIsMarsh;
+          if (currentIsMarsh) {
+            if (marshNeighbors <= 1 && marshScore < 0.6) {
+              nextIsMarsh = false;
+            }
+          } else if (tile.base === grassTileKey && marshScore > 0.58) {
+            if (marshNeighbors >= 3) {
+              nextIsMarsh = true;
+            } else if (marshNeighbors >= 2 && marshScore > 0.66) {
+              nextIsMarsh = true;
+            } else {
+              nextIsMarsh = false;
+            }
+          } else {
+            nextIsMarsh = false;
+          }
+          if (!Number.isFinite(marshScore) || marshScore === -Infinity) {
+            nextIsMarsh = false;
+          }
+          marshBuffer[idx] = nextIsMarsh ? 1 : 0;
+        }
+      }
+      marshMask.set(marshBuffer);
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const shouldBeMarsh = marshMask[idx] === 1;
+        if (shouldBeMarsh) {
+          tiles[y][x].base = marshTileKey;
+        } else if (tiles[y][x].base === marshTileKey) {
+          tiles[y][x].base = grassTileKey;
+        }
+      }
+    }
+  }
+
   if (hasMountainTile) {
     mountainScores = new Float32Array(width * height);
-    const mountainHeightField = new Float32Array(width * height);
+    mountainHeightField = new Float32Array(width * height);
     let ridgeField = new Float32Array(width * height);
     const ridgeDirectionIndex = new Int8Array(width * height);
     ridgeDirectionIndex.fill(-1);
@@ -8048,18 +10293,30 @@ function createWorld(seedString) {
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
-        if (mountainMask[idx]) {
-          const tile = tiles[y][x];
-          tile.overlay = mountainOverlayKey;
-          if (tile.base === marshTileKey) {
-            tile.base = grassTileKey;
-          }
+        if (!mountainMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        const normalizedHeight = mountainHeightField ? mountainHeightField[idx] : 0;
+        const usePeakOverlay =
+          mountainPeakKey && normalizedHeight >= mountainPeakHeightThreshold;
+        tile.overlay = usePeakOverlay ? mountainPeakKey : mountainOverlayKey;
+        const isSandBase = hasSandTile && tile.base === sandTileKey;
+        const isBadlandsBase = hasBadlandsTile && tile.base === badlandsTileKey;
+        if (isSandBase || isBadlandsBase) {
+          tile.base = stoneTileKey;
+        } else if (tile.base === marshTileKey) {
+          tile.base = grassTileKey;
         }
       }
     }
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
+    const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
     if (dwarfholdKey) {
       const fallbackMountainScoreThreshold =
         mountainScores && mountainCandidateThreshold !== null
@@ -8098,6 +10355,9 @@ function createWorld(seedString) {
           24,
           dwarfSettlementMultiplier
         );
+        const abandonedDwarfholdChance = computeAbandonedDwarfholdChance(
+          dwarfSettlementFrequencyNormalized
+        );
         const minDistanceBase = 5;
         const minDistance = adjustMinDistance(minDistanceBase, dwarfSettlementFrequencyNormalized);
         const minDistanceSq = minDistance * minDistance;
@@ -8112,6 +10372,8 @@ function createWorld(seedString) {
           mountainOverlayKey,
           dwarfholdKey,
           greatDwarfholdKey,
+          abandonedDwarfholdKey,
+          abandonedDwarfholdChance,
           rng,
           dwarfholds,
           towns,
@@ -8316,6 +10578,8 @@ function createWorld(seedString) {
         tile.river = null;
         tile.biomeType = null;
         tile.areaName = null;
+        tile.waterDepth = 0;
+        tile.coastProximity = 0;
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
@@ -8378,10 +10642,64 @@ function createWorld(seedString) {
     snowDistanceField = snowCount > 0 ? computeEuclideanDistanceField(snowMask, width, height) : null;
   }
 
-  const riverMap = buildRiverMap(elevationField, rainfallField, drainageField, width, height, seaLevel, {
-    frequencyNormalized: riverFrequencyNormalized
-  });
+  const riverMap = buildRiverMap(
+    elevationField,
+    rainfallField,
+    drainageField,
+    width,
+    height,
+    seaLevel,
+    waterMask,
+    {
+      frequencyNormalized: riverFrequencyNormalized
+    }
+  );
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
+
+  const coastlineFalloff = 4.2;
+  let oceanMask = waterTileKey ? new Uint8Array(width * height) : null;
+
+  if (waterTileKey) {
+    const landMaskForDistance = new Uint8Array(width * height);
+    for (let i = 0; i < waterMask.length; i += 1) {
+      landMaskForDistance[i] = waterMask[i] ? 0 : 1;
+    }
+    const waterDistanceField = computeEuclideanDistanceField(landMaskForDistance, width, height);
+    const landDistanceField = computeEuclideanDistanceField(waterMask, width, height);
+
+    let maxWaterDepth = 0;
+    for (let idx = 0; idx < waterDistanceField.length; idx += 1) {
+      if (!waterMask[idx]) {
+        continue;
+      }
+      const depth = Math.sqrt(waterDistanceField[idx]);
+      if (depth > maxWaterDepth) {
+        maxWaterDepth = depth;
+      }
+    }
+    const depthNormalization = maxWaterDepth > 0 ? 1 / maxWaterDepth : 1;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        if (waterMask[idx]) {
+          const depth = Math.sqrt(waterDistanceField[idx]);
+          tile.waterDepth = clamp(depth * depthNormalization, 0, 1);
+          tile.coastProximity = 0;
+          tile.desertProximity = 0;
+        } else {
+          const distanceToWater = Math.sqrt(landDistanceField[idx]);
+          const proximity = clamp(1 - distanceToWater / coastlineFalloff, 0, 1);
+          tile.coastProximity = proximity;
+          tile.waterDepth = 0;
+        }
+      }
+    }
+  }
+
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = y * width + x;
@@ -8431,11 +10749,19 @@ function createWorld(seedString) {
         if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
+        if (tile.base !== grassTileKey) {
+          continue;
+        }
         const elevationValue = elevationField[idx];
         const preferredElevation = seaLevel + 0.18;
         const elevationScore = clamp(1 - Math.abs(elevationValue - preferredElevation) * 2.1, 0, 1);
+        const rainfallValue = rainfallField[idx];
+        const drainageValue = drainageField[idx];
+        const localMoisture = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
         let roughness = 0;
         let neighborCount = 0;
+        let neighborhoodMoistureSum = 0;
+        let neighborhoodMoistureSamples = 0;
         for (let i = 0; i < neighborOffsets8.length; i += 1) {
           const nx = x + neighborOffsets8[i][0];
           const ny = y + neighborOffsets8[i][1];
@@ -8448,12 +10774,70 @@ function createWorld(seedString) {
           }
           roughness += Math.abs(elevationValue - elevationField[nIdx]);
           neighborCount += 1;
+          const neighborMoisture = clamp(
+            rainfallField[nIdx] * 0.7 + (1 - drainageField[nIdx]) * 0.3,
+            0,
+            1
+          );
+          neighborhoodMoistureSum += neighborMoisture;
+          neighborhoodMoistureSamples += 1;
         }
         const averageRoughness = neighborCount > 0 ? roughness / neighborCount : 0;
         const slopeScore = clamp(1 - averageRoughness * 12, 0, 1);
         const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
         const maxEdgeDistance = Math.max(1, Math.min(width, height) / 2);
         const edgeScore = clamp(edgeDistance / maxEdgeDistance, 0, 1);
+        const neighborhoodMoisture =
+          neighborhoodMoistureSamples > 0
+            ? neighborhoodMoistureSum / neighborhoodMoistureSamples
+            : localMoisture;
+        const blendedMoisture = localMoisture * 0.65 + neighborhoodMoisture * 0.35;
+        const dryness = 1 - blendedMoisture;
+        const humidityExcess = Math.max(0, blendedMoisture - 0.52);
+        const swampPressure = Math.max(0, blendedMoisture - 0.68);
+        const aridPressure = Math.max(0, dryness - 0.55);
+        const poorDrainage = Math.max(0, 0.48 - drainageValue);
+        const normalizedY = (y + 0.5) / height;
+        const latitudeFactor = 1 - Math.abs(normalizedY - 0.5) * 2;
+        const elevationAboveSea = Math.max(elevationValue - seaLevel, 0);
+        const elevationCooling = clamp(1 - elevationAboveSea * 3.5, 0, 1);
+        const approximateTemperature = clamp(
+          latitudeFactor * 0.75 + elevationCooling * 0.25,
+          0,
+          1
+        );
+        const relativeElevation = elevationValue - seaLevel;
+        let biomeTendency = 'grassland';
+        if (relativeElevation < 0.05) {
+          if (blendedMoisture > 0.7) {
+            biomeTendency = 'marsh';
+          } else if (blendedMoisture > 0.54 && approximateTemperature > 0.52) {
+            biomeTendency = 'forest';
+          }
+        } else if (blendedMoisture < 0.3) {
+          biomeTendency = 'badlands';
+        } else if (approximateTemperature < 0.3) {
+          biomeTendency = 'tundra';
+        } else if (blendedMoisture > 0.72) {
+          biomeTendency = 'marsh';
+        } else if (blendedMoisture > 0.52 && approximateTemperature > 0.55) {
+          biomeTendency = 'forest';
+        }
+        let grassPreference = clamp(
+          1 - humidityExcess * 1.4 - swampPressure * 1.25 - aridPressure * 1.05 - poorDrainage * 0.55,
+          0,
+          1
+        );
+        if (biomeTendency === 'forest') {
+          grassPreference *= 0.12;
+        } else if (biomeTendency === 'marsh') {
+          grassPreference *= 0.08;
+        } else if (biomeTendency === 'tundra' || biomeTendency === 'badlands') {
+          grassPreference *= 0.35;
+        }
+        if (grassPreference < 0.22) {
+          continue;
+        }
         let riverAdjacency = 0;
         for (let i = 0; i < cardinalOffsets.length; i += 1) {
           const nx = x + cardinalOffsets[i][0];
@@ -8467,9 +10851,23 @@ function createWorld(seedString) {
           }
         }
         const riverScore = riverAdjacency > 0 ? clamp(0.18 + riverAdjacency * 0.06, 0, 0.32) : 0;
+        const biomePenalty =
+          biomeTendency === 'forest'
+            ? 0.24
+            : biomeTendency === 'marsh'
+            ? 0.18
+            : biomeTendency === 'tundra' || biomeTendency === 'badlands'
+            ? 0.08
+            : 0;
         const score =
-          elevationScore * 0.4 + slopeScore * 0.25 + edgeScore * 0.15 + riverScore + rng() * 0.2;
-        townCandidates.push({ x, y, score });
+          elevationScore * 0.35 +
+          slopeScore * 0.2 +
+          edgeScore * 0.12 +
+          riverScore +
+          grassPreference * 0.32 -
+          biomePenalty +
+          rng() * 0.12;
+        townCandidates.push({ x, y, score, grassPreference });
       }
     }
 
@@ -8488,6 +10886,9 @@ function createWorld(seedString) {
           break;
         }
         const candidate = townCandidates[i];
+        if (candidate.grassPreference != null && candidate.grassPreference < 0.25) {
+          continue;
+        }
         let tooClose = false;
         for (let j = 0; j < placed.length; j += 1) {
           const other = placed[j];
@@ -8758,39 +11159,26 @@ function createWorld(seedString) {
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
   const treeJungleOverlayKey = hasTreeTile && tileLookup.has('JUNGLE_TREE') ? 'JUNGLE_TREE' : null;
-  const jungleSnowDistanceThresholdSq = 100 * 100;
+  let jungleMask = null;
   const treeOverlayKeys = [treeOverlayKey, treeSnowOverlayKey, treeJungleOverlayKey].filter(
     (key, index, array) => key && array.indexOf(key) === index
   );
   const isTreeOverlayKey = (overlayKey) =>
     hasTreeTile && overlayKey != null && treeOverlayKeys.includes(overlayKey);
-  const selectTreeOverlayForTile = (tile, idx, x, y) => {
+  const selectTreeOverlayForTile = (tile, idx) => {
     if (!tile || !treeOverlayKey) {
       return treeOverlayKey;
     }
     if (tile.base === snowTileKey && treeSnowOverlayKey) {
       return treeSnowOverlayKey;
     }
-    if (treeJungleOverlayKey) {
-      const withinSnowRange =
-        snowDistanceField && snowDistanceField[idx] <= jungleSnowDistanceThresholdSq;
-      if (!withinSnowRange) {
-        return treeOverlayKey;
-      }
-      const normalizedY = (y + 0.5) / height;
-      const rainfallValue = rainfallField[idx];
-      const drainageValue = drainageField[idx];
-      const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 2, 0, 1);
-      const elevationAboveSea = elevationField[idx] - seaLevel;
-      const elevationHeatPenalty = clamp(Math.max(0, elevationAboveSea) * 2.8, 0, 1);
-      const heat = clamp(equatorialAlignment * 0.7 + (1 - elevationHeatPenalty) * 0.3, 0, 1);
-      const humidity = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
-      if (heat > 0.65 && humidity > 0.7) {
-        return treeJungleOverlayKey;
-      }
+    if (treeJungleOverlayKey && jungleMask && jungleMask[idx]) {
+      return treeJungleOverlayKey;
     }
     return treeOverlayKey;
   };
+  let treeDensityField = null;
+
   if (hasTreeTile) {
     const treeBaseSeed = (seedNumber + 0x27d4eb2f) >>> 0;
     const treeDetailSeed = (seedNumber + 0x165667b1) >>> 0;
@@ -8800,8 +11188,86 @@ function createWorld(seedString) {
     const treeBaseOffsetY = rng() * 4096;
     const treeDetailOffsetX = rng() * 8192;
     const treeDetailOffsetY = rng() * 8192;
-    const treeDensityField = new Float32Array(width * height);
+    treeDensityField = new Float32Array(width * height);
     const treeMask = new Uint8Array(width * height);
+    if (treeJungleOverlayKey) {
+      jungleMask = new Uint8Array(width * height);
+      const jungleBaseSeed = (seedNumber + 0x4b9c1fcb) >>> 0;
+      const jungleDetailSeed = (seedNumber + 0x1e35a9bd) >>> 0;
+      const jungleBaseScale = 1.65 + rng() * 1.15;
+      const jungleDetailScale = 5.1 + rng() * 2.9;
+      const jungleBaseOffsetX = rng() * 4096;
+      const jungleBaseOffsetY = rng() * 4096;
+      const jungleDetailOffsetX = rng() * 8192;
+      const jungleDetailOffsetY = rng() * 8192;
+      const jungleSnowBufferSq = 130 * 130;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || !isLandBaseTile(tile.base)) {
+            continue;
+          }
+          if (hasSnowTile && tile.base === snowTileKey) {
+            continue;
+          }
+          if (hasSandTile && tile.base === sandTileKey) {
+            continue;
+          }
+          if (hasBadlandsTile && tile.base === badlandsTileKey) {
+            continue;
+          }
+          if (snowDistanceField && snowDistanceField[idx] < jungleSnowBufferSq) {
+            continue;
+          }
+          const normalizedX = (x + 0.5) / width;
+          const normalizedY = (y + 0.5) / height;
+          const baseNoise = octaveNoise(
+            (normalizedX + jungleBaseOffsetX) * jungleBaseScale,
+            (normalizedY + jungleBaseOffsetY) * jungleBaseScale,
+            jungleBaseSeed,
+            3,
+            0.6,
+            1.95
+          );
+          const detailNoise = octaveNoise(
+            (normalizedX + jungleDetailOffsetX) * jungleDetailScale,
+            (normalizedY + jungleDetailOffsetY) * jungleDetailScale,
+            jungleDetailSeed,
+            4,
+            0.5,
+            2.35
+          );
+          const noiseValue = baseNoise * 0.68 + detailNoise * 0.32;
+          const rainfallValue = rainfallField[idx];
+          const drainageValue = drainageField[idx];
+          const humidity = clamp(rainfallValue * 0.82 + (1 - drainageValue) * 0.18, 0, 1);
+          const equatorialAlignment = clamp(1 - Math.abs(normalizedY - 0.5) * 3.4, 0, 1);
+          const elevationValue = elevationField[idx];
+          const elevationAboveSea = Math.max(0, elevationValue - seaLevel);
+          const elevationScore = clamp(0.28 - elevationAboveSea, 0, 1);
+          const elevationPenalty = clamp(elevationAboveSea * 3.1, 0, 1);
+          const heat = clamp(equatorialAlignment * 0.85 + (1 - elevationPenalty) * 0.25, 0, 1);
+          if (heat < 0.68 || humidity < 0.74 || equatorialAlignment < 0.45) {
+            continue;
+          }
+          const drainageScore = clamp(0.55 - drainageValue, 0, 1);
+          const combinedScore =
+            (heat - 0.68) * 0.35 +
+            (humidity - 0.74) * 0.45 +
+            (equatorialAlignment - 0.45) * 0.25 +
+            drainageScore * 0.2 +
+            elevationScore * 0.3 +
+            (noiseValue - 0.55) * 0.25;
+          if (combinedScore > 0.12) {
+            jungleMask[idx] = 1;
+          }
+        }
+      }
+    }
     const clusterNeighborOffsets = [
       [-1, -1],
       [0, -1],
@@ -8818,16 +11284,19 @@ function createWorld(seedString) {
     const baseNeighborBonus = 0.08;
     const baseDensityAlwaysAdd = 0.6;
     const baseSoftSeedMultiplier = 1.8;
+    const growthSpeedModifier = clamp(0.45 + forestBias * 0.2, 0.35, 0.8);
+    const growthIterationModifier = clamp(0.5 + forestBias * 0.25, 0.5, 0.95);
     const seedThreshold = clamp(baseSeedThreshold - forestBias * 0.18, 0.35, 0.9);
     const softSeedThreshold = clamp(baseSoftSeedThreshold - forestBias * 0.16, 0.25, 0.85);
     const growthBaseline = clamp(baseGrowthBaseline - forestBias * 0.14, 0.2, 0.7);
     const neighborBonus = clamp(baseNeighborBonus + forestBias * 0.04, 0.02, 0.14);
     const densityAlwaysAddThreshold = clamp(
-      baseDensityAlwaysAdd - forestBias * 0.12,
-      0.4,
-      0.78
+      baseDensityAlwaysAdd - forestBias * 0.12 + (1 - growthSpeedModifier) * 0.1,
+      0.45,
+      0.82
     );
     const softSeedMultiplier = clamp(baseSoftSeedMultiplier + forestBias * 0.6, 0.8, 2.6);
+    const maxGrowthIterations = Math.max(1, Math.round(2 * growthIterationModifier));
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -8888,15 +11357,19 @@ function createWorld(seedString) {
           if (tile.base === marshTileKey) {
             tile.base = grassTileKey;
           }
-          if (!tile.hillOverlay && overlayIsHill) {
-            tile.hillOverlay = overlay;
+          const hillOverlayKeyForTile = isHillOverlay(overlay)
+            ? overlay
+            : isHillOverlay(tile.hillOverlay)
+            ? tile.hillOverlay
+            : null;
+          if (hillOverlayKeyForTile) {
+            tile.hillOverlay = hillOverlayKeyForTile;
           }
-          tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
+          tile.overlay = selectTreeOverlayForTile(tile, idx);
         }
       }
     }
 
-    const maxGrowthIterations = 2;
     for (let iteration = 0; iteration < maxGrowthIterations; iteration += 1) {
       const additions = [];
       for (let y = 0; y < height; y += 1) {
@@ -8933,11 +11406,9 @@ function createWorld(seedString) {
             continue;
           }
           const density = treeDensityField[idx];
-          const probability = clamp(
-            (density - growthBaseline) / 0.52 + neighborTrees * neighborBonus,
-            0,
-            1
-          );
+          const baseGrowthChance =
+            (density - growthBaseline) / 0.52 + neighborTrees * neighborBonus;
+          const probability = clamp(baseGrowthChance * growthSpeedModifier, 0, 1);
           if (density > densityAlwaysAddThreshold || rng() < probability) {
             additions.push(idx);
           }
@@ -8974,10 +11445,48 @@ function createWorld(seedString) {
         if (tile.base === marshTileKey) {
           tile.base = grassTileKey;
         }
-        if (!tile.hillOverlay && overlayIsHill) {
-          tile.hillOverlay = overlay;
+        const hillOverlayKeyForTile = isHillOverlay(overlay)
+          ? overlay
+          : isHillOverlay(tile.hillOverlay)
+          ? tile.hillOverlay
+          : null;
+        if (hillOverlayKeyForTile) {
+          tile.hillOverlay = hillOverlayKeyForTile;
         }
-        tile.overlay = selectTreeOverlayForTile(tile, idx, x, y);
+        tile.overlay = selectTreeOverlayForTile(tile, idx);
+      }
+    }
+
+    if (hasSandTile && treeOverlayKeys.length > 0) {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!treeMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || !isTreeOverlayKey(tile.overlay)) {
+            continue;
+          }
+          let adjacentToSand = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && neighborTile.base === sandTileKey) {
+              adjacentToSand = true;
+              break;
+            }
+          }
+          if (!adjacentToSand) {
+            continue;
+          }
+          treeMask[idx] = 0;
+          tile.overlay = null;
+        }
       }
     }
 
@@ -8988,7 +11497,13 @@ function createWorld(seedString) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
           const tile = tiles[y][x];
-          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
+          if (
+            !tile ||
+            !tileHasTreeOverlay(tile) ||
+            tileHasJungleOverlay(tile) ||
+            tile.structure ||
+            (hasSnowTile && tile.base === snowTileKey)
+          ) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -9032,7 +11547,13 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[candidate.y][candidate.x];
-          if (!tile || !tileHasTreeOverlay(tile) || tile.structure) {
+          if (
+            !tile ||
+            !tileHasTreeOverlay(tile) ||
+            tileHasJungleOverlay(tile) ||
+            tile.structure ||
+            (hasSnowTile && tile.base === snowTileKey)
+          ) {
             continue;
           }
           const name = generateWoodElfGroveName(rng);
@@ -9214,6 +11735,20 @@ function createWorld(seedString) {
             break;
           }
         }
+        if (!tooClose) {
+          for (let j = 0; j < towerProximityPoints.length; j += 1) {
+            const other = towerProximityPoints[j];
+            if (!other) {
+              continue;
+            }
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+        }
         if (tooClose) {
           continue;
         }
@@ -9241,6 +11776,7 @@ function createWorld(seedString) {
         tile.structureName = name;
         tile.structureDetails = details;
         placed.push(candidate);
+        recordTowerProximityPoint(candidate.x, candidate.y);
         evilWizardTowers.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
@@ -9317,6 +11853,20 @@ function createWorld(seedString) {
             break;
           }
         }
+        if (!tooClose) {
+          for (let j = 0; j < towerProximityPoints.length; j += 1) {
+            const other = towerProximityPoints[j];
+            if (!other) {
+              continue;
+            }
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+        }
         if (tooClose) {
           continue;
         }
@@ -9341,7 +11891,605 @@ function createWorld(seedString) {
         tile.structureName = name;
         tile.structureDetails = details;
         placed.push(candidate);
+        recordTowerProximityPoint(candidate.x, candidate.y);
         towers.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const majorSettlementPoints = [
+    ...dwarfholds,
+    ...towns,
+    ...woodElfGroves,
+    ...lizardmenCities,
+    ...towers,
+    ...evilWizardTowers
+  ];
+  const hillOverlayKeysForStructures = new Set(['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key)));
+  const isHillOverlayForStructures = (overlayKey) =>
+    overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
+  const mapArea = width * height;
+  const orcCampNoiseSeed = (seedNumber + 0x4a1d2b7f) >>> 0;
+  const dungeonNoiseSeed = (seedNumber + 0x5c8d3a1f) >>> 0;
+  const monasteryNoiseSeed = (seedNumber + 0x6f12c43d) >>> 0;
+  const castleNoiseSeed = (seedNumber + 0x7be21a59) >>> 0;
+  const shrineNoiseSeed = (seedNumber + 0x8cf43123) >>> 0;
+
+  const orcCampKey = tileLookup.has('ORC_CAMP') ? 'ORC_CAMP' : null;
+  if (orcCampKey) {
+    const allowedOrcBases = new Set(
+      [grassTileKey, sandTileKey, marshTileKey, badlandsTileKey].filter((key) => typeof key === 'string')
+    );
+    const orcCampCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!allowedOrcBases.has(tile.base)) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const settlementDistSq = computeNearestDistanceSq(x, y, majorSettlementPoints);
+        if (settlementDistSq < 36) {
+          continue;
+        }
+        const rainfallValue = rainfallField[idx];
+        const dryness = clamp(1 - rainfallValue, 0, 1);
+        let baseScore = 0.2;
+        if (tile.base === badlandsTileKey) {
+          baseScore += 0.45;
+        } else if (tile.base === sandTileKey) {
+          baseScore += 0.36;
+        } else if (tile.base === marshTileKey) {
+          baseScore += 0.28;
+        } else {
+          baseScore += 0.24;
+        }
+        const hillBonus =
+          (isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay)) && tile.base !== marshTileKey
+            ? 0.16
+            : 0;
+        let waterAdjacency = 0;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            waterAdjacency += 1;
+          }
+        }
+        const waterScore = clamp(waterAdjacency * 0.08, 0, 0.18);
+        let settlementPenalty = 0;
+        if (settlementDistSq !== Infinity) {
+          const distance = Math.sqrt(settlementDistSq);
+          settlementPenalty = clamp((10 - distance) * 0.05, 0, 0.35);
+        }
+        const borderDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const edgeScore = clamp(borderDistance / Math.max(6, Math.min(width, height) / 3.2), 0, 1) * 0.12;
+        const noise = hashCoords(x, y, orcCampNoiseSeed) - 0.5;
+        const score =
+          baseScore +
+          dryness * 0.35 +
+          hillBonus +
+          waterScore +
+          edgeScore +
+          noise * 0.22 +
+          rng() * 0.18 -
+          settlementPenalty;
+        if (score > 0.28) {
+          orcCampCandidates.push({ x, y, score });
+        }
+      }
+    }
+
+    if (orcCampCandidates.length > 0) {
+      orcCampCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 14000));
+      const maxCamps = computeStructurePlacementLimit(baseTarget, 16, 1);
+      const minDistance = 8;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < orcCampCandidates.length; i += 1) {
+        if (placed.length >= maxCamps) {
+          break;
+        }
+        const candidate = orcCampCandidates[i];
+        if (candidate.score < 0.3) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const settlementDistSq = computeNearestDistanceSq(candidate.x, candidate.y, majorSettlementPoints);
+        if (settlementDistSq < 36) {
+          continue;
+        }
+        const name = generateOrcCampName(rng);
+        const details = generateOrcCampDetails(name, rng);
+        tile.structure = orcCampKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        orcCamps.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const dungeonKey = tileLookup.has('DUNGEON') ? 'DUNGEON' : null;
+  if (dungeonKey) {
+    const dungeonCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!isLandBaseTile(tile.base)) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const settlementDistSq = computeNearestDistanceSq(x, y, majorSettlementPoints);
+        if (settlementDistSq < 49) {
+          continue;
+        }
+        const heightValue = elevationField[idx];
+        let slopeSum = 0;
+        let neighborCount = 0;
+        let mountainNeighbors = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          slopeSum += Math.abs(heightValue - elevationField[nIdx]);
+          neighborCount += 1;
+          if (mountainMask && mountainMask[nIdx]) {
+            mountainNeighbors += 1;
+          } else {
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && mountainOverlayKey && isMountainOverlay(neighborTile.overlay)) {
+              mountainNeighbors += 1;
+            }
+          }
+        }
+        const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+        const slopeScore = clamp((averageSlope - 0.008) * 38, 0, 1);
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.12 : 0;
+        const mountainBonus = Math.min(0.3, mountainNeighbors * 0.08);
+        const moisture = clamp(rainfallField[idx] * 0.55 + (1 - drainageField[idx]) * 0.45, 0, 1);
+        const dampBonus = clamp(moisture * 0.25, 0, 0.18);
+        const noise = hashCoords(x, y, dungeonNoiseSeed) - 0.5;
+        const score = slopeScore * 0.45 + mountainBonus + hillBonus + dampBonus + noise * 0.3 + rng() * 0.15;
+        if (score > 0.2) {
+          dungeonCandidates.push({ x, y, score });
+        }
+      }
+    }
+
+    if (dungeonCandidates.length > 0) {
+      dungeonCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 21000));
+      const maxDungeons = computeStructurePlacementLimit(baseTarget, 14, 1);
+      const minDistance = 9;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < dungeonCandidates.length; i += 1) {
+        if (placed.length >= maxDungeons) {
+          break;
+        }
+        const candidate = dungeonCandidates[i];
+        if (candidate.score < 0.22) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        if (!isLandBaseTile(tile.base)) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const name = generateDungeonName(rng);
+        const details = generateDungeonDetails(name, rng);
+        tile.structure = dungeonKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        dungeons.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const monasteryKey = tileLookup.has('MONASTERY') ? 'MONASTERY' : null;
+  if (monasteryKey) {
+    const monasteryCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const distanceToTownSq = computeNearestDistanceSq(x, y, towns);
+        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarfholds);
+        const settlementDistanceSq = Math.min(distanceToTownSq, distanceToHoldSq);
+        if (settlementDistanceSq === Infinity) {
+          continue;
+        }
+        const settlementDistance = Math.sqrt(settlementDistanceSq);
+        if (settlementDistance < 4 || settlementDistance > 46) {
+          continue;
+        }
+        const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+        if (distanceToOrcsSq < 49) {
+          continue;
+        }
+        let riverAdjacency = 0;
+        for (let i = 0; i < cardinalOffsets.length; i += 1) {
+          const nx = x + cardinalOffsets[i][0];
+          const ny = y + cardinalOffsets[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const neighborTile = tiles[ny][nx];
+          if (neighborTile && neighborTile.river) {
+            riverAdjacency += 1;
+          }
+        }
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.18 : 0;
+        const riverScore = riverAdjacency > 0 ? clamp(0.18 + riverAdjacency * 0.08, 0, 0.3) : 0;
+        const noise = hashCoords(x, y, monasteryNoiseSeed) - 0.5;
+        const distanceScore = clamp((settlementDistance - 4) / 18, 0, 1) * 0.22;
+        const elevationValue = elevationField[idx];
+        const elevationScore = clamp((elevationValue - seaLevel) * 2, 0, 1) * 0.18;
+        const score =
+          0.28 + hillBonus + riverScore + distanceScore + elevationScore + noise * 0.2 + rng() * 0.12;
+        monasteryCandidates.push({ x, y, score });
+      }
+    }
+
+    if (monasteryCandidates.length > 0) {
+      monasteryCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 24000));
+      const maxMonasteries = computeStructurePlacementLimit(baseTarget, 12, 1);
+      const minDistance = 11;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < monasteryCandidates.length; i += 1) {
+        if (placed.length >= maxMonasteries) {
+          break;
+        }
+        const candidate = monasteryCandidates[i];
+        if (candidate.score < 0.32) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const name = generateMonasteryName(rng);
+        const details = generateMonasteryDetails(name, rng);
+        tile.structure = monasteryKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        monasteries.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const castleKey = tileLookup.has('CASTLE') ? 'CASTLE' : null;
+  if (castleKey) {
+    const castleCandidates = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.24 : 0;
+        const distanceToTownSq = computeNearestDistanceSq(x, y, towns);
+        const distanceToHoldSq = computeNearestDistanceSq(x, y, dwarfholds);
+        const settlementDistanceSq = Math.min(distanceToTownSq, distanceToHoldSq);
+        if (settlementDistanceSq === Infinity) {
+          continue;
+        }
+        const settlementDistance = Math.sqrt(settlementDistanceSq);
+        if (settlementDistance < 6) {
+          continue;
+        }
+        const edgeDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
+        const edgeScore = clamp(edgeDistance / Math.max(8, Math.min(width, height) / 2.6), 0, 1) * 0.18;
+        const heightValue = elevationField[idx];
+        let slopeSum = 0;
+        let neighborCount = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            continue;
+          }
+          slopeSum += Math.abs(heightValue - elevationField[nIdx]);
+          neighborCount += 1;
+        }
+        const averageSlope = neighborCount > 0 ? slopeSum / neighborCount : 0;
+        const slopeScore = clamp(averageSlope * 42, 0, 0.35);
+        const settlementScore = clamp((settlementDistance - 6) / 20, 0, 1) * 0.28;
+        const noise = hashCoords(x, y, castleNoiseSeed) - 0.5;
+        const score = hillBonus + edgeScore + slopeScore + settlementScore + noise * 0.22 + rng() * 0.12;
+        if (score > 0.32) {
+          castleCandidates.push({ x, y, score });
+        }
+      }
+    }
+
+    if (castleCandidates.length > 0) {
+      castleCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 26000));
+      const maxCastles = computeStructurePlacementLimit(baseTarget, 10, 1);
+      const minDistance = 12;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < castleCandidates.length; i += 1) {
+        if (placed.length >= maxCastles) {
+          break;
+        }
+        const candidate = castleCandidates[i];
+        if (candidate.score < 0.34) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        if (!baseIsGrass && !baseIsSnow) {
+          continue;
+        }
+        const name = generateCastleName(rng);
+        const details = generateCastleDetails(name, rng);
+        tile.structure = castleKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        castles.push({ x: candidate.x, y: candidate.y, ...details });
+      }
+    }
+  }
+
+  const saintShrineKey = tileLookup.has('SAINT_SHRINE') ? 'SAINT_SHRINE' : null;
+  if (saintShrineKey) {
+    const shrineCandidates = [];
+    const monasteryPoints = monasteries.slice();
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (waterMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const baseIsMarsh = tile.base === marshTileKey;
+        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+          continue;
+        }
+        if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+          continue;
+        }
+        const distanceToMonasterySq = computeNearestDistanceSq(x, y, monasteryPoints);
+        if (distanceToMonasterySq === Infinity || distanceToMonasterySq < 25 || distanceToMonasterySq > 1600) {
+          continue;
+        }
+        const distanceToSettlementSq = computeNearestDistanceSq(x, y, majorSettlementPoints);
+        if (distanceToSettlementSq < 25) {
+          continue;
+        }
+        let waterAdjacency = 0;
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (waterMask[nIdx]) {
+            waterAdjacency += 1;
+          } else {
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && neighborTile.river) {
+              waterAdjacency += 1;
+            }
+          }
+        }
+        if (waterAdjacency === 0) {
+          continue;
+        }
+        const moisture = clamp(rainfallField[idx] * 0.6 + (1 - drainageField[idx]) * 0.4, 0, 1);
+        const moistureScore = clamp(moisture * 0.4, 0, 0.28);
+        const hillBonus =
+          isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay) ? 0.12 : 0;
+        const monasteryDistance = Math.sqrt(distanceToMonasterySq);
+        const devotionScore = clamp((monasteryDistance - 5) / 18, 0, 1) * 0.22;
+        const noise = hashCoords(x, y, shrineNoiseSeed) - 0.5;
+        const score =
+          0.25 + moistureScore + hillBonus + devotionScore + waterAdjacency * 0.05 + noise * 0.22 + rng() * 0.12;
+        shrineCandidates.push({ x, y, score });
+      }
+    }
+
+    if (shrineCandidates.length > 0) {
+      shrineCandidates.sort((a, b) => b.score - a.score);
+      const baseTarget = Math.max(1, Math.round(mapArea / 24000));
+      const maxShrines = computeStructurePlacementLimit(baseTarget, 14, 1);
+      const minDistance = 9;
+      const minDistanceSq = minDistance * minDistance;
+      const placed = [];
+
+      for (let i = 0; i < shrineCandidates.length; i += 1) {
+        if (placed.length >= maxShrines) {
+          break;
+        }
+        const candidate = shrineCandidates[i];
+        if (candidate.score < 0.3) {
+          continue;
+        }
+        let tooClose = false;
+        for (let j = 0; j < placed.length; j += 1) {
+          const other = placed[j];
+          const dx = candidate.x - other.x;
+          const dy = candidate.y - other.y;
+          if (dx * dx + dy * dy < minDistanceSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (tooClose) {
+          continue;
+        }
+        const tile = tiles[candidate.y][candidate.x];
+        if (!tile || tile.structure || tile.river) {
+          continue;
+        }
+        const baseIsGrass = tile.base === grassTileKey;
+        const baseIsSnow = tile.base === snowTileKey;
+        const baseIsMarsh = tile.base === marshTileKey;
+        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+          continue;
+        }
+        const name = generateSaintShrineName(rng);
+        const details = generateSaintShrineDetails(name, rng);
+        tile.structure = saintShrineKey;
+        tile.structureName = name;
+        tile.structureDetails = details;
+        placed.push(candidate);
+        saintShrines.push({ x: candidate.x, y: candidate.y, ...details });
       }
     }
   }
@@ -9370,6 +12518,14 @@ function createWorld(seedString) {
         if (!tile || !isMountainOverlay(tile.overlay)) {
           continue;
         }
+        if (mountainPeakKey && tile.overlay === mountainPeakKey) {
+          continue;
+        }
+        const normalizedHeight = mountainHeightField ? mountainHeightField[idx] : 0;
+        if (mountainPeakKey && normalizedHeight >= mountainPeakHeightThreshold) {
+          tile.overlay = mountainPeakKey;
+          continue;
+        }
         const hasMountainAbove = y > 0 && mountainMask[(y - 1) * width + x];
         const hasMountainBelow = y < height - 1 && mountainMask[(y + 1) * width + x];
         if (!hasMountainAbove && hasMountainBelow) {
@@ -9391,33 +12547,209 @@ function createWorld(seedString) {
     }
   }
 
-  const classifyTileBiome = (tile) => {
-    if (!tile) {
-      return null;
+  const biomeRandom = mulberry32((seedNumber + 0x4c95e6d9) >>> 0);
+  const temperatureNoiseSeed = (seedNumber + 0x52f6af13) >>> 0;
+  const temperatureNoiseScale = 2.7 + biomeRandom() * 1.8;
+  const temperatureNoiseOffsetX = biomeRandom() * 8192;
+  const temperatureNoiseOffsetY = biomeRandom() * 8192;
+  const moistureNoiseSeed = (seedNumber + 0x6a4b5c27) >>> 0;
+  const moistureNoiseScale = 3.1 + biomeRandom() * 2.3;
+  const moistureNoiseOffsetX = biomeRandom() * 8192;
+  const moistureNoiseOffsetY = biomeRandom() * 8192;
+  const temperatureField = new Float32Array(width * height);
+  const moistureField = new Float32Array(width * height);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const normalizedX = (x + 0.5) / width;
+      const normalizedY = (y + 0.5) / height;
+      const tile = tiles[y][x];
+      const latitudeFactor = 1 - Math.abs(normalizedY - 0.5) * 2;
+      const elevationValue = elevationField[idx];
+      const elevationAboveSea = Math.max(elevationValue - seaLevel, 0);
+      const elevationCooling = clamp(1 - elevationAboveSea * 3.5, 0, 1);
+      const temperatureNoise = octaveNoise(
+        (normalizedX + temperatureNoiseOffsetX) * temperatureNoiseScale,
+        (normalizedY + temperatureNoiseOffsetY) * temperatureNoiseScale,
+        temperatureNoiseSeed,
+        3,
+        0.55,
+        2.1
+      );
+      const baseTemperature = clamp(latitudeFactor * 0.75 + elevationCooling * 0.25, 0, 1);
+      temperatureField[idx] = clamp(baseTemperature + (temperatureNoise - 0.5) * 0.18, 0, 1);
+
+      const rainfallValue = rainfallField[idx];
+      const drainageValue = drainageField[idx];
+      const baseMoisture = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
+      const moistureNoise = octaveNoise(
+        (normalizedX + moistureNoiseOffsetX) * moistureNoiseScale,
+        (normalizedY + moistureNoiseOffsetY) * moistureNoiseScale,
+        moistureNoiseSeed,
+        3,
+        0.55,
+        2.2
+      );
+      moistureField[idx] = clamp(baseMoisture + (moistureNoise - 0.5) * 0.14, 0, 1);
+      if (tile) {
+        tile.temperature = temperatureField[idx];
+        tile.moisture = moistureField[idx];
+      }
     }
-    if (tile.base === waterTileKey) {
+  }
+
+  const initialBiomeField = new Array(width * height);
+
+  const computeInitialBiome = (tile, idx, x, y) => {
+    if (!tile) {
+      return waterMask[idx] ? 'water' : null;
+    }
+    if (waterMask[idx] || tile.base === waterTileKey) {
       return 'water';
+    }
+    if (tileHasTownSettlement(tile)) {
+      return 'grassland';
     }
     if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
       return 'mountain';
     }
-    if (hasSandTile && tile.base === sandTileKey) {
-      return 'desert';
-    }
     if (hasMarshTile && tile.base === marshTileKey) {
       return 'marsh';
     }
+    if (hasBadlandsTile && tile.base === badlandsTileKey) {
+      return 'badlands';
+    }
+    if (hasSandTile && tile.base === sandTileKey) {
+      return 'desert';
+    }
     if (hasSnowTile && tile.base === snowTileKey) {
-      if (isTreeOverlayKey(tile.overlay)) {
-        return 'forest';
+      if (tileHasTreeOverlay(tile)) {
+        return temperatureField[idx] > 0.35 ? 'forest' : 'tundra';
       }
       return 'tundra';
     }
-    if (isTreeOverlayKey(tile.overlay)) {
+    if (tileHasJungleOverlay(tile)) {
+      if (temperatureField[idx] > 0.38 && moistureField[idx] > 0.55) {
+        return 'jungle';
+      }
+      return temperatureField[idx] < 0.22 ? 'tundra' : 'forest';
+    }
+    if (tileHasTreeOverlay(tile)) {
+      return temperatureField[idx] < 0.22 ? 'tundra' : 'forest';
+    }
+
+    const temperature = temperatureField[idx];
+    const moisture = moistureField[idx];
+    const dryness = 1 - moisture;
+    const relativeElevation = elevationField[idx] - seaLevel;
+
+    let nearbyWaterTiles = 0;
+    for (let i = 0; i < neighborOffsets8.length; i += 1) {
+      const nx = x + neighborOffsets8[i][0];
+      const ny = y + neighborOffsets8[i][1];
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+        continue;
+      }
+      const nIdx = ny * width + nx;
+      if (waterMask[nIdx]) {
+        nearbyWaterTiles += 1;
+      }
+    }
+
+    if (moisture > 0.78 && (relativeElevation < 0.06 || nearbyWaterTiles >= 3)) {
+      return 'marsh';
+    }
+    if (temperature < 0.2) {
+      return 'tundra';
+    }
+    if (dryness > 0.64 && temperature > 0.32) {
+      return 'desert';
+    }
+    if (dryness > 0.52 && temperature > 0.35) {
+      return 'badlands';
+    }
+    if (moisture > 0.62 || (moisture > 0.52 && nearbyWaterTiles >= 2)) {
+      return 'forest';
+    }
+    if (moisture > 0.5 && temperature > 0.55) {
       return 'forest';
     }
     return 'grassland';
   };
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const tile = tiles[y][x];
+      const biomeType = computeInitialBiome(tile, idx, x, y);
+      initialBiomeField[idx] = biomeType;
+      if (tile) {
+        tile.biomeType = null;
+        tile.areaName = null;
+      }
+    }
+  }
+
+  let biomeField = initialBiomeField.slice();
+  let biomeBuffer = new Array(width * height);
+  const biomeSmoothingIterations = 2;
+
+  for (let iteration = 0; iteration < biomeSmoothingIterations; iteration += 1) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const currentType = biomeField[idx];
+        biomeBuffer[idx] = currentType;
+        const tile = tiles[y][x];
+        if (tileHasTownSettlement(tile)) {
+          continue;
+        }
+        if (!currentType || currentType === 'water' || currentType === 'mountain') {
+          continue;
+        }
+        const neighborCounts = new Map();
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const neighborType = biomeField[ny * width + nx];
+          if (!neighborType || neighborType === 'water') {
+            continue;
+          }
+          neighborCounts.set(neighborType, (neighborCounts.get(neighborType) || 0) + 1);
+        }
+        let bestType = currentType;
+        let bestCount = 0;
+        neighborCounts.forEach((count, type) => {
+          if (count > bestCount || (count === bestCount && type === currentType)) {
+            bestType = type;
+            bestCount = count;
+          }
+        });
+        if (bestType === currentType) {
+          continue;
+        }
+        const bestIsMarsh = bestType === 'marsh';
+        const currentIsMarsh = currentType === 'marsh';
+        if (currentIsMarsh) {
+          const marshSupport = neighborCounts.get('marsh') || 0;
+          if (marshSupport >= 2 && bestCount < 6) {
+            continue;
+          }
+        }
+        const requiredNeighbors = bestIsMarsh ? 4 : 5;
+        if (bestCount >= requiredNeighbors) {
+          biomeBuffer[idx] = bestType;
+        }
+      }
+    }
+    const swap = biomeField;
+    biomeField = biomeBuffer;
+    biomeBuffer = swap;
+  }
 
   const biomeVisited = new Uint8Array(width * height);
   const biomeClusters = [];
@@ -9428,8 +12760,8 @@ function createWorld(seedString) {
       if (biomeVisited[idx]) {
         continue;
       }
+      const baseBiome = biomeField[idx];
       const tile = tiles[y][x];
-      const baseBiome = classifyTileBiome(tile);
       if (!baseBiome) {
         biomeVisited[idx] = 1;
         if (tile) {
@@ -9450,9 +12782,9 @@ function createWorld(seedString) {
         if (cx === 0 || cy === 0 || cx === width - 1 || cy === height - 1) {
           touchesEdge = true;
         }
-        for (let i = 0; i < cardinalOffsets.length; i += 1) {
-          const nx = cx + cardinalOffsets[i][0];
-          const ny = cy + cardinalOffsets[i][1];
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = cx + neighborOffsets8[i][0];
+          const ny = cy + neighborOffsets8[i][1];
           if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
             continue;
           }
@@ -9460,8 +12792,7 @@ function createWorld(seedString) {
           if (biomeVisited[nIdx]) {
             continue;
           }
-          const neighborTile = tiles[ny][nx];
-          const neighborBiome = classifyTileBiome(neighborTile);
+          const neighborBiome = biomeField[nIdx];
           if (neighborBiome === baseBiome) {
             biomeVisited[nIdx] = 1;
             stack.push(nIdx);
@@ -9494,8 +12825,53 @@ function createWorld(seedString) {
       if (!clusterTile) {
         continue;
       }
+      if (resolvedType === 'ocean' && oceanMask) {
+        oceanMask[clusterIdx] = 1;
+      }
       clusterTile.biomeType = resolvedType;
       clusterTile.areaName = resolvedName;
+    }
+  }
+
+  if (oceanMask) {
+    let hasOcean = false;
+    for (let i = 0; i < oceanMask.length; i += 1) {
+      if (oceanMask[i]) {
+        hasOcean = true;
+        break;
+      }
+    }
+    if (hasOcean) {
+      const oceanDistanceField = computeEuclideanDistanceField(oceanMask, width, height);
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          const tile = tiles[y][x];
+          if (!tile) {
+            continue;
+          }
+          if (waterMask[idx]) {
+            tile.coastProximity = 0;
+            continue;
+          }
+          const distanceToOcean = Math.sqrt(oceanDistanceField[idx]);
+          const proximity = clamp(1 - distanceToOcean / coastlineFalloff, 0, 1);
+          tile.coastProximity = proximity;
+        }
+      }
+    } else {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (tile) {
+            tile.coastProximity = 0;
+          }
+        }
+      }
     }
   }
 
@@ -9562,6 +12938,15 @@ function createWorld(seedString) {
   const factions = politicalData.factions || [];
   return {
     tiles,
+    grassTileKey,
+    waterTileKey,
+    width,
+    height,
+    seaLevel,
+    elevationField,
+    temperatureField,
+    moistureField,
+    biomeField,
     seedString: finalSeed,
     dwarfholds,
     towns,
@@ -9570,6 +12955,11 @@ function createWorld(seedString) {
     evilWizardTowers,
     lizardmenCities,
     woodElfGroves,
+    orcCamps,
+    dungeons,
+    monasteries,
+    castles,
+    saintShrines,
     factions
   };
 }
@@ -9646,15 +13036,189 @@ function drawCustomOverlay(ctx, overlayKey, x, y) {
   return false;
 }
 
-function drawWorld(world) {
+function drawOverlayCell(ctx, x, y, color, alpha = 0.3) {
+  if (!ctx || !color) {
+    return;
+  }
+  const clampedAlpha = clamp(Number.isFinite(alpha) ? alpha : 0.3, 0, 1);
+  if (clampedAlpha <= 0) {
+    return;
+  }
+  ctx.save();
+  ctx.globalAlpha = clampedAlpha;
+  ctx.fillStyle = color;
+  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.restore();
+}
+
+function mixColors(colorA, colorB, t) {
+  const factor = clamp(Number.isFinite(t) ? t : 0, 0, 1);
+  return {
+    r: Math.round(colorA.r + (colorB.r - colorA.r) * factor),
+    g: Math.round(colorA.g + (colorB.g - colorA.g) * factor),
+    b: Math.round(colorA.b + (colorB.b - colorA.b) * factor)
+  };
+}
+
+function rgbToCss({ r, g, b }) {
+  const red = Math.round(Number.isFinite(r) ? r : 0);
+  const green = Math.round(Number.isFinite(g) ? g : 0);
+  const blue = Math.round(Number.isFinite(b) ? b : 0);
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function getElevationOverlayColor(value, seaLevel) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const safeSeaLevel = Number.isFinite(seaLevel) ? clamp(seaLevel, 0, 1) : 0.5;
+  const clampedValue = clamp(value, 0, 1);
+  if (clampedValue <= safeSeaLevel) {
+    const ratio = safeSeaLevel <= 0 ? 0 : clamp(clampedValue / safeSeaLevel, 0, 1);
+    const deep = { r: 23, g: 63, b: 140 };
+    const shallow = { r: 88, g: 164, b: 218 };
+    return rgbToCss(mixColors(deep, shallow, ratio));
+  }
+  const landSpan = Math.max(1 - safeSeaLevel, 0.0001);
+  const landRatio = clamp((clampedValue - safeSeaLevel) / landSpan, 0, 1);
+  const foothills = { r: 96, g: 158, b: 94 };
+  const highlands = { r: 168, g: 124, b: 80 };
+  const peaks = { r: 236, g: 230, b: 220 };
+  if (landRatio < 0.5) {
+    return rgbToCss(mixColors(foothills, highlands, landRatio * 2));
+  }
+  return rgbToCss(mixColors(highlands, peaks, (landRatio - 0.5) * 2));
+}
+
+function getTemperatureOverlayColor(value) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const t = clamp(value, 0, 1);
+  const cold = { r: 32, g: 74, b: 135 };
+  const temperate = { r: 245, g: 208, b: 112 };
+  const hot = { r: 204, g: 65, b: 52 };
+  if (t < 0.5) {
+    return rgbToCss(mixColors(cold, temperate, t * 2));
+  }
+  return rgbToCss(mixColors(temperate, hot, (t - 0.5) * 2));
+}
+
+const biomeOverlayColors = {
+  forest: '#2f855a',
+  jungle: '#0f766e',
+  mountain: '#9c6644',
+  desert: '#f4a261',
+  badlands: '#d97706',
+  tundra: '#94a3b8',
+  grassland: '#65a30d',
+  marsh: '#1d948a',
+  ocean: '#2563eb',
+  lake: '#38bdf8',
+  water: '#38bdf8'
+};
+
+function getBiomeOverlayColor(type) {
+  if (typeof type !== 'string' || type.length === 0) {
+    return null;
+  }
+  const normalized = type.toLowerCase();
+  return biomeOverlayColors[normalized] || null;
+}
+
+function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
+  if (!ctx || !cell) {
+    return;
+  }
+  const pixelX = x * drawSize;
+  const pixelY = y * drawSize;
+  const hasDistinctWaterTile = Boolean(waterTileKey) && waterTileKey !== grassTileKey;
+  const isWaterTile = hasDistinctWaterTile && cell.base === waterTileKey;
+  if (isWaterTile) {
+    const depth = clamp(Number.isFinite(cell.waterDepth) ? cell.waterDepth : 0, 0, 1);
+    const shallowFactor = clamp(1 - depth, 0, 1);
+    if (shallowFactor > 0.01) {
+      const alpha = shallowFactor * 0.32;
+      ctx.fillStyle = `rgba(88, 164, 218, ${alpha})`;
+      ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    }
+    return;
+  }
+  if (!grassTileKey || cell.base !== grassTileKey) {
+    return;
+  }
+  const coast = clamp(Number.isFinite(cell.coastProximity) ? cell.coastProximity : 0, 0, 1);
+  if (coast > 0.01) {
+    const alpha = coast * 0.4;
+    ctx.fillStyle = `rgba(226, 208, 167, ${alpha})`;
+    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+  }
+  const desertProximity = clamp(
+    Number.isFinite(cell.desertProximity) ? cell.desertProximity : 0,
+    0,
+    1
+  );
+  if (desertProximity > 0.01) {
+    const desertAlpha = desertProximity * 0.35;
+    ctx.fillStyle = `rgba(233, 214, 166, ${desertAlpha})`;
+    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+  }
+}
+
+function applyDesertMountainTint(ctx, cell, x, y) {
+  if (!ctx || !cell) {
+    return;
+  }
+
+  const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+  if (!overlayKey || !isMountainOverlayKey(overlayKey)) {
+    return;
+  }
+
+  const baseKey = typeof cell.base === 'string' ? cell.base : '';
+  const isSandBase = baseKey === 'SAND';
+  const isBadlandsBase = baseKey === 'BADLANDS';
+  if (!isSandBase && !isBadlandsBase) {
+    return;
+  }
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.globalAlpha = isBadlandsBase ? 0.35 : 0.45;
+  ctx.fillStyle = isBadlandsBase ? '#b38a5c' : '#dcbf7e';
+  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.restore();
+}
+
+function drawWorld(world, options = {}) {
+  const { preserveView = false } = options;
   const { tiles, seedString } = world;
   const factions = Array.isArray(world.factions) ? world.factions : [];
   const showPoliticalBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
   const showPoliticalInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
+  const showElevation = Boolean(state.ui && state.ui.showElevation);
+  const showBiomes = Boolean(state.ui && state.ui.showBiomes);
+  const showTemperature = Boolean(state.ui && state.ui.showTemperature);
+  const shouldDrawDataOverlay = showElevation || showBiomes || showTemperature;
+  const elevationField = showElevation && world.elevationField ? world.elevationField : null;
+  const temperatureField = showTemperature && world.temperatureField ? world.temperatureField : null;
+  const seaLevel = Number.isFinite(world.seaLevel) ? world.seaLevel : null;
   const hasPoliticalOverlay = (showPoliticalBorders || showPoliticalInfluence) && factions.length > 0;
+  const waterTileKey = world.waterTileKey || resolveTileName('WATER');
+  const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
+  hideStructureDetails();
   hideMapTooltip();
   const height = tiles.length;
   const width = tiles[0].length;
+  const previousView = preserveView
+    ? {
+        scale: viewState.scale,
+        translateX: viewState.translateX,
+        translateY: viewState.translateY,
+        hasInteracted: viewState.hasInteracted
+      }
+    : null;
+
   const ctx = elements.canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
@@ -9665,12 +13229,30 @@ function drawWorld(world) {
   elements.canvas.style.width = `${pixelWidth}px`;
   elements.canvas.style.height = `${pixelHeight}px`;
 
-  resetView(pixelWidth, pixelHeight);
+  if (preserveView && elements.canvasWrapper) {
+    const rect = elements.canvasWrapper.getBoundingClientRect();
+    viewState.wrapperSize = { width: rect.width, height: rect.height };
+    viewState.worldSize = { width: pixelWidth, height: pixelHeight };
+    const { contain, cover } = computeViewScales(rect.width, rect.height, pixelWidth, pixelHeight);
+    viewState.containScale = contain;
+    viewState.coverScale = cover;
+    viewState.minScale = Math.min(0.25, contain);
+    viewState.maxScale = Math.max(6, cover * 4);
+    const targetScale = previousView ? previousView.scale : viewState.scale;
+    viewState.scale = clamp(targetScale, viewState.minScale, viewState.maxScale);
+    viewState.translateX = previousView ? previousView.translateX : viewState.translateX;
+    viewState.translateY = previousView ? previousView.translateY : viewState.translateY;
+    viewState.hasInteracted = previousView ? previousView.hasInteracted : viewState.hasInteracted;
+    applyViewTransform();
+  } else {
+    resetView(pixelWidth, pixelHeight);
+  }
   refreshOverlayToggleButtons();
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const cell = tiles[y][x];
+      const cellIndex = shouldDrawDataOverlay ? y * width + x : null;
       const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('GRASS');
       if (!baseDefinition) {
         continue;
@@ -9690,6 +13272,8 @@ function drawWorld(world) {
         drawSize,
         drawSize
       );
+
+      applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey);
 
       if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
         const hillDefinition = tileLookup.get(cell.hillOverlay);
@@ -9733,6 +13317,31 @@ function drawWorld(world) {
         }
       }
 
+      applyDesertMountainTint(ctx, cell, x, y);
+
+      if (showElevation && elevationField && cellIndex !== null) {
+        const elevationValue = elevationField[cellIndex];
+        const elevationColor = getElevationOverlayColor(elevationValue, seaLevel);
+        if (elevationColor) {
+          drawOverlayCell(ctx, x, y, elevationColor, 0.55);
+        }
+      }
+
+      if (showTemperature && temperatureField && cellIndex !== null) {
+        const temperatureValue = temperatureField[cellIndex];
+        const temperatureColor = getTemperatureOverlayColor(temperatureValue);
+        if (temperatureColor) {
+          drawOverlayCell(ctx, x, y, temperatureColor, 0.55);
+        }
+      }
+
+      if (showBiomes) {
+        const biomeColor = getBiomeOverlayColor(cell && cell.biomeType);
+        if (biomeColor) {
+          drawOverlayCell(ctx, x, y, biomeColor, 0.35);
+        }
+      }
+
       if (cell.river) {
         drawRiverSegment(ctx, cell.river, x, y);
       }
@@ -9742,21 +13351,33 @@ function drawWorld(world) {
         if (!structureDefinition) {
           continue;
         }
-        const structureSheet = state.tileSheets[structureDefinition.sheet];
-        if (!structureSheet || !structureSheet.image) {
-          continue;
+        if (typeof structureDefinition.draw === 'function') {
+          structureDefinition.draw(ctx, {
+            x,
+            y,
+            pixelX: x * drawSize,
+            pixelY: y * drawSize,
+            size: drawSize,
+            cell,
+            world
+          });
+        } else {
+          const structureSheet = state.tileSheets[structureDefinition.sheet];
+          if (!structureSheet || !structureSheet.image) {
+            continue;
+          }
+          ctx.drawImage(
+            structureSheet.image,
+            structureDefinition.sx,
+            structureDefinition.sy,
+            structureDefinition.size,
+            structureDefinition.size,
+            x * drawSize,
+            y * drawSize,
+            drawSize,
+            drawSize
+          );
         }
-        ctx.drawImage(
-          structureSheet.image,
-          structureDefinition.sx,
-          structureDefinition.sy,
-          structureDefinition.size,
-          structureDefinition.size,
-          x * drawSize,
-          y * drawSize,
-          drawSize,
-          drawSize
-        );
       }
 
       if (hasPoliticalOverlay && cell && cell.factionId !== null && cell.factionId !== undefined) {
@@ -9778,7 +13399,7 @@ function drawWorld(world) {
           ctx.restore();
 
           if (showPoliticalBorders) {
-            const borderThickness = Math.max(1, Math.round(drawSize / 8));
+            const borderThickness = Math.max(1, Math.round(drawSize / 16));
             const leftNeighbor = x > 0 ? tiles[y][x - 1] : null;
             const rightNeighbor = x < width - 1 ? tiles[y][x + 1] : null;
             const topNeighbor = y > 0 ? tiles[y - 1][x] : null;
@@ -9815,6 +13436,9 @@ function drawWorld(world) {
     }
   }
 
+  drawLocalSelectionOverlay(ctx);
+  refreshLocalMapPreview();
+
   state.settings.lastSeedString = seedString;
   state.settings.seedString = seedString;
   if (elements.worldSeedInput) {
@@ -9846,6 +13470,7 @@ function beginGame() {
 function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
   hideMapTooltip();
+  hideLocalView({ suppressRedraw: true });
   const world = createWorld(seedToUse);
   state.currentWorld = world;
   drawWorld(world);
@@ -9870,6 +13495,9 @@ function updateOverlayToggleButton(button, isActive, labels) {
 function refreshOverlayToggleButtons() {
   const showBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
   const showInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
+  const showElevation = Boolean(state.ui && state.ui.showElevation);
+  const showBiomes = Boolean(state.ui && state.ui.showBiomes);
+  const showTemperature = Boolean(state.ui && state.ui.showTemperature);
   updateOverlayToggleButton(elements.politicalBordersToggle, showBorders, {
     active: 'Hide Borders',
     inactive: 'Show Borders'
@@ -9877,6 +13505,18 @@ function refreshOverlayToggleButtons() {
   updateOverlayToggleButton(elements.politicalInfluenceToggle, showInfluence, {
     active: 'Hide Influence',
     inactive: 'Show Influence'
+  });
+  updateOverlayToggleButton(elements.elevationToggle, showElevation, {
+    active: 'Hide Elevation',
+    inactive: 'Show Elevation'
+  });
+  updateOverlayToggleButton(elements.biomeToggle, showBiomes, {
+    active: 'Hide Biomes',
+    inactive: 'Show Biomes'
+  });
+  updateOverlayToggleButton(elements.temperatureToggle, showTemperature, {
+    active: 'Hide Temperature',
+    inactive: 'Show Temperature'
   });
 }
 
@@ -9966,6 +13606,21 @@ function attachEvents() {
 
   elements.closeOptions.addEventListener('click', () => toggleOptions(false));
 
+  if (elements.structureDetailsClose) {
+    elements.structureDetailsClose.addEventListener('click', () => {
+      hideStructureDetails({ returnFocus: true });
+    });
+  }
+
+  if (elements.localMapClose) {
+    elements.localMapClose.addEventListener('click', () => {
+      hideLocalView();
+      if (elements.canvasWrapper) {
+        elements.canvasWrapper.focus();
+      }
+    });
+  }
+
   if (elements.politicalBordersToggle) {
     elements.politicalBordersToggle.addEventListener('click', () => {
       state.ui.showPoliticalBorders = !state.ui.showPoliticalBorders;
@@ -9979,6 +13634,36 @@ function attachEvents() {
   if (elements.politicalInfluenceToggle) {
     elements.politicalInfluenceToggle.addEventListener('click', () => {
       state.ui.showPoliticalInfluence = !state.ui.showPoliticalInfluence;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.elevationToggle) {
+    elements.elevationToggle.addEventListener('click', () => {
+      state.ui.showElevation = !state.ui.showElevation;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.biomeToggle) {
+    elements.biomeToggle.addEventListener('click', () => {
+      state.ui.showBiomes = !state.ui.showBiomes;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.temperatureToggle) {
+    elements.temperatureToggle.addEventListener('click', () => {
+      state.ui.showTemperature = !state.ui.showTemperature;
       refreshOverlayToggleButtons();
       if (state.currentWorld) {
         drawWorld(state.currentWorld);
@@ -10213,7 +13898,36 @@ function attachEvents() {
       beginGame();
       ensureMusicStarted();
     });
+
+    elements.dwarfCustomizerForm.addEventListener('pointerdown', handleLayoutPointerDown);
+    elements.dwarfCustomizerForm.addEventListener('pointermove', handleLayoutPointerMove);
+    elements.dwarfCustomizerForm.addEventListener('pointerup', handleLayoutPointerUp);
+    elements.dwarfCustomizerForm.addEventListener('pointercancel', handleLayoutPointerUp);
+    elements.dwarfCustomizerForm.addEventListener('click', handleLayoutClickCapture, true);
+    elements.dwarfCustomizerForm.addEventListener('keydown', handleLayoutKeydownCapture, true);
   }
+
+  if (elements.dwarfLayoutToggle) {
+    elements.dwarfLayoutToggle.addEventListener('click', () => {
+      setLayoutEditingActive(!layoutEditorState.isActive);
+    });
+  }
+
+  if (elements.dwarfLayoutSave) {
+    elements.dwarfLayoutSave.addEventListener('click', () => {
+      if (layoutEditorState.isActive) {
+        downloadLayoutConfiguration();
+      }
+    });
+  }
+
+  if (elements.dwarfLayoutReset) {
+    elements.dwarfLayoutReset.addEventListener('click', () => {
+      resetLayoutOffsets();
+    });
+  }
+
+  updateLayoutControlStates();
 
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.addEventListener('input', (event) => {
@@ -10316,6 +14030,14 @@ function attachEvents() {
     }
 
     if (event.key === 'Escape') {
+      if (state.localView && state.localView.active) {
+        hideLocalView();
+        return;
+      }
+      if (structureDetailsState.visible) {
+        hideStructureDetails({ returnFocus: true });
+        return;
+      }
       if (isDwarfCustomizerVisible()) {
         closeDwarfCustomizer({ returnFocus: true });
         return;
