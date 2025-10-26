@@ -991,6 +991,104 @@ button:hover:not(:disabled) {
   align-self: flex-start;
 }
 
+.structure-details-section--portrait {
+  align-items: center;
+}
+
+.ruler-portrait {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  text-align: center;
+}
+
+.ruler-portrait-frame {
+  position: relative;
+  width: min(200px, 60vw);
+  aspect-ratio: 3 / 4;
+  padding: 0.65rem;
+  border-radius: 20px;
+  background: rgba(12, 15, 25, 0.92);
+  border: 1px solid var(--portrait-border, rgba(10, 12, 20, 0.85));
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.ruler-portrait-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0.38rem;
+  border-radius: 16px;
+  background: var(--portrait-background, linear-gradient(155deg, #293040, #3d455c));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 22px var(--portrait-glow, rgba(255, 206, 112, 0.18));
+  z-index: 0;
+}
+
+.ruler-portrait-image {
+  position: absolute;
+  inset: 0.38rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.ruler-portrait-image::after {
+  content: '';
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
+  opacity: 0.85;
+}
+
+.ruler-portrait-emblem {
+  position: relative;
+  z-index: 1;
+  font-family: 'Cinzel', 'Trajan Pro', 'Times New Roman', serif;
+  font-size: clamp(2.4rem, 4vw, 2.9rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--portrait-accent, #f7d293);
+  text-transform: uppercase;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ruler-portrait-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #fff;
+}
+
+.ruler-portrait-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.ruler-portrait-role {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.ruler-portrait-epithet {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .ruler-portrait-frame {
+    width: min(180px, 70vw);
+  }
+}
+
 .structure-details-empty--standalone {
   margin: 0;
 }
