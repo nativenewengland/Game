@@ -9618,7 +9618,13 @@ function createWorld(seedString) {
     state.settings.lizardmenSettlementFrequency,
     50
   );
-  const forestBias = (forestFrequencySetting - defaultForestFrequency) / 50;
+  const forestBias = clamp(
+    // Normalize relative to the default slider position so negative values mean "sparser"
+    // and positive values mean "denser", then clip extremes to keep the downstream math stable.
+    (forestFrequencySetting - defaultForestFrequency) / Math.max(1, defaultForestFrequency),
+    -1.5,
+    1.5
+  );
   const mountainFrequencyNormalized = clamp(mountainFrequencySetting / 100, 0, 1);
   const riverFrequencyNormalized = clamp(riverFrequencySetting / 100, 0, 1);
   const humanSettlementFrequencyNormalized = clamp(humanSettlementFrequencySetting / 100, 0, 1);
@@ -12683,6 +12689,9 @@ function createWorld(seedString) {
         density = clamp(density * 0.55 + rainfallValue * 0.45, 0, 1);
         const biasMultiplier = isFirstAge ? 1 + forestBias * 0.25 : 0.85 + forestBias * 0.2;
         density = clamp(density * biasMultiplier, 0, 1);
+        // Apply a small additive push so that the highest slider values can still create forests
+        // even when the multiplicative bias is already clamped by rainfall or elevation limits.
+        density = clamp(density + forestBias * 0.08, 0, 1);
         if (!isFirstAge) {
           const clusterNoise = octaveNoise(
             (normalizedX + treeClusterOffsetX) * treeClusterScale,
