@@ -1520,7 +1520,10 @@ button:hover:not(:disabled) {
 .dwarf-name-field::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background-image: url('tilesheet/nametype.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -1528,6 +1531,13 @@ button:hover:not(:disabled) {
   image-rendering: pixelated;
   pointer-events: none;
   z-index: 0;
+}
+
+@media (min-width: 1025px) {
+  .customizer-sidebar__name .dwarf-name-field::before {
+    left: calc(-1 * clamp(1.25rem, 3vw, 2.5rem));
+    background-position: right center;
+  }
 }
 
 .dwarf-name-input {
