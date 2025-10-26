@@ -1036,8 +1036,9 @@ button:hover:not(:disabled) {
 
 .customizer-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   justify-items: start;
+  align-items: start;
   gap: clamp(1.25rem, 3vw, 2.5rem);
 }
 
@@ -1115,6 +1116,70 @@ button:hover:not(:disabled) {
     clamp(1.1rem, 2.4vw, 1.6rem)
     clamp(1.2rem, 2.5vw, 1.6rem);
   margin-top: clamp(-1.75rem, calc(-0.6rem - 1.2vw), -0.85rem);
+}
+
+.customizer-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.85rem, 2.3vw, 1.45rem);
+  align-items: center;
+  justify-self: end;
+}
+
+.customizer-sidebar__name.pixel-bar {
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1vw, 0.6rem);
+  width: min(100%, clamp(18rem, 28vw, 24rem));
+  border-radius: 18px;
+  background: rgba(24, 18, 32, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18),
+    0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
+}
+
+.customizer-sidebar__name .dwarf-slot-info {
+  align-items: center;
+  margin-top: 0;
+  text-align: center;
+}
+
+.customizer-sidebar__name .slot-label {
+  width: 100%;
+}
+
+.customizer-sidebar__name .dwarf-name-nav {
+  justify-content: center;
+  gap: clamp(0.5rem, 1.4vw, 0.85rem);
+  width: 100%;
+}
+
+.customizer-sidebar__name .dwarf-name-field {
+  width: clamp(14.5rem, 24vw, 20.5rem);
+  margin: 0;
+}
+
+.customizer-sidebar__image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.body-panel-image {
+  display: block;
+  height: auto;
+  width: clamp(220px, 24vw, 310px);
+  image-rendering: pixelated;
+}
+
+.customizer-sidebar__actions {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  align-items: center;
+}
+
+.customizer-sidebar__actions .create-button--inline {
+  width: clamp(170px, 20vw, 230px);
 }
 
 .pixel-bar {
@@ -1787,7 +1852,16 @@ button:hover:not(:disabled) {
 }
 @media (max-width: 1024px) {
   .customizer-layout {
+    grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
+  }
+
+  .customizer-sidebar {
+    justify-self: center;
+  }
+
+  .customizer-sidebar__name.pixel-bar {
+    width: min(100%, 22rem);
   }
 
   .customizer-main {
@@ -1825,25 +1899,28 @@ button:hover:not(:disabled) {
 }
 
 @media (max-width: 720px) {
-  .customizer-top-bar.pixel-bar {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
+  .customizer-sidebar__name.pixel-bar {
+    width: min(100%, 18.5rem);
+    padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.75rem, 4vw, 1rem);
   }
 
-  .dwarf-slot-info {
+  .customizer-sidebar__name .dwarf-slot-info {
     align-items: center;
     text-align: center;
   }
 
-  .dwarf-name-nav {
-    justify-content: center;
-    width: auto;
+  .customizer-sidebar__name .dwarf-name-nav {
+    width: 100%;
   }
 
-  .dwarf-name-field {
+  .customizer-sidebar__name .dwarf-name-field {
     margin: 0 auto;
     justify-self: center;
+    width: min(100%, 17.5rem);
+  }
+
+  .body-panel-image {
+    width: min(220px, 85vw);
   }
 
   .customizer-main {
