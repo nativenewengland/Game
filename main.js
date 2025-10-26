@@ -5213,6 +5213,7 @@ const dwarfOptions = {
     { value: 'male', label: 'Male' }
   ],
   skin: [
+    { value: 'coal', label: 'Coal Black', color: '#1a0f10' },
     { value: 'umber', label: 'Deep Umber', color: '#4d3123' },
     { value: 'russet', label: 'Russet Bronze', color: '#6b3a22' },
     { value: 'sienna', label: 'Burnt Sienna', color: '#8a4b2a' },
@@ -5298,7 +5299,7 @@ const dwarfTraitAttributeDefinitions = [
     description:
       'Your soot colored skin indicates you to hail from the ash covered lands of Dun Mortis. You are known by your ivory skinned cousins as the Dark Dwarves, a race cast away from the light of the All-father into the refuge bin of Stonebeards furance. You are hated by your kin as an oathbreaker by virture of your birthright and if you attempt to enter into their holds will likely be killed on sight.',
     icon: 'tilesheet/darkdwarf.png',
-    isActive: (dwarf) => dwarf?.skin === 'umber'
+    isActive: (dwarf) => dwarf?.skin === 'umber' || dwarf?.skin === 'coal'
   }
 ];
 
