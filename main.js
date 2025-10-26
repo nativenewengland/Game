@@ -214,6 +214,8 @@ const baseTileCoords = {
   CASTLE: { row: 4, col: 6 },
   ROADSIDE_TAVERN: { row: 1, col: 12 },
   HAMLET: { row: 1, col: 13 },
+  ACTIVE_VOLCANO: { row: 2, col: 12 },
+  VOLCANO: { row: 2, col: 13 },
   OASIS: { row: 0, col: 12 },
   HAMLET_SNOW: { row: 0, col: 13 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
@@ -463,7 +465,10 @@ const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B'
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
 
-const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
+const volcanoOverlayKeySet = new Set(['VOLCANO', 'ACTIVE_VOLCANO']);
+const isVolcanoOverlayKey = (key) => typeof key === 'string' && volcanoOverlayKeySet.has(key);
+const isMountainOverlayKey = (key) =>
+  typeof key === 'string' && (key.startsWith('MOUNTAIN') || isVolcanoOverlayKey(key));
 const isHillOverlayKey = (key) => typeof key === 'string' && hillOverlayKeySet.has(key);
 const isTreeOverlayKey = (key) => typeof key === 'string' && treeOverlayKeySet.has(key);
 const tileHasTreeOverlay = (tile) =>
@@ -10245,6 +10250,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.waterDepth = 0;
     tile.coastProximity = 0;
     tile.desertProximity = 0;
+    tile.volcanoProximity = 0;
     waterMask[idx] = 1;
     return true;
   };
@@ -10924,6 +10930,7 @@ function createWorld(seedString) {
         waterDepth: 0,
         coastProximity: 0,
         desertProximity: 0,
+        volcanoProximity: 0,
         elevation: 0,
         temperature: 0,
         moisture: 0
@@ -11002,6 +11009,11 @@ function createWorld(seedString) {
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
   const mountainPeakKey = hasMountainTile && tileLookup.has('MOUNTAIN_PEAK') ? 'MOUNTAIN_PEAK' : null;
+  const activeVolcanoKey = hasMountainTile && tileLookup.has('ACTIVE_VOLCANO') ? 'ACTIVE_VOLCANO' : null;
+  const dormantVolcanoKey = hasMountainTile && tileLookup.has('VOLCANO') ? 'VOLCANO' : null;
+  const volcanoOverlayKeys = hasMountainTile
+    ? [activeVolcanoKey, dormantVolcanoKey].filter(Boolean)
+    : [];
   const mountainPeakHeightThreshold = 0.97;
   const mountainTopVariantKeys = hasMountainTile
     ? ['MOUNTAIN_TOP_A', 'MOUNTAIN_TOP_B'].filter((key) => tileLookup.has(key))
@@ -11014,7 +11026,8 @@ function createWorld(seedString) {
         mountainOverlayKey,
         mountainPeakKey,
         ...mountainTopVariantKeys,
-        ...mountainBottomVariantKeys
+        ...mountainBottomVariantKeys,
+        ...volcanoOverlayKeys
       ].filter(Boolean))
     : new Set();
   const isMountainOverlay = (overlayKey) =>
@@ -11076,6 +11089,7 @@ function createWorld(seedString) {
       tile.waterDepth = 0;
       tile.coastProximity = 0;
       tile.desertProximity = 0;
+      tile.volcanoProximity = 0;
       tile.elevation = heightValue;
     }
   }
@@ -12284,6 +12298,106 @@ function createWorld(seedString) {
       }
     }
 
+    if (volcanoOverlayKeys.length > 0) {
+      const volcanoCandidates = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!mountainMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || tile.structure || tile.river) {
+            continue;
+          }
+          if (tile.overlay !== mountainOverlayKey && tile.overlay !== mountainPeakKey) {
+            continue;
+          }
+          const normalizedHeight = mountainHeightField ? mountainHeightField[idx] : 0;
+          const score = mountainScores ? mountainScores[idx] : 0;
+          volcanoCandidates.push({ x, y, idx, height: normalizedHeight, score });
+        }
+      }
+
+      if (volcanoCandidates.length > 0) {
+        volcanoCandidates.sort((a, b) => {
+          if (b.height !== a.height) {
+            return b.height - a.height;
+          }
+          return b.score - a.score;
+        });
+
+        const minVolcanoCount = Math.min(volcanoOverlayKeys.length, volcanoCandidates.length);
+        const baseVolcanoCount = Math.round(volcanoCandidates.length / 600);
+        const desiredVolcanoCount = clamp(
+          Math.max(minVolcanoCount, baseVolcanoCount),
+          minVolcanoCount,
+          Math.min(volcanoCandidates.length, 6)
+        );
+
+        if (desiredVolcanoCount > 0) {
+          const selectionPoolSize = Math.min(
+            volcanoCandidates.length,
+            Math.max(desiredVolcanoCount * 5, desiredVolcanoCount + 3)
+          );
+          const selectionPool = volcanoCandidates.slice(0, selectionPoolSize);
+          const placedVolcanoes = [];
+          const volcanoMinDistance = 6;
+          const volcanoMinDistanceSq = volcanoMinDistance * volcanoMinDistance;
+          let attempts = 0;
+          const maxAttempts = selectionPool.length * 3;
+
+          while (
+            selectionPool.length > 0 &&
+            placedVolcanoes.length < desiredVolcanoCount &&
+            attempts < maxAttempts
+          ) {
+            attempts += 1;
+            const pickIndex = Math.floor(rng() * selectionPool.length);
+            const candidate = selectionPool.splice(pickIndex, 1)[0];
+            if (!candidate) {
+              continue;
+            }
+
+            let tooClose = false;
+            for (let i = 0; i < placedVolcanoes.length; i += 1) {
+              const placed = placedVolcanoes[i];
+              const dx = candidate.x - placed.x;
+              const dy = candidate.y - placed.y;
+              if (dx * dx + dy * dy < volcanoMinDistanceSq) {
+                tooClose = true;
+                break;
+              }
+            }
+            if (tooClose) {
+              continue;
+            }
+
+            const tile = tiles[candidate.y][candidate.x];
+            if (!tile || tile.structure || tile.river) {
+              continue;
+            }
+
+            const overlayKey =
+              placedVolcanoes.length === 0 && activeVolcanoKey
+                ? activeVolcanoKey
+                : dormantVolcanoKey || activeVolcanoKey;
+
+            if (!overlayKey) {
+              break;
+            }
+
+            tile.overlay = overlayKey;
+            if (stoneTileKey && tile.base !== stoneTileKey) {
+              tile.base = stoneTileKey;
+            }
+
+            placedVolcanoes.push({ x: candidate.x, y: candidate.y, overlayKey });
+          }
+        }
+      }
+    }
+
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
@@ -12303,6 +12417,9 @@ function createWorld(seedString) {
           }
           const tile = tiles[y][x];
           if (!tile) {
+            continue;
+          }
+          if (isVolcanoOverlayKey(tile.overlay)) {
             continue;
           }
           if (tile.river) {
@@ -12896,6 +13013,8 @@ function createWorld(seedString) {
         tile.areaName = null;
         tile.waterDepth = 0;
         tile.coastProximity = 0;
+        tile.desertProximity = 0;
+        tile.volcanoProximity = 0;
         const variantNoise = hashCoords(x, y, icebergVariantSeed);
         const variantIndex = Math.min(
           icebergOverlayKeys.length - 1,
@@ -13013,6 +13132,7 @@ function createWorld(seedString) {
           tile.waterDepth = clamp(depth * depthNormalization, 0, 1);
           tile.coastProximity = 0;
           tile.desertProximity = 0;
+          tile.volcanoProximity = 0;
         } else {
           const distanceToWater = Math.sqrt(landDistanceField[idx]);
           const proximity = clamp(1 - distanceToWater / coastlineFalloff, 0, 1);
@@ -15392,6 +15512,9 @@ function createWorld(seedString) {
         if (!tile || !isMountainOverlay(tile.overlay)) {
           continue;
         }
+        if (isVolcanoOverlayKey(tile.overlay)) {
+          continue;
+        }
         if (mountainPeakKey && tile.overlay === mountainPeakKey) {
           continue;
         }
@@ -15816,6 +15939,72 @@ function createWorld(seedString) {
           if (tile) {
             tile.coastProximity = 0;
           }
+        }
+      }
+    }
+  }
+
+  if (volcanoOverlayKeys.length > 0) {
+    const volcanoMask = new Uint8Array(width * height);
+    let hasVolcanoTile = false;
+    const volcanoEligibleBases = new Set(
+      [grassTileKey, stoneTileKey, sandTileKey, snowTileKey].filter((key) => typeof key === 'string')
+    );
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        if (isVolcanoOverlayKey(tile.overlay)) {
+          volcanoMask[idx] = 1;
+          hasVolcanoTile = true;
+          tile.volcanoProximity = 1;
+        } else if (!volcanoEligibleBases.has(tile.base) || waterMask[idx]) {
+          tile.volcanoProximity = 0;
+        }
+      }
+    }
+
+    if (hasVolcanoTile) {
+      const volcanoDistanceField = computeEuclideanDistanceField(volcanoMask, width, height);
+      const volcanoFalloff = 5.2;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (volcanoMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || !volcanoEligibleBases.has(tile.base) || waterMask[idx]) {
+            if (tile) {
+              tile.volcanoProximity = 0;
+            }
+            continue;
+          }
+          const distanceToVolcano = Math.sqrt(volcanoDistanceField[idx]);
+          const proximity = clamp(1 - distanceToVolcano / volcanoFalloff, 0, 1);
+          tile.volcanoProximity = proximity;
+        }
+      }
+    } else {
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const tile = tiles[y][x];
+          if (tile) {
+            tile.volcanoProximity = 0;
+          }
+        }
+      }
+    }
+  } else {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const tile = tiles[y][x];
+        if (tile) {
+          tile.volcanoProximity = 0;
         }
       }
     }
@@ -16262,6 +16451,23 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
   }
 }
 
+function applyVolcanoShading(ctx, cell, x, y) {
+  if (!ctx || !cell) {
+    return;
+  }
+
+  const proximity = clamp(Number.isFinite(cell.volcanoProximity) ? cell.volcanoProximity : 0, 0, 1);
+  if (proximity <= 0.01) {
+    return;
+  }
+
+  const pixelX = x * drawSize;
+  const pixelY = y * drawSize;
+  const alpha = proximity * 0.5;
+  ctx.fillStyle = `rgba(28, 14, 10, ${alpha})`;
+  ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+}
+
 function applyDesertMountainTint(ctx, cell, x, y) {
   if (!ctx || !cell) {
     return;
@@ -16371,6 +16577,7 @@ function drawWorld(world, options = {}) {
       );
 
       applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey);
+      applyVolcanoShading(ctx, cell, x, y);
 
       if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
         const hillDefinition = tileLookup.get(cell.hillOverlay);
