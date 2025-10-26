@@ -12108,6 +12108,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.areaName = null;
     tile.waterDepth = 0;
     tile.coastProximity = 0;
+    tile.marshProximity = 0;
     tile.desertProximity = 0;
     tile.volcanoProximity = 0;
     waterMask[idx] = 1;
@@ -12949,6 +12950,7 @@ function createWorld(seedString) {
         areaName: null,
         waterDepth: 0,
         coastProximity: 0,
+        marshProximity: 0,
         desertProximity: 0,
         volcanoProximity: 0,
         elevation: 0,
@@ -13855,6 +13857,58 @@ function createWorld(seedString) {
         tile.base = base;
         if (marshMaskField) {
           marshMaskField[y * width + x] = base === marshTileKey ? 1 : 0;
+        }
+      }
+    }
+
+    const marshDistanceMask = new Uint8Array(width * height);
+    let marshTileCount = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        if (waterMask[idx]) {
+          tile.marshProximity = 0;
+          continue;
+        }
+        if (tile.base === marshTileKey) {
+          marshDistanceMask[idx] = 1;
+          marshTileCount += 1;
+          tile.marshProximity = 0;
+        } else {
+          marshDistanceMask[idx] = 0;
+          tile.marshProximity = 0;
+        }
+      }
+    }
+
+    if (marshTileCount > 0) {
+      const marshDistanceField = computeEuclideanDistanceField(
+        marshDistanceMask,
+        width,
+        height
+      );
+      const marshTransitionFalloff = 3.5;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx] || marshDistanceMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile) {
+            continue;
+          }
+          if (tile.base !== grassTileKey) {
+            tile.marshProximity = 0;
+            continue;
+          }
+          const distanceToMarsh = Math.sqrt(marshDistanceField[idx]);
+          const proximity = clamp(1 - distanceToMarsh / marshTransitionFalloff, 0, 1);
+          tile.marshProximity = proximity;
         }
       }
     }
@@ -15254,6 +15308,7 @@ function createWorld(seedString) {
           const depth = Math.sqrt(waterDistanceField[idx]);
           tile.waterDepth = clamp(depth * depthNormalization, 0, 1);
           tile.coastProximity = 0;
+          tile.marshProximity = 0;
           tile.desertProximity = 0;
           tile.volcanoProximity = 0;
         } else {
@@ -18228,6 +18283,7 @@ function createWorld(seedString) {
           }
           if (waterMask[idx]) {
             tile.coastProximity = 0;
+            tile.marshProximity = 0;
             continue;
           }
           const distanceToOcean = Math.sqrt(oceanDistanceField[idx]);
@@ -18759,9 +18815,13 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
   if (!grassTileKey || cell.base !== grassTileKey) {
     return;
   }
-  const coast = clamp(Number.isFinite(cell.coastProximity) ? cell.coastProximity : 0, 0, 1);
-  if (coast > 0.01) {
-    const alpha = coast * 0.55;
+  const marshProximity = clamp(
+    Number.isFinite(cell.marshProximity) ? cell.marshProximity : 0,
+    0,
+    1
+  );
+  if (marshProximity > 0.01) {
+    const alpha = marshProximity * 0.55;
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(82, 64, 40, ${alpha})`;
