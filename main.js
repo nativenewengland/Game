@@ -12834,7 +12834,7 @@ function createWorld(seedString) {
         const minVolcanoCount = Math.min(volcanoOverlayKeys.length, volcanoCandidates.length);
         const baseVolcanoCount = Math.round(volcanoCandidates.length / 600);
         const volcanoBaseTarget = Math.max(1, Math.max(minVolcanoCount, baseVolcanoCount));
-        const volcanoRarityFactor = 0.5;
+        const volcanoRarityFactor = 0.3;
         const rarityAdjustedTarget = Math.max(
           1,
           Math.round(volcanoBaseTarget * volcanoRarityFactor)
@@ -16945,9 +16945,12 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
   }
   const coast = clamp(Number.isFinite(cell.coastProximity) ? cell.coastProximity : 0, 0, 1);
   if (coast > 0.01) {
-    const alpha = coast * 0.4;
-    ctx.fillStyle = `rgba(226, 208, 167, ${alpha})`;
+    const alpha = coast * 0.55;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = `rgba(82, 64, 40, ${alpha})`;
     ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.restore();
   }
   const desertProximity = clamp(
     Number.isFinite(cell.desertProximity) ? cell.desertProximity : 0,
@@ -16955,9 +16958,12 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     1
   );
   if (desertProximity > 0.01) {
-    const desertAlpha = desertProximity * 0.35;
-    ctx.fillStyle = `rgba(233, 214, 166, ${desertAlpha})`;
+    const desertAlpha = desertProximity * 0.45;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = `rgba(96, 74, 42, ${desertAlpha})`;
     ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.restore();
   }
 }
 
@@ -16976,6 +16982,27 @@ function applyVolcanoShading(ctx, cell, x, y) {
   const alpha = proximity * 0.5;
   ctx.fillStyle = `rgba(28, 14, 10, ${alpha})`;
   ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+}
+
+function applyMountainShading(ctx, cell, x, y) {
+  if (!ctx || !cell) {
+    return;
+  }
+
+  const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+  const hillOverlayKey = typeof cell.hillOverlay === 'string' ? cell.hillOverlay : null;
+  if (!isMountainOverlayKey(overlayKey) && !isMountainOverlayKey(hillOverlayKey)) {
+    return;
+  }
+
+  const peakOverlay = typeof overlayKey === 'string' && overlayKey.includes('PEAK');
+  const baseAlpha = peakOverlay ? 0.55 : 0.45;
+  const shadingAlpha = clamp(baseAlpha, 0, 0.75);
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = `rgba(24, 20, 18, ${shadingAlpha})`;
+  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.restore();
 }
 
 function applyDesertMountainTint(ctx, cell, x, y) {
@@ -17132,6 +17159,7 @@ function drawWorld(world, options = {}) {
       }
 
       applyDesertMountainTint(ctx, cell, x, y);
+      applyMountainShading(ctx, cell, x, y);
 
       if (showElevation && elevationField && cellIndex !== null) {
         const elevationValue = elevationField[cellIndex];
