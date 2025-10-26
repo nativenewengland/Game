@@ -7281,12 +7281,6 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     narrativeSections.push({ label, text });
   };
 
-  const mapX = Number(context.tileX);
-  const mapY = Number(context.tileY);
-  if (Number.isFinite(mapX) && Number.isFinite(mapY)) {
-    addOverviewEntry('Map Coordinates', `${mapX + 1}, ${mapY + 1}`);
-  }
-
   if (tile.areaName) {
     addOverviewEntry('Region', tile.areaName);
   }
