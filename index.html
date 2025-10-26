@@ -285,6 +285,7 @@
             src="tilesheet/charactercreationtitle.png"
             alt="Character creation title"
             class="founder-title-image"
+            data-draggable-id="founder-title-image"
           />
         </header>
         <div class="customizer-layout">
@@ -407,7 +408,7 @@
                         </div>
                       </div>
 
-                      <div class="field-group">
+                      <div class="field-group" data-draggable-id="trait-head-type">
                         <label for="dwarf-head-slider" class="field-label">Head type</label>
                         <div class="trait-slider">
                           <div class="trait-slider-visual">
@@ -431,7 +432,7 @@
                         </div>
                       </div>
 
-                      <div class="field-group">
+                      <div class="field-group" data-draggable-id="trait-eye-colour">
                         <label for="dwarf-eye-slider" class="field-label">Eye colour</label>
                         <div class="trait-slider">
                           <div class="trait-slider-visual">
@@ -455,7 +456,7 @@
                         </div>
                       </div>
 
-                      <div class="field-group">
+                      <div class="field-group" data-draggable-id="trait-hair-style">
                         <label for="dwarf-hair-style-slider" class="field-label">Hair style</label>
                         <div class="trait-slider">
                           <div class="trait-slider-visual">
@@ -479,7 +480,10 @@
                         </div>
                       </div>
 
-                      <div class="field-group field-group--hair-colour">
+                      <div
+                        class="field-group field-group--hair-colour"
+                        data-draggable-id="trait-hair-colour"
+                      >
                         <label for="dwarf-hair-slider" class="field-label">Hair colour</label>
                         <div class="hair-colour-controls">
                           <div class="trait-slider">
@@ -505,7 +509,11 @@
                         </div>
                       </div>
 
-                      <div class="field-group" id="dwarf-beard-field-group">
+                      <div
+                        class="field-group"
+                        id="dwarf-beard-field-group"
+                        data-draggable-id="trait-beard-style"
+                      >
                         <label for="dwarf-beard-slider" class="field-label">Beard style</label>
                         <div class="trait-slider">
                           <div class="trait-slider-visual">
@@ -538,6 +546,7 @@
                               id="dwarf-randomise"
                               class="gender-toggle-randomise"
                               aria-label="Randomise dwarf"
+                              data-draggable-id="randomise-button"
                             >
                               <span class="randomise-button__dice" aria-hidden="true"></span>
                               <span class="sr-only">Randomise dwarf</span>
@@ -547,6 +556,7 @@
                               class="gender-toggle"
                               role="radiogroup"
                               aria-labelledby="dwarf-gender-label"
+                              data-draggable-id="gender-toggle"
                             >
                               <button
                                 type="button"
@@ -582,7 +592,7 @@
                           </div>
                         </div>
 
-                        <div class="field-group">
+                        <div class="field-group" data-draggable-id="field-clan">
                           <label for="dwarf-clan-select" class="field-label">Clan</label>
                           <select id="dwarf-clan-select" class="field-control">
                             <option value="stonebeard">Stonebeard</option>
@@ -598,7 +608,7 @@
                           </select>
                         </div>
 
-                        <div class="field-group">
+                        <div class="field-group" data-draggable-id="field-guild">
                           <label for="dwarf-guild-select" class="field-label">Guild</label>
                           <select id="dwarf-guild-select" class="field-control">
                             <option value="miners-guild">Miners Guild</option>
@@ -644,7 +654,7 @@
                           </select>
                         </div>
 
-                        <div class="field-group">
+                        <div class="field-group" data-draggable-id="field-profession">
                           <label for="dwarf-profession-select" class="field-label">Profession</label>
                           <select id="dwarf-profession-select" class="field-control">
                             <option value="miner">Miner</option>
@@ -660,10 +670,19 @@
                         </div>
 
                         <div class="customizer-actions">
-                          <button type="button" id="dwarf-back" class="return-button">
+                          <button
+                            type="button"
+                            id="dwarf-back"
+                            class="return-button"
+                            data-draggable-id="return-button"
+                          >
                             <span class="sr-only">Back</span>
                           </button>
-                          <button type="submit" class="create-button create-button--inline">
+                          <button
+                            type="submit"
+                            class="create-button create-button--inline"
+                            data-draggable-id="create-button"
+                          >
                             <span class="sr-only">Begin Expedition</span>
                           </button>
                         </div>
