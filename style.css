@@ -134,8 +134,9 @@ select,
 }
 
 .embark-header--founder {
-  justify-items: center;
-  margin-top: -1.25rem;
+  justify-items: start;
+  margin-top: -1.35rem;
+  padding-left: clamp(0.4rem, 1.4vw, 1.1rem);
 }
 
 .founder-title-image {
@@ -143,7 +144,7 @@ select,
   max-width: 100%;
   height: auto;
   max-height: clamp(90px, 18vh, 140px);
-  transform: translateY(-0.35rem);
+  transform: translate(-0.35rem, -0.55rem);
 }
 
 .embark-eyebrow {
@@ -1538,14 +1539,6 @@ button:hover:not(:disabled) {
   width: 100%;
 }
 
-.subpanel-title {
-  margin: 0;
-  font-size: 0.9rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(240, 198, 116, 0.85);
-}
-
 .subpanel-description {
   margin: 0 0 0.5rem;
   font-size: 0.85rem;
@@ -1560,10 +1553,10 @@ button:hover:not(:disabled) {
   height: auto;
   margin-inline: auto;
   border-radius: 18px;
-  border: 4px solid rgba(48, 36, 60, 0.95);
+  border: none;
   background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
   image-rendering: pixelated;
-  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.2), 0 1.2rem 2.6rem rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1.2rem 2.6rem rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1585,6 +1578,7 @@ button:hover:not(:disabled) {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+  transform: translateY(-28px);
   z-index: 0;
   pointer-events: none;
 }
@@ -1594,6 +1588,7 @@ button:hover:not(:disabled) {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+  transform: translateY(-8px);
   filter: drop-shadow(0 0.65rem 1.6rem rgba(0, 0, 0, 0.55));
   z-index: 1;
   background: transparent;
