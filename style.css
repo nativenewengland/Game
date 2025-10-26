@@ -1017,6 +1017,7 @@ button:hover:not(:disabled) {
   border-radius: 0;
   overflow: visible;
   position: relative;
+  padding-bottom: clamp(5.25rem, 12vw, 6.75rem);
 }
 
 
@@ -1691,11 +1692,18 @@ button:hover:not(:disabled) {
   max-width: 100%;
 }
 
+.create-button--floating {
+  position: absolute;
+  right: clamp(1.25rem, 3vw, 1.85rem);
+  bottom: clamp(1.25rem, 3vw, 1.85rem);
+  z-index: 2;
+}
+
 .customizer-actions {
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   gap: clamp(0.75rem, 2vw, 1.25rem);
   margin-top: clamp(0.5rem, 1.5vw, 1rem);
@@ -1763,6 +1771,17 @@ button:hover:not(:disabled) {
   .customizer-actions .return-button,
   .customizer-actions .create-button--inline {
     width: min(240px, 100%);
+  }
+
+  .create-button--floating {
+    position: static;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: clamp(1rem, 3vw, 1.5rem);
+  }
+
+  #dwarf-customizer-form {
+    padding-bottom: clamp(6rem, 16vw, 7.25rem);
   }
 }
 @media (max-width: 1024px) {
