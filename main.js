@@ -13054,6 +13054,18 @@ function createWorld(seedString) {
     return baseHillOverlayOptions[index];
   };
   const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayPresenceKeySet.has(overlayKey);
+  const getHillOverlayKeyForTile = (tile) => {
+    if (!tile) {
+      return null;
+    }
+    if (tile.hillOverlay && isHillOverlay(tile.hillOverlay)) {
+      return tile.hillOverlay;
+    }
+    if (tile.overlay && isHillOverlay(tile.overlay)) {
+      return tile.overlay;
+    }
+    return null;
+  };
   if (hillOverlayPresenceKeySet.size > 0 && (primaryHillOverlayKey || snowHillOverlayKey)) {
     const hillUpperThreshold = hasMountainTile
       ? mountainBaseThreshold
@@ -13506,10 +13518,11 @@ function createWorld(seedString) {
           continue;
         }
         const tile = tiles[y][x];
+        const hillOverlayKeyForTile = getHillOverlayKeyForTile(tile);
         const overlay = tile.overlay;
-        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
+        const overlayBlocksTree = overlay && (!hillOverlayKeyForTile || overlay !== hillOverlayKeyForTile);
         if (
-          (overlay && !overlayIsHill) ||
+          overlayBlocksTree ||
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
@@ -13526,11 +13539,6 @@ function createWorld(seedString) {
           if (tile.base === marshTileKey) {
             tile.base = grassTileKey;
           }
-          const hillOverlayKeyForTile = isHillOverlay(overlay)
-            ? overlay
-            : isHillOverlay(tile.hillOverlay)
-            ? tile.hillOverlay
-            : null;
           if (hillOverlayKeyForTile) {
             tile.hillOverlay = hillOverlayKeyForTile;
           }
@@ -13548,10 +13556,11 @@ function createWorld(seedString) {
             continue;
           }
           const tile = tiles[y][x];
+          const hillOverlayKeyForTile = getHillOverlayKeyForTile(tile);
           const overlay = tile.overlay;
-          const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
+          const overlayBlocksTree = overlay && (!hillOverlayKeyForTile || overlay !== hillOverlayKeyForTile);
           if (
-            (overlay && !overlayIsHill) ||
+            overlayBlocksTree ||
             !isLandBaseTile(tile.base) ||
             tile.structure ||
             tile.river ||
@@ -13599,10 +13608,11 @@ function createWorld(seedString) {
         const y = Math.floor(idx / width);
         const x = idx % width;
         const tile = tiles[y][x];
+        const hillOverlayKeyForTile = getHillOverlayKeyForTile(tile);
         const overlay = tile.overlay;
-        const overlayIsHill = isHillOverlay(overlay) || isHillOverlay(tile.hillOverlay);
+        const overlayBlocksTree = overlay && (!hillOverlayKeyForTile || overlay !== hillOverlayKeyForTile);
         if (
-          (overlay && !overlayIsHill) ||
+          overlayBlocksTree ||
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
@@ -13614,11 +13624,6 @@ function createWorld(seedString) {
         if (tile.base === marshTileKey) {
           tile.base = grassTileKey;
         }
-        const hillOverlayKeyForTile = isHillOverlay(overlay)
-          ? overlay
-          : isHillOverlay(tile.hillOverlay)
-          ? tile.hillOverlay
-          : null;
         if (hillOverlayKeyForTile) {
           tile.hillOverlay = hillOverlayKeyForTile;
         }
@@ -15130,6 +15135,28 @@ function createWorld(seedString) {
     }
   }
 
+  const treeProximityRadius = 3;
+  const hasTreeWithinRadius = (x, y, radius = treeProximityRadius) => {
+    const clampedRadius = Math.max(0, Math.floor(radius));
+    for (let dy = -clampedRadius; dy <= clampedRadius; dy += 1) {
+      const ny = y + dy;
+      if (ny < 0 || ny >= height) {
+        continue;
+      }
+      for (let dx = -clampedRadius; dx <= clampedRadius; dx += 1) {
+        const nx = x + dx;
+        if (nx < 0 || nx >= width) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (tileHasTreeOverlay(neighborTile)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   const biomeRandom = mulberry32((seedNumber + 0x4c95e6d9) >>> 0);
   const temperatureNoiseSeed = (seedNumber + 0x52f6af13) >>> 0;
   const temperatureNoiseScale = 2.7 + biomeRandom() * 1.8;
@@ -15253,10 +15280,10 @@ function createWorld(seedString) {
       return 'badlands';
     }
     if (moisture > 0.62 || (moisture > 0.52 && nearbyWaterTiles >= 2)) {
-      return 'forest';
+      return hasTreeWithinRadius(x, y) ? 'forest' : 'grassland';
     }
     if (moisture > 0.5 && temperature > 0.55) {
-      return 'forest';
+      return hasTreeWithinRadius(x, y) ? 'forest' : 'grassland';
     }
     return 'grassland';
   };
@@ -15332,6 +15359,18 @@ function createWorld(seedString) {
     const swap = biomeField;
     biomeField = biomeBuffer;
     biomeBuffer = swap;
+  }
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (biomeField[idx] !== 'forest') {
+        continue;
+      }
+      if (!hasTreeWithinRadius(x, y)) {
+        biomeField[idx] = 'grassland';
+      }
+    }
   }
 
   const biomeVisited = new Uint8Array(width * height);
