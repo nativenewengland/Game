@@ -1759,6 +1759,50 @@ const townGuildOptions = [
   'Miners Exchange'
 ];
 
+const snowVillageNamePrefixes = [
+  'Aput',
+  'Nanu',
+  'Siku',
+  'Qimmi',
+  'Tuktu',
+  'Aklaq',
+  'Sila',
+  'Ukpik',
+  'Imaq',
+  'Nuna',
+  'Kangi',
+  'Talir'
+];
+
+const snowVillageNameSuffixes = [
+  'vik',
+  'ruq',
+  'naq',
+  'lik',
+  'juq',
+  'toq',
+  'riaq',
+  'suk',
+  'aluk',
+  'tuuq'
+];
+
+const snowVillageNameDescriptors = ['Camp', 'Harbor', 'Haven', 'Settlement', 'Encampment'];
+
+const snowVillageLeaderNamePools = {
+  male: ['Aputi', 'Tulugaq', 'Inuk', 'Panik', 'Qajaq', 'Nanuq'],
+  female: ['Sila', 'Nukka', 'Pipaluk', 'Kaya', 'Tala', 'Tekkeitsertok'],
+  neutral: ['Siku', 'Atka', 'Ilu', 'Tuktu', 'Amaruq']
+};
+
+const snowVillageClanNames = ['Qimmiq', 'Sirmiq', 'Ukialik', 'Auyuittuq', 'Nunavik', 'Kugluktuk', 'Panaq', 'Talur'];
+
+const snowVillageRulerTitles = {
+  male: ['Isumataq', 'Angakkuq', 'Head Elder'],
+  female: ['Isumataq', 'Angakkuq', 'Head Elder'],
+  neutral: ['Isumataq', 'Angakkuq', 'Storykeeper']
+};
+
 const townFirstNamePools = {
   male: ['Aldric', 'Berend', 'Cedric', 'Darian', 'Edric', 'Garran', 'Henric', 'Loric', 'Rowan', 'Therin'],
   female: ['Adela', 'Brienne', 'Celia', 'Elowen', 'Fiora', 'Gwendolyn', 'Isolde', 'Maren', 'Rowena', 'Seren'],
@@ -3751,35 +3795,78 @@ function generateTownName(random) {
   return `Town of ${baseName}`;
 }
 
-function generateTownDetails(name, random) {
+function generateSnowVillageName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const population = Math.max(20, Math.floor(20 + randomFn() * 6000));
+  const prefix = pickRandomFrom(snowVillageNamePrefixes, randomFn) || 'Siku';
+  const suffix = pickRandomFrom(snowVillageNameSuffixes, randomFn) || 'vik';
+  const baseName = `${prefix}${suffix}`;
+  const descriptor = pickRandomFrom(snowVillageNameDescriptors, randomFn);
+  const styleRoll = randomFn();
+  if (descriptor && styleRoll < 0.35) {
+    return `${baseName} ${descriptor}`;
+  }
+  if (descriptor && styleRoll > 0.85) {
+    return `${descriptor} of ${baseName}`;
+  }
+  return baseName;
+}
+
+function generateTownDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const isSnowVillage = Boolean(options.snowVillage);
+  const population = isSnowVillage
+    ? Math.max(20, Math.floor(30 + randomFn() * 70))
+    : Math.max(20, Math.floor(20 + randomFn() * 6000));
   let classification = 'Village';
-  if (population >= 6000) {
-    classification = 'City';
-  } else if (population >= 3600) {
-    classification = 'Large Town';
-  } else if (population >= 100) {
-    classification = 'Town';
+  if (!isSnowVillage) {
+    if (population >= 6000) {
+      classification = 'City';
+    } else if (population >= 3600) {
+      classification = 'Large Town';
+    } else if (population >= 100) {
+      classification = 'Town';
+    }
   }
 
   const type = classification === 'City' ? 'city' : classification === 'Village' ? 'village' : 'town';
   const genderRoll = randomFn();
   const gender = genderRoll < 0.45 ? 'male' : genderRoll < 0.9 ? 'female' : 'neutral';
-  const firstNamePool =
-    (gender === 'male' && townFirstNamePools.male) ||
-    (gender === 'female' && townFirstNamePools.female) ||
-    townFirstNamePools.neutral;
-  const fallbackPool = townFirstNamePools.male || townFirstNamePools.neutral || [];
-  const firstName = pickRandomFrom(firstNamePool && firstNamePool.length > 0 ? firstNamePool : fallbackPool, randomFn) ||
-    'Aldric';
-  const familyName = pickRandomFrom(townProminentFamilyNames, randomFn) || 'Ambermere';
-  const rulerTitle = resolveTownRulerTitle(gender, randomFn);
+  const firstNamePool = isSnowVillage
+    ? (gender === 'male' && snowVillageLeaderNamePools.male) ||
+      (gender === 'female' && snowVillageLeaderNamePools.female) ||
+      snowVillageLeaderNamePools.neutral
+    : (gender === 'male' && townFirstNamePools.male) ||
+      (gender === 'female' && townFirstNamePools.female) ||
+      townFirstNamePools.neutral;
+  const fallbackPool = isSnowVillage
+    ? snowVillageLeaderNamePools.neutral || snowVillageLeaderNamePools.male || []
+    : townFirstNamePools.male || townFirstNamePools.neutral || [];
+  const firstName = pickRandomFrom(
+    firstNamePool && firstNamePool.length > 0 ? firstNamePool : fallbackPool,
+    randomFn
+  ) || (isSnowVillage ? 'Siku' : 'Aldric');
+  const familyNamePool = isSnowVillage ? snowVillageClanNames : townProminentFamilyNames;
+  const defaultFamilyName = isSnowVillage ? 'Qimmiq' : 'Ambermere';
+  const familyName = pickRandomFrom(familyNamePool, randomFn) || defaultFamilyName;
+  const rulerTitle = isSnowVillage
+    ? (pickRandomFrom(
+        ((gender === 'male' && snowVillageRulerTitles.male) ||
+          (gender === 'female' && snowVillageRulerTitles.female) ||
+          snowVillageRulerTitles.neutral) ||
+          snowVillageRulerTitles.neutral,
+        randomFn
+      ) || 'Isumataq')
+    : resolveTownRulerTitle(gender, randomFn);
   const hallmark = pickRandomFrom(townHallmarks, randomFn) || 'Bustling markets draw traders from afar.';
   const foundedYearsAgo = Math.max(12, Math.floor(30 + randomFn() * 420));
-  const prominentFamily = pickRandomFrom(townProminentFamilyNames, randomFn) || familyName;
-  const majorGuildCount = clamp(Math.floor(1 + randomFn() * 3), 1, townGuildOptions.length);
-  const majorGuilds = pickUniqueFrom(townGuildOptions, majorGuildCount, randomFn);
+  const prominentGroupLabel = isSnowVillage ? 'Prominent Clan' : 'Prominent House';
+  const prominentFamily = pickRandomFrom(familyNamePool, randomFn) || familyName;
+  const prominentGroup = isSnowVillage ? `${prominentFamily} Clan` : `House ${prominentFamily}`;
+  let majorGuilds = [];
+  if (classification !== 'Village') {
+    const majorGuildCount = clamp(Math.floor(1 + randomFn() * 3), 1, townGuildOptions.length);
+    majorGuilds = pickUniqueFrom(townGuildOptions, majorGuildCount, randomFn);
+  }
   const majorExportCount = clamp(Math.floor(1 + randomFn() * 3), 1, townExportOptions.length);
   const majorExports = pickUniqueFrom(townExportOptions, majorExportCount, randomFn);
   const populationBreakdown = generateTownPopulationBreakdown(population, randomFn);
@@ -3791,8 +3878,6 @@ function generateTownDetails(name, random) {
   } else if (classification === 'Village') {
     populationDescriptor = 'villagers';
   }
-
-  const prominentGroup = `House ${prominentFamily}`;
 
   return {
     type,
@@ -3808,7 +3893,7 @@ function generateTownDetails(name, random) {
     },
     foundedYearsAgo,
     prominentGroup,
-    prominentGroupLabel: 'Prominent House',
+    prominentGroupLabel,
     hallmark,
     majorGuilds,
     majorExports,
@@ -14370,9 +14455,9 @@ function createWorld(seedString) {
         if (!tile || !isLandBaseTile(tile.base) || tile.overlay || tile.structure || tile.river) {
           continue;
         }
-        const name = generateTownName(rng);
-        const details = generateTownDetails(name, rng);
         const baseIsSnowPlacement = hasSnowTile && tile.base === snowTileKey;
+        const name = baseIsSnowPlacement ? generateSnowVillageName(rng) : generateTownName(rng);
+        const details = generateTownDetails(name, rng, { snowVillage: baseIsSnowPlacement });
         const isSmallVillage = details.type === 'village' && details.population < 100;
         if (baseIsSnowPlacement && !isSmallVillage) {
           continue;
