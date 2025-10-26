@@ -10182,14 +10182,41 @@ function createInlandSeaMask() {
 function createArchipelagoMask() {
   const size = 512;
   return createProceduralMask(size, size, (nx, ny) => {
-    const base = valueNoise(nx * 8.2 + 5.3, ny * 8.2 + 17.5, 0x7f4a7c1);
-    const detail = valueNoise(nx * 22.5 + 2.7, ny * 22.5 + 13.3, 0x6a09e66);
-    const micro = valueNoise(nx * 48.5 + 11.9, ny * 48.5 + 29.1, 0x1b87359);
-    let value = base * 0.55 + detail * 0.35 + micro * 0.1;
-    const latitude = 1 - Math.abs(ny - 0.5) * 1.25;
-    const longitude = 1 - Math.abs(nx - 0.5) * 0.6;
-    value = value * 0.7 + latitude * 0.2 + longitude * 0.1;
-    value -= 0.08;
+    const islands = [
+      { x: 0.28, y: 0.32, radiusX: 0.22, radiusY: 0.18, height: 1.05, power: 1.35 },
+      { x: 0.52, y: 0.28, radiusX: 0.18, radiusY: 0.16, height: 0.92, power: 1.4 },
+      { x: 0.68, y: 0.38, radiusX: 0.16, radiusY: 0.2, height: 0.88, power: 1.45 },
+      { x: 0.36, y: 0.62, radiusX: 0.2, radiusY: 0.18, height: 0.94, power: 1.3 },
+      { x: 0.54, y: 0.58, radiusX: 0.22, radiusY: 0.2, height: 1.02, power: 1.32 },
+      { x: 0.73, y: 0.57, radiusX: 0.15, radiusY: 0.17, height: 0.86, power: 1.48 },
+      { x: 0.46, y: 0.44, radiusX: 0.24, radiusY: 0.22, height: 1.08, power: 1.28 }
+    ];
+
+    let sum = 0;
+    for (let i = 0; i < islands.length; i += 1) {
+      const island = islands[i];
+      const dx = nx - island.x;
+      const dy = ny - island.y;
+      const distance = Math.sqrt(
+        (dx * dx) / (island.radiusX * island.radiusX) +
+          (dy * dy) / (island.radiusY * island.radiusY)
+      );
+      let influence = clamp(1 - distance, 0, 1);
+      influence = Math.pow(influence, island.power) * island.height;
+      sum += influence;
+    }
+
+    const jagged = (valueNoise(nx * 18.3 + 4.7, ny * 18.3 + 9.1, 0x3c6ef372) - 0.5) * 0.32;
+    const detail = (valueNoise(nx * 42.7 + 12.5, ny * 42.7 + 3.8, 0xa54ff53a) - 0.5) * 0.18;
+    const micro = (valueNoise(nx * 82.1 + 6.2, ny * 82.1 + 14.4, 0x510e527f) - 0.5) * 0.08;
+
+    let value = sum * 0.7 + jagged + detail + micro;
+    const clusterBias = 1 - Math.hypot(nx - 0.52, ny - 0.49) * 1.1;
+    value += clusterBias * 0.08;
+
+    const edge = Math.min(nx, 1 - nx, ny, 1 - ny);
+    value -= clamp(0.2 - edge, 0, 0.2) * 3.2;
+    value -= 0.46;
     return value;
   });
 }
@@ -10247,14 +10274,14 @@ const worldGenerationProfiles = {
   },
   archipelago: {
     key: 'archipelago',
-    label: 'Shattered Isles',
+    label: 'Archipelago',
     baseNoiseScaleRange: [1.4, 2.2],
     detailNoiseScaleRange: [4, 6.6],
     ridgeNoiseScaleRange: [7.2, 11],
     edgeTaperRange: [2.1, 2.8],
     edgeDropRange: [0.22, 0.34],
-    maskInfluence: 0.58,
-    seaLevelShift: 0.06,
+    maskInfluence: 0.68,
+    seaLevelShift: 0.08,
     rainfallBias: 0.05,
     createMask: createArchipelagoMask
   }
