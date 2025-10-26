@@ -8788,6 +8788,83 @@ const riverNeighborDefinitions = [
   { dx: -1, dy: 0, key: 'W', bit: 8 }
 ];
 
+function computeEdgeConnectedWaterMask(waterMask, width, height) {
+  if (!waterMask || typeof waterMask.length !== 'number') {
+    return null;
+  }
+
+  const totalSize = width * height;
+  if (totalSize === 0) {
+    return null;
+  }
+
+  const mask = new Uint8Array(totalSize);
+  const queue = new Int32Array(totalSize);
+  let queueHead = 0;
+  let queueTail = 0;
+
+  const enqueue = (idx) => {
+    if (mask[idx]) {
+      return;
+    }
+    mask[idx] = 1;
+    queue[queueTail] = idx;
+    queueTail += 1;
+  };
+
+  for (let x = 0; x < width; x += 1) {
+    const topIdx = x;
+    if (waterMask[topIdx]) {
+      enqueue(topIdx);
+    }
+    if (height > 1) {
+      const bottomIdx = (height - 1) * width + x;
+      if (waterMask[bottomIdx]) {
+        enqueue(bottomIdx);
+      }
+    }
+  }
+
+  for (let y = 1; y < height - 1; y += 1) {
+    const leftIdx = y * width;
+    if (waterMask[leftIdx]) {
+      enqueue(leftIdx);
+    }
+    if (width > 1) {
+      const rightIdx = leftIdx + (width - 1);
+      if (waterMask[rightIdx]) {
+        enqueue(rightIdx);
+      }
+    }
+  }
+
+  if (queueTail === 0) {
+    return null;
+  }
+
+  while (queueHead < queueTail) {
+    const current = queue[queueHead];
+    queueHead += 1;
+    const cx = current % width;
+    const cy = Math.floor(current / width);
+    for (let i = 0; i < riverNeighborDefinitions.length; i += 1) {
+      const { dx, dy } = riverNeighborDefinitions[i];
+      const nx = cx + dx;
+      const ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+        continue;
+      }
+      const nIdx = ny * width + nx;
+      if (!waterMask[nIdx] || mask[nIdx]) {
+        continue;
+      }
+      enqueue(nIdx);
+    }
+  }
+
+  return mask;
+}
+
 const riverMaskSuffixLookup = {
   0: '0',
   1: 'N',
@@ -8807,7 +8884,7 @@ const riverMaskSuffixLookup = {
   15: 'NSWE'
 };
 
-function resolveRiverTile(riverMap, width, height, x, y, waterMask) {
+function resolveRiverTile(riverMap, width, height, x, y, waterMask, oceanMask) {
   const idx = y * width + x;
   const strength = riverMap[idx];
   if (strength === 0) {
@@ -8817,6 +8894,7 @@ function resolveRiverTile(riverMap, width, height, x, y, waterMask) {
   const prefix = 'RIVER_';
 
   let mask = 0;
+  let riverNeighborCount = 0;
   riverNeighborDefinitions.forEach(({ dx, dy, bit }) => {
     const nx = x + dx;
     const ny = y + dy;
@@ -8825,8 +8903,28 @@ function resolveRiverTile(riverMap, width, height, x, y, waterMask) {
     }
     if (riverMap[ny * width + nx] > 0) {
       mask |= bit;
+      riverNeighborCount += 1;
     }
   });
+  let touchesOcean = false;
+  if (oceanMask && riverNeighborCount === 1) {
+    for (let i = 0; i < riverNeighborDefinitions.length; i += 1) {
+      const { dx, dy, bit } = riverNeighborDefinitions[i];
+      if (mask & bit) {
+        continue;
+      }
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+        continue;
+      }
+      const nIdx = ny * width + nx;
+      if (oceanMask[nIdx]) {
+        mask |= bit;
+        touchesOcean = true;
+      }
+    }
+  }
   const suffix = riverMaskSuffixLookup[mask] || 'NSWE';
   const baseKey = `${prefix}${suffix}`;
   const majorKey = `RIVER_MAJOR_${suffix}`;
@@ -8835,7 +8933,7 @@ function resolveRiverTile(riverMap, width, height, x, y, waterMask) {
 
   let tileKey = useMajor ? majorKey : baseKey;
 
-  if (!useMajor && suffix.length === 1 && suffix !== '0' && waterMask) {
+  if (!useMajor && suffix.length === 1 && suffix !== '0' && waterMask && !touchesOcean) {
     const direction = suffix;
     const mouthKey = `RIVER_MOUTH_NARROW_${direction}`;
     if (tileLookup.has(mouthKey)) {
@@ -8853,7 +8951,7 @@ function resolveRiverTile(riverMap, width, height, x, y, waterMask) {
     }
   }
 
-  if (useMajor && suffix.length === 1 && suffix !== '0' && waterMask) {
+  if (useMajor && suffix.length === 1 && suffix !== '0' && waterMask && !touchesOcean) {
     const direction = suffix;
     const mouthKey = `RIVER_MAJOR_MOUTH_NARROW_${direction}`;
     if (tileLookup.has(mouthKey)) {
@@ -10948,6 +11046,12 @@ function createWorld(seedString) {
   );
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
 
+  const edgeConnectedOceanMask = computeEdgeConnectedWaterMask(
+    waterMask,
+    width,
+    height
+  );
+
   const coastlineFalloff = 4.2;
   let oceanMask = waterTileKey ? new Uint8Array(width * height) : null;
 
@@ -11003,7 +11107,15 @@ function createWorld(seedString) {
         tile.river = null;
         continue;
       }
-      const riverTile = resolveRiverTile(riverMap, width, height, x, y, waterMask);
+      const riverTile = resolveRiverTile(
+        riverMap,
+        width,
+        height,
+        x,
+        y,
+        waterMask,
+        edgeConnectedOceanMask
+      );
       tile.river = riverTile || null;
     }
   }
