@@ -11606,7 +11606,7 @@ function createWorld(seedString) {
       const jungleBaseOffsetY = rng() * 4096;
       const jungleDetailOffsetX = rng() * 8192;
       const jungleDetailOffsetY = rng() * 8192;
-      const jungleSnowBufferSq = 130 * 130;
+      const jungleSnowBufferSq = 100 * 100;
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
