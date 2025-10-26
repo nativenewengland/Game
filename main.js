@@ -4159,7 +4159,10 @@ const elements = {
   dwarfPortrait: document.getElementById('dwarf-portrait'),
   dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary'),
-  dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes')
+  dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes'),
+  dwarfLayoutToggle: document.getElementById('dwarf-layout-toggle'),
+  dwarfLayoutSave: document.getElementById('dwarf-layout-save'),
+  dwarfLayoutReset: document.getElementById('dwarf-layout-reset')
 };
 
 function createSoundEffect(src, options = {}) {
@@ -5510,6 +5513,218 @@ function setupTraitSliderControl(trait, sliderElement, valueElement) {
   });
 
   updateDisplay();
+}
+
+const layoutEditorState = {
+  isActive: false,
+  activeElement: null,
+  pointerId: null,
+  startPointer: { x: 0, y: 0 },
+  startOffset: { x: 0, y: 0 }
+};
+
+const layoutPositionEpsilon = 0.01;
+
+function getLayoutDraggableElements() {
+  if (!elements.dwarfCustomizerForm) {
+    return [];
+  }
+  return Array.from(elements.dwarfCustomizerForm.querySelectorAll('[data-draggable-id]'));
+}
+
+function parseLayoutOffset(value) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getLayoutOffsets(element) {
+  if (!element) {
+    return { x: 0, y: 0 };
+  }
+  return {
+    x: parseLayoutOffset(element.dataset.layoutTranslateX),
+    y: parseLayoutOffset(element.dataset.layoutTranslateY)
+  };
+}
+
+function applyLayoutOffset(element, x, y) {
+  if (!element) {
+    return;
+  }
+  const normalizedX = Number.isFinite(x) ? Math.round(x * 100) / 100 : 0;
+  const normalizedY = Number.isFinite(y) ? Math.round(y * 100) / 100 : 0;
+
+  if (Math.abs(normalizedX) <= layoutPositionEpsilon) {
+    delete element.dataset.layoutTranslateX;
+  } else {
+    element.dataset.layoutTranslateX = normalizedX.toString();
+  }
+
+  if (Math.abs(normalizedY) <= layoutPositionEpsilon) {
+    delete element.dataset.layoutTranslateY;
+  } else {
+    element.dataset.layoutTranslateY = normalizedY.toString();
+  }
+
+  if (Math.abs(normalizedX) <= layoutPositionEpsilon && Math.abs(normalizedY) <= layoutPositionEpsilon) {
+    element.style.removeProperty('transform');
+  } else {
+    element.style.transform = `translate3d(${normalizedX}px, ${normalizedY}px, 0)`;
+  }
+}
+
+function layoutHasOffsets() {
+  return getLayoutDraggableElements().some((element) => {
+    const { x, y } = getLayoutOffsets(element);
+    return Math.abs(x) > layoutPositionEpsilon || Math.abs(y) > layoutPositionEpsilon;
+  });
+}
+
+function updateLayoutControlStates() {
+  if (elements.dwarfLayoutToggle) {
+    elements.dwarfLayoutToggle.textContent = layoutEditorState.isActive
+      ? 'Disable Layout Dragging'
+      : 'Enable Layout Dragging';
+    elements.dwarfLayoutToggle.setAttribute('aria-pressed', layoutEditorState.isActive ? 'true' : 'false');
+  }
+
+  if (elements.dwarfLayoutSave) {
+    elements.dwarfLayoutSave.disabled = !layoutEditorState.isActive;
+  }
+
+  if (elements.dwarfLayoutReset) {
+    elements.dwarfLayoutReset.disabled = !layoutHasOffsets();
+  }
+}
+
+function setLayoutEditingActive(shouldActivate) {
+  const isActive = Boolean(shouldActivate);
+  if (layoutEditorState.isActive === isActive) {
+    updateLayoutControlStates();
+    return;
+  }
+
+  layoutEditorState.isActive = isActive;
+  layoutEditorState.activeElement = null;
+  layoutEditorState.pointerId = null;
+
+  if (elements.dwarfCustomizer) {
+    elements.dwarfCustomizer.classList.toggle('layout-editing-active', isActive);
+  }
+
+  if (!isActive) {
+    getLayoutDraggableElements().forEach((element) => {
+      element.classList.remove('layout-element--dragging');
+      element.style.willChange = '';
+    });
+  }
+
+  updateLayoutControlStates();
+}
+
+function resetLayoutOffsets() {
+  getLayoutDraggableElements().forEach((element) => {
+    applyLayoutOffset(element, 0, 0);
+  });
+  updateLayoutControlStates();
+}
+
+function downloadLayoutConfiguration() {
+  const draggables = getLayoutDraggableElements();
+  if (draggables.length === 0) {
+    return;
+  }
+
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    positions: {}
+  };
+
+  draggables.forEach((element) => {
+    const id = element.dataset.draggableId;
+    if (!id) {
+      return;
+    }
+    const { x, y } = getLayoutOffsets(element);
+    payload.positions[id] = { x, y };
+  });
+
+  const contents = `${JSON.stringify(payload, null, 2)}\n`;
+  const blob = new Blob([contents], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `dwarf-customizer-layout-${timestamp}.json`;
+  anchor.rel = 'noopener';
+  anchor.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
+function handleLayoutPointerDown(event) {
+  if (!layoutEditorState.isActive || event.button !== 0) {
+    return;
+  }
+
+  const target = event.target.closest('[data-draggable-id]');
+  if (!target || !elements.dwarfCustomizerForm || !elements.dwarfCustomizerForm.contains(target)) {
+    return;
+  }
+
+  event.preventDefault();
+  layoutEditorState.activeElement = target;
+  layoutEditorState.pointerId = event.pointerId;
+  layoutEditorState.startPointer = { x: event.clientX, y: event.clientY };
+  layoutEditorState.startOffset = getLayoutOffsets(target);
+  target.classList.add('layout-element--dragging');
+  target.style.willChange = 'transform';
+  if (typeof target.setPointerCapture === 'function') {
+    try {
+      target.setPointerCapture(event.pointerId);
+    } catch (error) {
+      console.warn('Failed to capture pointer for layout editing', error);
+    }
+  }
+}
+
+function handleLayoutPointerMove(event) {
+  if (!layoutEditorState.isActive) {
+    return;
+  }
+  const { activeElement, pointerId, startPointer, startOffset } = layoutEditorState;
+  if (!activeElement || pointerId !== event.pointerId) {
+    return;
+  }
+
+  const deltaX = event.clientX - startPointer.x;
+  const deltaY = event.clientY - startPointer.y;
+  applyLayoutOffset(activeElement, startOffset.x + deltaX, startOffset.y + deltaY);
+}
+
+function handleLayoutPointerUp(event) {
+  if (!layoutEditorState.isActive) {
+    return;
+  }
+  const { activeElement, pointerId } = layoutEditorState;
+  if (!activeElement || pointerId !== event.pointerId) {
+    return;
+  }
+
+  if (typeof activeElement.releasePointerCapture === 'function') {
+    try {
+      activeElement.releasePointerCapture(event.pointerId);
+    } catch (error) {
+      console.warn('Failed to release pointer capture for layout editing', error);
+    }
+  }
+
+  activeElement.classList.remove('layout-element--dragging');
+  activeElement.style.willChange = '';
+  layoutEditorState.activeElement = null;
+  layoutEditorState.pointerId = null;
+  updateLayoutControlStates();
 }
 
 function updateGenderButtonsUI(selectedValue) {
@@ -13231,7 +13446,34 @@ function attachEvents() {
       beginGame();
       ensureMusicStarted();
     });
+
+    elements.dwarfCustomizerForm.addEventListener('pointerdown', handleLayoutPointerDown);
+    elements.dwarfCustomizerForm.addEventListener('pointermove', handleLayoutPointerMove);
+    elements.dwarfCustomizerForm.addEventListener('pointerup', handleLayoutPointerUp);
+    elements.dwarfCustomizerForm.addEventListener('pointercancel', handleLayoutPointerUp);
   }
+
+  if (elements.dwarfLayoutToggle) {
+    elements.dwarfLayoutToggle.addEventListener('click', () => {
+      setLayoutEditingActive(!layoutEditorState.isActive);
+    });
+  }
+
+  if (elements.dwarfLayoutSave) {
+    elements.dwarfLayoutSave.addEventListener('click', () => {
+      if (layoutEditorState.isActive) {
+        downloadLayoutConfiguration();
+      }
+    });
+  }
+
+  if (elements.dwarfLayoutReset) {
+    elements.dwarfLayoutReset.addEventListener('click', () => {
+      resetLayoutOffsets();
+    });
+  }
+
+  updateLayoutControlStates();
 
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.addEventListener('input', (event) => {
