@@ -11262,6 +11262,44 @@ function createWorld(seedString) {
       }
     }
 
+    if (hasBadlandsTile && badlandsMask) {
+      const surroundedSand = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (tiles[y][x].base !== sandTileKey) {
+            continue;
+          }
+          let hasNeighbor = false;
+          let allBadlands = true;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              allBadlands = false;
+              continue;
+            }
+            hasNeighbor = true;
+            if (tiles[ny][nx].base !== badlandsTileKey) {
+              allBadlands = false;
+              break;
+            }
+          }
+          if (hasNeighbor && allBadlands) {
+            surroundedSand.push({ idx, x, y });
+          }
+        }
+      }
+      for (let i = 0; i < surroundedSand.length; i += 1) {
+        const { idx, x, y } = surroundedSand[i];
+        tiles[y][x].base = badlandsTileKey;
+        badlandsMask[idx] = 1;
+        if (desertMask) {
+          desertMask[idx] = 1;
+        }
+      }
+    }
+
     if (hasSnowTile) {
       const snowClearRadius = 2;
       for (let y = 0; y < height; y += 1) {
