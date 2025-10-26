@@ -6827,7 +6827,7 @@ function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
     .join('');
 
   return `
-    <section class="structure-details-section">
+    <section class="structure-details-section structure-details-section--chart">
       <h3 class="structure-details-heading">Population Breakdown</h3>
       <div class="structure-details-chart">
         <div
@@ -7069,7 +7069,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
       )
       .join('');
     sections.push(`
-      <section class="structure-details-section">
+      <section class="structure-details-section structure-details-section--overview">
         <h3 class="structure-details-heading">Overview</h3>
         <dl class="structure-details-list">${overviewItems}</dl>
       </section>
@@ -7081,7 +7081,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
       .map((item) => `<li>${escapeHtml(item)}</li>`)
       .join('');
     sections.push(`
-      <section class="structure-details-section">
+      <section class="structure-details-section structure-details-section--list">
         <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
         <ul class="structure-details-bullet-list">${items}</ul>
       </section>
@@ -7094,7 +7094,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
 
   narrativeSections.forEach((section) => {
     sections.push(`
-      <section class="structure-details-section">
+      <section class="structure-details-section structure-details-section--narrative">
         <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
         <p class="structure-details-paragraph">${escapeHtml(section.text)}</p>
       </section>
@@ -7102,7 +7102,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   });
 
   if (sections.length === 0) {
-    sections.push('<p class="structure-details-empty">No additional records found for this location.</p>');
+    sections.push('<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>');
   }
 
   return {

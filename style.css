@@ -262,14 +262,14 @@ select,
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.25rem;
-  padding: 3.5rem 4.5rem;
+  gap: clamp(1rem, 2.5vw, 1.25rem);
+  padding: clamp(1.75rem, 4vw, 3.5rem) clamp(1.5rem, 5vw, 4.5rem);
   border-radius: 26px;
   backdrop-filter: blur(18px);
   background: linear-gradient(160deg, rgba(12, 8, 4, 0.78), rgba(6, 8, 16, 0.82));
   border: 2px solid rgba(138, 100, 46, 0.75);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1.5rem 3.5rem rgba(0, 0, 0, 0.55);
-  max-width: 580px;
+  width: min(92vw, 580px);
 }
 
 .title-overlay::before,
@@ -316,7 +316,7 @@ h3,
 }
 
 .game-title .game-logo {
-  width: clamp(24rem, 80vw, 44rem);
+  width: clamp(16rem, 60vw, 36rem);
   height: auto;
   filter: drop-shadow(0 0 14px rgba(240, 198, 116, 0.25))
     drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
@@ -334,6 +334,30 @@ h3,
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 1.25rem 0;
+  }
+
+  .title-overlay {
+    gap: 0.85rem;
+    padding: 1.5rem clamp(1.25rem, 6vw, 2rem);
+  }
+
+  .tagline {
+    font-size: 1rem;
+  }
+
+  .title-buttons {
+    flex-direction: column;
+    width: min(75vw, 20rem);
+  }
+
+  .title-buttons button {
+    width: 100%;
+  }
 }
 
 button {
@@ -626,8 +650,8 @@ button:hover:not(:disabled) {
   --structure-frame-left: 15px;
   top: 8vh;
   bottom: auto;
-  width: min(600px, 90vw);
-  max-height: 80vh;
+  width: min(1150px, 92vw);
+  max-height: 82vh;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -697,16 +721,41 @@ button:hover:not(:disabled) {
 .structure-details-content {
   flex: 1;
   overflow-y: auto;
-  padding-right: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  padding-right: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: row dense;
+  grid-auto-rows: minmax(min-content, auto);
+  gap: 1.25rem 2rem;
+  align-content: start;
 }
 
 .structure-details-section {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
+}
+
+.structure-details-section.wide,
+.structure-details-section:first-child,
+.structure-details-section--overview,
+.structure-details-section--chart,
+.structure-details-section--narrative {
+  grid-column: 1 / -1;
+}
+
+.structure-details-section .structure-details-chart,
+.structure-details-section .structure-details-paragraph {
+  width: 100%;
+}
+
+.structure-details-section .structure-details-chart {
+  align-self: flex-start;
+}
+
+.structure-details-empty--standalone {
+  grid-column: 1 / -1;
 }
 
 .structure-details-heading {
@@ -825,6 +874,14 @@ button:hover:not(:disabled) {
     left: 5vw;
     width: auto;
     max-height: 70vh;
+  }
+
+  .structure-details-content {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    gap: 1.25rem;
   }
 
   .structure-details-chart {
