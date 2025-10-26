@@ -11898,6 +11898,95 @@ function createWorld(seedString) {
 
     const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
     if (woodElfGroveKey) {
+      const getOceanMask = (() => {
+        let computed = false;
+        return () => {
+          if (computed) {
+            return oceanMask && oceanMask.length === width * height ? oceanMask : null;
+          }
+          computed = true;
+          if (!oceanMask || !waterMask || waterMask.length !== width * height) {
+            return null;
+          }
+          oceanMask.fill(0);
+          const queue = new Int32Array(width * height);
+          let head = 0;
+          let tail = 0;
+          const enqueue = (idx) => {
+            if (oceanMask[idx]) {
+              return;
+            }
+            oceanMask[idx] = 1;
+            queue[tail] = idx;
+            tail += 1;
+          };
+          for (let x = 0; x < width; x += 1) {
+            const topIdx = x;
+            if (waterMask[topIdx]) {
+              enqueue(topIdx);
+            }
+            const bottomIdx = (height - 1) * width + x;
+            if (waterMask[bottomIdx]) {
+              enqueue(bottomIdx);
+            }
+          }
+          for (let y = 1; y < height - 1; y += 1) {
+            const leftIdx = y * width;
+            if (waterMask[leftIdx]) {
+              enqueue(leftIdx);
+            }
+            const rightIdx = y * width + (width - 1);
+            if (waterMask[rightIdx]) {
+              enqueue(rightIdx);
+            }
+          }
+          while (head < tail) {
+            const current = queue[head];
+            head += 1;
+            const cx = current % width;
+            const cy = Math.floor(current / width);
+            for (let i = 0; i < neighborOffsets8.length; i += 1) {
+              const nx = cx + neighborOffsets8[i][0];
+              const ny = cy + neighborOffsets8[i][1];
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              const nIdx = ny * width + nx;
+              if (!waterMask[nIdx] || oceanMask[nIdx]) {
+                continue;
+              }
+              enqueue(nIdx);
+            }
+          }
+          return oceanMask;
+        };
+      })();
+
+      const isTileNearOcean = (x, y) => {
+        if (x < 0 || y < 0 || x >= width || y >= height) {
+          return true;
+        }
+        const mask = getOceanMask();
+        if (!mask) {
+          return false;
+        }
+        const idx = y * width + x;
+        if (mask[idx]) {
+          return true;
+        }
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const nIdx = ny * width + nx;
+          if (mask[nIdx]) {
+            return true;
+          }
+        }
+        return false;
+      };
       const groveCandidates = [];
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
@@ -11910,6 +11999,9 @@ function createWorld(seedString) {
             tile.structure ||
             (hasSnowTile && tile.base === snowTileKey)
           ) {
+            continue;
+          }
+          if (isTileNearOcean(x, y)) {
             continue;
           }
           const score = treeDensityField ? treeDensityField[idx] : 0;
@@ -11958,7 +12050,8 @@ function createWorld(seedString) {
             !tileHasTreeOverlay(tile) ||
             tileHasJungleOverlay(tile) ||
             tile.structure ||
-            (hasSnowTile && tile.base === snowTileKey)
+            (hasSnowTile && tile.base === snowTileKey) ||
+            isTileNearOcean(candidate.x, candidate.y)
           ) {
             continue;
           }
