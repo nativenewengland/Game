@@ -290,15 +290,20 @@
         </header>
         <div class="customizer-layout">
           <section class="customizer-main" aria-live="polite">
-            <div class="customizer-visuals" data-draggable-id="visuals-panel">
-              <div class="customizer-preview" role="group" aria-label="Appearance preview">
-                  <h3 class="subpanel-title">Appearance</h3>
+              <div class="customizer-visuals" data-draggable-id="visuals-panel">
+                <div class="customizer-preview" role="group" aria-label="Appearance preview">
                   <div id="dwarf-portrait" class="dwarf-portrait" role="img" aria-label="Dwarf portrait">
+                    <img
+                      src="tilesheet/facepanel.png"
+                      alt=""
+                      class="dwarf-portrait-frame"
+                      aria-hidden="true"
+                    />
                     <canvas
                       id="dwarf-portrait-canvas"
                       class="dwarf-portrait-canvas"
-                      width="128"
-                      height="128"
+                      width="424"
+                      height="377"
                       aria-hidden="true"
                     ></canvas>
                   </div>
@@ -430,53 +435,16 @@
                     </button>
                   </div>
                 </div>
-                <div class="layout-edit-controls" role="group" aria-label="Layout editing controls">
-                  <button
-                    type="button"
-                    id="dwarf-layout-toggle"
-                    class="secondary layout-toggle-button"
-                    aria-pressed="false"
-                  >
-                    Enable Layout Dragging
-                  </button>
-                  <button
-                    type="button"
-                    id="dwarf-layout-save"
-                    class="secondary layout-save-button"
-                    disabled
-                  >
-                    Download Layout
-                  </button>
-                  <button
-                    type="button"
-                    id="dwarf-layout-reset"
-                    class="secondary layout-reset-button"
-                    disabled
-                  >
-                    Reset Layout
-                  </button>
-                </div>
               </div>
               <div class="customizer-body">
                 <div class="customizer-fields">
                   <div class="field-group field-group--gender">
-                    <p id="dwarf-gender-label" class="field-label">Gender</p>
                     <div class="gender-toggle-wrapper">
-                      <button
-                        type="button"
-                        id="dwarf-randomise"
-                        class="gender-toggle-randomise"
-                        aria-label="Randomise dwarf"
-                        data-draggable-id="randomise-button"
-                      >
-                        <span class="randomise-button__dice" aria-hidden="true"></span>
-                        <span class="sr-only">Randomise dwarf</span>
-                      </button>
                       <div
                         id="dwarf-gender-buttons"
                         class="gender-toggle"
                         role="radiogroup"
-                        aria-labelledby="dwarf-gender-label"
+                        aria-label="Select gender"
                         data-draggable-id="gender-toggle"
                       >
                         <button
@@ -599,13 +567,25 @@
                     >
                       <span class="sr-only">Back</span>
                     </button>
-                    <button
-                      type="submit"
-                      class="create-button create-button--inline create-button--floating"
-                      data-draggable-id="create-button"
-                    >
-                      <span class="sr-only">Begin Expedition</span>
-                    </button>
+                    <div class="customizer-actions__primary">
+                      <button
+                        type="button"
+                        id="dwarf-randomise"
+                        class="gender-toggle-randomise"
+                        aria-label="Randomise dwarf"
+                        data-draggable-id="randomise-button"
+                      >
+                        <span class="randomise-button__dice" aria-hidden="true"></span>
+                        <span class="sr-only">Randomise dwarf</span>
+                      </button>
+                      <button
+                        type="submit"
+                        class="create-button create-button--inline"
+                        data-draggable-id="create-button"
+                      >
+                        <span class="sr-only">Begin Expedition</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -798,8 +778,8 @@
             <h2 id="structure-details-title">Structure Details</h2>
             <p id="structure-details-subtitle" class="structure-details-subtitle hidden"></p>
           </div>
-          <button id="structure-details-close" type="button" class="secondary" aria-label="Close details">
-            Close
+          <button id="structure-details-close" type="button" aria-label="Close details">
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div id="structure-details-content" class="structure-details-content" aria-live="polite"></div>
