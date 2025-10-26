@@ -9168,6 +9168,7 @@ function createWorld(seedString) {
   const desertSuitabilityField = hasSandTile ? new Float32Array(width * height) : null;
   const desertHeatField = hasSandTile ? new Float32Array(width * height) : null;
   const desertMask = hasSandTile ? new Uint8Array(width * height) : null;
+  const badlandsMask = hasBadlandsTile ? new Uint8Array(width * height) : null;
   const desertBadlandsSeed = hasBadlandsTile ? (seedNumber + 0x428a2f98) >>> 0 : 0;
   const desertBadlandsScale = hasBadlandsTile ? 3.4 + rng() * 3.6 : 1;
   const desertBadlandsOffsetX = hasBadlandsTile ? rng() * 4096 : 0;
@@ -9672,6 +9673,9 @@ function createWorld(seedString) {
       for (let x = 0; x < width; x += 1) {
         const idx = y * width + x;
         if (waterMask[idx]) {
+          if (badlandsMask) {
+            badlandsMask[idx] = 0;
+          }
           continue;
         }
         if (desertMask[idx]) {
@@ -9697,8 +9701,85 @@ function createWorld(seedString) {
             }
           }
           tiles[y][x].base = baseTileName;
+          if (badlandsMask) {
+            badlandsMask[idx] = baseTileName === badlandsTileKey ? 1 : 0;
+          }
         } else if (tiles[y][x].base === sandTileKey || (hasBadlandsTile && tiles[y][x].base === badlandsTileKey)) {
           tiles[y][x].base = grassTileKey;
+          if (badlandsMask) {
+            badlandsMask[idx] = 0;
+          }
+        }
+      }
+    }
+
+    if (badlandsMask) {
+      const badlandsFillRadius = 2;
+      const badlandsFillOffsets = [];
+      for (let dy = -badlandsFillRadius; dy <= badlandsFillRadius; dy += 1) {
+        for (let dx = -badlandsFillRadius; dx <= badlandsFillRadius; dx += 1) {
+          if (dx === 0 && dy === 0) {
+            continue;
+          }
+          if (Math.max(Math.abs(dx), Math.abs(dy)) > badlandsFillRadius) {
+            continue;
+          }
+          badlandsFillOffsets.push([dx, dy]);
+        }
+      }
+      const badlandsFillIterations = 2;
+      for (let iteration = 0; iteration < badlandsFillIterations; iteration += 1) {
+        const additions = [];
+        for (let y = 0; y < height; y += 1) {
+          for (let x = 0; x < width; x += 1) {
+            const idx = y * width + x;
+            if (!desertMask[idx] || badlandsMask[idx]) {
+              continue;
+            }
+            let neighborCount = 0;
+            let hasLeft = false;
+            let hasRight = false;
+            let hasUp = false;
+            let hasDown = false;
+            for (let i = 0; i < badlandsFillOffsets.length; i += 1) {
+              const offset = badlandsFillOffsets[i];
+              const nx = x + offset[0];
+              const ny = y + offset[1];
+              if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                continue;
+              }
+              const nIdx = ny * width + nx;
+              if (!badlandsMask[nIdx]) {
+                continue;
+              }
+              neighborCount += 1;
+              if (offset[0] < 0) {
+                hasLeft = true;
+              } else if (offset[0] > 0) {
+                hasRight = true;
+              }
+              if (offset[1] < 0) {
+                hasUp = true;
+              } else if (offset[1] > 0) {
+                hasDown = true;
+              }
+            }
+            const hasHorizontalBridge = hasLeft && hasRight;
+            const hasVerticalBridge = hasUp && hasDown;
+            const hasCrossBridge =
+              (hasLeft || hasRight) && (hasUp || hasDown) && neighborCount >= 3;
+            if (neighborCount >= 2 && (hasHorizontalBridge || hasVerticalBridge || hasCrossBridge)) {
+              additions.push({ idx, x, y });
+            }
+          }
+        }
+        if (additions.length === 0) {
+          break;
+        }
+        for (let i = 0; i < additions.length; i += 1) {
+          const { idx, x, y } = additions[i];
+          badlandsMask[idx] = 1;
+          tiles[y][x].base = badlandsTileKey;
         }
       }
     }
@@ -9735,6 +9816,9 @@ function createWorld(seedString) {
           if (nearSnow) {
             tiles[y][x].base = grassTileKey;
             desertMask[idx] = 0;
+            if (badlandsMask) {
+              badlandsMask[idx] = 0;
+            }
           }
         }
       }
@@ -11211,6 +11295,8 @@ function createWorld(seedString) {
   );
   const isTreeOverlayKey = (overlayKey) =>
     hasTreeTile && overlayKey != null && treeOverlayKeys.includes(overlayKey);
+  const isDesertBaseTile = (baseKey) =>
+    hasSandTile && (baseKey === sandTileKey || (hasBadlandsTile && baseKey === badlandsTileKey));
   const selectTreeOverlayForTile = (tile, idx) => {
     if (!tile || !treeOverlayKey) {
       return treeOverlayKey;
@@ -11390,7 +11476,7 @@ function createWorld(seedString) {
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
-          (hasSandTile && tile.base === sandTileKey)
+          isDesertBaseTile(tile.base)
         ) {
           continue;
         }
@@ -11432,7 +11518,7 @@ function createWorld(seedString) {
             !isLandBaseTile(tile.base) ||
             tile.structure ||
             tile.river ||
-            (hasSandTile && tile.base === sandTileKey)
+            isDesertBaseTile(tile.base)
           ) {
             continue;
           }
@@ -11483,7 +11569,7 @@ function createWorld(seedString) {
           !isLandBaseTile(tile.base) ||
           tile.structure ||
           tile.river ||
-          (hasSandTile && tile.base === sandTileKey)
+          isDesertBaseTile(tile.base)
         ) {
           continue;
         }
@@ -11503,7 +11589,7 @@ function createWorld(seedString) {
       }
     }
 
-    if (hasSandTile && treeOverlayKeys.length > 0) {
+    if ((hasSandTile || hasBadlandsTile) && treeOverlayKeys.length > 0) {
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
@@ -11514,7 +11600,7 @@ function createWorld(seedString) {
           if (!tile || !isTreeOverlayKey(tile.overlay)) {
             continue;
           }
-          let adjacentToSand = false;
+          let adjacentToDesert = false;
           for (let i = 0; i < neighborOffsets8.length; i += 1) {
             const nx = x + neighborOffsets8[i][0];
             const ny = y + neighborOffsets8[i][1];
@@ -11522,12 +11608,12 @@ function createWorld(seedString) {
               continue;
             }
             const neighborTile = tiles[ny][nx];
-            if (neighborTile && neighborTile.base === sandTileKey) {
-              adjacentToSand = true;
+            if (neighborTile && isDesertBaseTile(neighborTile.base)) {
+              adjacentToDesert = true;
               break;
             }
           }
-          if (!adjacentToSand) {
+          if (!adjacentToDesert) {
             continue;
           }
           treeMask[idx] = 0;
