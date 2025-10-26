@@ -7411,17 +7411,27 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     sections.push(breakdownSection);
   }
 
-  listSections.forEach((section) => {
-    const items = section.items
-      .map((item) => `<li>${escapeHtml(item)}</li>`)
+  if (listSections.length > 0) {
+    const collections = listSections
+      .map((section) => {
+        const items = section.items
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join('');
+        return `
+          <article class="structure-details-collection">
+            <h4 class="structure-details-collection-title">${escapeHtml(section.label)}</h4>
+            <ul class="structure-details-collection-list">${items}</ul>
+          </article>
+        `;
+      })
       .join('');
     sections.push(`
-      <section class="structure-details-section structure-details-section--list">
-        <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
-        <ul class="structure-details-bullet-list">${items}</ul>
+      <section class="structure-details-section structure-details-section--collections">
+        <h3 class="structure-details-heading">Notable Groups &amp; Orders</h3>
+        <div class="structure-details-collections-grid">${collections}</div>
       </section>
     `);
-  });
+  }
 
   narrativeSections.forEach((section) => {
     sections.push(`
