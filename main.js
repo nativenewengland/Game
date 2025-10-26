@@ -74,6 +74,8 @@ const baseTileCoords = {
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
+  HILLS_VARIANT_A: { row: 4, col: 4 },
+  HILLS_VARIANT_B: { row: 5, col: 2 },
   HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
@@ -267,6 +269,92 @@ function drawMonasteryStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const groundRadius = size * 0.46;
+  ctx.fillStyle = '#6a8c3a';
+  ctx.beginPath();
+  ctx.arc(size * 0.5, size * 0.58, groundRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  const hutWidth = size * 0.26;
+  const hutHeight = size * 0.2;
+
+  ctx.fillStyle = '#d2b48c';
+  ctx.fillRect(size * 0.18, size * 0.42, hutWidth, hutHeight);
+  ctx.fillRect(size * 0.56, size * 0.48, hutWidth, hutHeight);
+
+  ctx.fillStyle = '#8b5a2b';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.18, size * 0.42);
+  ctx.lineTo(size * 0.31, size * 0.3);
+  ctx.lineTo(size * 0.44, size * 0.42);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(size * 0.56, size * 0.48);
+  ctx.lineTo(size * 0.69, size * 0.36);
+  ctx.lineTo(size * 0.82, size * 0.48);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#c8c79b';
+  ctx.beginPath();
+  ctx.arc(size * 0.45, size * 0.66, size * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#3f2d16';
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  ctx.beginPath();
+  ctx.moveTo(size * 0.3, size * 0.52);
+  ctx.lineTo(size * 0.3, size * 0.62);
+  ctx.moveTo(size * 0.68, size * 0.56);
+  ctx.lineTo(size * 0.68, size * 0.66);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+  ctx.fillStyle = '#5b666f';
+  ctx.fillRect(size * 0.12, size * 0.3, size * 0.76, size * 0.5);
+  ctx.fillStyle = '#77828b';
+  ctx.fillRect(size * 0.18, size * 0.36, size * 0.64, size * 0.38);
+
+  ctx.fillStyle = '#4a545c';
+  const towerWidth = size * 0.2;
+  ctx.fillRect(size * 0.12, size * 0.18, towerWidth, size * 0.42);
+  ctx.fillRect(size * 0.68, size * 0.18, towerWidth, size * 0.42);
+
+  ctx.fillStyle = '#2a2f33';
+  ctx.fillRect(size * 0.44, size * 0.54, size * 0.12, size * 0.26);
+
+  ctx.fillStyle = '#c7352d';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5, size * 0.18);
+  ctx.lineTo(size * 0.6, size * 0.32);
+  ctx.lineTo(size * 0.4, size * 0.32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#32393f';
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  ctx.beginPath();
+  const merlonCount = 4;
+  for (let i = 0; i < merlonCount; i += 1) {
+    const startX = size * 0.22 + (size * 0.56 * i) / merlonCount;
+    ctx.moveTo(startX, size * 0.32);
+    ctx.lineTo(startX + size * 0.08, size * 0.32);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawSaintShrineStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -384,6 +472,8 @@ const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
+const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW']);
+const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
 
 const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
@@ -559,6 +649,7 @@ registerCustomStructure('ORC_CAMP', (ctx, drawOptions) => drawOrcCampStructure(c
 registerCustomStructure('DUNGEON', (ctx, drawOptions) => drawDungeonStructure(ctx, drawOptions));
 registerCustomStructure('MONASTERY', (ctx, drawOptions) => drawMonasteryStructure(ctx, drawOptions));
 registerCustomStructure('SAINT_SHRINE', (ctx, drawOptions) => drawSaintShrineStructure(ctx, drawOptions));
+registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
 registerCustomStructure('TRAVELERS_CAMP', (ctx, drawOptions) =>
   drawTravelerCampStructure(ctx, drawOptions)
 );
@@ -2844,7 +2935,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
 
 function generateEvilWizardTowerDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const population = Math.max(40, Math.floor(80 + randomFn() * 520));
+  const population = Math.max(1, Math.floor(1 + randomFn() * 599));
   const wizardRoll = randomFn();
   const wizardCount =
     wizardRoll < 0.7
@@ -2912,13 +3003,13 @@ function generateTownName(random) {
 
 function generateTownDetails(name, random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
-  const population = Math.max(120, Math.floor(220 + randomFn() * 6000));
+  const population = Math.max(20, Math.floor(20 + randomFn() * 6000));
   let classification = 'Village';
   if (population >= 6000) {
     classification = 'City';
   } else if (population >= 3600) {
     classification = 'Large Town';
-  } else if (population >= 1800) {
+  } else if (population >= 100) {
     classification = 'Town';
   }
 
@@ -11196,6 +11287,7 @@ function createWorld(seedString) {
 
   const townKey = tileLookup.has('TOWN') ? 'TOWN' : null;
   const portTownKey = tileLookup.has('PORT_TOWN') ? 'PORT_TOWN' : null;
+  const hamletKey = tileLookup.has('HAMLET') ? 'HAMLET' : null;
   if (townKey) {
     const townCandidates = [];
     for (let y = 0; y < height; y += 1) {
@@ -11386,6 +11478,9 @@ function createWorld(seedString) {
             structureKey = portTownKey;
           }
         }
+        if (hamletKey && details.type === 'village' && details.population < 100) {
+          structureKey = hamletKey;
+        }
         tile.structure = structureKey;
         tile.structureName = name;
         tile.structureDetails = details;
@@ -11395,12 +11490,30 @@ function createWorld(seedString) {
     }
   }
 
-  const hillOverlayKeys = ['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key));
-  const hillOverlayKeySet = new Set(hillOverlayKeys);
-  const hillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : hillOverlayKeys[0] || null;
-  const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : hillOverlayKey;
-  const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayKeySet.has(overlayKey);
-  if (hillOverlayKeySet.size > 0 && hillOverlayKey) {
+  const baseHillOverlayOptions = ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B'].filter((key) =>
+    tileLookup.has(key)
+  );
+  const primaryHillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : baseHillOverlayOptions[0] || null;
+  const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : primaryHillOverlayKey;
+  const hillOverlayPresenceKeys = [...baseHillOverlayOptions, snowHillOverlayKey].filter(Boolean);
+  const hillOverlayPresenceKeySet = new Set(hillOverlayPresenceKeys);
+  const hillVariantSelectionSeed = (seedNumber + 0x3ab41d7f) >>> 0;
+  const selectBaseHillOverlayKey = (x, y) => {
+    if (baseHillOverlayOptions.length === 0) {
+      return null;
+    }
+    if (baseHillOverlayOptions.length === 1) {
+      return baseHillOverlayOptions[0];
+    }
+    const noise = hashCoords(x, y, hillVariantSelectionSeed);
+    const index = Math.min(
+      Math.floor(noise * baseHillOverlayOptions.length),
+      baseHillOverlayOptions.length - 1
+    );
+    return baseHillOverlayOptions[index];
+  };
+  const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayPresenceKeySet.has(overlayKey);
+  if (hillOverlayPresenceKeySet.size > 0 && (primaryHillOverlayKey || snowHillOverlayKey)) {
     const hillUpperThreshold = hasMountainTile
       ? mountainBaseThreshold
       : Math.min(0.92, seaLevel + 0.32);
@@ -11485,7 +11598,7 @@ function createWorld(seedString) {
             noiseValue * 0.12;
           const threshold = 0.5 - mountainBonus * 0.18;
           if (compositeScore > threshold) {
-            const overlayKey = baseIsSnow ? snowHillOverlayKey : hillOverlayKey;
+            const overlayKey = baseIsSnow ? snowHillOverlayKey : selectBaseHillOverlayKey(x, y);
             if (overlayKey) {
               tile.hillOverlay = overlayKey;
               tile.overlay = overlayKey;
@@ -12542,7 +12655,9 @@ function createWorld(seedString) {
     ...towers,
     ...evilWizardTowers
   ];
-  const hillOverlayKeysForStructures = new Set(['HILLS', 'HILLS_SNOW'].filter((key) => tileLookup.has(key)));
+  const hillOverlayKeysForStructures = new Set(
+    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW'].filter((key) => tileLookup.has(key))
+  );
   const isHillOverlayForStructures = (overlayKey) =>
     overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
   const mapArea = width * height;
