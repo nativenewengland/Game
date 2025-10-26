@@ -9164,6 +9164,132 @@ function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
   `;
 }
 
+function hashStringToNumber(value) {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+  const stringValue = String(value);
+  if (!stringValue) {
+    return 0;
+  }
+  let hash = 0;
+  for (let index = 0; index < stringValue.length; index += 1) {
+    const charCode = stringValue.charCodeAt(index);
+    hash = (hash << 5) - hash + charCode;
+    hash |= 0; // eslint-disable-line no-bitwise
+  }
+  return hash;
+}
+
+function buildRulerPortraitTheme(seed) {
+  const hash = hashStringToNumber(seed || '');
+  const baseHue = ((hash % 360) + 360) % 360;
+  const highlightHue = (baseHue + 24) % 360;
+  const accentHue = (baseHue + 160) % 360;
+  return {
+    background: `linear-gradient(155deg, hsl(${baseHue}, 38%, 26%), hsl(${highlightHue}, 46%, 34%))`,
+    accent: `hsl(${accentHue}, 68%, 72%)`,
+    border: `hsl(${baseHue}, 46%, 18%)`,
+    glow: `hsla(${accentHue}, 70%, 60%, 0.35)`
+  };
+}
+
+function getRulerInitials(name, fallbackLabel) {
+  const source = typeof name === 'string' && name.trim() ? name.trim() : fallbackLabel || '';
+  if (!source) {
+    return '?';
+  }
+  const parts = source
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .slice(0, 3);
+  if (parts.length === 0) {
+    return '?';
+  }
+  return parts
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+}
+
+function buildRulerPortraitPanelSection(resolvedName, details) {
+  if (!details || !details.isSettlement) {
+    return '';
+  }
+
+  const ruler = details.ruler;
+  if (!ruler || (!ruler.name && !ruler.title && !ruler.label)) {
+    return '';
+  }
+
+  const title = typeof ruler.title === 'string' ? ruler.title.trim() : '';
+  const name = typeof ruler.name === 'string' ? ruler.name.trim() : '';
+  const label =
+    typeof ruler.label === 'string' && ruler.label.trim() ? ruler.label.trim() : title || 'Ruler';
+  const displayName = [title, name].filter(Boolean).join(' ').trim();
+  const settlementDescriptor = resolvedName ? `of ${resolvedName}` : '';
+  const roleText = settlementDescriptor ? `${label} ${settlementDescriptor}` : label;
+  const epithet = typeof ruler.epithet === 'string' && ruler.epithet.trim() ? ruler.epithet.trim() : '';
+  const motto = typeof ruler.motto === 'string' && ruler.motto.trim() ? ruler.motto.trim() : '';
+  const secondaryLine = motto || epithet;
+  const seedParts = [
+    resolvedName,
+    name,
+    title,
+    label,
+    details.banner,
+    details.rulingHouse,
+    details.prominentGroup
+  ]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .join('|');
+  const theme = buildRulerPortraitTheme(seedParts);
+  const initials = getRulerInitials(name, displayName || label);
+  const figureLabelParts = [];
+  if (displayName) {
+    figureLabelParts.push(displayName);
+  }
+  if (roleText && roleText !== displayName) {
+    figureLabelParts.push(roleText);
+  }
+  if (secondaryLine) {
+    figureLabelParts.push(secondaryLine);
+  }
+  const figureAriaLabel =
+    figureLabelParts.length > 0 ? figureLabelParts.join(' — ') : 'Ruler portrait';
+  const styleParts = [];
+  if (theme.background) {
+    styleParts.push(`--portrait-background:${theme.background}`);
+  }
+  if (theme.accent) {
+    styleParts.push(`--portrait-accent:${theme.accent}`);
+  }
+  if (theme.border) {
+    styleParts.push(`--portrait-border:${theme.border}`);
+  }
+  if (theme.glow) {
+    styleParts.push(`--portrait-glow:${theme.glow}`);
+  }
+  const styleAttr = escapeHtml(styleParts.join(';'));
+
+  return `
+    <section class="structure-details-section structure-details-section--portrait">
+      <h3 class="structure-details-heading">Ruler Portrait</h3>
+      <figure class="ruler-portrait" role="group" aria-label="${escapeHtml(figureAriaLabel)}">
+        <div class="ruler-portrait-frame" style="${styleAttr}">
+          <div class="ruler-portrait-image">
+            <span class="ruler-portrait-emblem">${escapeHtml(initials)}</span>
+          </div>
+        </div>
+        <figcaption class="ruler-portrait-caption">
+          ${displayName ? `<span class="ruler-portrait-name">${escapeHtml(displayName)}</span>` : ''}
+          ${roleText ? `<span class="ruler-portrait-role">${escapeHtml(roleText)}</span>` : ''}
+          ${secondaryLine ? `<span class="ruler-portrait-epithet">${escapeHtml(secondaryLine)}</span>` : ''}
+        </figcaption>
+      </figure>
+    </section>
+  `;
+}
+
 function buildStructureDetailsPanelContent(tile, context = {}) {
   if (!tile || !tile.structureName) {
     return null;
@@ -9372,6 +9498,11 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   const breakdownSection = buildPopulationBreakdownPanelSection(resolvedName, details.populationBreakdown);
 
   const columnSections = [[], [], []];
+
+  const rulerPortraitSection = buildRulerPortraitPanelSection(resolvedName, details);
+  if (rulerPortraitSection) {
+    columnSections[0].push(rulerPortraitSection);
+  }
 
   if (overviewEntries.length > 0) {
     const overviewItems = overviewEntries
