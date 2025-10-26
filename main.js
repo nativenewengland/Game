@@ -7426,7 +7426,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
 
   const breakdownSection = buildPopulationBreakdownPanelSection(resolvedName, details.populationBreakdown);
 
-  const sections = [];
+  const columnSections = [[], [], []];
 
   if (overviewEntries.length > 0) {
     const overviewItems = overviewEntries
@@ -7439,7 +7439,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
         `
       )
       .join('');
-    sections.push(`
+    columnSections[0].push(`
       <section class="structure-details-section structure-details-section--overview">
         <h3 class="structure-details-heading">Overview</h3>
         <dl class="structure-details-list">${overviewItems}</dl>
@@ -7448,7 +7448,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   }
 
   if (breakdownSection) {
-    sections.push(breakdownSection);
+    columnSections[1].push(breakdownSection);
   }
 
   if (listSections.length > 0) {
@@ -7465,7 +7465,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
         `;
       })
       .join('');
-    sections.push(`
+    columnSections[2].push(`
       <section class="structure-details-section structure-details-section--collections">
         <h3 class="structure-details-heading">Notable Groups &amp; Orders</h3>
         <div class="structure-details-collections-grid">${collections}</div>
@@ -7474,7 +7474,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   }
 
   narrativeSections.forEach((section) => {
-    sections.push(`
+    columnSections[2].push(`
       <section class="structure-details-section structure-details-section--narrative">
         <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
         <p class="structure-details-paragraph">${escapeHtml(section.text)}</p>
@@ -7482,14 +7482,29 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   });
 
-  if (sections.length === 0) {
-    sections.push('<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>');
-  }
+  const populatedColumns = columnSections
+    .map((items, index) => {
+      if (items.length === 0) {
+        return '';
+      }
+      const columnNames = ['primary', 'secondary', 'tertiary'];
+      const columnClass = columnNames[index] || `col-${index + 1}`;
+      return `
+        <div class="structure-details-column structure-details-column--${columnClass}">
+          ${items.join('')}
+        </div>
+      `;
+    })
+    .filter(Boolean);
+
+  const body = populatedColumns.length > 0
+    ? populatedColumns.join('')
+    : '<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>';
 
   return {
     title: resolvedName,
     subtitle,
-    body: sections.join('')
+    body
   };
 }
 
