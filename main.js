@@ -135,6 +135,7 @@ const baseTileCoords = {
   PORT_TOWN: { row: 4, col: 5 },
   CASTLE: { row: 4, col: 6 },
   ROADSIDE_TAVERN: { row: 1, col: 12 },
+  OASIS: { row: 0, col: 12 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
@@ -10442,6 +10443,7 @@ function createWorld(seedString) {
   const sandGenerationEnabled = true;
   const hasSandTile = sandGenerationEnabled && tileLookup.has('SAND');
   const sandTileKey = hasSandTile ? 'SAND' : grassTileKey;
+  const oasisTileKey = hasSandTile && tileLookup.has('OASIS') ? 'OASIS' : null;
   const hasBadlandsTile = sandGenerationEnabled && tileLookup.has('BADLANDS');
   const badlandsTileKey = hasBadlandsTile ? 'BADLANDS' : sandTileKey;
   const hasStoneTile = tileLookup.has('STONE');
@@ -11482,6 +11484,54 @@ function createWorld(seedString) {
             tile.desertProximity = proximity;
           } else {
             tile.desertProximity = 0;
+          }
+        }
+      }
+    }
+
+    if (oasisTileKey) {
+      const oasisBaseChance = 0.0025;
+      const oasisSuitabilityScale = 0.0075;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!desertMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || tile.base !== sandTileKey) {
+            continue;
+          }
+          if (tile.overlay || tile.hillOverlay || tile.structure || tile.river) {
+            continue;
+          }
+          let hasNeighborOasis = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx];
+            if (neighborTile && neighborTile.overlay === oasisTileKey) {
+              hasNeighborOasis = true;
+              break;
+            }
+          }
+          if (hasNeighborOasis) {
+            continue;
+          }
+          const suitability = desertSuitabilityField ? desertSuitabilityField[idx] : 0;
+          const oasisChance = clamp(
+            oasisBaseChance + suitability * oasisSuitabilityScale,
+            0,
+            0.12
+          );
+          if (oasisChance <= 0) {
+            continue;
+          }
+          if (rng() < oasisChance) {
+            tile.overlay = oasisTileKey;
           }
         }
       }
