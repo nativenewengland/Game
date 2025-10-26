@@ -114,6 +114,11 @@ select,
   max-height: min(880px, 92vh);
   padding: clamp(1.6rem, 2.8vw, 2.2rem);
   margin: clamp(1.25rem, 4vh, 2.5rem) auto clamp(2rem, 6vh, 3.5rem);
+  background: radial-gradient(circle at 20% 12%, rgba(36, 52, 92, 0.35), transparent 42%),
+    radial-gradient(circle at 82% 8%, rgba(48, 72, 128, 0.28), transparent 45%),
+    linear-gradient(160deg, rgba(7, 11, 26, 0.98) 0%, rgba(3, 5, 16, 0.96) 42%, rgba(2, 4, 12, 0.94) 100%);
+  border-radius: 28px;
+  box-shadow: 0 2.4rem 4.6rem rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(240, 198, 116, 0.08);
 }
 
 .embark-header {
@@ -1092,6 +1097,36 @@ button:hover:not(:disabled) {
   z-index: -1;
 }
 
+.pixel-panel--frost {
+  background: linear-gradient(170deg, rgba(20, 28, 54, 0.92) 0%, rgba(10, 15, 32, 0.94) 55%, rgba(6, 9, 22, 0.96) 100%);
+  box-shadow: 0 1.4rem 2.8rem rgba(0, 0, 0, 0.55);
+}
+
+.pixel-panel--slim {
+  --frame-top: 11px;
+  --frame-right: 14px;
+  --frame-bottom: 11px;
+  --frame-left: 14px;
+  border-radius: 14px;
+  background: linear-gradient(170deg, rgba(24, 28, 48, 0.95), rgba(12, 16, 32, 0.92));
+  box-shadow: 0 0.9rem 2rem rgba(0, 0, 0, 0.5);
+}
+
+.pixel-panel--slim::after {
+  opacity: 0.6;
+}
+
+.pixel-subpanel--frost {
+  background: linear-gradient(170deg, rgba(18, 24, 48, 0.95), rgba(12, 16, 34, 0.92));
+  box-shadow: 0 1.1rem 2.4rem rgba(0, 0, 0, 0.48);
+}
+
+.pixel-panel--frost::after,
+.pixel-subpanel--frost::after {
+  opacity: 0.7;
+  filter: saturate(120%);
+}
+
 .customizer-main {
   display: flex;
   flex-direction: column;
@@ -1106,13 +1141,9 @@ button:hover:not(:disabled) {
   width: 100%;
   flex: 1;
   min-height: 0;
-  padding: clamp(0.7rem, 2vw, 1.2rem)
-    clamp(1.1rem, 2.4vw, 1.6rem)
-    clamp(1.2rem, 2.5vw, 1.6rem);
-  margin-top: clamp(-1.75rem, calc(-0.6rem - 1.2vw), -0.85rem);
-  background: none;
-  border: none;
-  box-shadow: none;
+  padding: clamp(0.85rem, 2.2vw, 1.45rem) clamp(1.15rem, 2.5vw, 1.75rem)
+    clamp(1.3rem, 2.8vw, 1.9rem);
+  margin-top: clamp(-1.45rem, calc(-0.45rem - 1.1vw), -0.6rem);
 }
 
 .pixel-bar {
@@ -1476,12 +1507,13 @@ button:hover:not(:disabled) {
   flex-direction: column;
   gap: clamp(1rem, 2.3vw, 1.4rem);
   align-items: stretch;
+  padding: clamp(0.65rem, 2vw, 1.1rem);
 }
 
 .customizer-body {
   display: flex;
   flex-direction: column;
-  gap: clamp(1.25rem, 3vw, 1.75rem);
+  gap: clamp(1.35rem, 3.1vw, 1.85rem);
   align-items: stretch;
   min-height: 0;
 }
@@ -1491,6 +1523,7 @@ button:hover:not(:disabled) {
   gap: clamp(0.85rem, 2.3vw, 1.3rem);
   align-content: start;
   align-self: start;
+  padding: clamp(0.95rem, 2.1vw, 1.4rem);
 }
 
 .customizer-preview {
@@ -1500,14 +1533,23 @@ button:hover:not(:disabled) {
   text-align: center;
   gap: clamp(0.65rem, 1.8vw, 1rem);
   width: 100%;
-  padding: clamp(0.85rem, 2vw, 1.3rem);
-  margin-top: clamp(-0.35rem, -1.2vw, -0.2rem);
+  padding: clamp(0.85rem, 2vw, 1.25rem) clamp(0.8rem, 1.8vw, 1.1rem) clamp(1rem, 2vw, 1.35rem);
+  margin-top: clamp(-0.15rem, -0.6vw, -0.05rem);
+}
+
+.customizer-preview .subpanel-title {
+  text-align: left;
+}
+
+.customizer-preview .trait-summary {
+  text-align: left;
+  line-height: 1.5;
 }
 
 .trait-sliders-panel {
   display: grid;
-  gap: clamp(0.75rem, 2.1vw, 1.15rem);
-  padding: clamp(0.9rem, 2vw, 1.35rem);
+  gap: clamp(0.85rem, 2.1vw, 1.35rem);
+  padding: clamp(1.05rem, 2.3vw, 1.5rem);
   align-self: stretch;
   width: 100%;
   max-width: 420px;
@@ -1515,12 +1557,40 @@ button:hover:not(:disabled) {
 }
 
 .trait-sliders-panel .field-group {
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(120px, 0.55fr) minmax(0, 1fr);
+  align-items: center;
   text-align: left;
+  column-gap: clamp(0.85rem, 2vw, 1.2rem);
 }
 
 .trait-sliders-panel .hair-colour-controls {
+  grid-column: 2;
   width: 100%;
+}
+
+.trait-sliders-panel .field-label {
+  grid-row: 1;
+  grid-column: 1;
+  margin: 0;
+}
+
+.trait-slider {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(0.85rem, 2vw, 1.2rem);
+}
+
+.trait-slider-visual {
+  grid-column: 1;
+}
+
+.trait-slider-value {
+  grid-column: 2;
+  justify-self: end;
 }
 
 .subpanel-title {
@@ -1660,10 +1730,12 @@ button:hover:not(:disabled) {
 
 .customizer-fields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
   gap: 1.1rem 1.5rem;
   align-content: start;
-  padding: clamp(0.85rem, 2vw, 1.3rem);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  max-width: min(560px, 100%);
+  margin-left: auto;
 }
 
 .customizer-fields .field-group {
@@ -1677,6 +1749,10 @@ button:hover:not(:disabled) {
   align-items: flex-start;
   text-align: left;
   gap: 0.6rem;
+}
+
+.customizer-fields .field-group:not(.field-group--gender) {
+  grid-column: span 1;
 }
 
 .field-group--hair-colour .hair-colour-controls {
@@ -1790,6 +1866,7 @@ button:hover:not(:disabled) {
 
   .customizer-fields {
     grid-template-columns: repeat(2, minmax(200px, 1fr));
+    margin-left: 0;
   }
 }
 
@@ -1810,6 +1887,10 @@ button:hover:not(:disabled) {
 
   .customizer-fields .field-group--gender {
     gap: 0.5rem;
+  }
+
+  .customizer-fields {
+    margin-left: 0;
   }
 }
 
