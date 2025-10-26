@@ -58,7 +58,45 @@ const characterCreatorPortraitAssets = {
     key: 'headDefault',
     path: 'tilesheet/Character Creator/head_default.png',
     image: null
+  },
+  beard1: {
+    key: 'beard1',
+    path: 'tilesheet/Character Creator/beard_1.png',
+    image: null
+  },
+  beard2: {
+    key: 'beard2',
+    path: 'tilesheet/Character Creator/beard_2.png',
+    image: null
+  },
+  beard3: {
+    key: 'beard3',
+    path: 'tilesheet/Character Creator/beard_3.png',
+    image: null
+  },
+  beard4: {
+    key: 'beard4',
+    path: 'tilesheet/Character Creator/beard_4.png',
+    image: null
+  },
+  beard5: {
+    key: 'beard5',
+    path: 'tilesheet/Character Creator/beard_5.png',
+    image: null
+  },
+  nose: {
+    key: 'nose',
+    path: 'tilesheet/Character Creator/nose.png',
+    image: null
   }
+};
+
+const characterCreatorBeardAssetMap = {
+  short: 'beard1',
+  full: 'beard2',
+  braided: 'beard3',
+  forked: 'beard4',
+  mutton: 'beard5'
 };
 
 const baseTileCoords = {
@@ -6324,7 +6362,19 @@ function shouldUseCharacterCreatorPortrait(dwarf) {
   return Boolean(bodyImage && headImage);
 }
 
-function renderCharacterCreatorPortrait(ctx, canvas) {
+function getCharacterCreatorBeardImage(dwarf) {
+  if (!dwarf || dwarf.gender !== 'male') {
+    return null;
+  }
+  const beardValue = dwarf.beard || 'clean';
+  const assetKey = characterCreatorBeardAssetMap[beardValue];
+  if (!assetKey) {
+    return null;
+  }
+  return characterCreatorPortraitAssets[assetKey]?.image || null;
+}
+
+function renderCharacterCreatorPortrait(ctx, canvas, dwarf) {
   const bodyImage = characterCreatorPortraitAssets.maleBody?.image;
   const headImage = characterCreatorPortraitAssets.headDefault?.image;
   if (!bodyImage || !headImage) {
@@ -6337,6 +6387,14 @@ function renderCharacterCreatorPortrait(ctx, canvas) {
   const offsetY = Math.floor((canvas.height - drawHeight) / 2);
   ctx.drawImage(bodyImage, offsetX, offsetY, drawWidth, drawHeight);
   ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+  const beardImage = getCharacterCreatorBeardImage(dwarf);
+  if (beardImage) {
+    ctx.drawImage(beardImage, offsetX, offsetY, drawWidth, drawHeight);
+    const noseImage = characterCreatorPortraitAssets.nose?.image;
+    if (noseImage) {
+      ctx.drawImage(noseImage, offsetX, offsetY, drawWidth, drawHeight);
+    }
+  }
 }
 
 function renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
@@ -6398,7 +6456,7 @@ function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyle
   }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (shouldUseCharacterCreatorPortrait(dwarf)) {
-    renderCharacterCreatorPortrait(ctx, canvas);
+    renderCharacterCreatorPortrait(ctx, canvas, dwarf);
     return;
   }
   renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
