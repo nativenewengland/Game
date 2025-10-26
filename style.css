@@ -743,6 +743,20 @@ button:hover:not(:disabled) {
 
 #structure-details-close {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+#structure-details-close span {
+  display: block;
+  transform: translateY(-1px);
 }
 
 .structure-details-content {
