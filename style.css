@@ -238,6 +238,7 @@ select,
 }
 
 .world-map-size-label,
+.world-layout-label,
 .world-seed-label,
 .world-name-label {
   font-size: 0.95rem;
@@ -247,12 +248,14 @@ select,
 }
 
 .world-map-size-input,
+.world-layout-input,
 .world-seed-input,
 .world-name-input {
   margin-bottom: 0;
 }
 
 .world-map-size-input select,
+.world-layout-input select,
 .world-seed-input input {
   width: 100%;
 }

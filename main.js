@@ -1,4 +1,5 @@
 const drawSize = 32;
+const defaultWorldGenerationType = 'major_continent';
 
 const tileSheets = {
   base: {
@@ -5101,6 +5102,8 @@ function resolveTileName(baseKey) {
   return tileLookup.has(baseKey) ? baseKey : 'GRASS';
 }
 
+const landMaskCache = new Map();
+
 const state = {
   settings: {
     mapSize: defaultMapSize.key,
@@ -5114,7 +5117,8 @@ const state = {
     humanSettlementFrequency: 50,
     dwarfSettlementFrequency: 50,
     woodElfSettlementFrequency: 50,
-    lizardmenSettlementFrequency: 50
+    lizardmenSettlementFrequency: 50,
+    worldGenerationType: defaultWorldGenerationType
   },
   tileSheets,
   landMask: null,
@@ -5640,6 +5644,7 @@ const elements = {
   biomeToggle: document.getElementById('toggle-biomes'),
   temperatureToggle: document.getElementById('toggle-temperature'),
   mapSizeSelect: document.getElementById('map-size'),
+  worldGenerationTypeSelect: document.getElementById('world-generation-type'),
   seedInput: document.getElementById('world-seed'),
   worldMapSizeSelect: document.getElementById('world-map-size-select'),
   worldSeedInput: document.getElementById('world-seed-input'),
@@ -5669,11 +5674,13 @@ const elements = {
   worldInfoModal: document.getElementById('world-info'),
   worldInfoForm: document.getElementById('world-info-form'),
   worldInfoSize: document.getElementById('world-info-size'),
+  worldInfoGenerationType: document.getElementById('world-info-generation-type'),
   worldInfoSeed: document.getElementById('world-info-seed'),
   worldInfoChronology: document.getElementById('world-info-chronology'),
   worldYearInput: document.getElementById('world-year-input'),
   worldAgeInput: document.getElementById('world-age-input'),
   worldChronologyRandom: document.getElementById('world-chronology-random'),
+  worldInfoGenerationTypeSelect: document.getElementById('world-generation-type-select'),
   worldNameInput: document.getElementById('world-name-input'),
   worldNameRandom: document.getElementById('world-name-random'),
   worldInfoCancel: document.getElementById('world-info-cancel'),
@@ -5810,6 +5817,7 @@ function loadLandMask(src) {
         throw new Error('Failed to create land mask context.');
       }
       state.landMask = mask;
+      landMaskCache.set(defaultWorldGenerationType, mask);
       return mask;
     })
     .catch((error) => {
@@ -5966,6 +5974,9 @@ function applyFormSettings() {
   const selectedKey = elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize;
   const preset = getMapSizePreset(selectedKey);
   const seedString = (elements.seedInput.value || '').trim();
+  const generationTypeValue = elements.worldGenerationTypeSelect
+    ? elements.worldGenerationTypeSelect.value
+    : state.settings.worldGenerationType;
   const forestFrequencyRaw = elements.forestFrequencyInput
     ? Number.parseInt(elements.forestFrequencyInput.value, 10)
     : state.settings.forestFrequency;
@@ -6029,11 +6040,13 @@ function applyFormSettings() {
       : lizardmenSettlementFrequencyRaw,
     state.settings.lizardmenSettlementFrequency
   );
+  setWorldGenerationType(generationTypeValue);
 
   if (elements.worldMapSizeSelect) {
     elements.worldMapSizeSelect.value = state.settings.mapSize;
   }
   updateWorldInfoSizeDisplay();
+  updateWorldInfoGenerationTypeDisplay();
 
   if (elements.worldSeedInput) {
     elements.worldSeedInput.value = state.settings.seedString;
@@ -6043,6 +6056,21 @@ function applyFormSettings() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function sampleRange(randomFn, range, fallbackMin, fallbackMax) {
+  const hasRange = Array.isArray(range) && range.length === 2;
+  const min = hasRange && Number.isFinite(range[0]) ? range[0] : fallbackMin;
+  const max = hasRange && Number.isFinite(range[1]) ? range[1] : fallbackMax;
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    const defaultSpan = fallbackMax - fallbackMin;
+    return fallbackMin + randomFn() * defaultSpan;
+  }
+  if (max <= min) {
+    return min;
+  }
+  const span = max - min;
+  return min + randomFn() * span;
 }
 
 function shuffleArray(items, random = Math.random) {
@@ -7976,6 +8004,70 @@ function updateWorldInfoSizeDisplay() {
   );
 }
 
+function getWorldGenerationProfile(key) {
+  if (key && worldGenerationProfiles[key]) {
+    return worldGenerationProfiles[key];
+  }
+  return worldGenerationProfiles[defaultWorldGenerationType];
+}
+
+function getWorldGenerationProfileLabel(key) {
+  const profile = getWorldGenerationProfile(key);
+  return profile && profile.label ? profile.label : 'Major Continent';
+}
+
+function ensureLandMaskForProfile(profileKey) {
+  const profile = getWorldGenerationProfile(profileKey);
+  if (!profile) {
+    return state.landMask;
+  }
+  const cacheKey = profile.key;
+  if (landMaskCache.has(cacheKey)) {
+    const cachedMask = landMaskCache.get(cacheKey);
+    if (cachedMask) {
+      state.landMask = cachedMask;
+    }
+    return cachedMask || state.landMask;
+  }
+  if (typeof profile.createMask === 'function') {
+    const generatedMask = profile.createMask();
+    if (generatedMask) {
+      landMaskCache.set(cacheKey, generatedMask);
+      state.landMask = generatedMask;
+      return generatedMask;
+    }
+  }
+  if (cacheKey === defaultWorldGenerationType && state.landMask) {
+    landMaskCache.set(cacheKey, state.landMask);
+    return state.landMask;
+  }
+  if (cacheKey !== defaultWorldGenerationType) {
+    return ensureLandMaskForProfile(defaultWorldGenerationType);
+  }
+  return state.landMask;
+}
+
+function setWorldGenerationType(type) {
+  const profile = getWorldGenerationProfile(type);
+  state.settings.worldGenerationType = profile.key;
+  ensureLandMaskForProfile(profile.key);
+  if (elements.worldGenerationTypeSelect) {
+    elements.worldGenerationTypeSelect.value = profile.key;
+  }
+  if (elements.worldInfoGenerationTypeSelect) {
+    elements.worldInfoGenerationTypeSelect.value = profile.key;
+  }
+  updateWorldInfoGenerationTypeDisplay();
+}
+
+function updateWorldInfoGenerationTypeDisplay() {
+  if (!elements.worldInfoGenerationType) {
+    return;
+  }
+  const label = getWorldGenerationProfileLabel(state.settings.worldGenerationType);
+  elements.worldInfoGenerationType.textContent = label;
+}
+
 function updateWorldInfoSeedDisplay(seedValue) {
   if (!elements.worldInfoSeed) {
     return;
@@ -8037,6 +8129,10 @@ function openWorldInfoModal() {
     elements.mapSizeSelect.value = state.settings.mapSize;
   }
   updateWorldInfoSizeDisplay();
+  if (elements.worldInfoGenerationTypeSelect) {
+    elements.worldInfoGenerationTypeSelect.value = state.settings.worldGenerationType;
+  }
+  updateWorldInfoGenerationTypeDisplay();
 
   const seed = ensureSeedString();
   state.settings.lastSeedString = seed;
@@ -9948,6 +10044,120 @@ function valueNoise(x, y, seed) {
   return lerp(ix0, ix1, sy);
 }
 
+function createProceduralMask(width, height, sampler) {
+  const data = new Float32Array(width * height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const nx = (x + 0.5) / width;
+      const ny = (y + 0.5) / height;
+      const value = sampler(nx, ny);
+      data[y * width + x] = clamp(value, 0, 1);
+    }
+  }
+  return { width, height, data };
+}
+
+function createTwinContinentsMask() {
+  const size = 512;
+  return createProceduralMask(size, size, (nx, ny) => {
+    const left = Math.hypot((nx - 0.32) / 0.55, (ny - 0.48) / 0.33);
+    const right = Math.hypot((nx - 0.68) / 0.55, (ny - 0.52) / 0.33);
+    let value = 1 - Math.min(left, right);
+    value = Math.pow(clamp(value, 0, 1), 0.82);
+    const saddle = Math.cos((ny - 0.5) * Math.PI * 2.2) * 0.05;
+    const noise = (valueNoise(nx * 12.5 + 3.1, ny * 12.5 + 7.9, 0x9e3779b) - 0.5) * 0.12;
+    const detail = (valueNoise(nx * 34.2 + 11.3, ny * 34.2 + 4.6, 0x85ebca6) - 0.5) * 0.06;
+    value += saddle + noise + detail;
+    return value;
+  });
+}
+
+function createInlandSeaMask() {
+  const size = 512;
+  return createProceduralMask(size, size, (nx, ny) => {
+    const dx = nx - 0.5;
+    const dy = ny - 0.53;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    let ring = clamp((distance - 0.18) * 3.25, 0, 1);
+    ring = Math.pow(ring, 0.82);
+    const coastline = clamp(1 - distance * 1.05, 0, 1) * 0.4;
+    let value = ring + coastline;
+    value += (valueNoise(nx * 9.5 + 0.2, ny * 9.5 + 0.4, 0x6c8e9cf) - 0.5) * 0.18;
+    value += (valueNoise(nx * 26.5 + 8.1, ny * 26.5 + 2.3, 0x51a7f5d) - 0.5) * 0.08;
+    value -= 0.05;
+    return value;
+  });
+}
+
+function createArchipelagoMask() {
+  const size = 512;
+  return createProceduralMask(size, size, (nx, ny) => {
+    const base = valueNoise(nx * 8.2 + 5.3, ny * 8.2 + 17.5, 0x7f4a7c1);
+    const detail = valueNoise(nx * 22.5 + 2.7, ny * 22.5 + 13.3, 0x6a09e66);
+    const micro = valueNoise(nx * 48.5 + 11.9, ny * 48.5 + 29.1, 0x1b87359);
+    let value = base * 0.55 + detail * 0.35 + micro * 0.1;
+    const latitude = 1 - Math.abs(ny - 0.5) * 1.25;
+    const longitude = 1 - Math.abs(nx - 0.5) * 0.6;
+    value = value * 0.7 + latitude * 0.2 + longitude * 0.1;
+    value -= 0.08;
+    return value;
+  });
+}
+
+const worldGenerationProfiles = {
+  major_continent: {
+    key: 'major_continent',
+    label: 'Major Continent',
+    baseNoiseScaleRange: [1.2, 2],
+    detailNoiseScaleRange: [3.6, 6.8],
+    ridgeNoiseScaleRange: [6.4, 10.6],
+    edgeTaperRange: [2.4, 3.2],
+    edgeDropRange: [0.28, 0.42],
+    maskInfluence: 0.5,
+    seaLevelShift: 0,
+    rainfallBias: 0
+  },
+  twin_continents: {
+    key: 'twin_continents',
+    label: 'Twin Continents',
+    baseNoiseScaleRange: [1, 1.6],
+    detailNoiseScaleRange: [3.2, 5.4],
+    ridgeNoiseScaleRange: [5.6, 8.4],
+    edgeTaperRange: [2.2, 3],
+    edgeDropRange: [0.24, 0.36],
+    maskInfluence: 0.65,
+    seaLevelShift: -0.02,
+    rainfallBias: -0.02,
+    createMask: createTwinContinentsMask
+  },
+  inland_sea: {
+    key: 'inland_sea',
+    label: 'Inland Sea',
+    baseNoiseScaleRange: [1.1, 1.8],
+    detailNoiseScaleRange: [3.4, 6],
+    ridgeNoiseScaleRange: [6, 9.2],
+    edgeTaperRange: [2.6, 3.4],
+    edgeDropRange: [0.3, 0.46],
+    maskInfluence: 0.62,
+    seaLevelShift: 0.04,
+    rainfallBias: 0.03,
+    createMask: createInlandSeaMask
+  },
+  archipelago: {
+    key: 'archipelago',
+    label: 'Shattered Isles',
+    baseNoiseScaleRange: [1.4, 2.2],
+    detailNoiseScaleRange: [4, 6.6],
+    ridgeNoiseScaleRange: [7.2, 11],
+    edgeTaperRange: [2.1, 2.8],
+    edgeDropRange: [0.22, 0.34],
+    maskInfluence: 0.58,
+    seaLevelShift: 0.06,
+    rainfallBias: 0.05,
+    createMask: createArchipelagoMask
+  }
+};
+
 function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.1) {
   let amplitude = 1;
   let frequency = 1;
@@ -10970,6 +11180,14 @@ function createWorld(seedString) {
     state.settings.lizardmenSettlementFrequency,
     50
   );
+  const profile = getWorldGenerationProfile(state.settings.worldGenerationType);
+  const maskInfluence = clamp(
+    typeof profile.maskInfluence === 'number' ? profile.maskInfluence : 0.5,
+    0,
+    1
+  );
+  const targetWaterRatio = clamp(0.47 + (profile.seaLevelShift || 0), 0.2, 0.8);
+  const rainfallBias = Number.isFinite(profile.rainfallBias) ? profile.rainfallBias : 0;
   const forestBias = clamp(
     // Normalize relative to the default slider position so negative values mean "sparser"
     // and positive values mean "denser", then clip extremes to keep the downstream math stable.
@@ -11012,11 +11230,11 @@ function createWorld(seedString) {
   const detailNoiseOffsetX = rng() * 4096;
   const detailNoiseOffsetY = rng() * 4096;
 
-  const baseNoiseScale = 1.2 + rng() * 0.8;
-  const detailNoiseScale = 3.6 + rng() * 3.2;
-  const ridgeNoiseScale = 6.4 + rng() * 4.2;
-  const edgeTaper = 2.4 + rng() * 0.8;
-  const edgeDrop = 0.28 + rng() * 0.14;
+  const baseNoiseScale = sampleRange(rng, profile.baseNoiseScaleRange, 1.2, 2);
+  const detailNoiseScale = sampleRange(rng, profile.detailNoiseScaleRange, 3.6, 6.8);
+  const ridgeNoiseScale = sampleRange(rng, profile.ridgeNoiseScaleRange, 6.4, 10.6);
+  const edgeTaper = sampleRange(rng, profile.edgeTaperRange, 2.4, 3.2);
+  const edgeDrop = sampleRange(rng, profile.edgeDropRange, 0.28, 0.42);
 
   const baseNoiseSeed = (seedNumber + 0x9e3779b9) >>> 0;
   const detailNoiseSeed = (seedNumber + 0x85ebca6b) >>> 0;
@@ -11076,7 +11294,7 @@ function createWorld(seedString) {
       heightValue -= edgeFalloff * edgeFalloff * edgeDrop;
 
       if (maskSample !== null && maskSample !== undefined) {
-        heightValue = lerp(heightValue, maskSample, 0.5);
+        heightValue = lerp(heightValue, maskSample, maskInfluence);
       }
 
       heightValue = clamp(heightValue, -1, 1);
@@ -11087,7 +11305,7 @@ function createWorld(seedString) {
   normalizeField(elevationField);
   normalizeField(tectonicActivityField);
 
-  const { seaLevel } = estimateSeaLevels(elevationField, 0.47);
+  const { seaLevel } = estimateSeaLevels(elevationField, targetWaterRatio);
   const rainfallField = new Float32Array(width * height);
   const drainageField = new Float32Array(width * height);
   const rainfallBaseSeed = (seedNumber + 0x7f4a7c15) >>> 0;
@@ -11139,7 +11357,7 @@ function createWorld(seedString) {
       const coastalInfluence = clamp(1 - Math.abs(elevationValue - seaLevel) * 2.4, 0, 1);
       let rainfallValue = baseRainNoise * 0.65 + detailRainNoise * 0.35;
       rainfallValue = clamp(
-        rainfallValue * 0.55 + latitudeInfluence * 0.25 + coastalInfluence * 0.2,
+        rainfallValue * 0.55 + latitudeInfluence * 0.25 + coastalInfluence * 0.2 + rainfallBias,
         0,
         1
       );
@@ -17477,6 +17695,7 @@ function beginGame() {
 
 function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
+  ensureLandMaskForProfile(state.settings.worldGenerationType);
   hideMapTooltip();
   hideLocalView({ suppressRedraw: true });
   const world = createWorld(seedToUse);
@@ -17551,6 +17770,13 @@ function syncInputsWithSettings() {
     elements.worldMapSizeSelect.value = state.settings.mapSize;
   }
   updateWorldInfoSizeDisplay();
+  if (elements.worldGenerationTypeSelect) {
+    elements.worldGenerationTypeSelect.value = state.settings.worldGenerationType;
+  }
+  if (elements.worldInfoGenerationTypeSelect) {
+    elements.worldInfoGenerationTypeSelect.value = state.settings.worldGenerationType;
+  }
+  updateWorldInfoGenerationTypeDisplay();
   if (elements.seedInput) {
     elements.seedInput.value = state.settings.seedString;
   }
@@ -17780,6 +18006,10 @@ function attachEvents() {
         elements.mapSizeSelect.value = state.settings.mapSize;
       }
       updateWorldInfoSizeDisplay();
+      const selectedGenerationType = elements.worldInfoGenerationTypeSelect
+        ? elements.worldInfoGenerationTypeSelect.value
+        : state.settings.worldGenerationType;
+      setWorldGenerationType(selectedGenerationType);
 
       if (elements.worldSeedInput) {
         state.settings.seedString = elements.worldSeedInput.value.trim();
@@ -17866,6 +18096,15 @@ function attachEvents() {
         elements.mapSizeSelect.value = state.settings.mapSize;
       }
       updateWorldInfoSizeDisplay();
+    });
+  }
+
+  if (elements.worldInfoGenerationTypeSelect) {
+    elements.worldInfoGenerationTypeSelect.addEventListener('change', (event) => {
+      setWorldGenerationType(event.target.value);
+      if (elements.worldGenerationTypeSelect) {
+        elements.worldGenerationTypeSelect.value = state.settings.worldGenerationType;
+      }
     });
   }
 

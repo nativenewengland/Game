@@ -80,6 +80,13 @@
               <option value="large">Large</option>
               <option value="extra-large">Extra Large</option>
             </select>
+            <label for="world-generation-type">World layout</label>
+            <select id="world-generation-type" name="worldGenerationType">
+              <option value="major_continent" selected>Major Continent</option>
+              <option value="twin_continents">Twin Continents</option>
+              <option value="inland_sea">Inland Sea</option>
+              <option value="archipelago">Shattered Isles</option>
+            </select>
             <label>
               World seed
               <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
@@ -241,6 +248,10 @@
                 <dd id="world-info-size">—</dd>
               </div>
               <div>
+                <dt>World layout</dt>
+                <dd id="world-info-generation-type">—</dd>
+              </div>
+              <div>
                 <dt>Seed</dt>
                 <dd id="world-info-seed">—</dd>
               </div>
@@ -291,6 +302,15 @@
                 <option value="normal">Normal — 200 × 150</option>
                 <option value="large">Large — 260 × 195</option>
                 <option value="extra-large">Extra Large — 320 × 240</option>
+              </select>
+            </div>
+            <label class="world-layout-label" for="world-generation-type-select">World layout</label>
+            <div class="world-layout-input">
+              <select id="world-generation-type-select" name="worldGenerationType">
+                <option value="major_continent">Major Continent</option>
+                <option value="twin_continents">Twin Continents</option>
+                <option value="inland_sea">Inland Sea</option>
+                <option value="archipelago">Shattered Isles</option>
               </select>
             </div>
             <label class="world-seed-label" for="world-seed-input">World seed</label>
