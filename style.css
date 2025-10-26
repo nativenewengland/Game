@@ -122,6 +122,8 @@ select,
   box-shadow: none;
   backdrop-filter: none;
   border-radius: 22px;
+  gap: clamp(0.25rem, 0.8vw, 0.45rem);
+  padding-top: clamp(0.6rem, 1.6vw, 0.9rem);
 }
 
 #dwarf-customizer-form.pixel-panel::after {
@@ -1611,6 +1613,7 @@ button:hover:not(:disabled) {
   aspect-ratio: 424 / 377;
   height: auto;
   margin-inline: auto;
+  margin-top: clamp(-0.7rem, -2vw, -0.45rem);
   border-radius: 18px;
   border: none;
   background: url('tilesheet/backgroundmenu.png') center/cover no-repeat;
