@@ -723,7 +723,7 @@ button:hover:not(:disabled) {
   overflow-y: auto;
   padding-right: 0.5rem;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(280px, 0.75fr) minmax(240px, 1fr);
   grid-auto-flow: row dense;
   grid-auto-rows: minmax(min-content, auto);
   gap: 1.25rem 2rem;
@@ -738,11 +738,18 @@ button:hover:not(:disabled) {
 }
 
 .structure-details-section.wide,
-.structure-details-section:first-child,
-.structure-details-section--overview,
-.structure-details-section--chart,
 .structure-details-section--narrative {
   grid-column: 1 / -1;
+}
+
+.structure-details-section--overview,
+.structure-details-section--list {
+  grid-column: 1;
+}
+
+.structure-details-section--chart {
+  grid-column: 2;
+  align-self: start;
 }
 
 .structure-details-section .structure-details-chart,
@@ -773,6 +780,7 @@ button:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  max-width: 420px;
 }
 
 .structure-details-list > div {
@@ -882,6 +890,16 @@ button:hover:not(:disabled) {
     overflow-y: auto;
     padding-right: 0.25rem;
     gap: 1.25rem;
+  }
+
+  .structure-details-section--overview,
+  .structure-details-section--list,
+  .structure-details-section--chart {
+    grid-column: 1 / -1;
+  }
+
+  .structure-details-list {
+    max-width: none;
   }
 
   .structure-details-chart {
