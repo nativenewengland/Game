@@ -10198,13 +10198,13 @@ const worldGenerationProfiles = {
   normal: {
     key: 'normal',
     label: 'Normal',
-    baseNoiseScaleRange: [1.2, 2],
-    detailNoiseScaleRange: [3.6, 6.6],
-    ridgeNoiseScaleRange: [6.2, 10.2],
-    edgeTaperRange: [2.3, 3.1],
-    edgeDropRange: [0.26, 0.4],
-    maskInfluence: 0.48,
-    seaLevelShift: -0.01,
+    baseNoiseScaleRange: [1.6, 2.6],
+    detailNoiseScaleRange: [4.2, 7.4],
+    ridgeNoiseScaleRange: [7, 11.4],
+    edgeTaperRange: [2.1, 2.9],
+    edgeDropRange: [0.24, 0.36],
+    maskInfluence: 0.38,
+    seaLevelShift: 0.02,
     rainfallBias: 0
   },
   major_continent: {
