@@ -85,8 +85,8 @@ const baseTileCoords = {
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
-  ORC_CAMP: { row: 0, col: 6 },
-  TRAVELERS_CAMP: { row: 0, col: 6 },
+  ORC_CAMP: { row: 6, col: 0 },
+  TRAVELERS_CAMP: { row: 6, col: 0 },
   DUNGEON: { row: 2, col: 7 }
 };
 
