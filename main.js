@@ -5429,6 +5429,15 @@ function carveRoadBetweenPoints(start, end, options) {
     return;
   }
 
+  const path = findRoadPathBetweenPoints(start, end, options);
+  if (Array.isArray(path) && path.length > 0) {
+    for (let i = 0; i < path.length; i += 1) {
+      const step = path[i];
+      placeRoadOverlayAt(step.x, step.y, options);
+    }
+    return;
+  }
+
   let x0 = Math.round(start.x);
   let y0 = Math.round(start.y);
   const x1 = Math.round(end.x);
@@ -5472,18 +5481,8 @@ function placeRoadOverlayAt(x, y, options) {
     replaceableOverlays
   } = options || {};
 
-  if (!tiles || !overlayKey) {
-    return;
-  }
-
-  if (x < 0 || y < 0 || !Number.isFinite(x) || !Number.isFinite(y)) {
-    return;
-  }
-
-  const mapWidth = Number.isFinite(width) ? width : tiles.length > 0 ? tiles[0].length : 0;
-  const mapHeight = Number.isFinite(height) ? height : tiles.length;
-
-  if (x >= mapWidth || y >= mapHeight) {
+  const evaluation = evaluateRoadTileForPath(x, y, options);
+  if (!evaluation.passableForPlacement || !tiles || !overlayKey) {
     return;
   }
 
@@ -5493,47 +5492,315 @@ function placeRoadOverlayAt(x, y, options) {
   }
 
   const tile = row[x];
-  if (!tile || tile.structure || tile.river) {
+  if (!tile) {
     return;
   }
 
-  if (typeof isLandBaseTile === 'function' && !isLandBaseTile(tile.base)) {
-    return;
+  tile.overlay = overlayKey;
+}
+
+function evaluateRoadTileForPath(x, y, options) {
+  const {
+    tiles,
+    overlayKey = TOWN_ROAD_OVERLAY_KEY,
+    width,
+    height,
+    isLandBaseTile,
+    waterMask,
+    treeOverlayKey,
+    treeSnowOverlayKey,
+    treeOverlayKeys: allTreeOverlayKeys,
+    isMountainOverlay,
+    replaceableOverlays
+  } = options || {};
+
+  const defaultResult = {
+    passable: false,
+    passableForPlacement: false,
+    cost: Number.POSITIVE_INFINITY,
+    tile: null,
+    isHill: false,
+    isWater: false
+  };
+
+  if (!tiles || x < 0 || y < 0 || !Number.isFinite(x) || !Number.isFinite(y)) {
+    return defaultResult;
   }
+
+  const mapWidth = Number.isFinite(width) ? width : tiles.length > 0 ? tiles[0].length : 0;
+  const mapHeight = Number.isFinite(height) ? height : tiles.length;
+
+  if (x >= mapWidth || y >= mapHeight) {
+    return defaultResult;
+  }
+
+  const row = tiles[y];
+  if (!Array.isArray(row)) {
+    return defaultResult;
+  }
+
+  const tile = row[x];
+  if (!tile) {
+    return defaultResult;
+  }
+
+  if (tile.river) {
+    return { ...defaultResult, tile, isWater: true };
+  }
+
+  if (typeof isLandBaseTile === 'function' && !isLandBaseTile(tile.base)) {
+    return { ...defaultResult, tile };
+  }
+
+  const waterResult = { ...defaultResult, tile, isWater: true };
 
   if (waterMask && (Array.isArray(waterMask) || waterMask instanceof Uint8Array)) {
     const idx = y * mapWidth + x;
     if (idx >= 0 && idx < waterMask.length && waterMask[idx]) {
-      return;
+      return waterResult;
     }
   }
 
-  if (typeof isMountainOverlay === 'function' && isMountainOverlay(tile.overlay)) {
-    return;
+  let passable = true;
+  let passableForPlacement = true;
+  let cost = 1;
+
+  if (tile.structure) {
+    passableForPlacement = false;
+    passable = false;
   }
 
   const treeOverlays = Array.isArray(allTreeOverlayKeys) && allTreeOverlayKeys.length > 0
     ? allTreeOverlayKeys
     : [treeOverlayKey, treeSnowOverlayKey].filter((key, index, array) => key && array.indexOf(key) === index);
 
-  if (tile.overlay && tile.overlay !== overlayKey) {
+  const tileOverlay = tile.overlay;
+  const mountainOverlayPresent =
+    typeof isMountainOverlay === 'function' &&
+    (isMountainOverlay(tileOverlay) || (tile.hillOverlay && isMountainOverlay(tile.hillOverlay)));
+
+  if (mountainOverlayPresent) {
+    passable = false;
+    passableForPlacement = false;
+  }
+
+  const isHillOverlayPresent =
+    typeof isHillOverlayKey === 'function' &&
+    (isHillOverlayKey(tileOverlay) || (tile.hillOverlay && isHillOverlayKey(tile.hillOverlay)));
+
+  if (isHillOverlayPresent) {
+    cost = Math.max(cost, 6);
+  }
+
+  if (tileOverlay && tileOverlay !== overlayKey) {
     let canReplace = false;
     if (replaceableOverlays) {
       if (typeof replaceableOverlays.has === 'function') {
-        canReplace = replaceableOverlays.has(tile.overlay);
+        canReplace = replaceableOverlays.has(tileOverlay);
       } else if (Array.isArray(replaceableOverlays)) {
-        canReplace = replaceableOverlays.includes(tile.overlay);
+        canReplace = replaceableOverlays.includes(tileOverlay);
       }
     }
     if (!canReplace) {
-      const isTreeOverlay = treeOverlays.length > 0 && treeOverlays.includes(tile.overlay);
-      if (!isTreeOverlay) {
-        return;
+      const isTreeOverlay = treeOverlays.length > 0 && treeOverlays.includes(tileOverlay);
+      if (!isTreeOverlay && tileOverlay !== overlayKey) {
+        passable = false;
+        passableForPlacement = false;
       }
     }
   }
 
-  tile.overlay = overlayKey;
+  if (!passable) {
+    return { ...defaultResult, tile, passable: false, passableForPlacement, cost: Number.POSITIVE_INFINITY, isHill: isHillOverlayPresent };
+  }
+
+  return {
+    passable,
+    passableForPlacement,
+    cost,
+    tile,
+    isHill: isHillOverlayPresent,
+    isWater: false
+  };
+}
+
+function findRoadPathBetweenPoints(start, end, options) {
+  if (!options || !options.tiles) {
+    return null;
+  }
+
+  const {
+    width,
+    height
+  } = options;
+
+  const mapWidth = Number.isFinite(width) ? width : options.tiles.length > 0 ? options.tiles[0].length : 0;
+  const mapHeight = Number.isFinite(height) ? height : options.tiles.length;
+
+  if (!Number.isFinite(mapWidth) || !Number.isFinite(mapHeight) || mapWidth <= 0 || mapHeight <= 0) {
+    return null;
+  }
+
+  const startX = clamp(Math.round(start.x), 0, mapWidth - 1);
+  const startY = clamp(Math.round(start.y), 0, mapHeight - 1);
+  const endX = clamp(Math.round(end.x), 0, mapWidth - 1);
+  const endY = clamp(Math.round(end.y), 0, mapHeight - 1);
+
+  const padding = 8;
+  const minX = Math.max(0, Math.min(startX, endX) - padding);
+  const maxX = Math.min(mapWidth - 1, Math.max(startX, endX) + padding);
+  const minY = Math.max(0, Math.min(startY, endY) - padding);
+  const maxY = Math.min(mapHeight - 1, Math.max(startY, endY) + padding);
+
+  const searchWidth = maxX - minX + 1;
+  const searchHeight = maxY - minY + 1;
+  const totalCells = searchWidth * searchHeight;
+
+  if (totalCells <= 0) {
+    return null;
+  }
+
+  const evaluations = new Array(totalCells);
+  for (let localY = 0; localY < searchHeight; localY += 1) {
+    for (let localX = 0; localX < searchWidth; localX += 1) {
+      const worldX = minX + localX;
+      const worldY = minY + localY;
+      const index = localY * searchWidth + localX;
+      evaluations[index] = evaluateRoadTileForPath(worldX, worldY, options);
+    }
+  }
+
+  const startIndex = (startY - minY) * searchWidth + (startX - minX);
+  const goalIndex = (endY - minY) * searchWidth + (endX - minX);
+
+  const startInfo = evaluations[startIndex];
+  const goalInfo = evaluations[goalIndex];
+
+  if (startInfo) {
+    if (!startInfo.passable && startInfo.tile && !startInfo.isWater) {
+      startInfo.passable = true;
+      startInfo.cost = Math.min(startInfo.cost, 1);
+    }
+  }
+
+  if (goalInfo) {
+    if (!goalInfo.passable && goalInfo.tile && !goalInfo.isWater) {
+      goalInfo.passable = true;
+      goalInfo.cost = Math.min(goalInfo.cost, 1);
+    }
+  }
+
+  if (!startInfo || !startInfo.passable || !goalInfo || !goalInfo.passable) {
+    return null;
+  }
+
+  const gScores = new Array(totalCells).fill(Number.POSITIVE_INFINITY);
+  const fScores = new Array(totalCells).fill(Number.POSITIVE_INFINITY);
+  const cameFrom = new Array(totalCells).fill(-1);
+  const openSet = [];
+  const inOpenSet = new Array(totalCells).fill(false);
+
+  const heuristic = (x, y) => {
+    const dx = Math.abs(x - (endX - minX));
+    const dy = Math.abs(y - (endY - minY));
+    return Math.max(dx, dy);
+  };
+
+  gScores[startIndex] = 0;
+  fScores[startIndex] = heuristic(startX - minX, startY - minY);
+  openSet.push(startIndex);
+  inOpenSet[startIndex] = true;
+
+  const neighborSteps = [
+    { dx: 1, dy: 0, cost: 1 },
+    { dx: -1, dy: 0, cost: 1 },
+    { dx: 0, dy: 1, cost: 1 },
+    { dx: 0, dy: -1, cost: 1 },
+    { dx: 1, dy: 1, cost: Math.SQRT2 },
+    { dx: 1, dy: -1, cost: Math.SQRT2 },
+    { dx: -1, dy: 1, cost: Math.SQRT2 },
+    { dx: -1, dy: -1, cost: Math.SQRT2 }
+  ];
+
+  const isIndexValid = (index) => index >= 0 && index < totalCells;
+
+  while (openSet.length > 0) {
+    openSet.sort((a, b) => fScores[a] - fScores[b]);
+    const currentIndex = openSet.shift();
+    inOpenSet[currentIndex] = false;
+
+    if (currentIndex === goalIndex) {
+      return reconstructRoadPath(cameFrom, currentIndex, searchWidth, minX, minY);
+    }
+
+    const currentY = Math.floor(currentIndex / searchWidth);
+    const currentX = currentIndex - currentY * searchWidth;
+
+    for (let i = 0; i < neighborSteps.length; i += 1) {
+      const step = neighborSteps[i];
+      const neighborX = currentX + step.dx;
+      const neighborY = currentY + step.dy;
+
+      if (neighborX < 0 || neighborY < 0 || neighborX >= searchWidth || neighborY >= searchHeight) {
+        continue;
+      }
+
+      const neighborIndex = neighborY * searchWidth + neighborX;
+      if (!isIndexValid(neighborIndex)) {
+        continue;
+      }
+
+      const neighborInfo = evaluations[neighborIndex];
+      if (!neighborInfo || !neighborInfo.passable || neighborInfo.isWater) {
+        continue;
+      }
+
+      if (Math.abs(step.dx) + Math.abs(step.dy) === 2) {
+        const adjX = currentX + step.dx;
+        const adjY = currentY;
+        const adjIndex = adjY * searchWidth + adjX;
+        const otherAdjX = currentX;
+        const otherAdjY = currentY + step.dy;
+        const otherAdjIndex = otherAdjY * searchWidth + otherAdjX;
+        const adjInfo = evaluations[adjIndex];
+        const otherAdjInfo = evaluations[otherAdjIndex];
+        if ((adjInfo && !adjInfo.passable) || (otherAdjInfo && !otherAdjInfo.passable)) {
+          continue;
+        }
+      }
+
+      const traversalCost = neighborInfo.cost * step.cost;
+      const tentativeG = gScores[currentIndex] + traversalCost;
+
+      if (tentativeG >= gScores[neighborIndex]) {
+        continue;
+      }
+
+      cameFrom[neighborIndex] = currentIndex;
+      gScores[neighborIndex] = tentativeG;
+      fScores[neighborIndex] = tentativeG + heuristic(neighborX, neighborY);
+
+      if (!inOpenSet[neighborIndex]) {
+        openSet.push(neighborIndex);
+        inOpenSet[neighborIndex] = true;
+      }
+    }
+  }
+
+  return null;
+}
+
+function reconstructRoadPath(cameFrom, currentIndex, width, offsetX, offsetY) {
+  const path = [];
+  let current = currentIndex;
+  while (current !== -1) {
+    const y = Math.floor(current / width);
+    const x = current - y * width;
+    path.push({ x: offsetX + x, y: offsetY + y });
+    current = cameFrom[current];
+  }
+  path.reverse();
+  return path;
 }
 
 function tryPlaceDwarfhold(candidate, options) {
