@@ -4833,7 +4833,9 @@ const audioState = {
   tracks: musicTracks,
   currentIndex: 0,
   isPlaying: false,
-  initialised: false
+  initialised: false,
+  effectsMuted: false,
+  effectsVolume: 0.6
 };
 
 const soundEffects = {
@@ -4848,7 +4850,7 @@ const elements = {
   gameContainer: document.getElementById('game-container'),
   optionsButton: document.getElementById('title-options-button'),
   inGameOptions: document.getElementById('in-game-options'),
-  optionsPanel: document.getElementById('options-panel'),
+  optionsScreen: document.getElementById('options-screen'),
   closeOptions: document.getElementById('close-options'),
   optionsForm: document.getElementById('options-form'),
   regenerate: document.getElementById('regenerate-button'),
@@ -4894,6 +4896,11 @@ const elements = {
   musicToggle: document.getElementById('music-toggle'),
   musicVolume: document.getElementById('music-volume'),
   musicNowPlaying: document.getElementById('music-now-playing'),
+  musicToggleGame: document.getElementById('music-toggle-game'),
+  musicVolumeGame: document.getElementById('music-volume-game'),
+  musicNowPlayingGame: document.getElementById('music-now-playing-game'),
+  sfxToggle: document.getElementById('sfx-toggle'),
+  sfxVolume: document.getElementById('sfx-volume'),
   audioElement: document.getElementById('background-music'),
   worldInfoModal: document.getElementById('world-info'),
   worldInfoForm: document.getElementById('world-info-form'),
@@ -4948,10 +4955,11 @@ function createSoundEffect(src, options = {}) {
 }
 
 function playSoundEffect(audio) {
-  if (!audio) {
+  if (!audio || audioState.effectsMuted || audioState.effectsVolume <= 0) {
     return;
   }
   try {
+    audio.volume = clamp(audioState.effectsVolume, 0, 1);
     audio.currentTime = 0;
     const playPromise = audio.play();
     if (playPromise && typeof playPromise.catch === 'function') {
@@ -5091,10 +5099,89 @@ assetPromises
   });
 
 let optionsVisible = false;
+let optionsContext = {
+  source: 'title',
+  returnFocus: null
+};
 
-function toggleOptions(forceState) {
-  optionsVisible = typeof forceState === 'boolean' ? forceState : !optionsVisible;
-  elements.optionsPanel.classList.toggle('hidden', !optionsVisible);
+function getMusicToggleElements() {
+  return [elements.musicToggle, elements.musicToggleGame].filter(Boolean);
+}
+
+function getMusicVolumeInputs() {
+  return [elements.musicVolume, elements.musicVolumeGame].filter(Boolean);
+}
+
+function getMusicNowPlayingDisplays() {
+  return [elements.musicNowPlaying, elements.musicNowPlayingGame].filter(Boolean);
+}
+
+function updateOptionsBackButtonLabel() {
+  if (!elements.closeOptions) {
+    return;
+  }
+  const label = optionsContext.source === 'game' ? 'Return to Game' : 'Back to Title';
+  elements.closeOptions.textContent = label;
+}
+
+function openOptionsScreen(source = 'title') {
+  if (!elements.optionsScreen) {
+    return;
+  }
+  optionsVisible = true;
+  const activeElement =
+    typeof document !== 'undefined' && document.activeElement &&
+    typeof document.activeElement.focus === 'function'
+      ? document.activeElement
+      : null;
+  optionsContext = {
+    source,
+    returnFocus: activeElement
+  };
+  syncInputsWithSettings();
+  if (source === 'title' && elements.titleScreen) {
+    elements.titleScreen.classList.add('hidden');
+  }
+  if (source === 'game' && elements.gameContainer) {
+    elements.gameContainer.classList.add('hidden');
+  }
+  elements.optionsScreen.classList.remove('hidden');
+  updateOptionsBackButtonLabel();
+  if (elements.closeOptions) {
+    elements.closeOptions.focus();
+  }
+}
+
+function closeOptionsScreen({ restoreScreen = true, returnFocus = true } = {}) {
+  if (!elements.optionsScreen) {
+    return optionsContext.source;
+  }
+  const previousSource = optionsContext.source;
+  if (!optionsVisible) {
+    return previousSource;
+  }
+  optionsVisible = false;
+  elements.optionsScreen.classList.add('hidden');
+  if (restoreScreen) {
+    if (previousSource === 'title' && elements.titleScreen) {
+      elements.titleScreen.classList.remove('hidden');
+    }
+    if (previousSource === 'game' && elements.gameContainer) {
+      elements.gameContainer.classList.remove('hidden');
+    }
+  }
+  if (
+    returnFocus &&
+    optionsContext.returnFocus &&
+    typeof optionsContext.returnFocus.focus === 'function'
+  ) {
+    optionsContext.returnFocus.focus();
+  }
+  optionsContext = {
+    source: 'title',
+    returnFocus: null
+  };
+  return previousSource;
 }
 
 function applyFormSettings() {
@@ -8653,21 +8740,32 @@ function setupMapInteractions() {
 }
 
 function updateMusicToggleLabel() {
-  if (!elements.musicToggle) {
+  const toggles = getMusicToggleElements();
+  if (toggles.length === 0) {
     return;
   }
-  elements.musicToggle.textContent = audioState.isPlaying ? 'Pause Music' : 'Play Music';
-  elements.musicToggle.setAttribute('aria-pressed', audioState.isPlaying.toString());
+  const label = audioState.isPlaying ? 'Pause Music' : 'Play Music';
+  toggles.forEach((toggle) => {
+    toggle.textContent = label;
+    toggle.setAttribute('aria-pressed', audioState.isPlaying.toString());
+  });
 }
 
 function updateNowPlaying() {
-  if (!elements.musicNowPlaying || !audioState.tracks.length) {
+  if (!audioState.tracks.length) {
     return;
   }
   const track = audioState.tracks[audioState.currentIndex];
-  elements.musicNowPlaying.textContent = audioState.isPlaying
+  const displays = getMusicNowPlayingDisplays();
+  if (displays.length === 0) {
+    return;
+  }
+  const message = audioState.isPlaying
     ? `Now playing: ${track.title}`
     : `Ready: ${track.title}`;
+  displays.forEach((display) => {
+    display.textContent = message;
+  });
 }
 
 function loadTrack(index) {
@@ -8720,7 +8818,7 @@ function playNextTrack() {
 }
 
 function ensureMusicStarted() {
-  if (!elements.audioElement || !elements.musicToggle) {
+  if (!elements.audioElement || getMusicToggleElements().length === 0) {
     return;
   }
   if (!audioState.initialised) {
@@ -8730,22 +8828,43 @@ function ensureMusicStarted() {
 }
 
 function setupAudioControls() {
-  if (!elements.audioElement || !elements.musicToggle || !elements.musicVolume) {
+  if (!elements.audioElement) {
     return;
   }
 
-  const volumeValue = clamp(parseFloat(elements.musicVolume.value) || 0.5, 0, 1);
-  elements.audioElement.volume = volumeValue;
-  elements.musicVolume.value = volumeValue.toString();
-  loadTrack(audioState.currentIndex);
-  updateMusicToggleLabel();
+  const volumeInputs = getMusicVolumeInputs();
+  const toggles = getMusicToggleElements();
+  if (toggles.length === 0 && volumeInputs.length === 0) {
+    return;
+  }
 
-  elements.musicVolume.addEventListener('input', (event) => {
-    const newVolume = clamp(parseFloat(event.target.value), 0, 1);
-    elements.audioElement.volume = Number.isNaN(newVolume) ? elements.audioElement.volume : newVolume;
+  const initialVolumeSource = volumeInputs[0];
+  const initialVolume = clamp(
+    parseFloat(initialVolumeSource ? initialVolumeSource.value : elements.audioElement.volume) || 0.5,
+    0,
+    1
+  );
+  elements.audioElement.volume = initialVolume;
+  volumeInputs.forEach((input) => {
+    input.value = initialVolume.toString();
   });
 
-  elements.musicToggle.addEventListener('click', () => {
+  const handleVolumeInput = (event) => {
+    const newVolume = clamp(parseFloat(event.target.value), 0, 1);
+    const resolvedVolume = Number.isNaN(newVolume) ? elements.audioElement.volume : newVolume;
+    elements.audioElement.volume = resolvedVolume;
+    volumeInputs.forEach((input) => {
+      if (input !== event.target) {
+        input.value = resolvedVolume.toString();
+      }
+    });
+  };
+
+  volumeInputs.forEach((input) => {
+    input.addEventListener('input', handleVolumeInput);
+  });
+
+  const handleToggle = () => {
     if (!audioState.initialised) {
       loadTrack(audioState.currentIndex);
     }
@@ -8757,7 +8876,16 @@ function setupAudioControls() {
     } else {
       attemptPlay();
     }
+  };
+
+  toggles.forEach((toggle) => {
+    toggle.addEventListener('click', handleToggle);
+    toggle.setAttribute('aria-pressed', audioState.isPlaying.toString());
   });
+
+  loadTrack(audioState.currentIndex);
+  updateMusicToggleLabel();
+  updateNowPlaying();
 
   elements.audioElement.addEventListener('ended', () => {
     audioState.isPlaying = false;
@@ -8781,6 +8909,60 @@ function setupAudioControls() {
     audioState.isPlaying = false;
     playNextTrack();
   });
+}
+
+function updateSoundEffectsToggleLabel() {
+  if (elements.sfxToggle) {
+    const enabled = !audioState.effectsMuted;
+    elements.sfxToggle.textContent = enabled ? 'Sound Effects On' : 'Sound Effects Off';
+    elements.sfxToggle.setAttribute('aria-pressed', enabled.toString());
+  }
+  if (elements.sfxVolume) {
+    elements.sfxVolume.disabled = audioState.effectsMuted;
+    elements.sfxVolume.setAttribute('aria-disabled', audioState.effectsMuted.toString());
+  }
+  const finalVolume = audioState.effectsMuted ? 0 : clamp(audioState.effectsVolume, 0, 1);
+  Object.values(soundEffects).forEach((audio) => {
+    if (audio) {
+      audio.volume = finalVolume;
+    }
+  });
+}
+
+function setupSoundEffectControls() {
+  if (!elements.sfxToggle && !elements.sfxVolume) {
+    return;
+  }
+
+  if (elements.sfxVolume) {
+    const initialVolume = clamp(
+      parseFloat(elements.sfxVolume.value) || audioState.effectsVolume,
+      0,
+      1
+    );
+    audioState.effectsVolume = initialVolume;
+    elements.sfxVolume.value = initialVolume.toString();
+    elements.sfxVolume.addEventListener('input', (event) => {
+      const newVolume = clamp(parseFloat(event.target.value), 0, 1);
+      if (Number.isNaN(newVolume)) {
+        return;
+      }
+      audioState.effectsVolume = newVolume;
+      if (newVolume > 0 && audioState.effectsMuted) {
+        audioState.effectsMuted = false;
+      }
+      updateSoundEffectsToggleLabel();
+    });
+  }
+
+  if (elements.sfxToggle) {
+    elements.sfxToggle.addEventListener('click', () => {
+      audioState.effectsMuted = !audioState.effectsMuted;
+      updateSoundEffectsToggleLabel();
+    });
+  }
+
+  updateSoundEffectsToggleLabel();
 }
 
 function loadImage(src) {
@@ -15701,17 +15883,23 @@ function syncInputsWithSettings() {
 }
 
 function attachEvents() {
-  elements.optionsButton.addEventListener('click', () => {
-    syncInputsWithSettings();
-    toggleOptions(true);
-  });
+  if (elements.optionsButton) {
+    elements.optionsButton.addEventListener('click', () => {
+      openOptionsScreen('title');
+    });
+  }
 
-  elements.inGameOptions.addEventListener('click', () => {
-    syncInputsWithSettings();
-    toggleOptions(true);
-  });
+  if (elements.inGameOptions) {
+    elements.inGameOptions.addEventListener('click', () => {
+      openOptionsScreen('game');
+    });
+  }
 
-  elements.closeOptions.addEventListener('click', () => toggleOptions(false));
+  if (elements.closeOptions) {
+    elements.closeOptions.addEventListener('click', () => {
+      closeOptionsScreen();
+    });
+  }
 
   if (elements.structureDetailsClose) {
     elements.structureDetailsClose.addEventListener('click', () => {
@@ -15842,8 +16030,8 @@ function attachEvents() {
   elements.optionsForm.addEventListener('submit', (event) => {
     event.preventDefault();
     applyFormSettings();
-    toggleOptions(false);
-    if (!elements.gameContainer.classList.contains('hidden')) {
+    const previousSource = closeOptionsScreen();
+    if (previousSource === 'game' && elements.gameContainer) {
       generateAndRender();
     }
   });
@@ -15852,7 +16040,9 @@ function attachEvents() {
     if (!state.ready) {
       return;
     }
-    toggleOptions(false);
+    if (optionsVisible) {
+      closeOptionsScreen({ restoreScreen: false, returnFocus: false });
+    }
     openWorldInfoModal();
   });
 
@@ -16123,7 +16313,9 @@ function attachEvents() {
         closeWorldInfoModal({ returnFocus: true });
         return;
       }
-      toggleOptions(false);
+      if (optionsVisible) {
+        closeOptionsScreen();
+      }
     }
   });
 
@@ -16135,6 +16327,7 @@ attachEvents();
 function initialise() {
   syncInputsWithSettings();
   setupAudioControls();
+  setupSoundEffectControls();
   setupMapInteractions();
   handleResize();
 }

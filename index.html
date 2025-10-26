@@ -22,157 +22,205 @@
       </div>
     </div>
 
-    <section id="options-panel" class="modal hidden" aria-label="Game options">
-      <form id="options-form">
-        <h2>World Options</h2>
-        <label for="map-size">Map size</label>
-        <select id="map-size" name="mapSize">
-          <option value="mini">Mini</option>
-          <option value="small">Small</option>
-          <option value="normal" selected>Normal</option>
-          <option value="large">Large</option>
-          <option value="extra-large">Extra Large</option>
-        </select>
-        <label>
-          World seed
-          <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
-        </label>
-        <label for="forest-frequency">
-          Forest frequency
-          <div class="slider-control">
-            <input
-              id="forest-frequency"
-              name="forestFrequency"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="35"
-            />
-            <span id="forest-frequency-value" class="slider-value" aria-live="polite"
-              >35% — Low</span
-            >
+    <section
+      id="options-screen"
+      class="screen hidden options-screen"
+      aria-label="Game options"
+    >
+      <div class="options-backdrop" aria-hidden="true"></div>
+      <div class="options-panel">
+        <header class="options-header">
+          <div class="options-header__titles">
+            <p class="options-eyebrow">Settings</p>
+            <h2>Options</h2>
+            <p class="options-description">
+              Tune the realm to your liking before you begin your expedition.
+            </p>
           </div>
-        </label>
-        <label for="mountain-frequency">
-          Mountain frequency
-          <div class="slider-control">
-            <input
-              id="mountain-frequency"
-              name="mountainFrequency"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="35"
-            />
-            <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
-              >35% — Low</span
-            >
-          </div>
-        </label>
-        <label for="river-frequency">
-          River frequency
-          <div class="slider-control">
-            <input
-              id="river-frequency"
-              name="riverFrequency"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="50"
-            />
-            <span id="river-frequency-value" class="slider-value" aria-live="polite"
-              >50% — Balanced</span
-            >
-          </div>
-        </label>
-        <label for="human-settlement-frequency">
-          Human settlement frequency
-          <div class="slider-control">
-            <input
-              id="human-settlement-frequency"
-              name="humanSettlementFrequency"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="50"
-            />
-            <span
-              id="human-settlement-frequency-value"
-              class="slider-value"
-              aria-live="polite"
-              >50% — Balanced</span
-            >
-          </div>
-        </label>
-        <label for="dwarf-settlement-frequency">
-          Dwarf settlement frequency
-          <div class="slider-control">
-            <input
-              id="dwarf-settlement-frequency"
-              name="dwarfSettlementFrequency"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="50"
-            />
-            <span
-              id="dwarf-settlement-frequency-value"
-              class="slider-value"
-              aria-live="polite"
-              >50% — Balanced</span
-            >
-          </div>
-        </label>
-        <label for="wood-elf-settlement-frequency">
-          Wood elf settlement frequency
-          <div class="slider-control">
-            <input
-              id="wood-elf-settlement-frequency"
-              name="woodElfSettlementFrequency"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="50"
-            />
-            <span
-              id="wood-elf-settlement-frequency-value"
-              class="slider-value"
-              aria-live="polite"
-              >50% — Balanced</span
-            >
-          </div>
-        </label>
-        <label for="lizardmen-settlement-frequency">
-          Lizardmen temple-city frequency
-          <div class="slider-control">
-            <input
-              id="lizardmen-settlement-frequency"
-              name="lizardmenSettlementFrequency"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="50"
-            />
-            <span
-              id="lizardmen-settlement-frequency-value"
-              class="slider-value"
-              aria-live="polite"
-              >50% — Balanced</span
-            >
-          </div>
-        </label>
-        <div class="modal-buttons">
-          <button type="submit" class="primary">Apply</button>
-          <button type="button" id="close-options" class="secondary">Close</button>
+          <button type="button" id="close-options" class="secondary options-back-button">
+            Back
+          </button>
+        </header>
+        <div class="options-grid">
+          <section class="options-card" aria-label="Audio options">
+            <h3>Audio</h3>
+            <p class="options-card__description">
+              Control the music and ambience that accompany your fortress plans.
+            </p>
+            <div class="options-audio-controls audio-controls">
+              <button id="music-toggle" type="button" class="secondary" aria-pressed="false">
+                Play Music
+              </button>
+              <label class="volume-control" for="music-volume">
+                Music Volume
+                <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5" />
+              </label>
+              <div id="music-now-playing" class="now-playing" aria-live="polite"></div>
+            </div>
+            <div class="options-audio-controls audio-controls">
+              <button id="sfx-toggle" type="button" class="secondary" aria-pressed="true">
+                Sound Effects On
+              </button>
+              <label class="volume-control" for="sfx-volume">
+                Effects Volume
+                <input id="sfx-volume" type="range" min="0" max="1" step="0.01" value="0.6" />
+              </label>
+            </div>
+          </section>
+          <form id="options-form" class="options-card options-card--world" aria-label="World options">
+            <h3>World Generation</h3>
+            <p class="options-card__description">
+              Shape the landscape, climate, and civilisation spread before embarking.
+            </p>
+            <label for="map-size">Map size</label>
+            <select id="map-size" name="mapSize">
+              <option value="mini">Mini</option>
+              <option value="small">Small</option>
+              <option value="normal" selected>Normal</option>
+              <option value="large">Large</option>
+              <option value="extra-large">Extra Large</option>
+            </select>
+            <label>
+              World seed
+              <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
+            </label>
+            <label for="forest-frequency">
+              Forest frequency
+              <div class="slider-control">
+                <input
+                  id="forest-frequency"
+                  name="forestFrequency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="35"
+                />
+                <span id="forest-frequency-value" class="slider-value" aria-live="polite"
+                  >35% — Low</span
+                >
+              </div>
+            </label>
+            <label for="mountain-frequency">
+              Mountain frequency
+              <div class="slider-control">
+                <input
+                  id="mountain-frequency"
+                  name="mountainFrequency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="35"
+                />
+                <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
+                  >35% — Low</span
+                >
+              </div>
+            </label>
+            <label for="river-frequency">
+              River frequency
+              <div class="slider-control">
+                <input
+                  id="river-frequency"
+                  name="riverFrequency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                />
+                <span id="river-frequency-value" class="slider-value" aria-live="polite"
+                  >50% — Balanced</span
+                >
+              </div>
+            </label>
+            <label for="human-settlement-frequency">
+              Human settlement frequency
+              <div class="slider-control">
+                <input
+                  id="human-settlement-frequency"
+                  name="humanSettlementFrequency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                />
+                <span
+                  id="human-settlement-frequency-value"
+                  class="slider-value"
+                  aria-live="polite"
+                  >50% — Balanced</span
+                >
+              </div>
+            </label>
+            <label for="dwarf-settlement-frequency">
+              Dwarf settlement frequency
+              <div class="slider-control">
+                <input
+                  id="dwarf-settlement-frequency"
+                  name="dwarfSettlementFrequency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                />
+                <span
+                  id="dwarf-settlement-frequency-value"
+                  class="slider-value"
+                  aria-live="polite"
+                  >50% — Balanced</span
+                >
+              </div>
+            </label>
+            <label for="wood-elf-settlement-frequency">
+              Wood elf settlement frequency
+              <div class="slider-control">
+                <input
+                  id="wood-elf-settlement-frequency"
+                  name="woodElfSettlementFrequency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                />
+                <span
+                  id="wood-elf-settlement-frequency-value"
+                  class="slider-value"
+                  aria-live="polite"
+                  >50% — Balanced</span
+                >
+              </div>
+            </label>
+            <label for="lizardmen-settlement-frequency">
+              Lizardmen temple-city frequency
+              <div class="slider-control">
+                <input
+                  id="lizardmen-settlement-frequency"
+                  name="lizardmenSettlementFrequency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                />
+                <span
+                  id="lizardmen-settlement-frequency-value"
+                  class="slider-value"
+                  aria-live="polite"
+                  >50% — Balanced</span
+                >
+              </div>
+            </label>
+            <div class="options-card__actions">
+              <button type="submit" class="primary">Apply</button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </section>
 
     <section id="world-info" class="screen hidden embark-screen" aria-label="World information">
@@ -711,12 +759,19 @@
           </button>
         </div>
         <div class="audio-controls" role="region" aria-label="Music controls">
-          <button id="music-toggle" type="button" class="secondary">Play Music</button>
-          <label class="volume-control" for="music-volume">
+          <button id="music-toggle-game" type="button" class="secondary">Play Music</button>
+          <label class="volume-control" for="music-volume-game">
             Volume
-            <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5" />
+            <input
+              id="music-volume-game"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.5"
+            />
           </label>
-          <div id="music-now-playing" class="now-playing" aria-live="polite"></div>
+          <div id="music-now-playing-game" class="now-playing" aria-live="polite"></div>
         </div>
         <div class="seed-display" aria-live="polite"></div>
       </header>
