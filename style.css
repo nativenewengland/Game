@@ -1155,7 +1155,7 @@ button:hover:not(:disabled) {
 }
 
 #dwarf-customizer.layout-editing-active .layout-interaction-disabled {
-  pointer-events: none !important;
+  cursor: grab;
 }
 
 #dwarf-customizer.layout-editing-active [data-draggable-id]:hover {
