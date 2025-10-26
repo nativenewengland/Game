@@ -81,7 +81,12 @@ const baseTileCoords = {
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
   CASTLE: { row: 4, col: 6 },
-  LIZARDMEN_CITY: { row: 2, col: 11 }
+  LIZARDMEN_CITY: { row: 2, col: 11 },
+  SAINT_SHRINE: { row: 1, col: 11 },
+  MONASTERY: { row: 2, col: 2 },
+  ORC_CAMP: { row: 0, col: 6 },
+  TRAVELERS_CAMP: { row: 0, col: 6 },
+  DUNGEON: { row: 2, col: 7 }
 };
 
 const roadTileVariantDefinitions = (() => {
@@ -173,103 +178,6 @@ function registerCustomStructure(key, drawFn) {
   });
 }
 
-function drawOrcCampStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  const radius = size * 0.48;
-  ctx.fillStyle = '#2c4d2f';
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#50321f';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.18, size * 0.78);
-  ctx.lineTo(size * 0.34, size * 0.26);
-  ctx.lineTo(size * 0.5, size * 0.78);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#6b4226';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.54, size * 0.82);
-  ctx.lineTo(size * 0.72, size * 0.32);
-  ctx.lineTo(size * 0.86, size * 0.82);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(size * 0.33, size * 0.52, size * 0.08, size * 0.2);
-  ctx.fillRect(size * 0.66, size * 0.54, size * 0.09, size * 0.22);
-
-  ctx.fillStyle = '#c13f1a';
-  ctx.beginPath();
-  ctx.arc(size * 0.25, size * 0.62, size * 0.04, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawDungeonStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  const wallRadius = size * 0.16;
-  ctx.fillStyle = '#1f2330';
-  ctx.fillRect(size * 0.12, size * 0.18, size * 0.76, size * 0.66);
-  ctx.fillStyle = '#353a4a';
-  ctx.fillRect(size * 0.16, size * 0.24, size * 0.68, size * 0.54);
-
-  ctx.fillStyle = '#111317';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.38, size * 0.78);
-  ctx.lineTo(size * 0.5, size * 0.48);
-  ctx.lineTo(size * 0.62, size * 0.78);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = '#202633';
-  ctx.lineWidth = Math.max(1, size * 0.05);
-  ctx.strokeRect(size * 0.12 + ctx.lineWidth / 2, size * 0.18 + ctx.lineWidth / 2, size * 0.76 - ctx.lineWidth, size * 0.66 - ctx.lineWidth);
-
-  ctx.fillStyle = '#9f874a';
-  ctx.beginPath();
-  ctx.arc(size * 0.5, size * 0.42, wallRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawMonasteryStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  ctx.fillStyle = '#f1f0e6';
-  ctx.fillRect(size * 0.18, size * 0.32, size * 0.64, size * 0.46);
-  ctx.fillStyle = '#d9d4bf';
-  ctx.fillRect(size * 0.22, size * 0.36, size * 0.56, size * 0.34);
-
-  ctx.fillStyle = '#c58d1d';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.14, size * 0.32);
-  ctx.lineTo(size * 0.5, size * 0.14);
-  ctx.lineTo(size * 0.86, size * 0.32);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#a5690f';
-  ctx.fillRect(size * 0.44, size * 0.16, size * 0.12, size * 0.28);
-
-  ctx.strokeStyle = '#fff7ce';
-  ctx.lineWidth = Math.max(1, size * 0.04);
-  ctx.beginPath();
-  ctx.moveTo(size * 0.5, size * 0.18);
-  ctx.lineTo(size * 0.5, size * 0.34);
-  ctx.moveTo(size * 0.44, size * 0.26);
-  ctx.lineTo(size * 0.56, size * 0.26);
-  ctx.stroke();
-
-  ctx.fillStyle = '#7a7263';
-  ctx.fillRect(size * 0.46, size * 0.54, size * 0.08, size * 0.24);
-  ctx.restore();
-}
-
 function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -353,84 +261,6 @@ function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
     ctx.lineTo(startX + size * 0.08, size * 0.32);
   }
   ctx.stroke();
-  ctx.restore();
-}
-
-function drawSaintShrineStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  const centerX = size / 2;
-  const centerY = size * 0.52;
-  ctx.fillStyle = '#d5ecff';
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, size * 0.46, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#f6f0d0';
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, size * 0.34, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#b49a2a';
-  ctx.fillRect(size * 0.42, size * 0.26, size * 0.16, size * 0.44);
-  ctx.fillRect(size * 0.35, size * 0.58, size * 0.3, size * 0.16);
-
-  ctx.strokeStyle = '#fff6ba';
-  ctx.lineWidth = Math.max(1, size * 0.04);
-  ctx.beginPath();
-  ctx.moveTo(centerX, size * 0.18);
-  ctx.lineTo(centerX, size * 0.42);
-  ctx.moveTo(size * 0.4, size * 0.3);
-  ctx.lineTo(size * 0.6, size * 0.3);
-  ctx.stroke();
-
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, size * 0.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-function drawTravelerCampStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  const groundRadius = size * 0.46;
-  ctx.fillStyle = '#ad8b55';
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, groundRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#5f3d21';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.2, size * 0.74);
-  ctx.lineTo(size * 0.34, size * 0.34);
-  ctx.lineTo(size * 0.46, size * 0.74);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#7d4f2c';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.58, size * 0.78);
-  ctx.lineTo(size * 0.72, size * 0.42);
-  ctx.lineTo(size * 0.84, size * 0.78);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#362417';
-  ctx.beginPath();
-  ctx.arc(size * 0.5, size * 0.58, size * 0.12, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#ef7b2d';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.5, size * 0.44);
-  ctx.quadraticCurveTo(size * 0.54, size * 0.52, size * 0.5, size * 0.6);
-  ctx.quadraticCurveTo(size * 0.46, size * 0.52, size * 0.5, size * 0.44);
-  ctx.fill();
-
-  ctx.fillStyle = '#f6d284';
-  ctx.beginPath();
-  ctx.arc(size * 0.5, size * 0.54, size * 0.04, 0, Math.PI * 2);
-  ctx.fill();
   ctx.restore();
 }
 
@@ -646,14 +476,7 @@ registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
 
-registerCustomStructure('ORC_CAMP', (ctx, drawOptions) => drawOrcCampStructure(ctx, drawOptions));
-registerCustomStructure('DUNGEON', (ctx, drawOptions) => drawDungeonStructure(ctx, drawOptions));
-registerCustomStructure('MONASTERY', (ctx, drawOptions) => drawMonasteryStructure(ctx, drawOptions));
-registerCustomStructure('SAINT_SHRINE', (ctx, drawOptions) => drawSaintShrineStructure(ctx, drawOptions));
 registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
-registerCustomStructure('TRAVELERS_CAMP', (ctx, drawOptions) =>
-  drawTravelerCampStructure(ctx, drawOptions)
-);
 registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) =>
   drawRoadsideTavernStructure(ctx, drawOptions)
 );
