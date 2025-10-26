@@ -4919,8 +4919,6 @@ const elements = {
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
   dwarfSkinSlider: document.getElementById('dwarf-skin-slider'),
   dwarfSkinSliderValue: document.getElementById('dwarf-skin-slider-value'),
-  dwarfHeadSlider: document.getElementById('dwarf-head-slider'),
-  dwarfHeadSliderValue: document.getElementById('dwarf-head-slider-value'),
   dwarfEyeSlider: document.getElementById('dwarf-eye-slider'),
   dwarfEyeSliderValue: document.getElementById('dwarf-eye-slider-value'),
   dwarfHairStyleSlider: document.getElementById('dwarf-hair-style-slider'),
@@ -6658,13 +6656,6 @@ function updateCustomizerUI() {
     elements.dwarfSkinSliderValue,
     dwarf.skin,
     dwarfOptions.skin[0].value
-  );
-  ensureTraitSliderValue(
-    'head',
-    elements.dwarfHeadSlider,
-    elements.dwarfHeadSliderValue,
-    resolveHeadTypeValue(dwarf.head),
-    defaultHeadTypeValue
   );
   ensureTraitSliderValue(
     'eyes',
@@ -16087,7 +16078,6 @@ function attachEvents() {
   }
 
   setupTraitSliderControl('skin', elements.dwarfSkinSlider, elements.dwarfSkinSliderValue);
-  setupTraitSliderControl('head', elements.dwarfHeadSlider, elements.dwarfHeadSliderValue);
   setupTraitSliderControl('eyes', elements.dwarfEyeSlider, elements.dwarfEyeSliderValue);
   setupTraitSliderControl(
     'hairStyle',
