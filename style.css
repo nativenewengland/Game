@@ -1595,6 +1595,7 @@ button:hover:not(:disabled) {
   image-rendering: pixelated;
   filter: drop-shadow(0 0.65rem 1.6rem rgba(0, 0, 0, 0.55));
   z-index: 1;
+  background: transparent;
 }
 
 .trait-summary {
