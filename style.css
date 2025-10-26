@@ -1339,14 +1339,15 @@ button:hover:not(:disabled) {
 }
 
 .customizer-sidebar__name .dwarf-name-nav {
-  justify-content: center;
+  justify-content: flex-start;
   gap: clamp(0.5rem, 1.4vw, 0.85rem);
   width: 100%;
 }
 
 .customizer-sidebar__name .dwarf-name-field {
-  width: clamp(17rem, 28vw, 24rem);
+  width: min(100%, clamp(34rem, 56vw, 48rem));
   margin: 0;
+  margin-left: clamp(-1.5rem, -2.5vw, -0.75rem);
 }
 
 .customizer-sidebar__image {
@@ -1507,7 +1508,7 @@ button:hover:not(:disabled) {
 
 .dwarf-name-field {
   position: relative;
-  width: clamp(20rem, 72vw, 34rem);
+  width: min(100%, clamp(40rem, 90vw, 60rem));
   margin: clamp(-0.75rem, -1vh, -0.35rem) 0 0;
   aspect-ratio: 618 / 89;
   display: grid;
@@ -2107,13 +2108,14 @@ button:hover:not(:disabled) {
   }
 
   .customizer-sidebar__name .dwarf-name-nav {
+    justify-content: center;
     width: 100%;
   }
 
   .customizer-sidebar__name .dwarf-name-field {
     margin: 0 auto;
     justify-self: center;
-    width: min(100%, 17.5rem);
+    width: min(100%, 35rem);
   }
 
   .body-panel-image {
