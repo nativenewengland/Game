@@ -13079,12 +13079,12 @@ function createWorld(seedString) {
       [0, 1],
       [1, 1]
     ];
-    const baseSeedThreshold = isFirstAge ? 0.66 : 0.74;
-    const baseSoftSeedThreshold = isFirstAge ? 0.56 : 0.65;
-    const baseGrowthBaseline = isFirstAge ? 0.48 : 0.58;
-    const baseNeighborBonus = isFirstAge ? 0.08 : 0.06;
-    const baseDensityAlwaysAdd = isFirstAge ? 0.6 : 0.74;
-    const baseSoftSeedMultiplier = isFirstAge ? 1.8 : 1.35;
+    const baseSeedThreshold = isFirstAge ? 0.66 : 0.6;
+    const baseSoftSeedThreshold = isFirstAge ? 0.56 : 0.5;
+    const baseGrowthBaseline = isFirstAge ? 0.48 : 0.42;
+    const baseNeighborBonus = isFirstAge ? 0.08 : 0.085;
+    const baseDensityAlwaysAdd = isFirstAge ? 0.6 : 0.58;
+    const baseSoftSeedMultiplier = isFirstAge ? 1.8 : 1.85;
     const growthSpeedModifier = clamp(
       (isFirstAge ? 0.45 : 0.35) + forestBias * 0.2,
       isFirstAge ? 0.35 : 0.28,
@@ -13096,12 +13096,12 @@ function createWorld(seedString) {
       isFirstAge ? 0.95 : 0.75
     );
     const seedThreshold = clamp(
-      baseSeedThreshold - forestBias * (isFirstAge ? 0.18 : 0.12),
+      baseSeedThreshold - forestBias * (isFirstAge ? 0.18 : 0.13),
       0.35,
       0.92
     );
     const softSeedThreshold = clamp(
-      baseSoftSeedThreshold - forestBias * (isFirstAge ? 0.16 : 0.1),
+      baseSoftSeedThreshold - forestBias * (isFirstAge ? 0.16 : 0.13),
       0.25,
       0.88
     );
@@ -13111,7 +13111,7 @@ function createWorld(seedString) {
       0.72
     );
     const neighborBonus = clamp(
-      baseNeighborBonus + forestBias * (isFirstAge ? 0.04 : 0.02),
+      baseNeighborBonus + forestBias * (isFirstAge ? 0.04 : 0.035),
       0.02,
       0.12
     );
@@ -13121,7 +13121,7 @@ function createWorld(seedString) {
       0.84
     );
     const softSeedMultiplier = clamp(
-      baseSoftSeedMultiplier + forestBias * (isFirstAge ? 0.6 : 0.4),
+      baseSoftSeedMultiplier + forestBias * (isFirstAge ? 0.6 : 0.55),
       0.8,
       2.2
     );
@@ -13154,7 +13154,7 @@ function createWorld(seedString) {
         density = clamp(density * 0.6 + elevationPreference * 0.4, 0, 1);
         const rainfallValue = rainfallField[idx];
         density = clamp(density * 0.55 + rainfallValue * 0.45, 0, 1);
-        const biasMultiplier = isFirstAge ? 1 + forestBias * 0.25 : 0.85 + forestBias * 0.2;
+        const biasMultiplier = isFirstAge ? 1 + forestBias * 0.25 : 1 + forestBias * 0.2;
         density = clamp(density * biasMultiplier, 0, 1);
         // Apply a small additive push so that the highest slider values can still create forests
         // even when the multiplicative bias is already clamped by rainfall or elevation limits.
@@ -13169,7 +13169,7 @@ function createWorld(seedString) {
             2.2
           );
           const clusterWeight = clamp((clusterNoise - 0.35) * 1.6, 0, 1);
-          density = clamp(density * (0.35 + clusterWeight * 0.85), 0, 1);
+          density = clamp(density * (0.55 + clusterWeight * 0.65), 0, 1);
         }
         treeDensityField[idx] = density;
       }
