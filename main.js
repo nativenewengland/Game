@@ -85,8 +85,8 @@ const baseTileCoords = {
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
-  ORC_CAMP: { row: 0, col: 6 },
-  TRAVELERS_CAMP: { row: 0, col: 6 },
+  ORC_CAMP: { row: 6, col: 0 },
+  TRAVELERS_CAMP: { row: 6, col: 0 },
   DUNGEON: { row: 2, col: 7 }
 };
 
@@ -4416,7 +4416,13 @@ const dwarfOptions = {
     { value: 'full', label: 'Full Beard' },
     { value: 'braided', label: 'Braided Beard' },
     { value: 'forked', label: 'Forked Beard' },
-    { value: 'mutton', label: 'Mutton Chops' }
+    { value: 'mutton', label: 'Mutton Chops' },
+    { value: 'stubble', label: 'Stubble Beard (placeholder)' },
+    { value: 'trimmed', label: 'Trimmed Beard (placeholder)' },
+    { value: 'goatee', label: 'Goatee (placeholder)' },
+    { value: 'imperial', label: 'Imperial Beard (placeholder)' },
+    { value: 'wizard', label: 'Wizard Beard (placeholder)' },
+    { value: 'ringed', label: 'Ringed Beard (placeholder)' }
   ],
   clan: dwarfClanOptions,
   guild: dwarfGuildOptions,
@@ -4443,7 +4449,15 @@ const dwarfTraitAttributeDefinitions = [
     description:
       'You are the shame of your clan and the disgrace of your holdfast. Without a beard a dwarf is nothing, consider this path to be one that will lead to scorn and ridicule among your peers.',
     icon: 'tilesheet/beardless.png',
-    isActive: (dwarf) => dwarf?.gender === 'male' && dwarf?.beard === 'clean'
+    isActive: (dwarf) => {
+      if (dwarf?.gender !== 'male') {
+        return false;
+      }
+      const beardValue = dwarf?.beard || 'clean';
+      const hasBeardConfig = Object.prototype.hasOwnProperty.call(dwarfBeardRows, beardValue);
+      const row = hasBeardConfig ? dwarfBeardRows[beardValue] : dwarfBeardRows.default;
+      return row === null || row === undefined;
+    }
   },
   {
     key: 'dark-dwarf',
@@ -4545,6 +4559,12 @@ const dwarfBeardRows = {
   braided: 29,
   forked: 23,
   mutton: 21,
+  stubble: null,
+  trimmed: null,
+  goatee: null,
+  imperial: null,
+  wizard: null,
+  ringed: null,
   default: 26
 };
 
