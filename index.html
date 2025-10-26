@@ -397,45 +397,6 @@
                 </div>
               </div>
             <div class="customizer-detail-panel">
-              <div class="customizer-top-bar pixel-bar">
-                <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
-                  <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
-                  <label
-                    id="founder-name-label"
-                    class="field-label sr-only"
-                    for="dwarf-name-input"
-                    >Founder name</label
-                  >
-                  <div class="dwarf-name-nav">
-                    <button
-                      type="button"
-                      id="dwarf-prev"
-                      class="secondary dwarf-nav-button dwarf-nav-button--prev"
-                      aria-label="Previous name"
-                    >
-                      <span class="dwarf-nav-icon" aria-hidden="true"></span>
-                    </button>
-                    <div class="dwarf-name-field">
-                      <input
-                        type="text"
-                        id="dwarf-name-input"
-                        class="dwarf-name-input"
-                        maxlength="40"
-                        autocomplete="off"
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      id="dwarf-next"
-                      class="secondary dwarf-nav-button dwarf-nav-button--next"
-                      aria-label="Next name"
-                    >
-                      <span class="dwarf-nav-icon" aria-hidden="true"></span>
-                    </button>
-                  </div>
-                </div>
-              </div>
               <div class="customizer-body">
                 <div class="customizer-fields">
                   <div class="field-group field-group--gender">
@@ -567,25 +528,6 @@
                     >
                       <span class="sr-only">Back</span>
                     </button>
-                    <div class="customizer-actions__primary">
-                      <button
-                        type="button"
-                        id="dwarf-randomise"
-                        class="gender-toggle-randomise"
-                        aria-label="Randomise dwarf"
-                        data-draggable-id="randomise-button"
-                      >
-                        <span class="randomise-button__dice" aria-hidden="true"></span>
-                        <span class="sr-only">Randomise dwarf</span>
-                      </button>
-                      <button
-                        type="submit"
-                        class="create-button create-button--inline"
-                        data-draggable-id="create-button"
-                      >
-                        <span class="sr-only">Begin Expedition</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
 
@@ -670,6 +612,69 @@
               </div>
             </div>
           </section>
+          <aside class="customizer-sidebar" aria-label="Body panel">
+            <div class="customizer-sidebar__name pixel-bar">
+              <div class="dwarf-slot-info" aria-labelledby="founder-name-label">
+                <p id="dwarf-slot-label" class="slot-label" aria-live="polite"></p>
+                <label
+                  id="founder-name-label"
+                  class="field-label sr-only"
+                  for="dwarf-name-input"
+                  >Founder name</label
+                >
+                <div class="dwarf-name-nav">
+                  <button
+                    type="button"
+                    id="dwarf-prev"
+                    class="secondary dwarf-nav-button dwarf-nav-button--prev"
+                    aria-label="Previous name"
+                  >
+                    <span class="dwarf-nav-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="dwarf-name-field">
+                    <input
+                      type="text"
+                      id="dwarf-name-input"
+                      class="dwarf-name-input"
+                      maxlength="40"
+                      autocomplete="off"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    id="dwarf-next"
+                    class="secondary dwarf-nav-button dwarf-nav-button--next"
+                    aria-label="Next name"
+                  >
+                    <span class="dwarf-nav-icon" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="customizer-sidebar__image" aria-hidden="true">
+              <img src="tilesheet/bodypanel.png" alt="" class="body-panel-image" />
+            </div>
+            <div class="customizer-sidebar__actions">
+              <button
+                type="button"
+                id="dwarf-randomise"
+                class="gender-toggle-randomise"
+                aria-label="Randomise dwarf"
+                data-draggable-id="randomise-button"
+              >
+                <span class="randomise-button__dice" aria-hidden="true"></span>
+                <span class="sr-only">Randomise dwarf</span>
+              </button>
+              <button
+                type="submit"
+                class="create-button create-button--inline"
+                data-draggable-id="create-button"
+              >
+                <span class="sr-only">Begin Expedition</span>
+              </button>
+            </div>
+          </aside>
         </div>
       </form>
     </section>
