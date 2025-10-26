@@ -3631,7 +3631,14 @@ const state = {
     showBiomes: false,
     showTemperature: false
   },
-  currentWorld: null
+  currentWorld: null,
+  localView: {
+    active: false,
+    centerX: null,
+    centerY: null,
+    bounds: null,
+    detail: null
+  }
 };
 
 const defaultDwarfCount = 1;
@@ -4086,6 +4093,13 @@ const elements = {
   canvas: document.getElementById('world-canvas'),
   canvasWrapper: document.querySelector('.canvas-wrapper'),
   mapTooltip: document.getElementById('world-tooltip'),
+  localMapPanel: document.getElementById('local-map-panel'),
+  localMapCanvas: document.getElementById('local-map-canvas'),
+  localMapTitle: document.getElementById('local-map-title'),
+  localMapSubtitle: document.getElementById('local-map-subtitle'),
+  localMapCoordinates: document.getElementById('local-map-coordinates'),
+  localMapClose: document.getElementById('local-map-close'),
+  localMapDetails: document.getElementById('local-map-details'),
   structureDetailsPanel: document.getElementById('structure-details'),
   structureDetailsTitle: document.getElementById('structure-details-title'),
   structureDetailsSubtitle: document.getElementById('structure-details-subtitle'),
@@ -6309,6 +6323,16 @@ const viewState = {
   hasInteracted: false
 };
 
+const localViewConfig = {
+  radius: 4,
+  subdivisions: 8,
+  maxCanvasSize: 768,
+  baseCellSize: 12,
+  minCellSize: 4
+};
+
+const localMapDefaultMessage = 'Click the world map to open a local preview.';
+
 const structureDetailsState = {
   visible: false
 };
@@ -6704,6 +6728,699 @@ function buildStructureTooltipContent(tile) {
   }
 
   return sections.join('');
+}
+
+function computeLocalViewBounds(tileX, tileY, width, height, radius) {
+  const clampedRadius = Math.max(0, Math.floor(radius));
+  const startX = Math.max(0, tileX - clampedRadius);
+  const endX = Math.min(width - 1, tileX + clampedRadius);
+  const startY = Math.max(0, tileY - clampedRadius);
+  const endY = Math.min(height - 1, tileY + clampedRadius);
+  return {
+    startX,
+    startY,
+    endX,
+    endY,
+    width: endX - startX + 1,
+    height: endY - startY + 1
+  };
+}
+
+function sampleFieldBilinear(field, width, height, x, y) {
+  if (!field || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+
+  const clampedX = clamp(x, 0, width - 1);
+  const clampedY = clamp(y, 0, height - 1);
+  const x0 = Math.floor(clampedX);
+  const y0 = Math.floor(clampedY);
+  const x1 = Math.min(x0 + 1, width - 1);
+  const y1 = Math.min(y0 + 1, height - 1);
+  const tx = clampedX - x0;
+  const ty = clampedY - y0;
+
+  const idx00 = y0 * width + x0;
+  const idx10 = y0 * width + x1;
+  const idx01 = y1 * width + x0;
+  const idx11 = y1 * width + x1;
+
+  const v00 = field[idx00];
+  const v10 = field[idx10];
+  const v01 = field[idx01];
+  const v11 = field[idx11];
+
+  const top = lerp(v00, v10, tx);
+  const bottom = lerp(v01, v11, tx);
+  return lerp(top, bottom, ty);
+}
+
+function gatherTileSamples(tiles, width, height, x, y) {
+  if (!Array.isArray(tiles) || height <= 0 || width <= 0) {
+    return [];
+  }
+
+  const clampedX = clamp(x, 0, width - 1);
+  const clampedY = clamp(y, 0, height - 1);
+  const x0 = Math.floor(clampedX);
+  const y0 = Math.floor(clampedY);
+  const x1 = Math.min(x0 + 1, width - 1);
+  const y1 = Math.min(y0 + 1, height - 1);
+  const tx = clampedX - x0;
+  const ty = clampedY - y0;
+
+  const samples = [];
+  const pushSample = (sx, sy, weight) => {
+    if (weight <= 0) {
+      return;
+    }
+    const row = tiles[sy];
+    if (!row) {
+      return;
+    }
+    samples.push({ tile: row[sx] || null, weight, x: sx, y: sy });
+  };
+
+  pushSample(x0, y0, (1 - tx) * (1 - ty));
+  pushSample(x1, y0, tx * (1 - ty));
+  pushSample(x0, y1, (1 - tx) * ty);
+  pushSample(x1, y1, tx * ty);
+  return samples;
+}
+
+function resolveDominantWeightedValue(samples, accessor) {
+  if (!Array.isArray(samples) || samples.length === 0 || typeof accessor !== 'function') {
+    return null;
+  }
+
+  const totals = new Map();
+  samples.forEach(({ tile, weight }) => {
+    if (!tile) {
+      return;
+    }
+    const value = accessor(tile);
+    if (value === null || value === undefined || value === '') {
+      return;
+    }
+    const safeWeight = Number.isFinite(weight) ? weight : 0;
+    totals.set(value, (totals.get(value) || 0) + safeWeight);
+  });
+
+  let bestValue = null;
+  let bestWeight = -Infinity;
+  totals.forEach((total, value) => {
+    if (total > bestWeight) {
+      bestWeight = total;
+      bestValue = value;
+    }
+  });
+  return bestValue;
+}
+
+function classifyLocalPreviewCell(options) {
+  const {
+    world,
+    samples,
+    elevation,
+    moisture,
+    temperature,
+    sampleX,
+    sampleY,
+    subdivisions,
+    seedNumber
+  } = options;
+
+  if (!world) {
+    return null;
+  }
+
+  const normalizedMoisture = Number.isFinite(moisture) ? clamp(moisture, 0, 1) : 0.5;
+  const normalizedTemperature = Number.isFinite(temperature) ? clamp(temperature, 0, 1) : 0.5;
+  const dryness = clamp(1 - normalizedMoisture, 0, 1);
+  const coldness = clamp(1 - normalizedTemperature, 0, 1);
+  const seaLevel = Number.isFinite(world.seaLevel) ? world.seaLevel : 0.42;
+  const waterTileKey = world.waterTileKey || resolveTileName('WATER');
+  const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
+
+  const elevationSeed = (seedNumber + 0x9e3779b9) >>> 0;
+  let effectiveElevation = elevation;
+  if (Number.isFinite(elevation)) {
+    const elevationJitter =
+      (valueNoise((sampleX + 17.31) * 2.7, (sampleY + 11.73) * 2.7, elevationSeed) - 0.5) * 0.04;
+    effectiveElevation = elevation + elevationJitter;
+  }
+
+  let isWater;
+  if (Number.isFinite(effectiveElevation)) {
+    isWater = effectiveElevation <= seaLevel;
+  } else {
+    const dominantBase = resolveDominantWeightedValue(samples, (tile) => tile?.base || null);
+    isWater = dominantBase === waterTileKey;
+  }
+
+  let baseKey;
+  const shorelineThreshold = seaLevel + 0.01;
+  if (isWater) {
+    baseKey = waterTileKey;
+  } else if (
+    Number.isFinite(effectiveElevation) &&
+    effectiveElevation <= shorelineThreshold &&
+    tileLookup.has('SAND')
+  ) {
+    baseKey = 'SAND';
+  } else {
+    const dominantLandBase = resolveDominantWeightedValue(samples, (tile) => {
+      if (!tile || tile.base === waterTileKey) {
+        return null;
+      }
+      return tile.base || null;
+    });
+    const normalizedElevation = Number.isFinite(effectiveElevation)
+      ? clamp((effectiveElevation - seaLevel) * 3.2, 0, 1)
+      : 0.5;
+    baseKey = dominantLandBase || grassTileKey;
+
+    if (
+      tileLookup.has('SNOW') &&
+      (coldness > 0.68 || (coldness > 0.55 && normalizedElevation > 0.55))
+    ) {
+      baseKey = 'SNOW';
+    } else if (
+      tileLookup.has('MARSH') &&
+      normalizedElevation < 0.35 &&
+      normalizedMoisture > 0.72
+    ) {
+      baseKey = 'MARSH';
+    } else if (
+      tileLookup.has('SAND') &&
+      dryness > 0.75 &&
+      normalizedElevation < 0.62
+    ) {
+      baseKey = 'SAND';
+    } else if (
+      tileLookup.has('BADLANDS') &&
+      dryness > 0.62 &&
+      normalizedElevation >= 0.35
+    ) {
+      baseKey = 'BADLANDS';
+    }
+  }
+
+  if (!tileLookup.has(baseKey)) {
+    baseKey = grassTileKey;
+  }
+
+  let overlayKey = resolveDominantWeightedValue(samples, (tile) => tile?.overlay || null);
+  let hillOverlayKey = resolveDominantWeightedValue(samples, (tile) => tile?.hillOverlay || null);
+  if (overlayKey === hillOverlayKey) {
+    hillOverlayKey = null;
+  }
+
+  if (!isWater && !overlayKey) {
+    const normalizedElevation = Number.isFinite(effectiveElevation)
+      ? clamp((effectiveElevation - seaLevel) * 3.4, 0, 1)
+      : 0.5;
+    const treeChance = clamp(normalizedMoisture * 0.75 - dryness * 0.2, 0, 1);
+    if (treeChance > 0) {
+      const treeSeed = (seedNumber + 0x1bf5c17d) >>> 0;
+      const treeNoise = valueNoise((sampleX + 5.37) * 1.9, (sampleY + 9.11) * 1.9, treeSeed);
+      if (treeNoise < treeChance) {
+        if (baseKey === 'SNOW' && tileLookup.has('TREE_SNOW')) {
+          overlayKey = 'TREE_SNOW';
+        } else if (normalizedTemperature > 0.68 && tileLookup.has('JUNGLE_TREE')) {
+          overlayKey = 'JUNGLE_TREE';
+        } else if (tileLookup.has('TREE')) {
+          overlayKey = 'TREE';
+        }
+      }
+    }
+
+    if (!overlayKey && normalizedElevation > 0.72) {
+      const ridgeSeed = (seedNumber + 0x5bf03635) >>> 0;
+      const ridgeNoise = valueNoise((sampleX + 21.77) * 2.8, (sampleY + 4.95) * 2.8, ridgeSeed);
+      if (ridgeNoise > 0.68) {
+        const mountainOverlay = resolveDominantWeightedValue(samples, (tile) => tile?.overlay || null);
+        if (mountainOverlay && tileLookup.has(mountainOverlay)) {
+          overlayKey = mountainOverlay;
+        } else if (hillOverlayKey && tileLookup.has(hillOverlayKey)) {
+          overlayKey = hillOverlayKey;
+          hillOverlayKey = null;
+        }
+      }
+    }
+  }
+
+  if (overlayKey && !tileLookup.has(overlayKey)) {
+    overlayKey = null;
+  }
+  if (hillOverlayKey && !tileLookup.has(hillOverlayKey)) {
+    hillOverlayKey = null;
+  }
+
+  let structureKey = null;
+  let structureSample = null;
+  let bestWeight = -Infinity;
+  samples.forEach((sample) => {
+    if (!sample.tile || !sample.tile.structure) {
+      return;
+    }
+    if (sample.weight > bestWeight) {
+      bestWeight = sample.weight;
+      structureSample = sample;
+    }
+  });
+  if (structureSample && structureSample.tile && structureSample.tile.structure) {
+    const tileCenterX = (structureSample.x || 0) + 0.5;
+    const tileCenterY = (structureSample.y || 0) + 0.5;
+    const distance = Math.hypot(sampleX - tileCenterX, sampleY - tileCenterY);
+    const maxDistance = Math.max(0.18, 0.45 / Math.max(1, subdivisions));
+    if (distance <= maxDistance) {
+      structureKey = structureSample.tile.structure;
+    }
+  }
+
+  return {
+    base: baseKey,
+    overlay: overlayKey,
+    hillOverlay: hillOverlayKey,
+    structure: structureKey,
+    isWater: Boolean(isWater)
+  };
+}
+
+function generateLocalPreviewDetail(world, bounds, subdivisions) {
+  if (!world || !bounds || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return null;
+  }
+
+  const clampedSubdivisions = Math.max(2, Math.floor(subdivisions) || 2);
+  const worldHeight = world.tiles.length;
+  const worldWidth = Array.isArray(world.tiles[0]) ? world.tiles[0].length : 0;
+  if (worldWidth === 0) {
+    return null;
+  }
+
+  const widthCells = Math.max(1, bounds.width * clampedSubdivisions);
+  const heightCells = Math.max(1, bounds.height * clampedSubdivisions);
+  const cells = Array.from({ length: heightCells }, () => new Array(widthCells));
+  const seedNumber = stringToSeed(world.seedString || '');
+
+  for (let localY = 0; localY < heightCells; localY += 1) {
+    const sampleY = bounds.startY + (localY + 0.5) / clampedSubdivisions;
+    for (let localX = 0; localX < widthCells; localX += 1) {
+      const sampleX = bounds.startX + (localX + 0.5) / clampedSubdivisions;
+      const samples = gatherTileSamples(world.tiles, worldWidth, worldHeight, sampleX, sampleY);
+      const elevation = sampleFieldBilinear(
+        world.elevationField,
+        worldWidth,
+        worldHeight,
+        sampleX,
+        sampleY
+      );
+      const moisture = sampleFieldBilinear(
+        world.moistureField,
+        worldWidth,
+        worldHeight,
+        sampleX,
+        sampleY
+      );
+      const temperature = sampleFieldBilinear(
+        world.temperatureField,
+        worldWidth,
+        worldHeight,
+        sampleX,
+        sampleY
+      );
+      cells[localY][localX] = classifyLocalPreviewCell({
+        world,
+        samples,
+        elevation,
+        moisture,
+        temperature,
+        sampleX,
+        sampleY,
+        subdivisions: clampedSubdivisions,
+        seedNumber
+      });
+    }
+  }
+
+  return {
+    width: widthCells,
+    height: heightCells,
+    subdivisions: clampedSubdivisions,
+    cells
+  };
+}
+
+function resolveLocalSubtitle(tile) {
+  if (!tile) {
+    return 'Local terrain preview';
+  }
+  const subtitleParts = [];
+  const details = tile.structureDetails;
+  if (details) {
+    if (details.displayType) {
+      subtitleParts.push(details.displayType);
+    }
+    if (details.classification && !subtitleParts.includes(details.classification)) {
+      subtitleParts.push(details.classification);
+    }
+  }
+  if (subtitleParts.length === 0 && tile.biomeType) {
+    const definition = biomeTypeDefinitions[tile.biomeType];
+    if (definition && definition.label) {
+      subtitleParts.push(definition.label);
+    } else {
+      subtitleParts.push(tile.biomeType.charAt(0).toUpperCase() + tile.biomeType.slice(1));
+    }
+  }
+  return subtitleParts.length > 0 ? subtitleParts.join(' • ') : 'Local terrain preview';
+}
+
+function refreshLocalMapPreview() {
+  if (!elements.localMapPanel || !elements.localMapCanvas) {
+    return;
+  }
+  const world = state.currentWorld;
+  const localView = state.localView;
+  if (
+    !world ||
+    !localView ||
+    !localView.active ||
+    localView.centerX === null ||
+    localView.centerY === null ||
+    !localView.bounds
+  ) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+    if (elements.localMapCanvas) {
+      elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    }
+    if (elements.localMapTitle) {
+      elements.localMapTitle.textContent = 'Local View';
+    }
+    if (elements.localMapSubtitle) {
+      elements.localMapSubtitle.textContent = 'Select a site to examine the surrounding terrain.';
+    }
+    if (elements.localMapDetails) {
+      elements.localMapDetails.textContent = localMapDefaultMessage;
+    }
+    if (elements.localMapCoordinates) {
+      elements.localMapCoordinates.textContent = '';
+    }
+    return;
+  }
+
+  const tiles = Array.isArray(world.tiles) ? world.tiles : null;
+  if (!tiles || tiles.length === 0) {
+    return;
+  }
+
+  const centerRow = tiles[localView.centerY];
+  if (!Array.isArray(centerRow)) {
+    return;
+  }
+
+  const focusTile = centerRow[localView.centerX] || null;
+  const bounds = localView.bounds;
+  const tileWidth = Math.max(1, bounds.width);
+  const tileHeight = Math.max(1, bounds.height);
+
+  elements.localMapPanel.classList.remove('hidden');
+  elements.localMapPanel.setAttribute('aria-hidden', 'false');
+
+  if (elements.localMapTitle) {
+    elements.localMapTitle.textContent = focusTile
+      ? focusTile.structureName || focusTile.areaName || 'Local View'
+      : 'Local View';
+  }
+
+  if (elements.localMapSubtitle) {
+    elements.localMapSubtitle.textContent = resolveLocalSubtitle(focusTile);
+  }
+
+  if (elements.localMapDetails) {
+    const tooltipContent = buildStructureTooltipContent(focusTile);
+    if (tooltipContent) {
+      elements.localMapDetails.innerHTML = tooltipContent;
+    } else {
+      elements.localMapDetails.textContent = localMapDefaultMessage;
+    }
+  }
+
+  const detail =
+    localView.detail || generateLocalPreviewDetail(world, bounds, localViewConfig.subdivisions);
+  if (!detail) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  state.localView.detail = detail;
+
+  if (elements.localMapCoordinates) {
+    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${
+      localView.centerY + 1
+    } — ${tileWidth}×${tileHeight} world tiles (${detail.width}×${detail.height} local tiles)`;
+  }
+
+  const canvas = elements.localMapCanvas;
+  const context = canvas ? canvas.getContext('2d') : null;
+  if (!canvas || !context) {
+    return;
+  }
+
+  const maxSize = localViewConfig.maxCanvasSize;
+  let cellPixelSize = Math.max(1, Math.floor(localViewConfig.baseCellSize));
+  if (!Number.isFinite(cellPixelSize) || cellPixelSize <= 0) {
+    cellPixelSize = 12;
+  }
+  let destWidth = detail.width * cellPixelSize;
+  let destHeight = detail.height * cellPixelSize;
+
+  if (destWidth > maxSize) {
+    const possible = Math.floor(maxSize / Math.max(1, detail.width));
+    cellPixelSize = Math.max(localViewConfig.minCellSize, possible);
+    destWidth = detail.width * cellPixelSize;
+    destHeight = detail.height * cellPixelSize;
+  }
+  if (destHeight > maxSize) {
+    const possible = Math.floor(maxSize / Math.max(1, detail.height));
+    cellPixelSize = Math.max(localViewConfig.minCellSize, possible);
+    destWidth = detail.width * cellPixelSize;
+    destHeight = detail.height * cellPixelSize;
+  }
+
+  canvas.width = destWidth;
+  canvas.height = destHeight;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  canvas.setAttribute(
+    'aria-label',
+    `Local preview covering ${detail.width}×${detail.height} tiles (${tileWidth}×${tileHeight} world tiles) around world tile ${
+      localView.centerX + 1
+    }, ${localView.centerY + 1}.`
+  );
+  canvas.setAttribute('aria-hidden', 'false');
+
+  context.imageSmoothingEnabled = false;
+  context.clearRect(0, 0, destWidth, destHeight);
+  context.fillStyle = '#05060b';
+  context.fillRect(0, 0, destWidth, destHeight);
+
+  const drawScaledTile = (tileKey, x, y, size) => {
+    if (!tileKey) {
+      return false;
+    }
+    const definition = tileLookup.get(tileKey);
+    if (!definition) {
+      return false;
+    }
+    const sheet = state.tileSheets[definition.sheet];
+    if (!sheet || !sheet.image) {
+      return false;
+    }
+    context.drawImage(
+      sheet.image,
+      definition.sx,
+      definition.sy,
+      definition.size,
+      definition.size,
+      x,
+      y,
+      size,
+      size
+    );
+    return true;
+  };
+
+  for (let y = 0; y < detail.height; y += 1) {
+    for (let x = 0; x < detail.width; x += 1) {
+      const cell = detail.cells[y][x];
+      const px = x * cellPixelSize;
+      const py = y * cellPixelSize;
+      const baseKey = cell?.base || world.grassTileKey || resolveTileName('GRASS');
+      drawScaledTile(baseKey, px, py, cellPixelSize);
+    }
+  }
+
+  for (let y = 0; y < detail.height; y += 1) {
+    for (let x = 0; x < detail.width; x += 1) {
+      const cell = detail.cells[y][x];
+      if (!cell) {
+        continue;
+      }
+      const px = x * cellPixelSize;
+      const py = y * cellPixelSize;
+      if (cell.hillOverlay) {
+        drawScaledTile(cell.hillOverlay, px, py, cellPixelSize);
+      }
+      if (cell.overlay) {
+        drawScaledTile(cell.overlay, px, py, cellPixelSize);
+      }
+      if (cell.structure) {
+        const structureDefinition = tileLookup.get(cell.structure);
+        if (structureDefinition && structureDefinition.draw) {
+          const coarseX = bounds.startX + x / detail.subdivisions;
+          const coarseY = bounds.startY + y / detail.subdivisions;
+          structureDefinition.draw(context, {
+            x: coarseX,
+            y: coarseY,
+            pixelX: px,
+            pixelY: py,
+            size: cellPixelSize,
+            cell,
+            world
+          });
+        } else {
+          drawScaledTile(cell.structure, px, py, cellPixelSize);
+        }
+      }
+    }
+  }
+
+  const tilePixelWidth = detail.subdivisions * cellPixelSize;
+  const tilePixelHeight = detail.subdivisions * cellPixelSize;
+
+  context.save();
+  context.strokeStyle = 'rgba(12, 14, 22, 0.45)';
+  context.lineWidth = 1;
+  for (let x = 1; x < tileWidth; x += 1) {
+    const px = Math.round(x * tilePixelWidth) + 0.5;
+    context.beginPath();
+    context.moveTo(px, 0);
+    context.lineTo(px, destHeight);
+    context.stroke();
+  }
+  for (let y = 1; y < tileHeight; y += 1) {
+    const py = Math.round(y * tilePixelHeight) + 0.5;
+    context.beginPath();
+    context.moveTo(0, py);
+    context.lineTo(destWidth, py);
+    context.stroke();
+  }
+  context.restore();
+
+  const highlightX = (localView.centerX - bounds.startX) * tilePixelWidth;
+  const highlightY = (localView.centerY - bounds.startY) * tilePixelHeight;
+  context.save();
+  const minTileSize = Math.max(1, Math.min(tilePixelWidth, tilePixelHeight));
+  const lineWidth = Math.max(2, Math.round(minTileSize * 0.12));
+  context.lineWidth = lineWidth;
+  context.strokeStyle = 'rgba(240, 198, 116, 0.9)';
+  context.fillStyle = 'rgba(240, 198, 116, 0.12)';
+  context.fillRect(highlightX, highlightY, tilePixelWidth, tilePixelHeight);
+  context.strokeRect(
+    highlightX + lineWidth / 2,
+    highlightY + lineWidth / 2,
+    tilePixelWidth - lineWidth,
+    tilePixelHeight - lineWidth
+  );
+  context.restore();
+}
+
+function hideLocalView(options = {}) {
+  state.localView.active = false;
+  state.localView.centerX = null;
+  state.localView.centerY = null;
+  state.localView.bounds = null;
+  state.localView.detail = null;
+  if (elements.localMapPanel) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.localMapCanvas) {
+    elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    elements.localMapCanvas.setAttribute('aria-label', 'Local map preview');
+  }
+  if (elements.localMapTitle) {
+    elements.localMapTitle.textContent = 'Local View';
+  }
+  if (elements.localMapSubtitle) {
+    elements.localMapSubtitle.textContent = 'Select a site to examine the surrounding terrain.';
+  }
+  if (elements.localMapDetails) {
+    elements.localMapDetails.textContent = localMapDefaultMessage;
+  }
+  if (elements.localMapCoordinates) {
+    elements.localMapCoordinates.textContent = '';
+  }
+  if (!options.suppressRedraw && state.currentWorld) {
+    drawWorld(state.currentWorld, { preserveView: true });
+  }
+}
+
+function showLocalViewAt(tileX, tileY) {
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return;
+  }
+  const height = world.tiles.length;
+  const width = Array.isArray(world.tiles[0]) ? world.tiles[0].length : 0;
+  if (width === 0) {
+    return;
+  }
+  const clampedX = clamp(tileX, 0, width - 1);
+  const clampedY = clamp(tileY, 0, height - 1);
+  const bounds = computeLocalViewBounds(clampedX, clampedY, width, height, localViewConfig.radius);
+  state.localView.active = true;
+  state.localView.centerX = clampedX;
+  state.localView.centerY = clampedY;
+  state.localView.bounds = bounds;
+  state.localView.detail = generateLocalPreviewDetail(
+    world,
+    bounds,
+    localViewConfig.subdivisions
+  );
+  drawWorld(world, { preserveView: true });
+}
+
+function drawLocalSelectionOverlay(ctx) {
+  if (!ctx || !state.localView || !state.localView.active || !state.localView.bounds) {
+    return;
+  }
+  const bounds = state.localView.bounds;
+  const widthTiles = Math.max(1, bounds.endX - bounds.startX + 1);
+  const heightTiles = Math.max(1, bounds.endY - bounds.startY + 1);
+  const pixelX = bounds.startX * drawSize;
+  const pixelY = bounds.startY * drawSize;
+  const pixelWidth = widthTiles * drawSize;
+  const pixelHeight = heightTiles * drawSize;
+  const lineWidth = Math.max(2, Math.round(drawSize * 0.18));
+  ctx.save();
+  ctx.fillStyle = 'rgba(240, 198, 116, 0.12)';
+  ctx.fillRect(pixelX, pixelY, pixelWidth, pixelHeight);
+  ctx.strokeStyle = 'rgba(240, 198, 116, 0.85)';
+  ctx.lineWidth = lineWidth;
+  const dash = Math.max(4, Math.round(drawSize * 0.6));
+  ctx.setLineDash([dash, dash]);
+  ctx.strokeRect(
+    pixelX + lineWidth / 2,
+    pixelY + lineWidth / 2,
+    Math.max(0, pixelWidth - lineWidth),
+    Math.max(0, pixelHeight - lineWidth)
+  );
+  ctx.restore();
 }
 
 function formatStructureDetailLabel(value) {
@@ -7274,6 +7991,8 @@ function setupMapInteractions() {
   let isPanning = false;
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
+  const initialPosition = { x: 0, y: 0 };
+  let pointerMovedDuringPan = false;
 
   const resolveTileAtPointer = (event) => {
     if (!elements.canvasWrapper) {
@@ -7386,6 +8105,9 @@ function setupMapInteractions() {
     activePointerId = event.pointerId;
     lastPosition.x = event.clientX;
     lastPosition.y = event.clientY;
+    initialPosition.x = event.clientX;
+    initialPosition.y = event.clientY;
+    pointerMovedDuringPan = false;
     elements.canvasWrapper.setPointerCapture(event.pointerId);
   };
 
@@ -7397,6 +8119,14 @@ function setupMapInteractions() {
     event.preventDefault();
     const dx = event.clientX - lastPosition.x;
     const dy = event.clientY - lastPosition.y;
+    if (!pointerMovedDuringPan) {
+      const totalDx = event.clientX - initialPosition.x;
+      const totalDy = event.clientY - initialPosition.y;
+      const distance = Math.hypot(totalDx, totalDy);
+      if (distance > 3) {
+        pointerMovedDuringPan = true;
+      }
+    }
     lastPosition.x = event.clientX;
     lastPosition.y = event.clientY;
     viewState.translateX += dx;
@@ -7406,11 +8136,19 @@ function setupMapInteractions() {
   };
 
   const handlePointerUp = (event) => {
-    if (event.pointerId === activePointerId) {
+    const wasActivePointer = event.pointerId === activePointerId;
+    if (wasActivePointer) {
       elements.canvasWrapper.releasePointerCapture(event.pointerId);
       isPanning = false;
       activePointerId = null;
-      updateHover(event);
+      if (!pointerMovedDuringPan) {
+        const resolved = resolveTileAtPointer(event);
+        if (resolved) {
+          showLocalViewAt(resolved.tileX, resolved.tileY);
+        }
+      } else {
+        updateHover(event);
+      }
       return;
     }
     updateHover(event);
@@ -12788,7 +13526,8 @@ function applyDesertMountainTint(ctx, cell, x, y) {
   ctx.restore();
 }
 
-function drawWorld(world) {
+function drawWorld(world, options = {}) {
+  const { preserveView = false } = options;
   const { tiles, seedString } = world;
   const factions = Array.isArray(world.factions) ? world.factions : [];
   const showPoliticalBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
@@ -12807,6 +13546,15 @@ function drawWorld(world) {
   hideMapTooltip();
   const height = tiles.length;
   const width = tiles[0].length;
+  const previousView = preserveView
+    ? {
+        scale: viewState.scale,
+        translateX: viewState.translateX,
+        translateY: viewState.translateY,
+        hasInteracted: viewState.hasInteracted
+      }
+    : null;
+
   const ctx = elements.canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
@@ -12817,7 +13565,24 @@ function drawWorld(world) {
   elements.canvas.style.width = `${pixelWidth}px`;
   elements.canvas.style.height = `${pixelHeight}px`;
 
-  resetView(pixelWidth, pixelHeight);
+  if (preserveView && elements.canvasWrapper) {
+    const rect = elements.canvasWrapper.getBoundingClientRect();
+    viewState.wrapperSize = { width: rect.width, height: rect.height };
+    viewState.worldSize = { width: pixelWidth, height: pixelHeight };
+    const { contain, cover } = computeViewScales(rect.width, rect.height, pixelWidth, pixelHeight);
+    viewState.containScale = contain;
+    viewState.coverScale = cover;
+    viewState.minScale = Math.min(0.25, contain);
+    viewState.maxScale = Math.max(6, cover * 4);
+    const targetScale = previousView ? previousView.scale : viewState.scale;
+    viewState.scale = clamp(targetScale, viewState.minScale, viewState.maxScale);
+    viewState.translateX = previousView ? previousView.translateX : viewState.translateX;
+    viewState.translateY = previousView ? previousView.translateY : viewState.translateY;
+    viewState.hasInteracted = previousView ? previousView.hasInteracted : viewState.hasInteracted;
+    applyViewTransform();
+  } else {
+    resetView(pixelWidth, pixelHeight);
+  }
   refreshOverlayToggleButtons();
 
   for (let y = 0; y < height; y += 1) {
@@ -13007,6 +13772,9 @@ function drawWorld(world) {
     }
   }
 
+  drawLocalSelectionOverlay(ctx);
+  refreshLocalMapPreview();
+
   state.settings.lastSeedString = seedString;
   state.settings.seedString = seedString;
   if (elements.worldSeedInput) {
@@ -13038,6 +13806,7 @@ function beginGame() {
 function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
   hideMapTooltip();
+  hideLocalView({ suppressRedraw: true });
   const world = createWorld(seedToUse);
   state.currentWorld = world;
   drawWorld(world);
@@ -13176,6 +13945,15 @@ function attachEvents() {
   if (elements.structureDetailsClose) {
     elements.structureDetailsClose.addEventListener('click', () => {
       hideStructureDetails({ returnFocus: true });
+    });
+  }
+
+  if (elements.localMapClose) {
+    elements.localMapClose.addEventListener('click', () => {
+      hideLocalView();
+      if (elements.canvasWrapper) {
+        elements.canvasWrapper.focus();
+      }
     });
   }
 
@@ -13586,6 +14364,10 @@ function attachEvents() {
     }
 
     if (event.key === 'Escape') {
+      if (state.localView && state.localView.active) {
+        hideLocalView();
+        return;
+      }
       if (structureDetailsState.visible) {
         hideStructureDetails({ returnFocus: true });
         return;
