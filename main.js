@@ -11467,6 +11467,52 @@ function createWorld(seedString) {
         }
       }
     }
+
+    // Remove isolated marsh tiles by converting them to match surrounding terrain.
+    const isolatedMarshes = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const tile = tiles[y][x];
+        if (!tile || tile.base !== marshTileKey) {
+          continue;
+        }
+        let validNeighborCount = 0;
+        let marshNeighborCount = 0;
+        const neighborOptions = [];
+        for (let i = 0; i < neighborOffsets8.length; i += 1) {
+          const nx = x + neighborOffsets8[i][0];
+          const ny = y + neighborOffsets8[i][1];
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          validNeighborCount += 1;
+          const neighborTile = tiles[ny][nx];
+          if (!neighborTile) {
+            continue;
+          }
+          if (neighborTile.base === marshTileKey) {
+            marshNeighborCount += 1;
+          } else {
+            neighborOptions.push(neighborTile.base);
+          }
+        }
+        if (
+          validNeighborCount > 0 &&
+          marshNeighborCount === 0 &&
+          neighborOptions.length === validNeighborCount
+        ) {
+          const replacementIndex = Math.floor(rng() * neighborOptions.length);
+          isolatedMarshes.push({ x, y, base: neighborOptions[replacementIndex] });
+        }
+      }
+    }
+    for (let i = 0; i < isolatedMarshes.length; i += 1) {
+      const { x, y, base } = isolatedMarshes[i];
+      const tile = tiles[y][x];
+      if (tile) {
+        tile.base = base;
+      }
+    }
   }
 
   if (hasMountainTile) {
