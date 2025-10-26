@@ -1492,10 +1492,10 @@ button:hover:not(:disabled) {
 }
 
 .customizer-body {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(1.25rem, 3vw, 1.75rem);
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(260px, 360px);
+  gap: clamp(1.1rem, 2.6vw, 1.85rem);
+  align-items: start;
   min-height: 0;
 }
 
@@ -1521,10 +1521,12 @@ button:hover:not(:disabled) {
   display: grid;
   gap: clamp(0.75rem, 2.1vw, 1.15rem);
   padding: clamp(0.9rem, 2vw, 1.35rem);
-  align-self: stretch;
+  align-self: start;
   width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
+  max-width: 360px;
+  margin: 0;
+  justify-self: stretch;
+  grid-column: 2;
 }
 
 .trait-sliders-panel .field-group {
@@ -1677,6 +1679,9 @@ button:hover:not(:disabled) {
   gap: 1.1rem 1.5rem;
   align-content: start;
   padding: clamp(0.85rem, 2vw, 1.3rem);
+  align-self: start;
+  justify-self: stretch;
+  grid-column: 1;
 }
 
 .customizer-fields .field-group {
@@ -1796,6 +1801,11 @@ button:hover:not(:disabled) {
     padding-bottom: clamp(6rem, 16vw, 7.25rem);
   }
 }
+@media (max-width: 1280px) {
+  .customizer-body {
+    grid-template-columns: minmax(320px, 1fr) minmax(240px, 320px);
+  }
+}
 @media (max-width: 1024px) {
   .customizer-layout {
     justify-items: stretch;
@@ -1819,7 +1829,18 @@ button:hover:not(:disabled) {
     justify-items: center;
   }
 
+  .customizer-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trait-sliders-panel {
+    grid-column: 1;
+    max-width: 420px;
+    justify-self: center;
+  }
+
   .customizer-fields {
+    grid-column: 1;
     grid-template-columns: repeat(2, minmax(200px, 1fr));
   }
 }
@@ -1847,6 +1868,11 @@ button:hover:not(:disabled) {
 @media (max-width: 640px) {
   .customizer-fields {
     grid-template-columns: 1fr;
+  }
+
+  .trait-sliders-panel {
+    justify-self: stretch;
+    max-width: 100%;
   }
 
   .dwarf-portrait {
