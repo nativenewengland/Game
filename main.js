@@ -3628,6 +3628,16 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     [0, 1],
     [0, -1]
   ];
+  const surroundingNeighborOffsets = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1]
+  ];
   let hasLand = false;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -3948,7 +3958,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         continue;
       }
 
-      const effectiveClaimRadius = bestFaction.claimRadius * Math.max(bestSuitability, 0.0001);
+      const suitabilityRadiusFactor = clamp(0.55 + bestSuitability * 0.45, 0.55, 1);
+      const effectiveClaimRadius = bestFaction.claimRadius * suitabilityRadiusFactor;
 
       if (bestDistance > effectiveClaimRadius) {
         tile.factionId = null;
@@ -3971,6 +3982,121 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
   }
 
+  const fillUnclaimedEnclaves = () => {
+    const visited = new Set();
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const row = tiles[y];
+        const tile = row ? row[x] : null;
+        if (!tile) {
+          continue;
+        }
+        if (waterMask && waterMask[idx]) {
+          continue;
+        }
+        if (tile.factionId !== null && tile.factionId !== undefined) {
+          continue;
+        }
+
+        const key = toKey(x, y);
+        if (visited.has(key)) {
+          continue;
+        }
+
+        const component = [];
+        const queue = [[x, y]];
+        let queueIndex = 0;
+        let touchesEdge = false;
+        const borderingFactions = new Set();
+        visited.add(key);
+
+        while (queueIndex < queue.length) {
+          const [cx, cy] = queue[queueIndex];
+          queueIndex += 1;
+          component.push([cx, cy]);
+
+          for (let i = 0; i < cardinalNeighborOffsets.length; i += 1) {
+            const [ox, oy] = cardinalNeighborOffsets[i];
+            const nx = cx + ox;
+            const ny = cy + oy;
+
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              touchesEdge = true;
+              continue;
+            }
+
+            const nIdx = ny * width + nx;
+            const neighborRow = tiles[ny];
+            const neighborTile = neighborRow ? neighborRow[nx] : null;
+            if (!neighborTile) {
+              touchesEdge = true;
+              continue;
+            }
+            if (waterMask && waterMask[nIdx]) {
+              touchesEdge = true;
+              continue;
+            }
+
+            if (neighborTile.factionId === null || neighborTile.factionId === undefined) {
+              const neighborKey = toKey(nx, ny);
+              if (!visited.has(neighborKey)) {
+                visited.add(neighborKey);
+                queue.push([nx, ny]);
+              }
+              continue;
+            }
+
+            borderingFactions.add(neighborTile.factionId);
+          }
+
+          if (touchesEdge) {
+            continue;
+          }
+
+          for (let i = 0; i < surroundingNeighborOffsets.length; i += 1) {
+            const [ox, oy] = surroundingNeighborOffsets[i];
+            const nx = cx + ox;
+            const ny = cy + oy;
+
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              touchesEdge = true;
+              continue;
+            }
+
+            const neighborRow = tiles[ny];
+            const neighborTile = neighborRow ? neighborRow[nx] : null;
+            if (!neighborTile) {
+              touchesEdge = true;
+              continue;
+            }
+            if (neighborTile.factionId !== null && neighborTile.factionId !== undefined) {
+              borderingFactions.add(neighborTile.factionId);
+            }
+          }
+        }
+
+        if (touchesEdge || borderingFactions.size !== 1) {
+          continue;
+        }
+
+        const [factionId] = borderingFactions;
+        if (!factionById.has(factionId)) {
+          continue;
+        }
+
+        for (let i = 0; i < component.length; i += 1) {
+          const [cx, cy] = component[i];
+          const componentTile = tiles[cy][cx];
+          componentTile.factionId = factionId;
+          componentTile.factionInfluence = Math.max(componentTile.factionInfluence || 0, 0.2);
+        }
+      }
+    }
+  };
+
+  fillUnclaimedEnclaves();
   enforceFactionConnectivity();
 
   return { factions };
