@@ -55,6 +55,7 @@ const baseTileCoords = {
   MARSH: { row: 4, col: 2 },
   SNOW: { row: 2, col: 3 },
   TREE: { row: 1, col: 0 },
+  TREE_LONE: { row: 5, col: 6 },
   TREE_SNOW: { row: 1, col: 1 },
   JUNGLE_TREE: { row: 3, col: 0 },
   WATER: { row: 1, col: 4 },
@@ -76,6 +77,7 @@ const baseTileCoords = {
   HILLS_SNOW: { row: 3, col: 2 },
   TOWN: { row: 2, col: 1 },
   PORT_TOWN: { row: 4, col: 5 },
+  CASTLE: { row: 4, col: 6 },
   LIZARDMEN_CITY: { row: 2, col: 11 }
 };
 
@@ -265,43 +267,6 @@ function drawMonasteryStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  ctx.fillStyle = '#5b666f';
-  ctx.fillRect(size * 0.12, size * 0.3, size * 0.76, size * 0.5);
-  ctx.fillStyle = '#77828b';
-  ctx.fillRect(size * 0.18, size * 0.36, size * 0.64, size * 0.38);
-
-  ctx.fillStyle = '#4a545c';
-  const towerWidth = size * 0.2;
-  ctx.fillRect(size * 0.12, size * 0.18, towerWidth, size * 0.42);
-  ctx.fillRect(size * 0.68, size * 0.18, towerWidth, size * 0.42);
-
-  ctx.fillStyle = '#2a2f33';
-  ctx.fillRect(size * 0.44, size * 0.54, size * 0.12, size * 0.26);
-
-  ctx.fillStyle = '#c7352d';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.5, size * 0.18);
-  ctx.lineTo(size * 0.6, size * 0.32);
-  ctx.lineTo(size * 0.4, size * 0.32);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = '#32393f';
-  ctx.lineWidth = Math.max(1, size * 0.03);
-  ctx.beginPath();
-  const merlonCount = 4;
-  for (let i = 0; i < merlonCount; i += 1) {
-    const startX = size * 0.22 + (size * 0.56 * i) / merlonCount;
-    ctx.moveTo(startX, size * 0.32);
-    ctx.lineTo(startX + size * 0.08, size * 0.32);
-  }
-  ctx.stroke();
-  ctx.restore();
-}
-
 function drawSaintShrineStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -418,7 +383,7 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
 const hillOverlayKeySet = new Set(['HILLS', 'HILLS_SNOW']);
-const treeOverlayKeySet = new Set(['TREE', 'TREE_SNOW', 'JUNGLE_TREE']);
+const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
 
 const isMountainOverlayKey = (key) => typeof key === 'string' && key.startsWith('MOUNTAIN');
@@ -593,7 +558,6 @@ registerTiles('base', icebergTileCoords);
 registerCustomStructure('ORC_CAMP', (ctx, drawOptions) => drawOrcCampStructure(ctx, drawOptions));
 registerCustomStructure('DUNGEON', (ctx, drawOptions) => drawDungeonStructure(ctx, drawOptions));
 registerCustomStructure('MONASTERY', (ctx, drawOptions) => drawMonasteryStructure(ctx, drawOptions));
-registerCustomStructure('CASTLE', (ctx, drawOptions) => drawCastleStructure(ctx, drawOptions));
 registerCustomStructure('SAINT_SHRINE', (ctx, drawOptions) => drawSaintShrineStructure(ctx, drawOptions));
 registerCustomStructure('TRAVELERS_CAMP', (ctx, drawOptions) =>
   drawTravelerCampStructure(ctx, drawOptions)
@@ -11654,8 +11618,14 @@ function createWorld(seedString) {
   const treeOverlayKey = hasTreeTile ? 'TREE' : null;
   const treeSnowOverlayKey = hasTreeTile && tileLookup.has('TREE_SNOW') ? 'TREE_SNOW' : treeOverlayKey;
   const treeJungleOverlayKey = hasTreeTile && tileLookup.has('JUNGLE_TREE') ? 'JUNGLE_TREE' : null;
+  const treeLoneOverlayKey = hasTreeTile && tileLookup.has('TREE_LONE') ? 'TREE_LONE' : null;
   let jungleMask = null;
-  const treeOverlayKeys = [treeOverlayKey, treeSnowOverlayKey, treeJungleOverlayKey].filter(
+  const treeOverlayKeys = [
+    treeOverlayKey,
+    treeSnowOverlayKey,
+    treeJungleOverlayKey,
+    treeLoneOverlayKey
+  ].filter(
     (key, index, array) => key && array.indexOf(key) === index
   );
   const isTreeOverlayKey = (overlayKey) =>
@@ -12028,6 +11998,38 @@ function createWorld(seedString) {
           }
           treeMask[idx] = 0;
           tile.overlay = null;
+        }
+      }
+    }
+
+    if (treeOverlayKey && treeLoneOverlayKey) {
+      const loneTreeVariantChance = 0.5;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!treeMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || tile.overlay !== treeOverlayKey) {
+            continue;
+          }
+          let hasNeighborTree = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const neighborTile = tiles[ny][nx];
+            if (tileHasTreeOverlay(neighborTile)) {
+              hasNeighborTree = true;
+              break;
+            }
+          }
+          if (!hasNeighborTree && rng() < loneTreeVariantChance) {
+            tile.overlay = treeLoneOverlayKey;
+          }
         }
       }
     }
