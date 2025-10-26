@@ -13104,6 +13104,44 @@ function createWorld(seedString) {
     }
   }
 
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    if (cluster.type !== 'grassland') {
+      continue;
+    }
+    let hasDesertNeighbor = false;
+    let hasBlockingNeighbor = false;
+    for (let j = 0; j < cluster.indices.length && !hasBlockingNeighbor; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      const cx = clusterIdx % width;
+      const cy = Math.floor(clusterIdx / width);
+      for (let k = 0; k < neighborOffsets8.length; k += 1) {
+        const nx = cx + neighborOffsets8[k][0];
+        const ny = cy + neighborOffsets8[k][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const neighborType = biomeField[ny * width + nx];
+        if (!neighborType || neighborType === 'grassland') {
+          continue;
+        }
+        if (neighborType === 'desert') {
+          hasDesertNeighbor = true;
+        } else {
+          hasBlockingNeighbor = true;
+          break;
+        }
+      }
+    }
+    if (hasDesertNeighbor && !hasBlockingNeighbor) {
+      cluster.type = 'desert';
+      for (let j = 0; j < cluster.indices.length; j += 1) {
+        const clusterIdx = cluster.indices[j];
+        biomeField[clusterIdx] = 'desert';
+      }
+    }
+  }
+
   const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
 
   for (let i = 0; i < biomeClusters.length; i += 1) {
