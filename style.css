@@ -479,7 +479,9 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 108px;
+  flex: 0 0 auto;
+  width: clamp(115px, calc(20vw * 0.672), 155px);
+  max-width: 100%;
   aspect-ratio: 150 / 136;
   padding: 0;
   border: none;
