@@ -1033,8 +1033,7 @@ button:hover:not(:disabled) {
 }
 
 
-.pixel-panel::after,
-.pixel-subpanel::after {
+.pixel-panel::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1045,8 +1044,7 @@ button:hover:not(:disabled) {
   z-index: -2;
 }
 
-#dwarf-customizer .pixel-panel,
-#dwarf-customizer .pixel-subpanel {
+#dwarf-customizer .pixel-panel {
   background: rgba(12, 15, 26, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.35);
@@ -1056,12 +1054,7 @@ button:hover:not(:disabled) {
   padding: clamp(1.1rem, 2.4vw, 1.6rem);
 }
 
-#dwarf-customizer .pixel-subpanel {
-  padding: clamp(0.75rem, 1.8vw, 1.2rem);
-}
-
-.pixel-panel,
-.pixel-subpanel {
+.pixel-panel {
   position: relative;
   border-radius: 18px;
   overflow: visible;
@@ -1077,18 +1070,7 @@ button:hover:not(:disabled) {
   box-shadow: 0 1.4rem 2.4rem rgba(0, 0, 0, 0.5);
 }
 
-.pixel-subpanel {
-  --frame-top: 12px;
-  --frame-right: 15px;
-  --frame-bottom: 12px;
-  --frame-left: 15px;
-  padding: clamp(0.85rem, 2vw, 1.3rem);
-  border-radius: 16px;
-  box-shadow: 0 0.9rem 1.8rem rgba(0, 0, 0, 0.45);
-}
-
-.pixel-panel::before,
-.pixel-subpanel::before {
+.pixel-panel::before {
   content: '';
   position: absolute;
   top: calc(-1 * var(--frame-top));
