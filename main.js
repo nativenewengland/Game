@@ -11620,8 +11620,8 @@ function createWorld(seedString) {
     }
 
     if (oasisTileKey) {
-      const oasisBaseChance = 0.0025;
-      const oasisSuitabilityScale = 0.0075;
+      const oasisBaseChance = 0.00025;
+      const oasisSuitabilityScale = 0.002;
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
