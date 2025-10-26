@@ -1672,13 +1672,14 @@ const towerHallmarks = [
   'Stone walls etched with oath-runes that glow at the approach of danger.'
 ];
 
-const towerPopulationRoleOptions = [
-  { key: 'sentinels', label: 'Sentinels', color: '#8fbf9f' },
-  { key: 'marksmen', label: 'Marksmen', color: '#d2a679' },
-  { key: 'support', label: 'Support Crew', color: '#9bb6d8' },
-  { key: 'mages', label: 'Signal Mages', color: '#b389ff' },
-  { key: 'scouts', label: 'Scouts', color: '#f4c069' },
-  { key: 'others', label: 'Camp Followers', color: '#9e9e9e' }
+const towerPopulationRaceOptions = [
+  { key: 'humans', label: 'Humans', color: '#9bb6d8' },
+  { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
+  { key: 'elves', label: 'Elves', color: '#6ecf85' },
+  { key: 'halflings', label: 'Halflings', color: '#f7a072' },
+  { key: 'dragonborn', label: 'Dragonborn', color: '#c16a6a' },
+  { key: 'tieflings', label: 'Tieflings', color: '#b064b0' },
+  { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
 const townRulerTitles = {
@@ -3207,7 +3208,7 @@ function generatePopulationBreakdownFromOptions(options, population, random, con
 }
 
 function generateTowerPopulationBreakdown(population, random) {
-  return generatePopulationBreakdownFromOptions(towerPopulationRoleOptions, population, random, {
+  return generatePopulationBreakdownFromOptions(towerPopulationRaceOptions, population, random, {
     majorityIndex: 0,
     majorityShareRange: [0.45, 0.7],
     ensureMajority: true
