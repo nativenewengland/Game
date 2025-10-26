@@ -12982,7 +12982,7 @@ function createWorld(seedString) {
         const minVolcanoCount = Math.min(volcanoOverlayKeys.length, volcanoCandidates.length);
         const baseVolcanoCount = Math.round(volcanoCandidates.length / 600);
         const volcanoBaseTarget = Math.max(1, Math.max(minVolcanoCount, baseVolcanoCount));
-        const volcanoRarityFactor = 0.3;
+        const volcanoRarityFactor = 0.15;
         const rarityAdjustedTarget = Math.max(
           1,
           Math.round(volcanoBaseTarget * volcanoRarityFactor)
