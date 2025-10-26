@@ -305,6 +305,86 @@
                   </div>
                   <p id="dwarf-trait-summary" class="trait-summary"></p>
                   <div
+                    class="trait-preview-sliders"
+                    aria-label="Featured appearance adjustments"
+                  >
+                    <div class="field-group" data-draggable-id="trait-skin-tone">
+                      <label for="dwarf-skin-slider" class="field-label">Skin tone</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-skin-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-skin-slider-value"
+                          class="trait-slider-value has-color"
+                          aria-live="polite"
+                        >
+                          Deep Umber
+                        </div>
+                      </div>
+                    </div>
+                    <div class="field-group" data-draggable-id="trait-hair-colour">
+                      <label for="dwarf-hair-slider" class="field-label">Hair colour</label>
+                      <div class="hair-colour-controls">
+                        <div class="trait-slider">
+                          <div class="trait-slider-visual">
+                            <input
+                              id="dwarf-hair-slider"
+                              class="trait-slider-input"
+                              type="range"
+                              min="0"
+                              max="0"
+                              step="1"
+                              value="0"
+                            />
+                          </div>
+                          <div
+                            id="dwarf-hair-slider-value"
+                            class="trait-slider-value"
+                            aria-live="polite"
+                          >
+                            Obsidian Black
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="field-group"
+                      id="dwarf-beard-field-group"
+                      data-draggable-id="trait-beard-style"
+                    >
+                      <label for="dwarf-beard-slider" class="field-label">Beard style</label>
+                      <div class="trait-slider">
+                        <div class="trait-slider-visual">
+                          <input
+                            id="dwarf-beard-slider"
+                            class="trait-slider-input"
+                            type="range"
+                            min="0"
+                            max="0"
+                            step="1"
+                            value="0"
+                          />
+                        </div>
+                        <div
+                          id="dwarf-beard-slider-value"
+                          class="trait-slider-value"
+                          aria-live="polite"
+                        >
+                          Clean-shaven
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div
                     id="dwarf-trait-attributes"
                     class="trait-attributes"
                     aria-live="polite"
@@ -534,30 +614,6 @@
                     class="trait-sliders-panel pixel-subpanel"
                     aria-label="Appearance adjustments"
                   >
-                    <div class="field-group" data-draggable-id="trait-skin-tone">
-                      <label for="dwarf-skin-slider" class="field-label">Skin tone</label>
-                      <div class="trait-slider">
-                        <div class="trait-slider-visual">
-                          <input
-                            id="dwarf-skin-slider"
-                            class="trait-slider-input"
-                            type="range"
-                            min="0"
-                            max="0"
-                            step="1"
-                            value="0"
-                          />
-                        </div>
-                        <div
-                          id="dwarf-skin-slider-value"
-                          class="trait-slider-value has-color"
-                          aria-live="polite"
-                        >
-                          Deep Umber
-                        </div>
-                      </div>
-                    </div>
-
                     <div class="field-group" data-draggable-id="trait-head-type">
                         <label for="dwarf-head-slider" class="field-label">Head type</label>
                         <div class="trait-slider">
@@ -630,63 +686,7 @@
                         </div>
                       </div>
 
-                      <div
-                        class="field-group field-group--hair-colour"
-                        data-draggable-id="trait-hair-colour"
-                      >
-                        <label for="dwarf-hair-slider" class="field-label">Hair colour</label>
-                        <div class="hair-colour-controls">
-                          <div class="trait-slider">
-                            <div class="trait-slider-visual">
-                              <input
-                                id="dwarf-hair-slider"
-                                class="trait-slider-input"
-                                type="range"
-                                min="0"
-                                max="0"
-                                step="1"
-                                value="0"
-                              />
-                            </div>
-                            <div
-                              id="dwarf-hair-slider-value"
-                              class="trait-slider-value"
-                              aria-live="polite"
-                            >
-                              Obsidian Black
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        class="field-group"
-                        id="dwarf-beard-field-group"
-                        data-draggable-id="trait-beard-style"
-                      >
-                        <label for="dwarf-beard-slider" class="field-label">Beard style</label>
-                        <div class="trait-slider">
-                          <div class="trait-slider-visual">
-                            <input
-                              id="dwarf-beard-slider"
-                              class="trait-slider-input"
-                              type="range"
-                              min="0"
-                              max="0"
-                              step="1"
-                              value="0"
-                            />
-                          </div>
-                          <div
-                            id="dwarf-beard-slider-value"
-                            class="trait-slider-value"
-                            aria-live="polite"
-                          >
-                            Clean-shaven
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      
                   </div>
                 </div>
               </div>
