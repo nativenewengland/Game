@@ -12377,6 +12377,31 @@ function createWorld(seedString) {
   const marshNoiseScale = hasMarshTile ? 2.2 + rng() * 1.6 : 1;
   const marshNoiseOffsetX = hasMarshTile ? rng() * 4096 : 0;
   const marshNoiseOffsetY = hasMarshTile ? rng() * 4096 : 0;
+  const marshWarpSeedX = hasMarshTile ? (seedNumber + 0x0c1b9d17) >>> 0 : 0;
+  const marshWarpSeedY = hasMarshTile ? (seedNumber + 0x91e10dac) >>> 0 : 0;
+  const marshWarpScale = hasMarshTile ? 2.6 + rng() * 2.4 : 1;
+  const marshWarpStrength = hasMarshTile ? 0.08 + rng() * 0.12 : 0;
+  const marshWarpOffsetX = hasMarshTile ? rng() * 4096 : 0;
+  const marshWarpOffsetY = hasMarshTile ? rng() * 4096 : 0;
+  const marshSuitabilitySeed = hasMarshTile ? (seedNumber + 0x243f6a88) >>> 0 : 0;
+  const marshSuitabilityScale = hasMarshTile ? 2.8 + rng() * 2.6 : 1;
+  const marshSuitabilityOffsetX = hasMarshTile ? rng() * 4096 : 0;
+  const marshSuitabilityOffsetY = hasMarshTile ? rng() * 4096 : 0;
+  const marshSuitabilityStrength = hasMarshTile ? 0.16 + rng() * 0.14 : 0;
+  const marshVariationSeed = hasMarshTile ? (seedNumber + 0x13198a2e) >>> 0 : 0;
+  const marshVariationScale = hasMarshTile ? 3.4 + rng() * 3 : 1;
+  const marshVariationOffsetX = hasMarshTile ? rng() * 4096 : 0;
+  const marshVariationOffsetY = hasMarshTile ? rng() * 4096 : 0;
+  const marshVariationStrength = hasMarshTile ? 0.12 + rng() * 0.11 : 0;
+  const marshThresholdSeed = hasMarshTile ? (seedNumber + 0xa4093822) >>> 0 : 0;
+  const marshThresholdScale = hasMarshTile ? 2.6 + rng() * 2.8 : 1;
+  const marshThresholdOffsetX = hasMarshTile ? rng() * 4096 : 0;
+  const marshThresholdOffsetY = hasMarshTile ? rng() * 4096 : 0;
+  const marshThresholdStrength = hasMarshTile ? 0.05 + rng() * 0.05 : 0;
+  const marshDistributionStrength = hasMarshTile ? 0.1 + rng() * 0.1 : 0;
+  const baseMarshThreshold = 0.6;
+  const marshSuitabilityField = hasMarshTile ? new Float32Array(width * height) : null;
+  const marshMaskField = hasMarshTile ? new Uint8Array(width * height) : null;
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
   const desertNoiseScale = hasSandTile ? 3.8 + rng() * 2.6 : 1;
   const desertNoiseOffsetX = hasSandTile ? rng() * 4096 : 0;
@@ -12459,38 +12484,153 @@ function createWorld(seedString) {
     return { warpX, warpY, warpedLatitude: clamp(latitude + warpY * 0.8, 0, 1) };
   };
 
-  const computeMarshSuitabilityScore = (x, y, heightValue) => {
-    if (!hasMarshTile || heightValue <= seaLevel) {
-      return -Infinity;
-    }
+  const calculateMarshSuitability = (
+    x,
+    y,
+    heightValue,
+    rainfallValue,
+    drainageValue,
+    recordFields
+  ) => {
     const idx = y * width + x;
+    if (!hasMarshTile || heightValue <= seaLevel) {
+      if (recordFields && marshSuitabilityField) {
+        marshSuitabilityField[idx] = 0;
+      }
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: -Infinity, threshold: baseMarshThreshold, qualifies: false };
+    }
     const normalizedX = (x + 0.5) / width;
     const normalizedY = (y + 0.5) / height;
+    if (rainfallValue === undefined) {
+      rainfallValue = rainfallField[idx];
+    }
+    if (drainageValue === undefined) {
+      drainageValue = drainageField[idx];
+    }
     const latitude = 1 - normalizedY;
     const { warpedLatitude } = sampleLatitudeWarp(normalizedX, normalizedY, latitude);
-    const rainfallValue = rainfallField[idx];
-    const drainageValue = drainageField[idx];
     const equatorialAlignment = clamp(1 - Math.abs(warpedLatitude - 0.5) * 2, 0, 1);
     const elevationAboveSea = heightValue - seaLevel;
-    const elevationHeatPenalty = clamp(elevationAboveSea * 3.6, 0, 1);
-    const heat = clamp(equatorialAlignment * 0.65 + (1 - elevationHeatPenalty) * 0.35, 0, 1);
-    const wetness = clamp(rainfallValue * 0.7 + (1 - drainageValue) * 0.3, 0, 1);
-    const lowlandFactor = clamp(1 - Math.max(0, elevationAboveSea) * 5.2, 0, 1);
-    if (wetness <= 0.68 || heat <= 0.58 || lowlandFactor <= 0.35) {
-      return -Infinity;
+    const positiveElevation = Math.max(0, elevationAboveSea);
+    const elevationPenalty = clamp(positiveElevation * 3.4, 0, 1);
+    const heat = clamp(equatorialAlignment * 0.6 + (1 - elevationPenalty) * 0.4, 0, 1);
+    const wetness = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
+    const lowlandFactor = clamp(1 - positiveElevation * 4.2, 0, 1);
+    const baseSuitability = clamp(wetness * 0.68 + lowlandFactor * 0.2 + heat * 0.12, 0, 1);
+    if (wetness <= 0.55 || lowlandFactor <= 0.22 || heat <= 0.45) {
+      if (recordFields && marshSuitabilityField) {
+        marshSuitabilityField[idx] = baseSuitability;
+      }
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: -Infinity, threshold: baseMarshThreshold, qualifies: false };
     }
-    const marshNoise =
-      octaveNoise(
-        (normalizedX + marshNoiseOffsetX) * marshNoiseScale,
-        (normalizedY + marshNoiseOffsetY) * marshNoiseScale,
-        marshNoiseSeed,
+    let warpX = 0;
+    let warpY = 0;
+    if (marshWarpStrength > 0) {
+      const warpSampleX = octaveNoise(
+        (normalizedX + marshWarpOffsetX) * marshWarpScale,
+        (normalizedY + marshWarpOffsetY) * marshWarpScale,
+        marshWarpSeedX,
         3,
         0.55,
-        2.15
-      ) *
-        2 -
-      1;
-    return wetness * 0.6 + lowlandFactor * 0.25 + marshNoise * 0.15;
+        2.05
+      );
+      const warpSampleY = octaveNoise(
+        (normalizedX + marshWarpOffsetX + 17.31) * (marshWarpScale * 0.94),
+        (normalizedY + marshWarpOffsetY + 23.77) * (marshWarpScale * 1.06),
+        marshWarpSeedY,
+        3,
+        0.55,
+        2.05
+      );
+      warpX = (warpSampleX * 2 - 1) * marshWarpStrength;
+      warpY = (warpSampleY * 2 - 1) * marshWarpStrength;
+    }
+    let suitability = baseSuitability;
+    if (marshSuitabilityStrength > 0) {
+      const suitabilityNoise =
+        octaveNoise(
+          (normalizedX + warpX + marshSuitabilityOffsetX) * marshSuitabilityScale,
+          (normalizedY + warpY + marshSuitabilityOffsetY) * marshSuitabilityScale,
+          marshSuitabilitySeed,
+          4,
+          0.55,
+          2.15
+        ) *
+          2 -
+        1;
+      suitability = clamp(suitability + suitabilityNoise * marshSuitabilityStrength, 0, 1);
+    }
+    if (marshVariationStrength > 0) {
+      const variationNoise =
+        octaveNoise(
+          (normalizedX + warpX + marshVariationOffsetX) * marshVariationScale,
+          (normalizedY + warpY + marshVariationOffsetY) * marshVariationScale,
+          marshVariationSeed,
+          4,
+          0.55,
+          2.1
+        ) *
+          2 -
+        1;
+      suitability = clamp(suitability + variationNoise * marshVariationStrength, 0, 1);
+    }
+    if (marshDistributionStrength > 0) {
+      const distributionNoise =
+        octaveNoise(
+          (normalizedX + warpX + marshNoiseOffsetX) * marshNoiseScale,
+          (normalizedY + warpY + marshNoiseOffsetY) * marshNoiseScale,
+          marshNoiseSeed,
+          3,
+          0.55,
+          2.15
+        ) *
+          2 -
+        1;
+      suitability = clamp(suitability + distributionNoise * marshDistributionStrength, 0, 1);
+    }
+    let threshold = baseMarshThreshold;
+    if (marshThresholdStrength > 0) {
+      const thresholdNoise =
+        octaveNoise(
+          (normalizedX + warpX + marshThresholdOffsetX) * marshThresholdScale,
+          (normalizedY + warpY + marshThresholdOffsetY) * marshThresholdScale,
+          marshThresholdSeed,
+          3,
+          0.55,
+          2.1
+        ) *
+          2 -
+        1;
+      threshold = clamp(threshold + thresholdNoise * marshThresholdStrength, 0.5, 0.7);
+    }
+    const qualifies = suitability > threshold;
+    if (recordFields && marshSuitabilityField) {
+      marshSuitabilityField[idx] = suitability;
+    }
+    if (recordFields && marshMaskField) {
+      marshMaskField[idx] = qualifies ? 1 : 0;
+    }
+    return { score: suitability, threshold, qualifies };
+  };
+
+  const computeMarshSuitabilityScore = (x, y, heightValue) => {
+    const idx = y * width + x;
+    const rainfallValue = rainfallField[idx];
+    const drainageValue = drainageField[idx];
+    return calculateMarshSuitability(
+      x,
+      y,
+      heightValue,
+      rainfallValue,
+      drainageValue,
+      false
+    ).score;
   };
 
   const determineLandBaseTile = (x, y, heightValue) => {
@@ -12504,6 +12644,10 @@ function createWorld(seedString) {
       desertSuitabilityField[idx] = 0;
       desertMask[idx] = 0;
     }
+    if (hasMarshTile) {
+      marshSuitabilityField[idx] = 0;
+      marshMaskField[idx] = 0;
+    }
 
     if (hasSnowTile && computeSnowPresence(normalizedX, normalizedY, heightValue)) {
       return snowTileKey;
@@ -12511,9 +12655,18 @@ function createWorld(seedString) {
 
     const rainfallValue = rainfallField[idx];
     const drainageValue = drainageField[idx];
-    const marshScore = computeMarshSuitabilityScore(x, y, heightValue);
-    if (marshScore > 0.62) {
-      return marshTileKey;
+    if (hasMarshTile) {
+      const marshEvaluation = calculateMarshSuitability(
+        x,
+        y,
+        heightValue,
+        rainfallValue,
+        drainageValue,
+        true
+      );
+      if (marshEvaluation.qualifies) {
+        return marshTileKey;
+      }
     }
 
     if (hasSandTile) {
@@ -13418,14 +13571,8 @@ function createWorld(seedString) {
   }
 
   if (hasMarshTile) {
-    const marshMask = new Uint8Array(width * height);
+    const marshMask = marshMaskField ? new Uint8Array(marshMaskField) : new Uint8Array(width * height);
     const marshBuffer = new Uint8Array(width * height);
-    for (let y = 0; y < height; y += 1) {
-      for (let x = 0; x < width; x += 1) {
-        const idx = y * width + x;
-        marshMask[idx] = tiles[y][x].base === marshTileKey ? 1 : 0;
-      }
-    }
     const marshIterations = 2;
     for (let iteration = 0; iteration < marshIterations; iteration += 1) {
       for (let y = 0; y < height; y += 1) {
@@ -13457,16 +13604,36 @@ function createWorld(seedString) {
             }
           }
           const heightValue = elevationField[idx];
-          const marshScore = computeMarshSuitabilityScore(x, y, heightValue);
+          const rainfallValue = rainfallField[idx];
+          const drainageValue = drainageField[idx];
+          const {
+            score: marshScore,
+            threshold: marshThreshold,
+            qualifies: marshQualifies
+          } = calculateMarshSuitability(
+            x,
+            y,
+            heightValue,
+            rainfallValue,
+            drainageValue,
+            false
+          );
           let nextIsMarsh = currentIsMarsh;
           if (currentIsMarsh) {
-            if (marshNeighbors <= 1 && marshScore < 0.6) {
+            if (!marshQualifies && marshNeighbors <= 1) {
+              nextIsMarsh = false;
+            } else if (marshNeighbors <= 2 && marshScore < marshThreshold) {
+              nextIsMarsh = false;
+            } else if (marshScore < marshThreshold - 0.08) {
               nextIsMarsh = false;
             }
-          } else if (tile.base === grassTileKey && marshScore > 0.58) {
-            if (marshNeighbors >= 3) {
+          } else if (tile.base === grassTileKey) {
+            if (
+              marshQualifies &&
+              (marshNeighbors >= 3 || (marshNeighbors >= 2 && marshScore > marshThreshold + 0.05))
+            ) {
               nextIsMarsh = true;
-            } else if (marshNeighbors >= 2 && marshScore > 0.66) {
+            } else if (marshNeighbors >= 4 && marshScore > marshThreshold - 0.02) {
               nextIsMarsh = true;
             } else {
               nextIsMarsh = false;
@@ -13491,6 +13658,9 @@ function createWorld(seedString) {
           tiles[y][x].base = marshTileKey;
         } else if (tiles[y][x].base === marshTileKey) {
           tiles[y][x].base = grassTileKey;
+        }
+        if (marshMaskField) {
+          marshMaskField[idx] = shouldBeMarsh ? 1 : 0;
         }
       }
     }
@@ -13538,6 +13708,9 @@ function createWorld(seedString) {
       const tile = tiles[y][x];
       if (tile) {
         tile.base = base;
+        if (marshMaskField) {
+          marshMaskField[y * width + x] = base === marshTileKey ? 1 : 0;
+        }
       }
     }
   }
