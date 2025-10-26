@@ -17120,6 +17120,14 @@ function applyVolcanoShading(ctx, cell, x, y) {
     return;
   }
 
+  const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+  const hillOverlayKey = typeof cell.hillOverlay === 'string' ? cell.hillOverlay : null;
+
+  if (isMountainOverlayKey(overlayKey) || isMountainOverlayKey(hillOverlayKey)) {
+    // Mountain tiles handle volcano shading separately to avoid double-darkening.
+    return;
+  }
+
   const proximity = clamp(Number.isFinite(cell.volcanoProximity) ? cell.volcanoProximity : 0, 0, 1);
   if (proximity <= 0.01) {
     return;
@@ -17127,9 +17135,12 @@ function applyVolcanoShading(ctx, cell, x, y) {
 
   const pixelX = x * drawSize;
   const pixelY = y * drawSize;
-  const alpha = proximity * 0.5;
+  const alpha = proximity * 0.4;
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
   ctx.fillStyle = `rgba(28, 14, 10, ${alpha})`;
   ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+  ctx.restore();
 }
 
 function applyMountainShading(ctx, cell, x, y) {
@@ -17144,8 +17155,15 @@ function applyMountainShading(ctx, cell, x, y) {
   }
 
   const peakOverlay = typeof overlayKey === 'string' && overlayKey.includes('PEAK');
-  const baseAlpha = peakOverlay ? 0.55 : 0.45;
-  const shadingAlpha = clamp(baseAlpha, 0, 0.75);
+  const volcanoOverlay = isVolcanoOverlayKey(overlayKey) || isVolcanoOverlayKey(hillOverlayKey);
+  const baseAlpha = volcanoOverlay ? 0.35 : peakOverlay ? 0.35 : 0.3;
+  const volcanoProximity = clamp(
+    Number.isFinite(cell.volcanoProximity) ? cell.volcanoProximity : 0,
+    0,
+    1
+  );
+  const volcanoAlphaBoost = volcanoProximity > 0 ? volcanoProximity * 0.35 : 0;
+  const shadingAlpha = clamp(baseAlpha + volcanoAlphaBoost, 0, 0.75);
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
   ctx.fillStyle = `rgba(24, 20, 18, ${shadingAlpha})`;
