@@ -9635,6 +9635,37 @@ function createWorld(seedString) {
           desertMask[verticalIsolation[i]] = 0;
         }
       }
+
+      const isolatedSingles = [];
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (!desertMask[idx]) {
+            continue;
+          }
+          let hasDesertNeighbor = false;
+          for (let i = 0; i < neighborOffsets8.length; i += 1) {
+            const nx = x + neighborOffsets8[i][0];
+            const ny = y + neighborOffsets8[i][1];
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+              continue;
+            }
+            const nIdx = ny * width + nx;
+            if (desertMask[nIdx]) {
+              hasDesertNeighbor = true;
+              break;
+            }
+          }
+          if (!hasDesertNeighbor) {
+            isolatedSingles.push(idx);
+          }
+        }
+      }
+      if (isolatedSingles.length > 0) {
+        for (let i = 0; i < isolatedSingles.length; i += 1) {
+          desertMask[isolatedSingles[i]] = 0;
+        }
+      }
     }
 
     for (let y = 0; y < height; y += 1) {
