@@ -1689,13 +1689,6 @@ button:hover:not(:disabled) {
   max-width: 100%;
 }
 
-.create-button--floating {
-  position: absolute;
-  right: clamp(1.25rem, 3vw, 1.85rem);
-  bottom: clamp(1.25rem, 3vw, 1.85rem);
-  z-index: 2;
-}
-
 .customizer-actions {
   grid-column: 1 / -1;
   display: flex;
@@ -1704,6 +1697,13 @@ button:hover:not(:disabled) {
   align-items: center;
   gap: clamp(0.75rem, 2vw, 1.25rem);
   margin-top: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+.customizer-actions__primary {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin-left: auto;
 }
 
 .gender-toggle {
@@ -1770,11 +1770,10 @@ button:hover:not(:disabled) {
     width: min(240px, 100%);
   }
 
-  .create-button--floating {
-    position: static;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: clamp(1rem, 3vw, 1.5rem);
+  .customizer-actions__primary {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
   }
 
   #dwarf-customizer-form {
