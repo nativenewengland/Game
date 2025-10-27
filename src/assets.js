@@ -18,6 +18,12 @@ export const tileSheets = {
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_edge_glacier.png',
     tileSize: 16,
     image: null
+  },
+  dwarfTest: {
+    key: 'dwarfTest',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_tiles.png',
+    tileSize: 16,
+    image: null
   }
 };
 
