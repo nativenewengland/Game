@@ -4493,11 +4493,11 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       }
 
       let bestFaction = null;
-      let bestDistance = Infinity;
-      let bestAdjustedDistance = Infinity;
+      let bestDistanceSq = Infinity;
+      let bestAdjustedDistanceSq = Infinity;
       let bestSuitability = 0;
-      let secondDistance = Infinity;
-      let secondAdjustedDistance = Infinity;
+      let secondDistanceSq = Infinity;
+      let secondAdjustedDistanceSq = Infinity;
 
       for (let i = 0; i < factions.length; i += 1) {
         const faction = factions[i];
@@ -4508,21 +4508,24 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
 
         const dx = x - faction.capital.x;
         const dy = y - faction.capital.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const adjustedDistance = distance / suitability;
+        const distanceSq = dx * dx + dy * dy;
+        const adjustedDistanceSq = distanceSq / (suitability * suitability);
 
-        if (adjustedDistance < bestAdjustedDistance) {
-          secondAdjustedDistance = bestAdjustedDistance;
-          secondDistance = bestDistance;
-          bestAdjustedDistance = adjustedDistance;
-          bestDistance = distance;
+        if (adjustedDistanceSq < bestAdjustedDistanceSq) {
+          secondAdjustedDistanceSq = bestAdjustedDistanceSq;
+          secondDistanceSq = bestDistanceSq;
+          bestAdjustedDistanceSq = adjustedDistanceSq;
+          bestDistanceSq = distanceSq;
           bestFaction = faction;
           bestSuitability = suitability;
-        } else if (adjustedDistance < secondAdjustedDistance) {
-          secondAdjustedDistance = adjustedDistance;
-          secondDistance = distance;
+        } else if (adjustedDistanceSq < secondAdjustedDistanceSq) {
+          secondAdjustedDistanceSq = adjustedDistanceSq;
+          secondDistanceSq = distanceSq;
         }
       }
+
+      const bestDistance = Number.isFinite(bestDistanceSq) ? Math.sqrt(bestDistanceSq) : Infinity;
+      const secondDistance = Number.isFinite(secondDistanceSq) ? Math.sqrt(secondDistanceSq) : Infinity;
 
       if (!bestFaction || !Number.isFinite(bestDistance)) {
         tile.factionId = null;
