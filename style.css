@@ -2152,6 +2152,11 @@ button:hover:not(:disabled) {
   grid-column: 1;
 }
 
+.customizer-fields .field-group[data-draggable-id='field-profession'],
+.customizer-fields .field-group[data-draggable-id='field-guild'] {
+  grid-column: 1;
+}
+
 .customizer-fields .field-group {
   display: flex;
   flex-direction: column;
