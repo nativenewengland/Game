@@ -116,137 +116,139 @@
               World seed
               <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
             </label>
-            <label for="forest-frequency">
-              Forest frequency
-              <div class="slider-control">
-                <input
-                  id="forest-frequency"
-                  name="forestFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="35"
-                />
-                <span id="forest-frequency-value" class="slider-value" aria-live="polite"
-                  >35% — Low</span
-                >
-              </div>
-            </label>
-            <label for="mountain-frequency">
-              Mountain frequency
-              <div class="slider-control">
-                <input
-                  id="mountain-frequency"
-                  name="mountainFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="35"
-                />
-                <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
-                  >35% — Low</span
-                >
-              </div>
-            </label>
-            <label for="river-frequency">
-              River frequency
-              <div class="slider-control">
-                <input
-                  id="river-frequency"
-                  name="riverFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span id="river-frequency-value" class="slider-value" aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="human-settlement-frequency">
-              Human settlement frequency
-              <div class="slider-control">
-                <input
-                  id="human-settlement-frequency"
-                  name="humanSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="human-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="dwarf-settlement-frequency">
-              Dwarf settlement frequency
-              <div class="slider-control">
-                <input
-                  id="dwarf-settlement-frequency"
-                  name="dwarfSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="dwarf-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="wood-elf-settlement-frequency">
-              Wood elf settlement frequency
-              <div class="slider-control">
-                <input
-                  id="wood-elf-settlement-frequency"
-                  name="woodElfSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="wood-elf-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="lizardmen-settlement-frequency">
-              Lizardmen temple-city frequency
-              <div class="slider-control">
-                <input
-                  id="lizardmen-settlement-frequency"
-                  name="lizardmenSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="lizardmen-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
+            <div class="world-generation-sliders">
+              <label for="forest-frequency">
+                Forest frequency
+                <div class="slider-control">
+                  <input
+                    id="forest-frequency"
+                    name="forestFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="35"
+                  />
+                  <span id="forest-frequency-value" class="slider-value" aria-live="polite"
+                    >35% — Low</span
+                  >
+                </div>
+              </label>
+              <label for="mountain-frequency">
+                Mountain frequency
+                <div class="slider-control">
+                  <input
+                    id="mountain-frequency"
+                    name="mountainFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="35"
+                  />
+                  <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
+                    >35% — Low</span
+                  >
+                </div>
+              </label>
+              <label for="river-frequency">
+                River frequency
+                <div class="slider-control">
+                  <input
+                    id="river-frequency"
+                    name="riverFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span id="river-frequency-value" class="slider-value" aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="human-settlement-frequency">
+                Human settlement frequency
+                <div class="slider-control">
+                  <input
+                    id="human-settlement-frequency"
+                    name="humanSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="human-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="dwarf-settlement-frequency">
+                Dwarf settlement frequency
+                <div class="slider-control">
+                  <input
+                    id="dwarf-settlement-frequency"
+                    name="dwarfSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="dwarf-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="wood-elf-settlement-frequency">
+                Wood elf settlement frequency
+                <div class="slider-control">
+                  <input
+                    id="wood-elf-settlement-frequency"
+                    name="woodElfSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="wood-elf-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="lizardmen-settlement-frequency">
+                Lizardmen temple-city frequency
+                <div class="slider-control">
+                  <input
+                    id="lizardmen-settlement-frequency"
+                    name="lizardmenSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="lizardmen-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+            </div>
             <div class="options-card__actions">
               <button type="submit" class="primary">Apply</button>
             </div>
@@ -420,13 +422,6 @@
                             value="0"
                           />
                         </div>
-                        <div
-                          id="dwarf-skin-slider-value"
-                          class="trait-slider-value has-color"
-                          aria-live="polite"
-                        >
-                          Coal Black
-                        </div>
                       </div>
                     </div>
                     <div class="field-group" data-draggable-id="trait-eye-colour">
@@ -442,13 +437,6 @@
                             step="1"
                             value="0"
                           />
-                        </div>
-                        <div
-                          id="dwarf-eye-slider-value"
-                          class="trait-slider-value"
-                          aria-live="polite"
-                        >
-                          Amber
                         </div>
                       </div>
                     </div>
@@ -467,13 +455,6 @@
                               value="0"
                             />
                           </div>
-                          <div
-                            id="dwarf-hair-slider-value"
-                            class="trait-slider-value"
-                            aria-live="polite"
-                          >
-                            Obsidian Black
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -490,13 +471,6 @@
                             step="1"
                             value="0"
                           />
-                        </div>
-                        <div
-                          id="dwarf-hair-style-slider-value"
-                          class="trait-slider-value"
-                          aria-live="polite"
-                        >
-                          Straight — Shoulder Length
                         </div>
                       </div>
                     </div>
@@ -517,13 +491,6 @@
                             step="1"
                             value="0"
                           />
-                        </div>
-                        <div
-                          id="dwarf-beard-slider-value"
-                          class="trait-slider-value"
-                          aria-live="polite"
-                        >
-                          Clean-shaven
                         </div>
                       </div>
                     </div>
@@ -659,16 +626,6 @@
                     </select>
                   </div>
 
-                  <div class="customizer-actions">
-                    <button
-                      type="button"
-                      id="dwarf-back"
-                      class="return-button"
-                      data-draggable-id="return-button"
-                    >
-                      <span class="sr-only">Back</span>
-                    </button>
-                  </div>
                 </div>
 
               </div>
@@ -725,8 +682,35 @@
                   aria-hidden="true"
                 ></canvas>
               </div>
+              <div
+                id="dwarf-test-area"
+                class="dwarf-test-area hidden"
+                aria-hidden="true"
+                tabindex="-1"
+                role="group"
+                aria-label="Dwarf test arena"
+              >
+                <canvas
+                  id="dwarf-test-canvas"
+                  class="dwarf-test-canvas"
+                  width="320"
+                  height="220"
+                  aria-hidden="true"
+                ></canvas>
+                <p class="dwarf-test-instructions">
+                  Use the arrow keys or WASD to move your dwarf around the proving grounds.
+                </p>
+              </div>
             </div>
             <div class="customizer-sidebar__actions">
+              <button
+                type="button"
+                id="dwarf-back"
+                class="return-button"
+                data-draggable-id="return-button"
+              >
+                <span class="sr-only">Back</span>
+              </button>
               <button
                 type="button"
                 id="dwarf-randomise"
@@ -743,6 +727,15 @@
                 data-draggable-id="create-button"
               >
                 <span class="sr-only">Begin Expedition</span>
+              </button>
+              <button
+                type="button"
+                id="dwarf-test"
+                class="secondary dwarf-test-button"
+                data-draggable-id="test-button"
+                aria-pressed="false"
+              >
+                Test
               </button>
             </div>
           </aside>
@@ -892,6 +885,54 @@
       </section>
     </div>
 
+    <section
+      id="dwarfhold-screen"
+      class="screen hidden dwarfhold-screen"
+      aria-hidden="true"
+      aria-labelledby="dwarfhold-title"
+      aria-describedby="dwarfhold-description"
+    >
+      <div class="dwarfhold-backdrop" aria-hidden="true"></div>
+      <div class="dwarfhold-panel">
+        <header class="dwarfhold-header">
+          <div class="dwarfhold-titles">
+            <p class="dwarfhold-eyebrow">Embark Site</p>
+            <h2 id="dwarfhold-title">Dwarven Hold Interior</h2>
+            <p id="dwarfhold-subtitle" class="dwarfhold-subtitle"></p>
+          </div>
+          <div class="dwarfhold-actions">
+            <p id="dwarfhold-coordinates" class="dwarfhold-coordinates"></p>
+            <button id="dwarfhold-exit" type="button" class="secondary">
+              Return to World Map
+            </button>
+          </div>
+        </header>
+        <div class="dwarfhold-layout">
+          <div class="dwarfhold-map" role="group" aria-label="Dwarven hold interior map">
+            <canvas
+              id="dwarfhold-canvas"
+              class="dwarfhold-canvas"
+              width="640"
+              height="480"
+              role="img"
+              aria-hidden="true"
+            ></canvas>
+          </div>
+          <aside class="dwarfhold-info" aria-live="polite">
+            <p id="dwarfhold-description" class="dwarfhold-description"></p>
+            <section class="dwarfhold-section" aria-labelledby="dwarfhold-features-title">
+              <h3 id="dwarfhold-features-title" class="dwarfhold-section-title">Notable Features</h3>
+              <ul id="dwarfhold-features" class="dwarfhold-feature-list" aria-live="polite"></ul>
+            </section>
+            <section class="dwarfhold-section" aria-labelledby="dwarfhold-legend-title">
+              <h3 id="dwarfhold-legend-title" class="dwarfhold-section-title">Legend</h3>
+              <ul id="dwarfhold-legend" class="dwarfhold-legend-list"></ul>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <div
       id="loading-screen"
       class="loading-screen hidden"
@@ -920,6 +961,13 @@
     </div>
 
     <audio id="background-music" preload="auto" aria-hidden="true" tabindex="-1"></audio>
+    <audio
+      id="structure-ambience"
+      preload="auto"
+      aria-hidden="true"
+      tabindex="-1"
+      loop
+    ></audio>
     <script src="main.js" type="module"></script>
   </body>
 </html>

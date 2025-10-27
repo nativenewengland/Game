@@ -19,6 +19,7 @@ import {
   registerCustomStructure
 } from './src/assets.js';
 import { clamp } from './src/utils/math.js';
+import { generateDwarfholdMap } from './src/local/dwarfhold-map.js';
 import { elements, getMusicToggleElements, getMusicVolumeInputs, getMusicNowPlayingDisplays } from './src/ui/elements.js';
 import { attachEvents } from './src/ui/events.js';
 
@@ -903,13 +904,53 @@ const dwarfholdPopulationRaceOptions = [
 
 const dwarfholdNearbyTownRadius = 12;
 
-const evilWizardTowerPopulationRaceOptions = [
+const evilWizardTowerBasePopulationOptions = [
   { key: 'wizards', label: 'Wizards', color: '#9c5cff' },
   { key: 'apprentices', label: 'Apprentices', color: '#b389ff' },
-  { key: 'thralls', label: 'Thralls', color: '#646e78' },
-  { key: 'summoned', label: 'Summoned Entities', color: '#ff8ba7' },
-  { key: 'guards', label: 'Enslaved Guards', color: '#f2cd5c' },
-  { key: 'others', label: 'Others', color: '#9e9e9e' }
+  { key: 'attendants', label: 'Attendants', color: '#9e9e9e' }
+];
+
+const evilWizardArchetypes = [
+  {
+    key: 'necromancer',
+    label: 'Necromancer',
+    populationOptions: [
+      { key: 'undead', label: 'Undead Legions', color: '#b1b1b1' },
+      { key: 'graveAcolytes', label: 'Grave Acolytes', color: '#6f7a6b' }
+    ]
+  },
+  {
+    key: 'warlock',
+    label: 'Warlock',
+    populationOptions: [
+      { key: 'demons', label: 'Infernal Servitors', color: '#ff6b6b' },
+      { key: 'cultists', label: 'Fanatical Cultists', color: '#f4a259' }
+    ]
+  },
+  {
+    key: 'artificer',
+    label: 'Artificer',
+    populationOptions: [
+      { key: 'constructs', label: 'Arcane Constructs', color: '#6ca0dc' },
+      { key: 'boundSpirits', label: 'Bound Spirits', color: '#9b5de5' }
+    ]
+  },
+  {
+    key: 'elementalist',
+    label: 'Elementalist',
+    populationOptions: [
+      { key: 'elementals', label: 'Elemental Servitors', color: '#48cae4' },
+      { key: 'planarAllies', label: 'Planar Allies', color: '#ffb347' }
+    ]
+  },
+  {
+    key: 'voidcaller',
+    label: 'Voidcaller',
+    populationOptions: [
+      { key: 'eldritchHorrors', label: 'Eldritch Horrors', color: '#845ec2' },
+      { key: 'shadowbound', label: 'Shadowbound Shades', color: '#3f3d56' }
+    ]
+  }
 ];
 
 const towerCommanderTitles = [
@@ -1871,10 +1912,7 @@ const woodElfGrovePopulationRoleOptions = [
 ];
 
 const lizardmenCityPopulationRoleOptions = [
-  { key: 'skinks', label: 'Skink Artisans', color: '#6bd38f' },
-  { key: 'saurus', label: 'Saurus Cohorts', color: '#3a9f68' },
-  { key: 'priests', label: 'Temple Acolytes', color: '#8cd1c6' },
-  { key: 'beastmasters', label: 'Beastmasters', color: '#b0f0d0' }
+  { key: 'lizardmen', label: 'Lizardmen', color: '#3a9f68' }
 ];
 
 const lizardmenCityPrefixes = ['Ix', 'Zan', 'Tla', 'Chal', 'Maz', 'Quet', 'Ssz', 'Olo', 'Yax', 'Huac'];
@@ -2681,7 +2719,7 @@ function generateDwarfholdPopulationBreakdown(population, random, options = {}) 
   });
 }
 
-function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCount) {
+function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCount, archetype) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const resolvedPopulation = Math.max(0, Math.round(Number.isFinite(population) ? population : 0));
   const resolvedWizardCount = Math.max(
@@ -2693,22 +2731,46 @@ function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCo
   );
   const remainderPopulation = Math.max(0, resolvedPopulation - resolvedWizardCount);
 
-  const remainderBreakdown =
-    remainderPopulation > 0
-      ? generatePopulationBreakdownFromOptions(
-          evilWizardTowerPopulationRaceOptions.slice(1),
-          remainderPopulation,
-          randomFn,
-          {
-            majorityIndex: 1,
-            majorityShareRange: [0.35, 0.6],
-            ensureMajority: true
-          }
-        )
-      : [];
+  const baseOptions = Array.isArray(evilWizardTowerBasePopulationOptions)
+    ? evilWizardTowerBasePopulationOptions
+    : [];
+  const wizardOption = baseOptions[0] || null;
+  const remainderBaseOptions = baseOptions.length > 1 ? baseOptions.slice(1) : [];
+
+  const specializationOptions = Array.isArray(archetype?.populationOptions)
+    ? archetype.populationOptions.filter(
+        (option) =>
+          option &&
+          typeof option.key === 'string' &&
+          option.key &&
+          typeof option.label === 'string' &&
+          option.label.trim()
+      )
+    : [];
+
+  const remainderOptions = [...specializationOptions, ...remainderBaseOptions];
+
+  let remainderBreakdown = [];
+  if (remainderPopulation > 0 && remainderOptions.length > 0) {
+    const shareRange = specializationOptions.length > 0 ? [0.45, 0.7] : [0.35, 0.6];
+    remainderBreakdown = generatePopulationBreakdownFromOptions(
+      remainderOptions,
+      remainderPopulation,
+      randomFn,
+      {
+        majorityIndex: 0,
+        majorityShareRange: shareRange,
+        ensureMajority: true
+      }
+    );
+  }
+
+  if (!wizardOption) {
+    return remainderBreakdown;
+  }
 
   const wizardEntry = {
-    ...evilWizardTowerPopulationRaceOptions[0],
+    ...wizardOption,
     percentage:
       resolvedPopulation === 0
         ? 0
@@ -2720,16 +2782,15 @@ function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCo
     return [wizardEntry];
   }
 
-  return [
-    wizardEntry,
-    ...remainderBreakdown.map((entry) => ({
-      ...entry,
-      percentage:
-        resolvedPopulation === 0
-          ? 0
-          : clamp((entry.population / resolvedPopulation) * 100, 0, 100)
-    }))
-  ];
+  const normalizedRemainder = remainderBreakdown.map((entry) => ({
+    ...entry,
+    percentage:
+      resolvedPopulation === 0
+        ? 0
+        : clamp((entry.population / resolvedPopulation) * 100, 0, 100)
+  }));
+
+  return [wizardEntry, ...normalizedRemainder];
 }
 
 function generateTownPopulationBreakdown(population, random) {
@@ -3143,10 +3204,12 @@ function generateEvilWizardTowerDetails(name, random) {
   const prominentGroup = cabal || null;
   const hallmark = pickRandomFrom(evilWizardTowerHallmarks, randomFn) ||
     'Shrouded in eldritch wards that thrum through the night.';
+  const wizardArchetype = pickRandomFrom(evilWizardArchetypes, randomFn) || null;
   const populationBreakdown = generateEvilWizardTowerPopulationBreakdown(
     population,
     randomFn,
-    resolvedWizardCount
+    resolvedWizardCount,
+    wizardArchetype
   );
 
   return {
@@ -3166,6 +3229,8 @@ function generateEvilWizardTowerDetails(name, random) {
     prominentGroupLabel: 'Dominant Cabal',
     hallmark,
     hallmarkLabel: 'Notorious For',
+    wizardTradition: wizardArchetype ? wizardArchetype.label : null,
+    wizardTraditionLabel: wizardArchetype ? 'Arcane Tradition' : null,
     populationBreakdown
   };
 }
@@ -3302,6 +3367,24 @@ function generateHamletDetails(name, random, options = {}) {
   const hallmark = pickRandomFrom(townHallmarks, randomFn) || baseDetails.hallmark;
   const exportCount = clamp(Math.floor(randomFn() * 2) + 1, 1, townExportOptions.length);
   const majorExports = pickUniqueFrom(townExportOptions, exportCount, randomFn);
+  const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+  let populationBreakdown = baseDetails.populationBreakdown;
+  if (isSnowHamlet) {
+    const humanEntry = Array.isArray(baseDetails.populationBreakdown)
+      ? baseDetails.populationBreakdown.find((entry) => entry && entry.key === 'humans')
+      : null;
+    const humanLabel = (humanEntry && humanEntry.label) || 'Humans';
+    const humanColor = (humanEntry && humanEntry.color) || '#9bb6d8';
+    populationBreakdown = [
+      {
+        key: 'humans',
+        label: humanLabel,
+        color: humanColor,
+        percentage: 100,
+        population: resolvedPopulation
+      }
+    ];
+  }
   return {
     ...baseDetails,
     type: 'village',
@@ -3310,7 +3393,8 @@ function generateHamletDetails(name, random, options = {}) {
     populationDescriptor: 'villagers',
     majorGuilds: [],
     majorExports,
-    hallmark
+    hallmark,
+    populationBreakdown
   };
 }
 
@@ -3959,6 +4043,9 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       case 'town':
         baseRadius = 32;
         break;
+      case 'monastery':
+        baseRadius = 28;
+        break;
       case 'tower':
         baseRadius = 24;
         break;
@@ -3990,6 +4077,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         return `${label} Thanedom`;
       case 'hillhold':
         return `${label} Holdfast`;
+      case 'monastery':
+        return `${label} Cloister`;
       case 'woodElfGrove':
         return `${label} Canopy`;
       case 'lizardmenCity':
@@ -4618,8 +4707,17 @@ const defaultCultureColorByKey = {
   beastmasters: '#b0f0d0',
   wizards: '#9c5cff',
   apprentices: '#b389ff',
-  thralls: '#646e78',
-  summoned: '#ff8ba7',
+  attendants: '#9e9e9e',
+  undead: '#b1b1b1',
+  graveAcolytes: '#6f7a6b',
+  demons: '#ff6b6b',
+  cultists: '#f4a259',
+  constructs: '#6ca0dc',
+  boundSpirits: '#9b5de5',
+  elementals: '#48cae4',
+  planarAllies: '#ffb347',
+  eldritchHorrors: '#845ec2',
+  shadowbound: '#3f3d56',
   guards: '#f2cd5c',
   others: '#9e9e9e'
 };
@@ -4692,6 +4790,48 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
       }
     ];
   }
+  if (type === 'monastery') {
+    return [
+      {
+        key: 'humans',
+        label: 'Humans',
+        percentage: 100,
+        color: defaultCultureColorByKey.humans
+      }
+    ];
+  }
+  if (type === 'saintShrine') {
+    return [
+      {
+        key: 'humans',
+        label: 'Humans',
+        percentage: 100,
+        color: defaultCultureColorByKey.humans
+      }
+    ];
+  }
+  if (type === 'roadsideTavern') {
+    return [
+      {
+        key: 'humans',
+        label: 'Humans',
+        percentage: 65,
+        color: defaultCultureColorByKey.humans
+      },
+      {
+        key: 'dwarves',
+        label: 'Dwarves',
+        percentage: 20,
+        color: defaultCultureColorByKey.dwarves
+      },
+      {
+        key: 'halflings',
+        label: 'Halflings',
+        percentage: 15,
+        color: defaultCultureColorByKey.halflings
+      }
+    ];
+  }
   return null;
 }
 
@@ -4714,6 +4854,10 @@ function resolveFallbackClaimRadius(type) {
       return 26;
     case 'orcCamp':
       return 28;
+    case 'monastery':
+      return 27;
+    case 'roadsideTavern':
+      return 18;
     default:
       return 24;
   }
@@ -4739,6 +4883,10 @@ function resolveCulturalRadiusMultiplier(type) {
       return 1.55;
     case 'orcCamp':
       return 1.75;
+    case 'monastery':
+      return 1.65;
+    case 'roadsideTavern':
+      return 1.25;
     default:
       return 1.6;
   }
@@ -4761,6 +4909,10 @@ function resolveCulturalFalloffPower(type) {
       return 1.42;
     case 'orcCamp':
       return 1.3;
+    case 'monastery':
+      return 1.34;
+    case 'roadsideTavern':
+      return 1.4;
     default:
       return 1.35;
   }
@@ -5031,6 +5183,7 @@ const landMaskCache = new Map();
 
 let loadingProgressValue = 0;
 let loadingProgressIntervalId = null;
+let hasManualLoadingProgress = false;
 
 const state = {
   settings: {
@@ -5069,7 +5222,18 @@ const state = {
     active: false,
     centerX: null,
     centerY: null,
-    bounds: null
+    bounds: null,
+    mode: 'world',
+    customMap: null,
+    structure: null,
+    highResolution: null
+  },
+  dwarfholdView: {
+    active: false,
+    map: null,
+    tileX: null,
+    tileY: null,
+    structure: null
   }
 };
 
@@ -5507,6 +5671,17 @@ const dwarfBodyPortraitState = {
   ctx: null
 };
 
+const dwarfTestState = {
+  canvas: null,
+  ctx: null,
+  active: false,
+  pressed: new Set(),
+  lastFrameTime: null,
+  rafId: null,
+  backgroundOffset: 0,
+  position: { x: 0, y: 0 }
+};
+
 const musicTracks = [
   { title: 'Another Year', src: 'sound/tracks/another_year/AY_Full.ogg' },
   { title: 'Craftsdwarfship', src: 'sound/tracks/craftsdwarfship/CS_Full.ogg' },
@@ -5539,6 +5714,21 @@ const soundEffects = {
     volume: 0.6
   })
 };
+
+const wizardTowerAmbienceTracks = [
+  'sound/ambience/Blizzard.ogg',
+  'sound/ambience/Evil.ogg',
+  'sound/ambience/Glacier.ogg'
+];
+
+const structureAmbienceState = {
+  currentTrack: null
+};
+
+if (elements.structureAmbienceAudio) {
+  elements.structureAmbienceAudio.loop = true;
+  elements.structureAmbienceAudio.volume = clamp(audioState.effectsVolume, 0, 1);
+}
 
 
 
@@ -6889,6 +7079,369 @@ function ensureBodyPortraitContext() {
   return dwarfBodyPortraitState.ctx;
 }
 
+function ensureDwarfTestContext() {
+  const canvas = elements.dwarfTestCanvas || null;
+  if (!canvas) {
+    dwarfTestState.canvas = null;
+    dwarfTestState.ctx = null;
+    return null;
+  }
+  if (canvas !== dwarfTestState.canvas) {
+    const context = canvas.getContext('2d');
+    if (!context) {
+      dwarfTestState.canvas = null;
+      dwarfTestState.ctx = null;
+      return null;
+    }
+    context.imageSmoothingEnabled = true;
+    dwarfTestState.canvas = canvas;
+    dwarfTestState.ctx = context;
+  }
+  return dwarfTestState.ctx;
+}
+
+function updateDwarfTestButtonState() {
+  const button = elements.dwarfTestButton;
+  if (!button) {
+    return;
+  }
+  if (dwarfTestState.active) {
+    button.textContent = 'Close Test';
+    button.setAttribute('aria-pressed', 'true');
+    button.classList.add('active');
+  } else {
+    button.textContent = 'Test';
+    button.setAttribute('aria-pressed', 'false');
+    button.classList.remove('active');
+  }
+}
+
+function getDwarfTestSpriteDimensions(ctx) {
+  const source = elements.dwarfBodyPortraitCanvas;
+  const { canvas } = ctx;
+  const maxHeight = Math.max(70, canvas.height * 0.62);
+  if (!source || source.width === 0 || source.height === 0) {
+    const height = clamp(maxHeight, 70, canvas.height * 0.7);
+    return {
+      width: height * 0.7,
+      height
+    };
+  }
+  const aspectRatio = source.width / source.height;
+  const targetHeight = clamp(maxHeight, 70, Math.min(source.height, canvas.height * 0.7));
+  const targetWidth = targetHeight * aspectRatio;
+  return {
+    width: targetWidth,
+    height: targetHeight
+  };
+}
+
+function getDwarfTestBounds(ctx, spriteDimensions) {
+  const { canvas } = ctx;
+  const paddingX = Math.max(16, canvas.width * 0.06);
+  const paddingY = Math.max(18, canvas.height * 0.1);
+  const minX = paddingX + spriteDimensions.width / 2;
+  const maxX = canvas.width - paddingX - spriteDimensions.width / 2;
+  const groundPadding = Math.max(paddingY, spriteDimensions.height * 0.2);
+  const minY = paddingY + spriteDimensions.height / 2;
+  const maxY = canvas.height - groundPadding;
+  return { minX, maxX, minY, maxY };
+}
+
+function drawDwarfTestBackground(ctx) {
+  const { canvas } = ctx;
+  const { width, height } = canvas;
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, '#101926');
+  gradient.addColorStop(1, '#070c14');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const groundHeight = Math.max(32, Math.round(height * 0.32));
+  const groundY = height - groundHeight;
+  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
+  groundGradient.addColorStop(0, '#1e3a2f');
+  groundGradient.addColorStop(1, '#14261f');
+  ctx.fillStyle = groundGradient;
+  ctx.fillRect(0, groundY, width, groundHeight);
+
+  const stripeSpacing = Math.max(18, Math.round(width / 14));
+  const offset = ((dwarfTestState.backgroundOffset % stripeSpacing) + stripeSpacing) % stripeSpacing;
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = -stripeSpacing + offset; x < width + stripeSpacing; x += stripeSpacing) {
+    ctx.moveTo(x, groundY);
+    ctx.lineTo(x, height);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.beginPath();
+  const horizontalSpacing = Math.max(14, stripeSpacing * 0.6);
+  for (let y = groundY; y < height; y += horizontalSpacing) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+  }
+  ctx.stroke();
+
+  const glowGradient = ctx.createRadialGradient(
+    width / 2,
+    groundY,
+    Math.max(10, width * 0.15),
+    width / 2,
+    groundY,
+    Math.max(60, width * 0.7)
+  );
+  glowGradient.addColorStop(0, 'rgba(88, 137, 196, 0.2)');
+  glowGradient.addColorStop(1, 'rgba(16, 25, 38, 0)');
+  ctx.fillStyle = glowGradient;
+  ctx.fillRect(0, 0, width, height);
+}
+
+function drawDwarfTestCharacter(ctx, spriteDimensions) {
+  const { width, height } = ctx.canvas;
+  const position = dwarfTestState.position;
+  const baseX = clamp(position.x, 0, width);
+  const baseY = clamp(position.y, 0, height);
+
+  const shadowWidth = spriteDimensions.width * 0.6;
+  const shadowHeight = Math.max(6, spriteDimensions.height * 0.18);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(baseX, baseY - 4, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const source = elements.dwarfBodyPortraitCanvas;
+  if (source && source.width > 0 && source.height > 0) {
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(
+      source,
+      baseX - spriteDimensions.width / 2,
+      baseY - spriteDimensions.height,
+      spriteDimensions.width,
+      spriteDimensions.height
+    );
+    ctx.restore();
+    return;
+  }
+
+  ctx.fillStyle = '#d0b89a';
+  ctx.beginPath();
+  ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5b473c';
+  ctx.fillRect(
+    baseX - spriteDimensions.width / 4,
+    baseY - spriteDimensions.height + spriteDimensions.height * 0.2,
+    spriteDimensions.width / 2,
+    spriteDimensions.height * 0.6
+  );
+}
+
+function getDwarfTestDirectionVector() {
+  let dx = 0;
+  let dy = 0;
+  if (dwarfTestState.pressed.has('left')) {
+    dx -= 1;
+  }
+  if (dwarfTestState.pressed.has('right')) {
+    dx += 1;
+  }
+  if (dwarfTestState.pressed.has('up')) {
+    dy -= 1;
+  }
+  if (dwarfTestState.pressed.has('down')) {
+    dy += 1;
+  }
+  if (dx === 0 && dy === 0) {
+    return { dx: 0, dy: 0 };
+  }
+  const length = Math.hypot(dx, dy) || 1;
+  return { dx: dx / length, dy: dy / length };
+}
+
+function updateDwarfTestFrame(timestamp) {
+  if (!dwarfTestState.active) {
+    return;
+  }
+  const ctx = ensureDwarfTestContext();
+  if (!ctx) {
+    closeDwarfTest();
+    return;
+  }
+
+  if (!Number.isFinite(dwarfTestState.lastFrameTime)) {
+    dwarfTestState.lastFrameTime = timestamp;
+  }
+  const deltaMs = timestamp - (dwarfTestState.lastFrameTime || timestamp);
+  const delta = clamp(deltaMs / 1000, 0, 0.1);
+  dwarfTestState.lastFrameTime = timestamp;
+
+  const direction = getDwarfTestDirectionVector();
+  const moveSpeed = 160;
+  const distance = moveSpeed * delta;
+  if (direction.dx !== 0 || direction.dy !== 0) {
+    dwarfTestState.position.x += direction.dx * distance;
+    dwarfTestState.position.y += direction.dy * distance;
+    dwarfTestState.backgroundOffset += direction.dx * distance * 0.6;
+  } else {
+    dwarfTestState.backgroundOffset *= 0.9;
+  }
+
+  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
+  const bounds = getDwarfTestBounds(ctx, spriteDimensions);
+  dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
+  dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
+
+  drawDwarfTestBackground(ctx);
+  drawDwarfTestCharacter(ctx, spriteDimensions);
+
+  dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
+}
+
+function normaliseDwarfTestKey(rawKey) {
+  switch (rawKey) {
+    case 'ArrowUp':
+    case 'Up':
+    case 'w':
+    case 'W':
+      return 'up';
+    case 'ArrowDown':
+    case 'Down':
+    case 's':
+    case 'S':
+      return 'down';
+    case 'ArrowLeft':
+    case 'Left':
+    case 'a':
+    case 'A':
+      return 'left';
+    case 'ArrowRight':
+    case 'Right':
+    case 'd':
+    case 'D':
+      return 'right';
+    default:
+      return null;
+  }
+}
+
+function handleDwarfTestKeyDown(event) {
+  if (!dwarfTestState.active) {
+    return;
+  }
+  const target = event.target;
+  if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+    return;
+  }
+  const key = normaliseDwarfTestKey(event.key);
+  if (!key) {
+    return;
+  }
+  event.preventDefault();
+  dwarfTestState.pressed.add(key);
+}
+
+function handleDwarfTestKeyUp(event) {
+  if (!dwarfTestState.active) {
+    return;
+  }
+  const key = normaliseDwarfTestKey(event.key);
+  if (!key) {
+    return;
+  }
+  event.preventDefault();
+  dwarfTestState.pressed.delete(key);
+}
+
+function resetDwarfTestState() {
+  const ctx = ensureDwarfTestContext();
+  if (!ctx) {
+    return;
+  }
+  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
+  const bounds = getDwarfTestBounds(ctx, spriteDimensions);
+  dwarfTestState.position.x = (bounds.minX + bounds.maxX) / 2;
+  dwarfTestState.position.y = bounds.maxY - Math.max(12, spriteDimensions.height * 0.08);
+  dwarfTestState.backgroundOffset = 0;
+  dwarfTestState.lastFrameTime = null;
+  dwarfTestState.pressed.clear();
+  drawDwarfTestBackground(ctx);
+  drawDwarfTestCharacter(ctx, spriteDimensions);
+}
+
+function openDwarfTest() {
+  const area = elements.dwarfTestArea;
+  if (!area) {
+    return;
+  }
+  if (dwarfTestState.active) {
+    return;
+  }
+  area.classList.remove('hidden');
+  area.setAttribute('aria-hidden', 'false');
+  const ctx = ensureDwarfTestContext();
+  if (!ctx) {
+    area.classList.add('hidden');
+    area.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  dwarfTestState.active = true;
+  resetDwarfTestState();
+  updateDwarfTestButtonState();
+  window.addEventListener('keydown', handleDwarfTestKeyDown);
+  window.addEventListener('keyup', handleDwarfTestKeyUp);
+  dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
+  window.requestAnimationFrame(() => {
+    if (typeof area.focus === 'function') {
+      area.focus();
+    }
+  });
+}
+
+function closeDwarfTest(options = {}) {
+  const { returnFocus = false } = options;
+  if (!dwarfTestState.active) {
+    updateDwarfTestButtonState();
+    if (returnFocus && elements.dwarfTestButton) {
+      elements.dwarfTestButton.focus();
+    }
+    return;
+  }
+  dwarfTestState.active = false;
+  dwarfTestState.pressed.clear();
+  if (dwarfTestState.rafId !== null) {
+    window.cancelAnimationFrame(dwarfTestState.rafId);
+    dwarfTestState.rafId = null;
+  }
+  window.removeEventListener('keydown', handleDwarfTestKeyDown);
+  window.removeEventListener('keyup', handleDwarfTestKeyUp);
+  dwarfTestState.lastFrameTime = null;
+  if (elements.dwarfTestArea) {
+    elements.dwarfTestArea.classList.add('hidden');
+    elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
+  }
+  updateDwarfTestButtonState();
+  if (returnFocus && elements.dwarfTestButton) {
+    elements.dwarfTestButton.focus();
+  }
+}
+
+function toggleDwarfTest() {
+  if (dwarfTestState.active) {
+    closeDwarfTest();
+  } else {
+    openDwarfTest();
+  }
+}
+
+function isDwarfTestActive() {
+  return dwarfTestState.active;
+}
+
 function getBaseBodyFrame(dwarf) {
   const frames = dwarfPortraitConfig.baseFrames;
   const gender = dwarf?.gender;
@@ -7610,6 +8163,7 @@ function updateCustomizerUI() {
   updateDwarfPortrait(dwarf);
   updateDwarfTraitSummary();
   updateRosterList();
+  updateDwarfTestButtonState();
 }
 
 function setActiveDwarf(index) {
@@ -7731,6 +8285,7 @@ function openDwarfCustomizer(options = {}) {
 
 function closeDwarfCustomizer(options = {}) {
   const { keepWorldInfoHidden = false, returnFocus = false } = options;
+  closeDwarfTest();
   if (elements.dwarfCustomizer) {
     elements.dwarfCustomizer.classList.add('hidden');
   }
@@ -8146,7 +8701,17 @@ const localViewConfig = {
   radius: 4,
   baseScale: 3,
   minScale: 2,
-  maxCanvasSize: 768
+  maxCanvasSize: 768,
+  highResolutionTileSubdivisions: 4,
+  highResolutionExtraPadding: 2,
+  highResolutionMinScale: 2,
+  highResolutionMaxTileSize: 28
+};
+
+const dwarfholdScreenConfig = {
+  baseTileSize: 28,
+  minTileSize: 8,
+  maxCanvasSize: 960
 };
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
@@ -8154,6 +8719,243 @@ const localMapDefaultMessage = 'Click the world map to open a local preview.';
 const structureDetailsState = {
   visible: false
 };
+
+function gatherStructureDescriptorInfo(tile) {
+  const descriptors = new Set();
+  const tokens = new Set();
+
+  const addTokenVariant = (token) => {
+    if (!token) {
+      return;
+    }
+    tokens.add(token);
+    if (token.length > 3 && token.endsWith('ies')) {
+      tokens.add(`${token.slice(0, -3)}y`);
+    } else if (token.length > 2 && token.endsWith('es')) {
+      tokens.add(token.slice(0, -2));
+    } else if (token.length > 1 && token.endsWith('s')) {
+      tokens.add(token.slice(0, -1));
+    }
+  };
+
+  const addValue = (value) => {
+    if (!value) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => addValue(item));
+      return;
+    }
+    if (typeof value !== 'string') {
+      return;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return;
+    }
+    const lower = trimmed.toLowerCase();
+    const normalized = lower.replace(/[_-]+/g, ' ');
+    const candidates = [lower, normalized, normalized.replace(/[’']/g, '')];
+    candidates.forEach((candidate) => {
+      if (!candidate) {
+        return;
+      }
+      descriptors.add(candidate);
+      candidate
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .forEach((token) => addTokenVariant(token));
+      const compact = candidate.replace(/\s+/g, '');
+      if (compact) {
+        addTokenVariant(compact);
+      }
+    });
+  };
+
+  if (tile) {
+    addValue(tile.structure);
+    addValue(tile.structureName);
+    addValue(tile.areaName);
+  }
+
+  const details = tile?.structureDetails || {};
+  addValue(details.type);
+  addValue(details.displayType);
+  addValue(details.classification);
+  addValue(details.displayName);
+  addValue(details.label);
+  addValue(details.tags);
+
+  return { descriptors, tokens };
+}
+
+function selectStructureAmbienceTrack(tile) {
+  const { descriptors, tokens } = gatherStructureDescriptorInfo(tile);
+  if (descriptors.size === 0 && tokens.size === 0) {
+    return null;
+  }
+
+  const descriptorList = Array.from(descriptors);
+  const hasDescriptorKeyword = (keywords) => {
+    const keywordList = Array.isArray(keywords) ? keywords : [keywords];
+    return descriptorList.some((descriptor) =>
+      keywordList.some((keyword) => descriptor.includes(keyword))
+    );
+  };
+  const hasAnyToken = (keywords) => {
+    const keywordList = Array.isArray(keywords) ? keywords : [keywords];
+    return keywordList.some((keyword) => tokens.has(keyword));
+  };
+  const hasAllTokens = (keywords) => {
+    const keywordList = Array.isArray(keywords) ? keywords : [keywords];
+    return keywordList.every((keyword) => tokens.has(keyword));
+  };
+
+  const isDwarfhold =
+    hasDescriptorKeyword(['dwarfhold', 'dwarven hold']) ||
+    hasAnyToken(['dwarfhold', 'hillhold']) ||
+    (tokens.has('dwarf') && tokens.has('hold'));
+  if (isDwarfhold) {
+    return 'sound/ambience/Workshop.ogg';
+  }
+
+  const isWoodElfGrove =
+    (hasAllTokens(['wood', 'elf']) && hasAnyToken(['grove'])) ||
+    hasDescriptorKeyword(['wood elf grove', 'woodelfgrove']);
+  if (isWoodElfGrove) {
+    return 'sound/ambience/Forest.ogg';
+  }
+
+  const isCave = hasAnyToken(['cave', 'cavern']);
+  if (isCave) {
+    return 'sound/ambience/Cavern.ogg';
+  }
+
+  const isWizardTower =
+    hasDescriptorKeyword(['evil wizard tower', "evil wizard's tower", 'evil wizards tower']) ||
+    hasAllTokens(['evil', 'wizard', 'tower']);
+  if (isWizardTower) {
+    const randomIndex = Math.floor(Math.random() * wizardTowerAmbienceTracks.length);
+    return wizardTowerAmbienceTracks[randomIndex] || null;
+  }
+
+  const isMonastery = hasDescriptorKeyword(['monaster']) || hasAnyToken(['monastery', 'monastic']);
+  if (isMonastery) {
+    return 'sound/ambience/Good.ogg';
+  }
+
+  const isHamletOrHillock = hasAnyToken(['hamlet', 'hillock']);
+  if (isHamletOrHillock) {
+    return 'sound/ambience/Grasslands.ogg';
+  }
+
+  const isLizardmenCity =
+    hasAnyToken(['lizardmen', 'lizardman', 'lizardfolk']) && hasAnyToken(['city']);
+  if (isLizardmenCity) {
+    return 'sound/ambience/Rainforest.ogg';
+  }
+
+  const isTavern = hasAnyToken(['tavern']);
+  if (isTavern) {
+    return 'sound/ambience/Tavern.ogg';
+  }
+
+  const isCastleOrTown = hasAnyToken(['castle', 'town', 'city']);
+  if (isCastleOrTown) {
+    return 'sound/ambience/Trade_Depot.ogg';
+  }
+
+  return null;
+}
+
+function playStructureAmbienceForTile(tile) {
+  if (!elements.structureAmbienceAudio) {
+    return;
+  }
+  const track = selectStructureAmbienceTrack(tile);
+  if (!track) {
+    stopStructureAmbience();
+    return;
+  }
+
+  const encodedTrack = encodeURI(track);
+  const shouldReload = structureAmbienceState.currentTrack !== encodedTrack;
+  structureAmbienceState.currentTrack = encodedTrack;
+
+  if (shouldReload) {
+    try {
+      elements.structureAmbienceAudio.pause();
+    } catch (error) {
+      /* ignore */
+    }
+    elements.structureAmbienceAudio.src = encodedTrack;
+    elements.structureAmbienceAudio.load();
+  }
+
+  if (audioState.effectsMuted || audioState.effectsVolume <= 0) {
+    return;
+  }
+
+  elements.structureAmbienceAudio.volume = clamp(audioState.effectsVolume, 0, 1);
+  try {
+    elements.structureAmbienceAudio.currentTime = 0;
+  } catch (error) {
+    /* ignore reset errors */
+  }
+  try {
+    const playPromise = elements.structureAmbienceAudio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {
+    /* ignore playback errors */
+  }
+}
+
+function stopStructureAmbience() {
+  if (!elements.structureAmbienceAudio) {
+    return;
+  }
+  structureAmbienceState.currentTrack = null;
+  try {
+    elements.structureAmbienceAudio.pause();
+  } catch (error) {
+    /* ignore */
+  }
+  try {
+    elements.structureAmbienceAudio.currentTime = 0;
+  } catch (error) {
+    /* ignore */
+  }
+}
+
+function updateStructureAmbienceVolume() {
+  if (!elements.structureAmbienceAudio) {
+    return;
+  }
+  const finalVolume = audioState.effectsMuted ? 0 : clamp(audioState.effectsVolume, 0, 1);
+  elements.structureAmbienceAudio.volume = finalVolume;
+  if (finalVolume <= 0) {
+    try {
+      elements.structureAmbienceAudio.pause();
+    } catch (error) {
+      /* ignore */
+    }
+    return;
+  }
+  if (!structureDetailsState.visible || !structureAmbienceState.currentTrack) {
+    return;
+  }
+  try {
+    const playPromise = elements.structureAmbienceAudio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {
+    /* ignore */
+  }
+}
 
 const structureContextMenuState = {
   visible: false,
@@ -8449,6 +9251,190 @@ function getDominantCulturalInfluence(tile) {
   };
 }
 
+function summarizeTileResources(tile) {
+  if (!tile) {
+    return [];
+  }
+
+  const catalog = {
+    forest: ['Hardwood timber', 'Game animals', 'Medicinal herbs'],
+    jungle: ['Rare hardwoods', 'Exotic fruits', 'Alchemical resins'],
+    mountain: ['Metallic ores', 'Quarried stone', 'Crystal seams'],
+    desert: ['Trade spices', 'Glass sands', 'Hidden oasis wells'],
+    badlands: ['Scrap metals', 'Hardy grazing', 'Quartz outcrops'],
+    tundra: ['Fur-bearing fauna', 'Permafrost relics', 'Glacial ice'],
+    grassland: ['Grain harvests', 'Pasture livestock', 'Wildflower dyes'],
+    marsh: ['Peat bogs', 'Reed thickets', 'Bog iron deposits'],
+    ocean: ['Rich fisheries', 'Pearl beds', 'Kelp forests'],
+    lake: ['Freshwater catches', 'Boat timber', 'Shoreline clay']
+  };
+
+  const resources = new Set();
+  const biomeResources = catalog[tile.biomeType];
+  if (Array.isArray(biomeResources)) {
+    biomeResources.forEach((entry) => {
+      if (typeof entry === 'string' && entry.trim()) {
+        resources.add(entry.trim());
+      }
+    });
+  }
+
+  const coastProximity = clamp(Number(tile.coastProximity) || 0, 0, 1);
+  const marshProximity = clamp(Number(tile.marshProximity) || 0, 0, 1);
+  const desertProximity = clamp(Number(tile.desertProximity) || 0, 0, 1);
+  const volcanoProximity = clamp(Number(tile.volcanoProximity) || 0, 0, 1);
+  const canopyDensity = clamp(Number(tile.forestCanopyDensity) || 0, 0, 1);
+  const temperature = clamp(Number(tile.temperature) || 0, 0, 1);
+
+  if (coastProximity >= 0.65 || tile.biomeType === 'ocean' || tile.biomeType === 'lake') {
+    resources.add('Coastal fisheries');
+  }
+  if (marshProximity >= 0.55 && tile.biomeType !== 'marsh') {
+    resources.add('Peat and bog iron');
+  }
+  if (desertProximity >= 0.55 && tile.biomeType !== 'desert') {
+    resources.add('Trade caravans');
+  }
+  if (volcanoProximity >= 0.45) {
+    resources.add('Volcanic glass & obsidian');
+  }
+  if (canopyDensity >= 0.65) {
+    resources.add('Dense lumber stands');
+  }
+  if (temperature <= 0.25 && tile.biomeType !== 'tundra') {
+    resources.add('Fur-bearing game');
+  }
+
+  return Array.from(resources).slice(0, 5);
+}
+
+function describeTileClimate(tile) {
+  if (!tile) {
+    return null;
+  }
+
+  const temperature = clamp(Number(tile.temperature) || 0, 0, 1);
+  const moisture = clamp(Number(tile.moisture) || 0, 0, 1);
+
+  const temperatureBands = [
+    { threshold: 0.18, label: 'Polar chill' },
+    { threshold: 0.32, label: 'Cold climate' },
+    { threshold: 0.48, label: 'Cool climate' },
+    { threshold: 0.68, label: 'Temperate climate' },
+    { threshold: 0.85, label: 'Warm climate' },
+    { threshold: Infinity, label: 'Tropical heat' }
+  ];
+
+  const moistureBands = [
+    { threshold: 0.18, label: 'parched air' },
+    { threshold: 0.32, label: 'dry winds' },
+    { threshold: 0.52, label: 'balanced rainfall' },
+    { threshold: 0.7, label: 'humid air' },
+    { threshold: 0.85, label: 'wet seasons' },
+    { threshold: Infinity, label: 'waterlogged ground' }
+  ];
+
+  const resolveBandLabel = (bands, value) => {
+    for (let i = 0; i < bands.length; i += 1) {
+      if (value <= bands[i].threshold) {
+        return bands[i].label;
+      }
+    }
+    return null;
+  };
+
+  const temperatureLabel = resolveBandLabel(temperatureBands, temperature);
+  const moistureLabel = resolveBandLabel(moistureBands, moisture);
+
+  if (!temperatureLabel && !moistureLabel) {
+    return null;
+  }
+
+  const qualifiers = [];
+  const coastProximity = clamp(Number(tile.coastProximity) || 0, 0, 1);
+  const marshProximity = clamp(Number(tile.marshProximity) || 0, 0, 1);
+  const volcanoProximity = clamp(Number(tile.volcanoProximity) || 0, 0, 1);
+  const desertProximity = clamp(Number(tile.desertProximity) || 0, 0, 1);
+
+  if (coastProximity >= 0.65) {
+    qualifiers.push('coastal breezes');
+  }
+  if (desertProximity >= 0.55 && moisture < 0.4) {
+    qualifiers.push('dry trade winds');
+  }
+  if (marshProximity >= 0.6) {
+    qualifiers.push('lowland mists');
+  }
+  if (volcanoProximity >= 0.45) {
+    qualifiers.push('volcanic warmth');
+  }
+
+  const climateParts = [];
+  if (temperatureLabel) {
+    climateParts.push(temperatureLabel);
+  }
+  if (moistureLabel) {
+    climateParts.push(`with ${moistureLabel}`);
+  }
+
+  let description = climateParts.join(' ');
+  if (qualifiers.length > 0) {
+    description += ` (${formatListWithConjunction(qualifiers)})`;
+  }
+
+  return description;
+}
+
+function derivePopulationGroupsFromCulture(tile) {
+  if (!tile || !tile.culturalInfluence || !Array.isArray(tile.culturalInfluence.breakdown)) {
+    return { major: null, minor: null };
+  }
+
+  const breakdown = tile.culturalInfluence.breakdown
+    .map((entry) => {
+      if (!entry) {
+        return null;
+      }
+      const share = clamp(Number(entry.share) || 0, 0, 1);
+      if (share <= 0) {
+        return null;
+      }
+      const label =
+        typeof entry.label === 'string' && entry.label.trim()
+          ? entry.label.trim()
+          : formatCultureLabel(entry.key);
+      return { label, share };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.share - a.share);
+
+  if (breakdown.length === 0) {
+    return { major: null, minor: null };
+  }
+
+  const majors = [];
+  const minors = [];
+
+  breakdown.forEach((entry, index) => {
+    const percentage = Math.round(entry.share * 100);
+    const display = percentage >= 5 ? `${entry.label} (${percentage}%)` : entry.label;
+    if (index === 0 || entry.share >= 0.22 || (majors.length < 2 && entry.share >= 0.16)) {
+      majors.push(display);
+    } else if (entry.share >= 0.08 || minors.length < 2) {
+      minors.push(display);
+    }
+  });
+
+  if (majors.length === 0 && minors.length > 0) {
+    majors.push(minors.shift());
+  }
+
+  return {
+    major: majors.length > 0 ? formatListWithConjunction(majors) : null,
+    minor: minors.length > 0 ? formatListWithConjunction(minors) : null
+  };
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile) {
     return null;
@@ -8471,11 +9457,44 @@ function buildStructureTooltipContent(tile) {
       return null;
     }
     const sections = [`<div class="tooltip-title">${escapeHtml(resolvedTitle)}</div>`];
+    const entries = [];
     if (biomeLabel) {
-      const listItems =
-        `<li><span class="tooltip-term">Biome</span><span class="tooltip-value">${escapeHtml(biomeLabel)}</span></li>`;
+      entries.push({ label: 'Biome', value: biomeLabel });
+    }
+
+    const climateDescription = describeTileClimate(tile);
+    if (climateDescription) {
+      entries.push({ label: 'Climate', value: climateDescription });
+    }
+
+    const resourceSummary = summarizeTileResources(tile);
+    if (resourceSummary.length > 0) {
+      const formattedResources = formatListWithConjunction(resourceSummary);
+      if (formattedResources) {
+        entries.push({ label: 'Resources', value: formattedResources });
+      }
+    }
+
+    const populationGroups = derivePopulationGroupsFromCulture(tile);
+    if (populationGroups.major) {
+      entries.push({ label: 'Major Population Groups', value: populationGroups.major });
+    }
+    if (populationGroups.minor) {
+      entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
+    }
+
+    if (entries.length > 0) {
+      const listItems = entries
+        .map(
+          ({ label, value }) =>
+            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+              value
+            )}</span></li>`
+        )
+        .join('');
       sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
     }
+
     return sections.join('');
   }
 
@@ -8536,6 +9555,11 @@ function buildStructureTooltipContent(tile) {
     if (prominentGroup) {
       const prominentLabel = details.prominentGroupLabel || (details.prominentClan ? 'Prominent Clan' : 'Prominent Group');
       entries.push({ label: prominentLabel, value: prominentGroup });
+    }
+
+    if (details.wizardTradition) {
+      const traditionLabel = details.wizardTraditionLabel || 'Arcane Tradition';
+      entries.push({ label: traditionLabel, value: details.wizardTradition });
     }
 
     if (Array.isArray(details.majorClans) && details.majorClans.length > 0) {
@@ -8754,14 +9778,359 @@ function resolveLocalSubtitle(tile) {
   return subtitleParts.length > 0 ? subtitleParts.join(' • ') : 'Local terrain preview';
 }
 
+function renderDwarfholdScreen() {
+  const view = state.dwarfholdView;
+  const customMap = view && view.active ? view.map : null;
+
+  if (elements.dwarfholdScreen) {
+    if (view && view.active) {
+      elements.dwarfholdScreen.setAttribute('aria-hidden', 'false');
+    } else {
+      elements.dwarfholdScreen.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  if (!customMap) {
+    if (elements.dwarfholdTitle) {
+      elements.dwarfholdTitle.textContent = 'Dwarven Hold Interior';
+    }
+    if (elements.dwarfholdSubtitle) {
+      elements.dwarfholdSubtitle.textContent = '';
+    }
+    if (elements.dwarfholdDescription) {
+      elements.dwarfholdDescription.textContent = '';
+    }
+    if (elements.dwarfholdCoordinates) {
+      elements.dwarfholdCoordinates.textContent = '';
+    }
+    if (elements.dwarfholdFeatures) {
+      elements.dwarfholdFeatures.innerHTML = '';
+    }
+    if (elements.dwarfholdLegend) {
+      elements.dwarfholdLegend.innerHTML = '';
+    }
+    if (elements.dwarfholdCanvas) {
+      const canvas = elements.dwarfholdCanvas;
+      const ctx = canvas.getContext('2d');
+      canvas.setAttribute('aria-hidden', 'true');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+      }
+    }
+    return;
+  }
+
+  const structure = view.structure;
+  const resolvedTitle =
+    customMap.title ||
+    (structure?.structureName || structure?.areaName || structure?.structureDetails?.displayType || 'Dwarven Hold Interior');
+  if (elements.dwarfholdTitle) {
+    elements.dwarfholdTitle.textContent = resolvedTitle;
+  }
+
+  const resolvedSubtitle =
+    customMap.subtitle ||
+    (structure?.structureDetails?.displayType
+      ? `${structure.structureDetails.displayType} interior`
+      : 'Subterranean stronghold overview');
+  if (elements.dwarfholdSubtitle) {
+    elements.dwarfholdSubtitle.textContent = resolvedSubtitle;
+  }
+
+  if (elements.dwarfholdDescription) {
+    elements.dwarfholdDescription.textContent = customMap.description || '';
+  }
+
+  if (elements.dwarfholdCoordinates) {
+    if (Number.isFinite(view.tileX) && Number.isFinite(view.tileY)) {
+      const baseLabel = `World Tile ${view.tileX + 1}, ${view.tileY + 1}`;
+      const sizeLabel =
+        Number.isFinite(customMap.width) && Number.isFinite(customMap.height)
+          ? ` — ${customMap.width}×${customMap.height} tiles`
+          : '';
+      elements.dwarfholdCoordinates.textContent = `${baseLabel}${sizeLabel}`;
+    } else {
+      elements.dwarfholdCoordinates.textContent = '';
+    }
+  }
+
+  if (elements.dwarfholdFeatures) {
+    elements.dwarfholdFeatures.innerHTML = '';
+    const featureList = Array.isArray(customMap.features) ? customMap.features : [];
+    if (featureList.length === 0) {
+      const emptyItem = document.createElement('li');
+      emptyItem.className = 'dwarfhold-feature-item dwarfhold-feature-item--empty';
+      emptyItem.textContent = 'No notable features recorded.';
+      elements.dwarfholdFeatures.appendChild(emptyItem);
+    } else {
+      featureList.forEach((feature) => {
+        const item = document.createElement('li');
+        item.className = 'dwarfhold-feature-item';
+        item.textContent = feature;
+        elements.dwarfholdFeatures.appendChild(item);
+      });
+    }
+  }
+
+  if (elements.dwarfholdLegend) {
+    elements.dwarfholdLegend.innerHTML = '';
+    const rawEntries = customMap.legend && typeof customMap.legend === 'object' ? customMap.legend : {};
+    const legendEntries = Object.entries(rawEntries).sort((a, b) => {
+      if (a[0] === 'rock') {
+        return b[0] === 'rock' ? 0 : 1;
+      }
+      if (b[0] === 'rock') {
+        return -1;
+      }
+      const labelA = typeof a[1]?.label === 'string' ? a[1].label : a[0];
+      const labelB = typeof b[1]?.label === 'string' ? b[1].label : b[0];
+      return labelA.localeCompare(labelB, undefined, { sensitivity: 'base' });
+    });
+
+    legendEntries.forEach(([type, definition]) => {
+      if (!definition) {
+        return;
+      }
+      const item = document.createElement('li');
+      item.className = 'dwarfhold-legend-item';
+
+      const swatch = document.createElement('span');
+      swatch.className = 'dwarfhold-legend-swatch';
+      swatch.style.backgroundColor = definition.color || '#1f2937';
+      swatch.style.backgroundImage = 'none';
+      swatch.style.backgroundSize = '';
+      swatch.style.borderColor = definition.borderColor || 'rgba(255, 255, 255, 0.18)';
+      if (definition.texture === 'speckled' && definition.accent) {
+        swatch.style.backgroundImage = `radial-gradient(${definition.accent} 18%, transparent 20%)`;
+        swatch.style.backgroundSize = '12px 12px';
+      }
+
+      const text = document.createElement('div');
+      text.className = 'dwarfhold-legend-text';
+
+      const label = document.createElement('p');
+      label.className = 'dwarfhold-legend-label';
+      label.textContent = definition.label || type;
+      text.appendChild(label);
+
+      const descriptionText = definition.description || definition.examples || null;
+      if (descriptionText) {
+        const description = document.createElement('p');
+        description.className = 'dwarfhold-legend-description';
+        description.textContent = descriptionText;
+        text.appendChild(description);
+      }
+
+      item.appendChild(swatch);
+      item.appendChild(text);
+      elements.dwarfholdLegend.appendChild(item);
+    });
+  }
+
+  const canvas = elements.dwarfholdCanvas;
+  if (canvas) {
+    const context = canvas.getContext('2d');
+    const tiles = Array.isArray(customMap.tiles) ? customMap.tiles : null;
+    const mapHeight = tiles ? tiles.length : 0;
+    const mapWidth = mapHeight > 0 && Array.isArray(tiles[0]) ? tiles[0].length : 0;
+
+    if (!context || !tiles || mapWidth === 0 || mapHeight === 0) {
+      canvas.setAttribute('aria-hidden', 'true');
+      if (context) {
+        context.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+      }
+      return;
+    }
+
+    let tilePixelSize = dwarfholdScreenConfig.baseTileSize;
+    const maxSize = dwarfholdScreenConfig.maxCanvasSize;
+    while (
+      (mapWidth * tilePixelSize > maxSize || mapHeight * tilePixelSize > maxSize) &&
+      tilePixelSize > dwarfholdScreenConfig.minTileSize
+    ) {
+      tilePixelSize -= 2;
+    }
+    if (!Number.isFinite(tilePixelSize) || tilePixelSize < dwarfholdScreenConfig.minTileSize) {
+      tilePixelSize = dwarfholdScreenConfig.minTileSize;
+    }
+
+    const destWidth = Math.max(1, Math.round(mapWidth * tilePixelSize));
+    const destHeight = Math.max(1, Math.round(mapHeight * tilePixelSize));
+    canvas.width = destWidth;
+    canvas.height = destHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.setAttribute(
+      'aria-label',
+      `Interior map for ${customMap.title || 'the dwarfhold'} covering ${mapWidth} by ${mapHeight} tiles.`
+    );
+    canvas.setAttribute('aria-hidden', 'false');
+
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, destWidth, destHeight);
+    context.fillStyle = '#05060b';
+    context.fillRect(0, 0, destWidth, destHeight);
+
+    const palette = customMap.legend || {};
+    for (let y = 0; y < mapHeight; y += 1) {
+      const row = Array.isArray(tiles[y]) ? tiles[y] : null;
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        const cell = row[x];
+        const type = typeof cell === 'string' ? cell : typeof cell?.type === 'string' ? cell.type : 'rock';
+        const definition = palette[type] || palette.rock || { color: '#1f2937' };
+        context.fillStyle = definition.color || '#1f2937';
+        context.fillRect(x * tilePixelSize, y * tilePixelSize, tilePixelSize, tilePixelSize);
+
+        if (definition.texture === 'speckled') {
+          context.save();
+          context.fillStyle = definition.accent || 'rgba(255, 255, 255, 0.08)';
+          const dot = Math.max(1, Math.round(tilePixelSize * 0.18));
+          for (let offsetY = dot; offsetY < tilePixelSize; offsetY += dot * 2) {
+            for (let offsetX = dot; offsetX < tilePixelSize; offsetX += dot * 2) {
+              context.fillRect(
+                x * tilePixelSize + offsetX - dot / 2,
+                y * tilePixelSize + offsetY - dot / 2,
+                dot,
+                dot
+              );
+            }
+          }
+          context.restore();
+        }
+
+        if (definition.borderColor) {
+          context.save();
+          context.strokeStyle = definition.borderColor;
+          context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
+          context.strokeRect(
+            x * tilePixelSize + context.lineWidth / 2,
+            y * tilePixelSize + context.lineWidth / 2,
+            tilePixelSize - context.lineWidth,
+            tilePixelSize - context.lineWidth
+          );
+          context.restore();
+        }
+      }
+    }
+
+    if (Array.isArray(customMap.markers)) {
+      customMap.markers.forEach((marker) => {
+        if (!Number.isFinite(marker?.x) || !Number.isFinite(marker?.y)) {
+          return;
+        }
+        const centerX = (marker.x + 0.5) * tilePixelSize;
+        const centerY = (marker.y + 0.5) * tilePixelSize;
+        const radius = Math.max(2, tilePixelSize * (Number(marker.radius) || 0.32));
+        context.save();
+        if (marker.shadowColor) {
+          context.fillStyle = marker.shadowColor;
+          context.globalAlpha = 0.35;
+          context.beginPath();
+          context.arc(centerX, centerY, radius * 1.45, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.globalAlpha = 1;
+        context.fillStyle = marker.color || '#facc15';
+        context.beginPath();
+        context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        context.fill();
+        if (marker.stroke) {
+          context.strokeStyle = marker.stroke;
+          context.lineWidth = Math.max(1, tilePixelSize * 0.12);
+          context.stroke();
+        }
+        context.restore();
+      });
+    }
+
+    context.save();
+    context.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+    context.lineWidth = 1;
+    for (let x = 1; x < mapWidth; x += 1) {
+      const px = Math.round(x * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(px, 0);
+      context.lineTo(px, destHeight);
+      context.stroke();
+    }
+    for (let y = 1; y < mapHeight; y += 1) {
+      const py = Math.round(y * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(0, py);
+      context.lineTo(destWidth, py);
+      context.stroke();
+    }
+    context.restore();
+  }
+}
+
+function openDwarfholdScreen() {
+  if (elements.gameContainer) {
+    elements.gameContainer.classList.add('hidden');
+    elements.gameContainer.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.localMapPanel) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.dwarfholdScreen) {
+    elements.dwarfholdScreen.classList.remove('hidden');
+    elements.dwarfholdScreen.setAttribute('aria-hidden', 'false');
+  }
+  renderDwarfholdScreen();
+  if (elements.dwarfholdExit) {
+    const focusTarget = elements.dwarfholdExit;
+    const focusElement = () => {
+      if (typeof focusTarget.focus === 'function') {
+        focusTarget.focus();
+      }
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(focusElement);
+    } else {
+      focusElement();
+    }
+  }
+}
+
+function closeDwarfholdScreen(options = {}) {
+  const { returnFocus = false } = options;
+  if (elements.dwarfholdScreen) {
+    elements.dwarfholdScreen.classList.add('hidden');
+    elements.dwarfholdScreen.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.dwarfholdCanvas) {
+    elements.dwarfholdCanvas.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.gameContainer) {
+    elements.gameContainer.classList.remove('hidden');
+    elements.gameContainer.setAttribute('aria-hidden', 'false');
+  }
+  if (returnFocus && elements.canvasWrapper) {
+    elements.canvasWrapper.focus();
+  }
+}
+
 function refreshLocalMapPreview() {
   if (!elements.localMapPanel || !elements.localMapCanvas) {
     return;
   }
   const world = state.currentWorld;
   const localView = state.localView;
+  const worldHasTiles = Array.isArray(world?.tiles) && world.tiles.length > 0;
+
+  if (state.dwarfholdView && state.dwarfholdView.active) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+    elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    renderDwarfholdScreen();
+    return;
+  }
+
   if (
-    !world ||
     !localView ||
     !localView.active ||
     localView.centerX === null ||
@@ -8788,17 +10157,289 @@ function refreshLocalMapPreview() {
     return;
   }
 
-  const tiles = Array.isArray(world.tiles) ? world.tiles : null;
-  if (!tiles || tiles.length === 0) {
+  const focusTile =
+    worldHasTiles && Array.isArray(world.tiles[localView.centerY])
+      ? world.tiles[localView.centerY][localView.centerX] || null
+      : null;
+
+  if (localView.mode === 'worldHighRes' && localView.highResolution) {
+    const patch = localView.highResolution;
+    const canvas = elements.localMapCanvas;
+    const context = canvas ? canvas.getContext('2d') : null;
+    if (!canvas || !context) {
+      return;
+    }
+
+    elements.localMapPanel.classList.remove('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'false');
+
+    if (elements.localMapTitle) {
+      elements.localMapTitle.textContent = focusTile
+        ? focusTile.structureName || focusTile.areaName || 'Local View'
+        : 'Local View';
+    }
+
+    if (elements.localMapSubtitle) {
+      elements.localMapSubtitle.textContent = 'High-resolution terrain sample';
+    }
+
+    if (elements.localMapCoordinates) {
+      const sourceLabel = `${patch.worldWidth}×${patch.worldHeight}`;
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+        patch.width
+      }×${patch.height} tiles (sampled from ${sourceLabel})`;
+    }
+
+    if (elements.localMapDetails) {
+      const tooltipContent = buildStructureTooltipContent(focusTile);
+      if (tooltipContent) {
+        elements.localMapDetails.innerHTML = tooltipContent;
+      } else {
+        elements.localMapDetails.textContent = localMapDefaultMessage;
+      }
+    }
+
+    const maxSize = localViewConfig.maxCanvasSize;
+    const maxTileSize = Number.isFinite(localViewConfig.highResolutionMaxTileSize)
+      ? Math.max(4, Math.floor(localViewConfig.highResolutionMaxTileSize))
+      : 24;
+    let tilePixelSize = maxTileSize;
+    const minTileSize = Number.isFinite(localViewConfig.highResolutionMinScale)
+      ? Math.max(2, Math.floor(localViewConfig.highResolutionMinScale))
+      : 2;
+    while (
+      (patch.width * tilePixelSize > maxSize || patch.height * tilePixelSize > maxSize) &&
+      tilePixelSize > minTileSize
+    ) {
+      tilePixelSize -= 1;
+    }
+    if (patch.width * tilePixelSize > maxSize || patch.height * tilePixelSize > maxSize) {
+      const fallbackSize = Math.floor(maxSize / Math.max(patch.width, patch.height));
+      tilePixelSize = Math.max(minTileSize, fallbackSize);
+    }
+    tilePixelSize = Math.max(minTileSize, tilePixelSize);
+
+    const destWidth = Math.max(1, patch.width * tilePixelSize);
+    const destHeight = Math.max(1, patch.height * tilePixelSize);
+    canvas.width = destWidth;
+    canvas.height = destHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.setAttribute(
+      'aria-label',
+      `High-resolution local preview covering ${patch.width} by ${patch.height} tiles around world tile ${
+        localView.centerX + 1
+      }, ${localView.centerY + 1}.`
+    );
+    canvas.setAttribute('aria-hidden', 'false');
+
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, destWidth, destHeight);
+    context.fillStyle = '#05060b';
+    context.fillRect(0, 0, destWidth, destHeight);
+
+    drawHighResolutionLocalPatch(context, patch, tilePixelSize, {
+      highlightX: patch.centerX,
+      highlightY: patch.centerY
+    });
+
     return;
   }
 
-  const centerRow = tiles[localView.centerY];
-  if (!Array.isArray(centerRow)) {
+  if (localView.mode === 'dwarfhold' && localView.customMap) {
+    const customMap = localView.customMap;
+    const tiles = Array.isArray(customMap?.tiles) ? customMap.tiles : null;
+    const mapHeight = tiles ? tiles.length : 0;
+    const mapWidth = mapHeight > 0 && Array.isArray(tiles[0]) ? tiles[0].length : 0;
+    const canvas = elements.localMapCanvas;
+    const context = canvas ? canvas.getContext('2d') : null;
+    if (!tiles || mapWidth === 0 || mapHeight === 0 || !canvas || !context) {
+      return;
+    }
+
+    elements.localMapPanel.classList.remove('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'false');
+
+    if (elements.localMapTitle) {
+      elements.localMapTitle.textContent =
+        customMap.title || focusTile?.structureName || focusTile?.areaName || 'Dwarven Hold Interior';
+    }
+
+    if (elements.localMapSubtitle) {
+      const subtitle =
+        customMap.subtitle ||
+        (focusTile?.structureDetails?.displayType
+          ? `${focusTile.structureDetails.displayType} interior`
+          : 'Subterranean quarters of the hold');
+      elements.localMapSubtitle.textContent = subtitle;
+    }
+
+    if (elements.localMapCoordinates) {
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+        mapWidth
+      }×${mapHeight} tiles`;
+    }
+
+    if (elements.localMapDetails) {
+      const sections = [];
+      if (customMap.description) {
+        sections.push(`<p class="tooltip-note">${escapeHtml(customMap.description)}</p>`);
+      }
+      if (Array.isArray(customMap.features) && customMap.features.length > 0) {
+        const list = customMap.features
+          .map((feature) => `<li>${escapeHtml(feature)}</li>`)
+          .join('');
+        sections.push(`<ul class="tooltip-list">${list}</ul>`);
+      }
+      if (customMap.legend && typeof customMap.legend === 'object') {
+        const legendEntries = Object.entries(customMap.legend)
+          .filter(([type, definition]) => type !== 'rock' && definition && definition.label)
+          .map(([type, definition]) => {
+            const description = definition.description || definition.examples || type;
+            return `<li><span class="tooltip-term">${escapeHtml(definition.label)}</span><span class="tooltip-value">${escapeHtml(description)}</span></li>`;
+          });
+        if (legendEntries.length > 0) {
+          sections.push(`<ul class="tooltip-list">${legendEntries.join('')}</ul>`);
+        }
+      }
+      if (sections.length > 0) {
+        elements.localMapDetails.innerHTML = sections.join('');
+      } else {
+        elements.localMapDetails.textContent = localMapDefaultMessage;
+      }
+    }
+
+    const maxSize = localViewConfig.maxCanvasSize;
+    let tilePixelSize = 24;
+    while ((mapWidth * tilePixelSize > maxSize || mapHeight * tilePixelSize > maxSize) && tilePixelSize > 8) {
+      tilePixelSize -= 2;
+    }
+    if (mapWidth * tilePixelSize > maxSize || mapHeight * tilePixelSize > maxSize) {
+      const fallbackSize = Math.floor(maxSize / Math.max(mapWidth, mapHeight));
+      if (Number.isFinite(fallbackSize) && fallbackSize > 0) {
+        tilePixelSize = Math.max(6, Math.min(tilePixelSize, fallbackSize));
+      }
+    }
+    if (!Number.isFinite(tilePixelSize) || tilePixelSize < 6) {
+      tilePixelSize = 6;
+    }
+
+    const destWidth = Math.max(1, mapWidth * tilePixelSize);
+    const destHeight = Math.max(1, mapHeight * tilePixelSize);
+    canvas.width = destWidth;
+    canvas.height = destHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.setAttribute(
+      'aria-label',
+      `Procedural dwarfhold interior covering ${mapWidth} by ${mapHeight} tiles at world tile ${
+        localView.centerX + 1
+      }, ${localView.centerY + 1}.`
+    );
+    canvas.setAttribute('aria-hidden', 'false');
+
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, destWidth, destHeight);
+    context.fillStyle = '#05060b';
+    context.fillRect(0, 0, destWidth, destHeight);
+
+    const palette = customMap.legend || {};
+    for (let y = 0; y < mapHeight; y += 1) {
+      const row = Array.isArray(tiles[y]) ? tiles[y] : null;
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        const cell = row[x];
+        const type = typeof cell === 'string' ? cell : typeof cell?.type === 'string' ? cell.type : 'rock';
+        const definition = palette[type] || palette.rock || { color: '#1f2937' };
+        context.fillStyle = definition.color || '#1f2937';
+        context.fillRect(x * tilePixelSize, y * tilePixelSize, tilePixelSize, tilePixelSize);
+
+        if (definition.texture === 'speckled') {
+          context.save();
+          context.fillStyle = definition.accent || 'rgba(255, 255, 255, 0.08)';
+          const dot = Math.max(1, Math.round(tilePixelSize * 0.18));
+          for (let offsetY = dot; offsetY < tilePixelSize; offsetY += dot * 2) {
+            for (let offsetX = dot; offsetX < tilePixelSize; offsetX += dot * 2) {
+              context.fillRect(x * tilePixelSize + offsetX - dot / 2, y * tilePixelSize + offsetY - dot / 2, dot, dot);
+            }
+          }
+          context.restore();
+        }
+
+        if (definition.borderColor) {
+          context.save();
+          context.strokeStyle = definition.borderColor;
+          context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
+          context.strokeRect(
+            x * tilePixelSize + context.lineWidth / 2,
+            y * tilePixelSize + context.lineWidth / 2,
+            tilePixelSize - context.lineWidth,
+            tilePixelSize - context.lineWidth
+          );
+          context.restore();
+        }
+      }
+    }
+
+    if (Array.isArray(customMap.markers)) {
+      customMap.markers.forEach((marker) => {
+        if (!Number.isFinite(marker?.x) || !Number.isFinite(marker?.y)) {
+          return;
+        }
+        const centerX = (marker.x + 0.5) * tilePixelSize;
+        const centerY = (marker.y + 0.5) * tilePixelSize;
+        const radius = Math.max(2, tilePixelSize * (Number(marker.radius) || 0.32));
+        context.save();
+        if (marker.shadowColor) {
+          context.fillStyle = marker.shadowColor;
+          context.globalAlpha = 0.35;
+          context.beginPath();
+          context.arc(centerX, centerY, radius * 1.45, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.globalAlpha = 1;
+        context.fillStyle = marker.color || '#facc15';
+        context.beginPath();
+        context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        context.fill();
+        if (marker.stroke) {
+          context.strokeStyle = marker.stroke;
+          context.lineWidth = Math.max(1, tilePixelSize * 0.12);
+          context.stroke();
+        }
+        context.restore();
+      });
+    }
+
+    context.save();
+    context.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+    context.lineWidth = 1;
+    for (let x = 1; x < mapWidth; x += 1) {
+      const px = Math.round(x * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(px, 0);
+      context.lineTo(px, destHeight);
+      context.stroke();
+    }
+    for (let y = 1; y < mapHeight; y += 1) {
+      const py = Math.round(y * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(0, py);
+      context.lineTo(destWidth, py);
+      context.stroke();
+    }
+    context.restore();
+
     return;
   }
 
-  const focusTile = centerRow[localView.centerX] || null;
+  if (!worldHasTiles) {
+    return;
+  }
+
+  const tiles = world.tiles;
   const bounds = localView.bounds;
   const tileWidth = Math.max(1, bounds.width);
   const tileHeight = Math.max(1, bounds.height);
@@ -8914,10 +10555,20 @@ function refreshLocalMapPreview() {
 }
 
 function hideLocalView(options = {}) {
+  const { suppressRedraw = false, returnFocus = false } = options;
   state.localView.active = false;
   state.localView.centerX = null;
   state.localView.centerY = null;
   state.localView.bounds = null;
+  state.localView.mode = 'world';
+  state.localView.customMap = null;
+  state.localView.structure = null;
+  state.localView.highResolution = null;
+  state.dwarfholdView.active = false;
+  state.dwarfholdView.map = null;
+  state.dwarfholdView.tileX = null;
+  state.dwarfholdView.tileY = null;
+  state.dwarfholdView.structure = null;
   if (elements.localMapPanel) {
     elements.localMapPanel.classList.add('hidden');
     elements.localMapPanel.setAttribute('aria-hidden', 'true');
@@ -8938,8 +10589,732 @@ function hideLocalView(options = {}) {
   if (elements.localMapCoordinates) {
     elements.localMapCoordinates.textContent = '';
   }
-  if (!options.suppressRedraw && state.currentWorld) {
+  renderDwarfholdScreen();
+  closeDwarfholdScreen({ returnFocus });
+  if (!suppressRedraw && state.currentWorld) {
     drawWorld(state.currentWorld, { preserveView: true });
+  }
+}
+
+function cloneTileForHighResolution(tile) {
+  if (!tile || typeof tile !== 'object') {
+    return tile || null;
+  }
+
+  const clone = { ...tile };
+  if (tile.river && typeof tile.river === 'object') {
+    clone.river = { ...tile.river };
+  }
+  if (tile.road && typeof tile.road === 'object') {
+    clone.road = { ...tile.road };
+  }
+  if (tile.structureDetails && typeof tile.structureDetails === 'object') {
+    clone.structureDetails = { ...tile.structureDetails };
+  }
+  if (Array.isArray(tile.features)) {
+    clone.features = tile.features.slice();
+  }
+  return clone;
+}
+
+function hashString32(value) {
+  if (typeof value !== 'string') {
+    value = JSON.stringify(value);
+  }
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+    hash >>>= 0;
+  }
+  return hash >>> 0;
+}
+
+function createDeterministicNoiseSampler(seedValue) {
+  const baseSeed = hashString32(seedValue || 'local');
+  return (x, y, channel = 0) => {
+    let state = baseSeed;
+    state ^= Math.imul(0x45d9f3b, x + 0x9e3779b9);
+    state ^= Math.imul(0x632be5ab, y + 0x9e3779b9);
+    state ^= Math.imul(0x27d4eb2d, channel + 0x9e3779b9);
+    state = Math.imul(state ^ (state >>> 15), 1 | state);
+    state ^= state + Math.imul(state ^ (state >>> 7), 61 | state);
+    state ^= state >>> 14;
+    return (state >>> 0) / 4294967296;
+  };
+}
+
+function getWorldTileAt(tiles, width, height, x, y) {
+  if (!Array.isArray(tiles) || width <= 0 || height <= 0) {
+    return null;
+  }
+  if (x < 0 || y < 0 || x >= width || y >= height) {
+    return null;
+  }
+  const row = tiles[y];
+  if (!Array.isArray(row) || x >= row.length) {
+    return null;
+  }
+  return row[x] || null;
+}
+
+function buildNeighborDetails(tiles, width, height, x, y, waterTileKey) {
+  const result = {};
+  const offsets = [
+    { key: 'north', dx: 0, dy: -1 },
+    { key: 'south', dx: 0, dy: 1 },
+    { key: 'west', dx: -1, dy: 0 },
+    { key: 'east', dx: 1, dy: 0 },
+    { key: 'northWest', dx: -1, dy: -1 },
+    { key: 'northEast', dx: 1, dy: -1 },
+    { key: 'southWest', dx: -1, dy: 1 },
+    { key: 'southEast', dx: 1, dy: 1 }
+  ];
+
+  for (let i = 0; i < offsets.length; i += 1) {
+    const { key, dx, dy } = offsets[i];
+    const tile = getWorldTileAt(tiles, width, height, x + dx, y + dy);
+    if (!tile) {
+      result[key] = null;
+      continue;
+    }
+    const overlayKey = typeof tile.overlay === 'string' ? tile.overlay : null;
+    const hillOverlayKey = typeof tile.hillOverlay === 'string' ? tile.hillOverlay : null;
+    const baseKey = typeof tile.base === 'string' ? tile.base : null;
+    result[key] = {
+      overlayKey,
+      hillOverlayKey,
+      hasForestOverlay: overlayKey ? isTreeOverlayKey(overlayKey) : false,
+      hasHillOverlay: hillOverlayKey ? hillOverlayKeySet.has(hillOverlayKey) : false,
+      baseKey,
+      isWater: Boolean(waterTileKey) && baseKey === waterTileKey
+    };
+  }
+
+  return result;
+}
+
+function computeRiverSubtileVariation(river, subdivisions, worldX, worldY, sampleNoise) {
+  if (!river || subdivisions <= 1) {
+    return null;
+  }
+  const mask = Number.isFinite(river.mask) ? river.mask : 0;
+  if (mask === 0) {
+    return null;
+  }
+  const baseWidth = subdivisions > 3 ? 2 : 1;
+  const centerBase = subdivisions / 2;
+
+  const computeRange = (channel) => {
+    const offsetNoise = sampleNoise(worldX, worldY, channel);
+    const offset = Math.round((offsetNoise - 0.5) * Math.min(1, Math.floor(subdivisions / 3)));
+    const start = clamp(
+      Math.round(centerBase - baseWidth / 2) + offset,
+      0,
+      Math.max(0, subdivisions - baseWidth)
+    );
+    return { start, end: Math.min(subdivisions - 1, start + baseWidth - 1) };
+  };
+
+  return {
+    mask,
+    vertical: computeRange(21),
+    horizontal: computeRange(22)
+  };
+}
+
+function applyRiverSubtileVariation(subTile, variation, subX, subY) {
+  if (!subTile || !variation || !subTile.river) {
+    return;
+  }
+  const { NORTH, SOUTH, EAST, WEST } = ROAD_DIRECTION_BITS;
+  const mask = variation.mask;
+  let keep = false;
+
+  if (mask & (NORTH | SOUTH)) {
+    const vertical = variation.vertical;
+    if (vertical && subX >= vertical.start && subX <= vertical.end) {
+      keep = true;
+    }
+  }
+
+  if (mask & (EAST | WEST)) {
+    const horizontal = variation.horizontal;
+    if (horizontal && subY >= horizontal.start && subY <= horizontal.end) {
+      keep = true;
+    }
+  }
+
+  if (!keep) {
+    subTile.river = null;
+  }
+}
+
+function applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt) {
+  if (!subTile || !baseTile) {
+    return;
+  }
+  const hillOverlayKey = typeof baseTile.hillOverlay === 'string' ? baseTile.hillOverlay : null;
+  if (!hillOverlayKey || !hillOverlayKeySet.has(hillOverlayKey)) {
+    return;
+  }
+
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.32;
+  let keepHill = true;
+
+  if (normalizedY < edgeThreshold && !(neighbors.north && neighbors.north.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(40) > 0.25 + normalizedY * 0.6;
+  }
+  if (normalizedY > 1 - edgeThreshold && !(neighbors.south && neighbors.south.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(41) > 0.25 + (1 - normalizedY) * 0.6;
+  }
+  if (normalizedX < edgeThreshold && !(neighbors.west && neighbors.west.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(42) > 0.25 + normalizedX * 0.6;
+  }
+  if (normalizedX > 1 - edgeThreshold && !(neighbors.east && neighbors.east.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(43) > 0.25 + (1 - normalizedX) * 0.6;
+  }
+
+  const interiorNoise = noiseAt(44);
+  if (keepHill && interiorNoise < 0.1) {
+    keepHill = false;
+  }
+
+  subTile.hillOverlay = keepHill ? hillOverlayKey : null;
+}
+
+function applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey) {
+  if (!subTile || !baseTile) {
+    return;
+  }
+  const overlayKey = typeof baseTile.overlay === 'string' ? baseTile.overlay : null;
+  const hasForestOverlay = overlayKey ? isTreeOverlayKey(overlayKey) : false;
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.3;
+
+  if (hasForestOverlay) {
+    let keepOverlay = subTile.base !== waterTileKey;
+    if (keepOverlay && normalizedY < edgeThreshold && !(neighbors.north && neighbors.north.hasForestOverlay)) {
+      keepOverlay = noiseAt(31) > 0.28 + normalizedY * 0.65;
+    }
+    if (keepOverlay && normalizedY > 1 - edgeThreshold && !(neighbors.south && neighbors.south.hasForestOverlay)) {
+      keepOverlay = noiseAt(32) > 0.28 + (1 - normalizedY) * 0.65;
+    }
+    if (keepOverlay && normalizedX < edgeThreshold && !(neighbors.west && neighbors.west.hasForestOverlay)) {
+      keepOverlay = noiseAt(33) > 0.28 + normalizedX * 0.65;
+    }
+    if (keepOverlay && normalizedX > 1 - edgeThreshold && !(neighbors.east && neighbors.east.hasForestOverlay)) {
+      keepOverlay = noiseAt(34) > 0.28 + (1 - normalizedX) * 0.65;
+    }
+    if (
+      keepOverlay &&
+      normalizedX < edgeThreshold &&
+      normalizedY < edgeThreshold &&
+      !(neighbors.northWest && neighbors.northWest.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(35) > 0.25 + (normalizedX + normalizedY) * 0.35;
+    }
+    if (
+      keepOverlay &&
+      normalizedX > 1 - edgeThreshold &&
+      normalizedY < edgeThreshold &&
+      !(neighbors.northEast && neighbors.northEast.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(36) > 0.25 + (1 - normalizedX + normalizedY) * 0.35;
+    }
+    if (
+      keepOverlay &&
+      normalizedX < edgeThreshold &&
+      normalizedY > 1 - edgeThreshold &&
+      !(neighbors.southWest && neighbors.southWest.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(37) > 0.25 + (normalizedX + (1 - normalizedY)) * 0.35;
+    }
+    if (
+      keepOverlay &&
+      normalizedX > 1 - edgeThreshold &&
+      normalizedY > 1 - edgeThreshold &&
+      !(neighbors.southEast && neighbors.southEast.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(38) > 0.25 + (2 - normalizedX - normalizedY) * 0.35;
+    }
+
+    if (keepOverlay && noiseAt(39) < 0.08) {
+      keepOverlay = false;
+    }
+
+    if (!keepOverlay) {
+      subTile.overlay = null;
+      if (Number.isFinite(subTile.forestCanopyDensity)) {
+        subTile.forestCanopyDensity = Math.min(subTile.forestCanopyDensity, 0.2);
+      }
+    } else {
+      subTile.overlay = overlayKey;
+      if (Number.isFinite(subTile.forestCanopyDensity)) {
+        subTile.forestCanopyDensity = clamp(subTile.forestCanopyDensity + (noiseAt(47) - 0.5) * 0.12, 0, 1);
+      } else {
+        subTile.forestCanopyDensity = 0.6;
+      }
+    }
+    return;
+  }
+
+  if (subTile.base === waterTileKey) {
+    subTile.overlay = null;
+    if (Number.isFinite(subTile.forestCanopyDensity)) {
+      subTile.forestCanopyDensity = Math.min(subTile.forestCanopyDensity, 0.15);
+    }
+    return;
+  }
+
+  if (subTile.overlay) {
+    return;
+  }
+
+  const candidateOverlays = [];
+  if (normalizedY < edgeThreshold && neighbors.north && neighbors.north.hasForestOverlay) {
+    candidateOverlays.push(neighbors.north.overlayKey);
+  }
+  if (normalizedY > 1 - edgeThreshold && neighbors.south && neighbors.south.hasForestOverlay) {
+    candidateOverlays.push(neighbors.south.overlayKey);
+  }
+  if (normalizedX < edgeThreshold && neighbors.west && neighbors.west.hasForestOverlay) {
+    candidateOverlays.push(neighbors.west.overlayKey);
+  }
+  if (normalizedX > 1 - edgeThreshold && neighbors.east && neighbors.east.hasForestOverlay) {
+    candidateOverlays.push(neighbors.east.overlayKey);
+  }
+
+  if (candidateOverlays.length === 0) {
+    if (Number.isFinite(subTile.forestCanopyDensity)) {
+      subTile.forestCanopyDensity = clamp(subTile.forestCanopyDensity * 0.9, 0, 1);
+    }
+    return;
+  }
+
+  const addChance = noiseAt(48);
+  if (addChance > 0.78) {
+    const index = Math.floor(noiseAt(49) * candidateOverlays.length) % candidateOverlays.length;
+    const selected = candidateOverlays[index];
+    if (selected) {
+      subTile.overlay = selected;
+      subTile.forestCanopyDensity = 0.55 + (addChance - 0.78) * 0.3;
+    }
+  }
+}
+
+function applyCoastlineVariation(
+  subTile,
+  baseTile,
+  neighbors,
+  subdivisions,
+  subX,
+  subY,
+  noiseAt,
+  { waterTileKey, defaultLandKey }
+) {
+  if (!subTile || !baseTile || !waterTileKey || subdivisions <= 1) {
+    return;
+  }
+  if (baseTile.structure || baseTile.structureDetails || baseTile.river) {
+    if (Number.isFinite(subTile.coastProximity)) {
+      subTile.coastProximity = clamp(subTile.coastProximity + (noiseAt(55) - 0.5) * 0.1, 0, 1);
+    }
+    return;
+  }
+
+  const baseKey = typeof baseTile.base === 'string' ? baseTile.base : null;
+  const isWater = baseKey === waterTileKey;
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.34;
+
+  const directions = [
+    { key: 'north', proximity: normalizedY, nearEdge: normalizedY < edgeThreshold },
+    { key: 'south', proximity: 1 - normalizedY, nearEdge: normalizedY > 1 - edgeThreshold },
+    { key: 'west', proximity: normalizedX, nearEdge: normalizedX < edgeThreshold },
+    { key: 'east', proximity: 1 - normalizedX, nearEdge: normalizedX > 1 - edgeThreshold }
+  ];
+
+  let converted = false;
+
+  if (isWater) {
+    for (let i = 0; i < directions.length; i += 1) {
+      const { key, proximity, nearEdge } = directions[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !neighbor.baseKey || neighbor.baseKey === waterTileKey) {
+        continue;
+      }
+      const threshold = 0.35 + proximity * 0.5;
+      if (noiseAt(60 + i) > threshold) {
+        subTile.base = neighbor.baseKey || defaultLandKey;
+        subTile.overlay = null;
+        subTile.hillOverlay = null;
+        subTile.waterDepth = 0;
+        subTile.coastProximity = Math.max(Number.isFinite(subTile.coastProximity) ? subTile.coastProximity : 0.6, 0.75);
+        converted = true;
+        break;
+      }
+    }
+  }
+
+  if (!converted && !isWater) {
+    for (let i = 0; i < directions.length; i += 1) {
+      const { key, proximity, nearEdge } = directions[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !neighbor.isWater) {
+        continue;
+      }
+      const threshold = 0.62 - proximity * 0.35;
+      if (noiseAt(70 + i) > threshold) {
+        subTile.base = waterTileKey;
+        subTile.overlay = null;
+        subTile.hillOverlay = null;
+        subTile.forestCanopyDensity = Number.isFinite(subTile.forestCanopyDensity)
+          ? Math.min(subTile.forestCanopyDensity, 0.18)
+          : subTile.forestCanopyDensity;
+        subTile.coastProximity = Math.max(Number.isFinite(subTile.coastProximity) ? subTile.coastProximity : 0.7, 0.85);
+        subTile.waterDepth = clamp(noiseAt(80 + i) * 0.45, 0, 0.6);
+        converted = true;
+        break;
+      }
+    }
+  }
+
+  if (!converted) {
+    if (Number.isFinite(subTile.coastProximity)) {
+      subTile.coastProximity = clamp(subTile.coastProximity + (noiseAt(90) - 0.5) * 0.12, 0, 1);
+    }
+    if (Number.isFinite(subTile.waterDepth)) {
+      subTile.waterDepth = clamp(subTile.waterDepth + (noiseAt(91) - 0.5) * 0.15, 0, 1);
+    }
+  }
+}
+
+function generateHighResolutionLocalPatch(world, tileX, tileY) {
+  if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return null;
+  }
+
+  const sourceTiles = world.tiles;
+  const sourceHeight = sourceTiles.length;
+  const sourceWidth = Array.isArray(sourceTiles[0]) ? sourceTiles[0].length : 0;
+  if (!sourceWidth || !sourceHeight) {
+    return null;
+  }
+
+  const subdivisions = Number.isFinite(localViewConfig.highResolutionTileSubdivisions)
+    ? Math.max(1, Math.floor(localViewConfig.highResolutionTileSubdivisions))
+    : 1;
+  const paddingTiles = Number.isFinite(localViewConfig.highResolutionExtraPadding)
+    ? Math.max(0, Math.floor(localViewConfig.highResolutionExtraPadding))
+    : 0;
+
+  const baseRadius = Math.max(1, localViewConfig.radius);
+  const startX = clamp(tileX - baseRadius - paddingTiles, 0, sourceWidth - 1);
+  const endX = clamp(tileX + baseRadius + paddingTiles, 0, sourceWidth - 1);
+  const startY = clamp(tileY - baseRadius - paddingTiles, 0, sourceHeight - 1);
+  const endY = clamp(tileY + baseRadius + paddingTiles, 0, sourceHeight - 1);
+
+  const areaWidth = Math.max(1, endX - startX + 1);
+  const areaHeight = Math.max(1, endY - startY + 1);
+  const patchWidth = areaWidth * subdivisions;
+  const patchHeight = areaHeight * subdivisions;
+
+  const patchTiles = new Array(patchHeight);
+  for (let y = 0; y < patchHeight; y += 1) {
+    patchTiles[y] = new Array(patchWidth);
+  }
+
+  const seedString =
+    (typeof world.seedString === 'string' && world.seedString) ||
+    (typeof state.settings?.seedString === 'string' ? state.settings.seedString : 'local');
+  const noiseSampler = createDeterministicNoiseSampler(
+    `${seedString}:${startX},${startY}:${patchWidth}x${patchHeight}`
+  );
+  const waterTileKey = world.waterTileKey || resolveTileName('WATER');
+  const defaultLandKey = world.grassTileKey || resolveTileName('GRASS');
+
+  for (let coarseY = 0; coarseY < areaHeight; coarseY += 1) {
+    const sourceRow = sourceTiles[startY + coarseY];
+    for (let coarseX = 0; coarseX < areaWidth; coarseX += 1) {
+      const baseTile = Array.isArray(sourceRow) ? sourceRow[startX + coarseX] || null : null;
+      if (!baseTile) {
+        for (let subY = 0; subY < subdivisions; subY += 1) {
+          const targetRow = patchTiles[coarseY * subdivisions + subY];
+          if (!Array.isArray(targetRow)) {
+            continue;
+          }
+          for (let subX = 0; subX < subdivisions; subX += 1) {
+            targetRow[coarseX * subdivisions + subX] = null;
+          }
+        }
+        continue;
+      }
+
+      if (subdivisions <= 1) {
+        const targetRow = patchTiles[coarseY];
+        if (Array.isArray(targetRow)) {
+          targetRow[coarseX] = cloneTileForHighResolution(baseTile);
+        }
+        continue;
+      }
+
+      const worldX = startX + coarseX;
+      const worldY = startY + coarseY;
+      const neighbors = buildNeighborDetails(sourceTiles, sourceWidth, sourceHeight, worldX, worldY, waterTileKey);
+      const riverVariation = baseTile.river
+        ? computeRiverSubtileVariation(baseTile.river, subdivisions, worldX, worldY, noiseSampler)
+        : null;
+
+      for (let subY = 0; subY < subdivisions; subY += 1) {
+        const targetRow = patchTiles[coarseY * subdivisions + subY];
+        if (!Array.isArray(targetRow)) {
+          continue;
+        }
+        for (let subX = 0; subX < subdivisions; subX += 1) {
+          const subTile = cloneTileForHighResolution(baseTile);
+          const globalSubX = worldX * subdivisions + subX;
+          const globalSubY = worldY * subdivisions + subY;
+          const noiseAt = (channel) => noiseSampler(globalSubX, globalSubY, channel);
+
+          applyCoastlineVariation(
+            subTile,
+            baseTile,
+            neighbors,
+            subdivisions,
+            subX,
+            subY,
+            noiseAt,
+            { waterTileKey, defaultLandKey }
+          );
+          applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
+          applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey);
+          applyRiverSubtileVariation(subTile, riverVariation, subX, subY);
+
+          targetRow[coarseX * subdivisions + subX] = subTile;
+        }
+      }
+    }
+  }
+
+  const centerX = clamp(
+    (tileX - startX) * subdivisions + Math.floor(subdivisions / 2),
+    0,
+    Math.max(0, patchWidth - 1)
+  );
+  const centerY = clamp(
+    (tileY - startY) * subdivisions + Math.floor(subdivisions / 2),
+    0,
+    Math.max(0, patchHeight - 1)
+  );
+
+  return {
+    tiles: patchTiles,
+    width: patchWidth,
+    height: patchHeight,
+    centerX,
+    centerY,
+    worldOriginX: startX,
+    worldOriginY: startY,
+    worldWidth: areaWidth,
+    worldHeight: areaHeight,
+    scaleX: subdivisions,
+    scaleY: subdivisions,
+    metadata: {
+      seaLevel: world.seaLevel,
+      waterTileKey: world.waterTileKey || resolveTileName('WATER'),
+      grassTileKey: world.grassTileKey || resolveTileName('GRASS'),
+      factions: Array.isArray(world.factions) ? world.factions : [],
+      seedString:
+        (typeof world.seedString === 'string' && world.seedString) ||
+        (typeof state.settings?.seedString === 'string' ? state.settings.seedString : null)
+    }
+  };
+}
+
+function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
+  if (!ctx || !patch || !Array.isArray(patch.tiles)) {
+    return;
+  }
+
+  const { highlightX = null, highlightY = null } = options;
+  const tiles = patch.tiles;
+  const width = patch.width;
+  const height = patch.height;
+  const metadata = patch.metadata || {};
+  const waterTileKey = metadata.waterTileKey || resolveTileName('WATER');
+  const grassTileKey = metadata.grassTileKey || resolveTileName('GRASS');
+  const patchWorld = {
+    tiles,
+    width,
+    height,
+    seaLevel: metadata.seaLevel,
+    factions: metadata.factions || []
+  };
+
+  for (let y = 0; y < height; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < width; x += 1) {
+      const cell = row[x];
+      if (!cell) {
+        ctx.fillStyle = '#05060b';
+        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        continue;
+      }
+
+      const baseKey = typeof cell.base === 'string' && cell.base ? cell.base : 'GRASS';
+      const baseDefinition = tileLookup.get(baseKey) || tileLookup.get('GRASS');
+      if (baseDefinition) {
+        const baseSheet = state.tileSheets[baseDefinition.sheet];
+        if (baseSheet && baseSheet.image) {
+          ctx.drawImage(
+            baseSheet.image,
+            baseDefinition.sx,
+            baseDefinition.sy,
+            baseDefinition.size,
+            baseDefinition.size,
+            x * tileSize,
+            y * tileSize,
+            tileSize,
+            tileSize
+          );
+        }
+      }
+
+      applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize);
+      applyVolcanoShading(ctx, cell, x, y, tileSize);
+
+      if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
+        const hillDefinition = tileLookup.get(cell.hillOverlay);
+        if (hillDefinition) {
+          const hillSheet = state.tileSheets[hillDefinition.sheet];
+          if (hillSheet && hillSheet.image) {
+            ctx.drawImage(
+              hillSheet.image,
+              hillDefinition.sx,
+              hillDefinition.sy,
+              hillDefinition.size,
+              hillDefinition.size,
+              x * tileSize,
+              y * tileSize,
+              tileSize,
+              tileSize
+            );
+          }
+        }
+      }
+
+      if (cell.overlay) {
+        const overlayDefinition = tileLookup.get(cell.overlay);
+        if (!overlayDefinition) {
+          drawCustomOverlay(ctx, cell.overlay, x, y, tiles, tileSize);
+        } else {
+          const overlaySheet = state.tileSheets[overlayDefinition.sheet];
+          if (overlaySheet && overlaySheet.image) {
+            ctx.drawImage(
+              overlaySheet.image,
+              overlayDefinition.sx,
+              overlayDefinition.sy,
+              overlayDefinition.size,
+              overlayDefinition.size,
+              x * tileSize,
+              y * tileSize,
+              tileSize,
+              tileSize
+            );
+          }
+        }
+      }
+
+      applyDesertMountainTint(ctx, cell, x, y, tileSize);
+      applyMountainShading(ctx, cell, x, y, tileSize);
+
+      if (cell.river) {
+        drawRiverSegment(ctx, cell.river, x, y, tileSize);
+      }
+
+      if (cell.structure) {
+        const structureDefinition = tileLookup.get(cell.structure);
+        if (structureDefinition) {
+          if (typeof structureDefinition.draw === 'function') {
+            structureDefinition.draw(ctx, {
+              x,
+              y,
+              pixelX: x * tileSize,
+              pixelY: y * tileSize,
+              size: tileSize,
+              cell,
+              world: patchWorld
+            });
+          } else {
+            const structureSheet = state.tileSheets[structureDefinition.sheet];
+            if (structureSheet && structureSheet.image) {
+              ctx.drawImage(
+                structureSheet.image,
+                structureDefinition.sx,
+                structureDefinition.sy,
+                structureDefinition.size,
+                structureDefinition.size,
+                x * tileSize,
+                y * tileSize,
+                tileSize,
+                tileSize
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.32)';
+  ctx.lineWidth = 1;
+  for (let x = 1; x < width; x += 1) {
+    const px = Math.round(x * tileSize) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, height * tileSize);
+    ctx.stroke();
+  }
+  for (let y = 1; y < height; y += 1) {
+    const py = Math.round(y * tileSize) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(0, py);
+    ctx.lineTo(width * tileSize, py);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if (Number.isFinite(highlightX) && Number.isFinite(highlightY)) {
+    const highlightPixelX = highlightX * tileSize;
+    const highlightPixelY = highlightY * tileSize;
+    const lineWidth = Math.max(2, Math.round(tileSize * 0.12));
+    ctx.save();
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = 'rgba(240, 198, 116, 0.9)';
+    ctx.fillStyle = 'rgba(240, 198, 116, 0.12)';
+    ctx.fillRect(highlightPixelX, highlightPixelY, tileSize, tileSize);
+    ctx.strokeRect(
+      highlightPixelX + lineWidth / 2,
+      highlightPixelY + lineWidth / 2,
+      tileSize - lineWidth,
+      tileSize - lineWidth
+    );
+    ctx.restore();
   }
 }
 
@@ -8960,7 +11335,77 @@ function showLocalViewAt(tileX, tileY) {
   state.localView.centerX = clampedX;
   state.localView.centerY = clampedY;
   state.localView.bounds = bounds;
+  const highResolutionPatch = generateHighResolutionLocalPatch(world, clampedX, clampedY);
+  if (highResolutionPatch) {
+    state.localView.mode = 'worldHighRes';
+    state.localView.highResolution = highResolutionPatch;
+  } else {
+    state.localView.mode = 'world';
+    state.localView.highResolution = null;
+  }
+  state.localView.customMap = null;
+  state.localView.structure = null;
   drawWorld(world, { preserveView: true });
+}
+
+function showDwarfholdInterior(tile, tileX, tileY) {
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return;
+  }
+  const height = world.tiles.length;
+  const width = Array.isArray(world.tiles[0]) ? world.tiles[0].length : 0;
+  if (width === 0) {
+    return;
+  }
+
+  const clampedX = clamp(Number(tileX) || 0, 0, width - 1);
+  const clampedY = clamp(Number(tileY) || 0, 0, height - 1);
+  const bounds = computeLocalViewBounds(clampedX, clampedY, width, height, localViewConfig.radius);
+
+  const seedCandidates = [
+    typeof state.settings?.seedString === 'string' ? state.settings.seedString : null,
+    typeof state.settings?.lastSeedString === 'string' ? state.settings.lastSeedString : null,
+    typeof state.worldName === 'string' && state.worldName ? state.worldName : null
+  ];
+  const resolvedSeed = seedCandidates.find((value) => value && value.length > 0) || 'dwarfhold';
+
+  const customMap = generateDwarfholdMap({
+    structureKey: typeof tile?.structure === 'string' ? tile.structure : null,
+    structureName:
+      typeof tile?.structureName === 'string' && tile.structureName
+        ? tile.structureName
+        : typeof tile?.areaName === 'string' && tile.areaName
+        ? tile.areaName
+        : null,
+    faction: tile?.structureDetails?.owner || tile?.factionId || null,
+    tileX: clampedX,
+    tileY: clampedY,
+    worldSeed: resolvedSeed
+  });
+
+  state.localView.active = true;
+  state.localView.centerX = clampedX;
+  state.localView.centerY = clampedY;
+  state.localView.bounds = bounds;
+  state.localView.mode = 'dwarfhold';
+  state.localView.customMap = customMap;
+  state.localView.structure = tile || null;
+  state.localView.highResolution = null;
+
+  state.dwarfholdView.active = true;
+  state.dwarfholdView.map = customMap;
+  state.dwarfholdView.tileX = clampedX;
+  state.dwarfholdView.tileY = clampedY;
+  state.dwarfholdView.structure = tile || null;
+
+  drawWorld(world, { preserveView: true });
+  openDwarfholdScreen();
+}
+
+function closeDwarfholdInterior(options = {}) {
+  const { returnFocus = false, suppressRedraw = false } = options;
+  hideLocalView({ suppressRedraw, returnFocus });
 }
 
 function drawLocalSelectionOverlay(ctx) {
@@ -9533,24 +11978,54 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   });
 
-  const populatedColumns = columnSections
-    .map((items, index) => {
-      if (items.length === 0) {
-        return '';
-      }
-      const columnNames = ['primary', 'secondary', 'tertiary'];
-      const columnClass = columnNames[index] || `col-${index + 1}`;
-      return `
-        <div class="structure-details-column structure-details-column--${columnClass}">
-          ${items.join('')}
+  const artPlaceholder = `
+    <figure class="structure-details-art-placeholder">
+      <div class="structure-details-art-frame" role="img" aria-label="Artwork placeholder">
+        <span class="structure-details-art-text">Artwork Placeholder</span>
+      </div>
+      <figcaption class="structure-details-art-caption">Reserve this space for concept art or GIF previews of the area.</figcaption>
+    </figure>
+  `;
+
+  const hasSectionContent = columnSections.some((items) => items.length > 0);
+
+  let body;
+
+  if (hasSectionContent) {
+    columnSections[2].push(artPlaceholder);
+
+    const populatedColumns = columnSections
+      .map((items, index) => {
+        if (items.length === 0) {
+          return '';
+        }
+        const columnNames = ['primary', 'secondary', 'tertiary'];
+        const columnClass = columnNames[index] || `col-${index + 1}`;
+        return `
+          <div class="structure-details-column structure-details-column--${columnClass}">
+            ${items.join('')}
+          </div>
+        `;
+      })
+      .filter(Boolean);
+
+    body = populatedColumns.length > 0
+      ? populatedColumns.join('')
+      : `
+        <div class="structure-details-column structure-details-column--tertiary">
+          ${artPlaceholder}
         </div>
       `;
-    })
-    .filter(Boolean);
-
-  const body = populatedColumns.length > 0
-    ? populatedColumns.join('')
-    : '<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>';
+  } else {
+    body = `
+      <div class="structure-details-column structure-details-column--primary">
+        <p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>
+      </div>
+      <div class="structure-details-column structure-details-column--tertiary">
+        ${artPlaceholder}
+      </div>
+    `;
+  }
 
   return {
     title: resolvedName,
@@ -9593,6 +12068,8 @@ function showStructureDetails(tile, context = {}) {
     elements.structureDetailsContent.innerHTML = content.body;
   }
 
+  playStructureAmbienceForTile(tile);
+
   if (elements.structureDetailsClose && typeof elements.structureDetailsClose.focus === 'function') {
     elements.structureDetailsClose.focus();
   }
@@ -9603,6 +12080,8 @@ function hideStructureDetails(options = {}) {
   if (!elements.structureDetailsPanel) {
     return;
   }
+
+  stopStructureAmbience();
 
   elements.structureDetailsPanel.classList.add('hidden');
   elements.structureDetailsPanel.setAttribute('aria-hidden', 'true');
@@ -9844,6 +12323,11 @@ function setupMapInteractions() {
     if (activePointerId !== null) {
       return;
     }
+    const menuElement = elements.structureContextMenu;
+    const isPointerInsideMenu = Boolean(menuElement && menuElement.contains(event.target));
+    if (isPointerInsideMenu) {
+      return;
+    }
     const pointerType = event.pointerType || 'mouse';
     const isTouchPointer = pointerType === 'touch';
     const isNonPrimaryButton = event.button !== undefined && event.button !== 0;
@@ -9922,10 +12406,32 @@ function setupMapInteractions() {
     hideStructureContextMenu();
   };
 
-  const handleDoubleClick = () => {
+  const handleDoubleClick = (event) => {
     if (!viewState.worldSize.width || !viewState.worldSize.height) {
       return;
     }
+
+    if (typeof event?.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    const resolved = resolveTileAtPointer(event);
+    if (resolved && resolved.tile) {
+      const { tile, tileX, tileY } = resolved;
+      const details = tile.structureDetails || null;
+      const detailType = typeof details?.type === 'string' ? details.type : null;
+      const isSettlement =
+        (details && details.isSettlement === true) ||
+        (detailType ? settlementDetailTypes.has(detailType) : false);
+
+      if (isSettlement && tile.structureName) {
+        hideStructureContextMenu();
+        hideLocalView({ suppressRedraw: true });
+        showStructureDetails(tile, { tileX, tileY });
+        return;
+      }
+    }
+
     hideStructureContextMenu();
     hideStructureDetails();
     resetView(viewState.worldSize.width, viewState.worldSize.height);
@@ -10136,6 +12642,7 @@ function updateSoundEffectsToggleLabel() {
       audio.volume = finalVolume;
     }
   });
+  updateStructureAmbienceVolume();
 }
 
 function setupSoundEffectControls() {
@@ -11770,6 +14277,8 @@ function createWorld(seedString) {
   const marshThresholdStrength = hasMarshTile ? 0.05 + rng() * 0.05 : 0;
   const marshDistributionStrength = hasMarshTile ? 0.1 + rng() * 0.1 : 0;
   const baseMarshThreshold = 0.65;
+  // Require more rainfall-driven wetness before marshes can form to reduce their frequency.
+  const marshWetnessThreshold = 0.66;
   const marshSuitabilityField = hasMarshTile ? new Float32Array(width * height) : null;
   const marshMaskField = hasMarshTile ? new Uint8Array(width * height) : null;
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
@@ -11890,7 +14399,7 @@ function createWorld(seedString) {
     const wetness = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
     const lowlandFactor = clamp(1 - positiveElevation * 4.2, 0, 1);
     const baseSuitability = clamp(wetness * 0.68 + lowlandFactor * 0.2 + heat * 0.12, 0, 1);
-    if (wetness <= 0.6 || lowlandFactor <= 0.22 || heat <= 0.45) {
+    if (wetness <= marshWetnessThreshold || lowlandFactor <= 0.22 || heat <= 0.45) {
       if (recordFields && marshSuitabilityField) {
         marshSuitabilityField[idx] = baseSuitability;
       }
@@ -11979,14 +14488,44 @@ function createWorld(seedString) {
         1;
       threshold = clamp(threshold + thresholdNoise * marshThresholdStrength, 0.5, 0.7);
     }
-    const qualifies = suitability > threshold;
+    const qualifiesByScore = suitability > threshold;
     if (recordFields && marshSuitabilityField) {
       marshSuitabilityField[idx] = suitability;
     }
-    if (recordFields && marshMaskField) {
-      marshMaskField[idx] = qualifies ? 1 : 0;
+    if (!qualifiesByScore) {
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: suitability, threshold, qualifies: false };
     }
-    return { score: suitability, threshold, qualifies };
+    let touchesSurfaceWater = false;
+    for (let dy = -1; dy <= 1 && !touchesSurfaceWater; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        if (dx === 0 && dy === 0) {
+          continue;
+        }
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        if (elevationField[nIdx] <= seaLevel) {
+          touchesSurfaceWater = true;
+          break;
+        }
+      }
+    }
+    if (!touchesSurfaceWater) {
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: -Infinity, threshold, qualifies: false };
+    }
+    if (recordFields && marshMaskField) {
+      marshMaskField[idx] = 1;
+    }
+    return { score: suitability, threshold, qualifies: true };
   };
 
   const computeMarshSuitabilityScore = (x, y, heightValue) => {
@@ -14783,7 +17322,7 @@ function createWorld(seedString) {
         }
         const baseIsSnowPlacement = hasSnowTile && tile.base === snowTileKey;
         const name = baseIsSnowPlacement ? generateSnowVillageName(rng) : generateTownName(rng);
-        const details = generateTownDetails(name, rng, { snowVillage: baseIsSnowPlacement });
+        let details = generateTownDetails(name, rng, { snowVillage: baseIsSnowPlacement });
         const isSmallVillage = details.type === 'village' && details.population < 100;
         if (baseIsSnowPlacement && !isSmallVillage) {
           continue;
@@ -14822,6 +17361,9 @@ function createWorld(seedString) {
             structureKey = hamletKey;
             isHamletStructure = true;
           }
+        }
+        if (isHamletStructure) {
+          details = generateHamletDetails(name, rng, { snowHamlet: baseIsSnowPlacement });
         }
         tile.structure = structureKey;
         tile.structureName = name;
@@ -16730,7 +19272,10 @@ function createWorld(seedString) {
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
         const baseIsMarsh = hasMarshTile && tile.base === marshTileKey;
-        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+        if (baseIsSnow) {
+          continue;
+        }
+        if (!baseIsGrass && !baseIsMarsh) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -16769,7 +19314,7 @@ function createWorld(seedString) {
         const distanceScore = clamp((settlementDistance - 4) / 18, 0, 1) * 0.22;
         const elevationValue = elevationField[idx];
         const elevationScore = clamp((elevationValue - seaLevel) * 2, 0, 1) * 0.18;
-        const baseSuitability = baseIsGrass ? 0.18 : baseIsSnow ? 0.12 : 0.08;
+        const baseSuitability = baseIsGrass ? 0.18 : baseIsMarsh ? 0.08 : 0;
         const latitude = (y + 0.5) / height;
         const latitudeNoise =
           hashCoords(x, Math.floor(latitude * 1024), monasteryLatitudeSeed) - 0.5;
@@ -16825,7 +19370,10 @@ function createWorld(seedString) {
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
         const baseIsMarsh = hasMarshTile && tile.base === marshTileKey;
-        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+        if (baseIsSnow) {
+          continue;
+        }
+        if (!baseIsGrass && !baseIsMarsh) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -17550,6 +20098,45 @@ function createWorld(seedString) {
     }
   }
 
+  const badlandsMinimumSize = 10;
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    if (cluster.type !== 'badlands' || cluster.size >= badlandsMinimumSize) {
+      continue;
+    }
+    const neighborCounts = new Map();
+    clusterAdjacency[i].forEach((neighborIndex) => {
+      const neighborCluster = biomeClusters[neighborIndex];
+      if (!neighborCluster) {
+        return;
+      }
+      const neighborType = neighborCluster.type;
+      if (!neighborType || neighborType === 'badlands') {
+        return;
+      }
+      neighborCounts.set(neighborType, (neighborCounts.get(neighborType) || 0) + 1);
+    });
+    if (!neighborCounts.size) {
+      continue;
+    }
+    let replacementType = null;
+    let replacementCount = -1;
+    neighborCounts.forEach((count, type) => {
+      if (count > replacementCount) {
+        replacementType = type;
+        replacementCount = count;
+      }
+    });
+    if (!replacementType) {
+      continue;
+    }
+    cluster.type = replacementType;
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      biomeField[clusterIdx] = replacementType;
+    }
+  }
+
   const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
 
   for (let i = 0; i < biomeClusters.length; i += 1) {
@@ -17577,6 +20164,26 @@ function createWorld(seedString) {
       }
       clusterTile.biomeType = resolvedType;
       clusterTile.areaName = resolvedName;
+      if (hasBadlandsTile && resolvedType === 'badlands') {
+        const isWaterTile =
+          (waterMask && waterMask[clusterIdx]) || clusterTile.base === waterTileKey;
+        if (!isWaterTile) {
+          clusterTile.base = badlandsTileKey;
+          if (badlandsMask) {
+            badlandsMask[clusterIdx] = 1;
+          }
+          if (desertMask) {
+            desertMask[clusterIdx] = 1;
+          }
+        } else {
+          if (badlandsMask) {
+            badlandsMask[clusterIdx] = 0;
+          }
+          if (desertMask) {
+            desertMask[clusterIdx] = 0;
+          }
+        }
+      }
     }
   }
 
@@ -17793,6 +20400,14 @@ function createWorld(seedString) {
       population: Number.isFinite(grove?.population) ? grove.population : null,
       settlementKind: typeof grove?.type === 'string' ? grove.type : null
     })),
+    ...monasteries.map((monastery) => ({
+      x: monastery.x,
+      y: monastery.y,
+      label: monastery.name || monastery.structureName || 'Monastery',
+      type: 'monastery',
+      population: Number.isFinite(monastery?.population) ? monastery.population : null,
+      settlementKind: typeof monastery?.type === 'string' ? monastery.type : null
+    })),
     ...castles.map((castle) => ({
       x: castle.x,
       y: castle.y,
@@ -17812,6 +20427,96 @@ function createWorld(seedString) {
     settlements: settlementSeeds
   });
   const factions = politicalData.factions || [];
+
+  if (saintShrines.length > 0 && factions.length > 0) {
+    const factionById = new Map(factions.map((faction) => [faction.id, faction]));
+    const saintShrineAttachmentTypes = new Set(['village', 'town', 'city']);
+    const candidateSettlements = [];
+
+    towns.forEach((town) => {
+      if (!town || !Number.isFinite(town.x) || !Number.isFinite(town.y)) {
+        return;
+      }
+      const settlementType = typeof town?.type === 'string' ? town.type : null;
+      if (settlementType && saintShrineAttachmentTypes.has(settlementType)) {
+        candidateSettlements.push(town);
+      }
+    });
+
+    castles.forEach((castle) => {
+      if (!castle || !Number.isFinite(castle.x) || !Number.isFinite(castle.y)) {
+        return;
+      }
+      candidateSettlements.push(castle);
+    });
+
+    if (candidateSettlements.length > 0) {
+      const saintShrineAttachmentRadius = 12;
+      const saintShrineAttachmentRadiusSq = saintShrineAttachmentRadius * saintShrineAttachmentRadius;
+
+      const findNearestCandidate = (x, y) => {
+        let best = null;
+        let bestDistanceSq = Infinity;
+        for (let i = 0; i < candidateSettlements.length; i += 1) {
+          const candidate = candidateSettlements[i];
+          const dx = x - candidate.x;
+          const dy = y - candidate.y;
+          const distanceSq = dx * dx + dy * dy;
+          if (distanceSq < bestDistanceSq && distanceSq <= saintShrineAttachmentRadiusSq) {
+            bestDistanceSq = distanceSq;
+            best = candidate;
+          }
+        }
+        return best;
+      };
+
+      for (let i = 0; i < saintShrines.length; i += 1) {
+        const shrine = saintShrines[i];
+        if (!shrine || !Number.isFinite(shrine.x) || !Number.isFinite(shrine.y)) {
+          continue;
+        }
+        const nearest = findNearestCandidate(shrine.x, shrine.y);
+        if (!nearest) {
+          continue;
+        }
+        const parentRow = tiles[nearest.y];
+        const parentTile = parentRow ? parentRow[nearest.x] : null;
+        const parentFactionId = parentTile ? parentTile.factionId : null;
+        if (parentFactionId === null || parentFactionId === undefined) {
+          continue;
+        }
+        const shrineRow = tiles[shrine.y];
+        const shrineTile = shrineRow ? shrineRow[shrine.x] : null;
+        if (!shrineTile) {
+          continue;
+        }
+        shrineTile.factionId = parentFactionId;
+        shrineTile.factionInfluence = Math.max(shrineTile.factionInfluence || 0, 0.85);
+      }
+
+      factions.forEach((faction) => {
+        faction.territory = 0;
+      });
+
+      for (let y = 0; y < height; y += 1) {
+        const row = tiles[y];
+        if (!row) {
+          continue;
+        }
+        for (let x = 0; x < width; x += 1) {
+          const tile = row[x];
+          if (!tile || tile.factionId === null || tile.factionId === undefined) {
+            continue;
+          }
+          const faction = factionById.get(tile.factionId);
+          if (faction) {
+            faction.territory += 1;
+          }
+        }
+      }
+    }
+  }
+
   applyCulturalInfluence({
     width,
     height,
@@ -17824,9 +20529,12 @@ function createWorld(seedString) {
       ...evilWizardTowers,
       ...lizardmenCities,
       ...woodElfGroves,
+      ...monasteries,
       ...mines,
       ...castles,
-      ...orcCamps
+      ...orcCamps,
+      ...roadsideTaverns,
+      ...saintShrines
     ],
     factions,
     isLandBaseTile
@@ -17863,11 +20571,32 @@ function createWorld(seedString) {
   };
 }
 
+function createWorldWithDimensions(seedString, width, height) {
+  const originalWidth = state.settings.width;
+  const originalHeight = state.settings.height;
+  const originalMapSize = state.settings.mapSize;
+
+  const safeWidth = Number.isFinite(width) && width > 0 ? Math.floor(width) : originalWidth;
+  const safeHeight = Number.isFinite(height) && height > 0 ? Math.floor(height) : originalHeight;
+
+  state.settings.width = safeWidth;
+  state.settings.height = safeHeight;
+  state.settings.mapSize = `${safeWidth}x${safeHeight}`;
+
+  try {
+    return createWorld(seedString);
+  } finally {
+    state.settings.width = originalWidth;
+    state.settings.height = originalHeight;
+    state.settings.mapSize = originalMapSize;
+  }
+}
+
 function generateSeedString(seedNumber) {
   return seedNumber.toString(16).padStart(8, '0');
 }
 
-function drawRiverSegment(ctx, river, x, y) {
+function drawRiverSegment(ctx, river, x, y, tileSize = drawSize) {
   if (!river) {
     return;
   }
@@ -17885,20 +20614,25 @@ function drawRiverSegment(ctx, river, x, y) {
     definition.sy,
     definition.size,
     definition.size,
-    x * drawSize,
-    y * drawSize,
-    drawSize,
-    drawSize
+    x * tileSize,
+    y * tileSize,
+    tileSize,
+    tileSize
   );
 }
 
-function computeRoadNeighborMask(x, y, overlayKey = TOWN_ROAD_OVERLAY_KEY) {
-  const world = state.currentWorld;
-  if (!world || !Array.isArray(world.tiles)) {
-    return 0;
+function computeRoadNeighborMask(x, y, overlayKey = TOWN_ROAD_OVERLAY_KEY, tilesOverride = null) {
+  let tiles = null;
+  if (Array.isArray(tilesOverride)) {
+    tiles = tilesOverride;
+  } else {
+    const world = state.currentWorld;
+    if (!world || !Array.isArray(world.tiles)) {
+      return 0;
+    }
+    tiles = world.tiles;
   }
 
-  const tiles = world.tiles;
   const height = tiles.length;
   if (!Number.isFinite(x) || !Number.isFinite(y) || y < 0 || y >= height) {
     return 0;
@@ -17998,7 +20732,7 @@ function selectRoadTileSprite(mask) {
   return { definition: roadTileSpriteDefinitions.cross, rotation: 0 };
 }
 
-function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
+function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0, tileSize = drawSize) {
   if (!ctx || !definition) {
     return false;
   }
@@ -18009,8 +20743,8 @@ function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
   }
 
   const normalizedRotation = ((Number.isFinite(rotationSteps) ? rotationSteps : 0) % 4 + 4) % 4;
-  const pixelX = x * drawSize;
-  const pixelY = y * drawSize;
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
 
   if (normalizedRotation === 0) {
     ctx.drawImage(
@@ -18021,14 +20755,14 @@ function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
       definition.size,
       pixelX,
       pixelY,
-      drawSize,
-      drawSize
+      tileSize,
+      tileSize
     );
     return true;
   }
 
   ctx.save();
-  ctx.translate(pixelX + drawSize / 2, pixelY + drawSize / 2);
+  ctx.translate(pixelX + tileSize / 2, pixelY + tileSize / 2);
   ctx.rotate((Math.PI / 2) * normalizedRotation);
   ctx.drawImage(
     sheet.image,
@@ -18036,37 +20770,44 @@ function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
     definition.sy,
     definition.size,
     definition.size,
-    -drawSize / 2,
-    -drawSize / 2,
-    drawSize,
-    drawSize
+    -tileSize / 2,
+    -tileSize / 2,
+    tileSize,
+    tileSize
   );
   ctx.restore();
   return true;
 }
 
-function drawRoadOverlay(ctx, x, y) {
+function drawRoadOverlay(ctx, x, y, tilesOverride = null, tileSize = drawSize) {
   if (!ctx || !roadTileSpriteDefinitions) {
     return false;
   }
 
-  const mask = computeRoadNeighborMask(x, y, TOWN_ROAD_OVERLAY_KEY);
+  const mask = computeRoadNeighborMask(x, y, TOWN_ROAD_OVERLAY_KEY, tilesOverride);
   const selection = selectRoadTileSprite(mask);
   if (!selection || !selection.definition) {
     return false;
   }
 
-  return drawRoadSprite(ctx, selection.definition, x, y, selection.rotation || 0);
+  return drawRoadSprite(
+    ctx,
+    selection.definition,
+    x,
+    y,
+    selection.rotation || 0,
+    tileSize
+  );
 }
 
-function drawCustomOverlay(ctx, overlayKey, x, y) {
+function drawCustomOverlay(ctx, overlayKey, x, y, tilesOverride = null, tileSize = drawSize) {
   if (overlayKey === TOWN_ROAD_OVERLAY_KEY) {
-    return drawRoadOverlay(ctx, x, y);
+    return drawRoadOverlay(ctx, x, y, tilesOverride, tileSize);
   }
   return false;
 }
 
-function drawOverlayCell(ctx, x, y, color, alpha = 0.3) {
+function drawOverlayCell(ctx, x, y, color, alpha = 0.3, tileSize = drawSize) {
   if (!ctx || !color) {
     return;
   }
@@ -18077,7 +20818,7 @@ function drawOverlayCell(ctx, x, y, color, alpha = 0.3) {
   ctx.save();
   ctx.globalAlpha = clampedAlpha;
   ctx.fillStyle = color;
-  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
 
@@ -18156,12 +20897,12 @@ function getBiomeOverlayColor(type) {
   return biomeOverlayColors[normalized] || null;
 }
 
-function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
+function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
-  const pixelX = x * drawSize;
-  const pixelY = y * drawSize;
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
   const hasDistinctWaterTile = Boolean(waterTileKey) && waterTileKey !== grassTileKey;
   const isWaterTile = hasDistinctWaterTile && cell.base === waterTileKey;
   if (isWaterTile) {
@@ -18170,7 +20911,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     if (shallowFactor > 0.01) {
       const alpha = shallowFactor * 0.32;
       ctx.fillStyle = `rgba(88, 164, 218, ${alpha})`;
-      ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+      ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     }
     return;
   }
@@ -18187,7 +20928,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(148, 205, 184, ${lightenAlpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
   const marshProximity = clamp(
@@ -18200,7 +20941,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(82, 64, 40, ${alpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
   const forestDensity = clamp(
@@ -18213,7 +20954,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(26, 74, 36, ${forestAlpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
   const desertProximity = clamp(
@@ -18226,12 +20967,12 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(228, 202, 146, ${desertAlpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
 }
 
-function applyVolcanoShading(ctx, cell, x, y) {
+function applyVolcanoShading(ctx, cell, x, y, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
@@ -18249,17 +20990,17 @@ function applyVolcanoShading(ctx, cell, x, y) {
     return;
   }
 
-  const pixelX = x * drawSize;
-  const pixelY = y * drawSize;
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
   const alpha = proximity * 0.4;
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
   ctx.fillStyle = `rgba(28, 14, 10, ${alpha})`;
-  ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+  ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
   ctx.restore();
 }
 
-function applyMountainShading(ctx, cell, x, y) {
+function applyMountainShading(ctx, cell, x, y, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
@@ -18283,11 +21024,11 @@ function applyMountainShading(ctx, cell, x, y) {
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
   ctx.fillStyle = `rgba(24, 20, 18, ${shadingAlpha})`;
-  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
 
-function applyDesertMountainTint(ctx, cell, x, y) {
+function applyDesertMountainTint(ctx, cell, x, y, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
@@ -18308,7 +21049,7 @@ function applyDesertMountainTint(ctx, cell, x, y) {
   ctx.globalCompositeOperation = 'source-atop';
   ctx.globalAlpha = isBadlandsBase ? 0.35 : 0.45;
   ctx.fillStyle = isBadlandsBase ? '#b38a5c' : '#dcbf7e';
-  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
 
@@ -18637,6 +21378,7 @@ function showLoadingScreen(statusText = defaultLoadingStatusMessage) {
   if (!elements.loadingScreen) {
     return;
   }
+  hasManualLoadingProgress = false;
   updateLoadingStatus(statusText);
   elements.loadingScreen.classList.remove('hidden');
   elements.loadingScreen.setAttribute('aria-hidden', 'false');
@@ -18652,6 +21394,7 @@ function hideLoadingScreen({ resetStatus = true } = {}) {
   if (!elements.loadingScreen) {
     return;
   }
+  hasManualLoadingProgress = false;
   elements.loadingScreen.classList.add('hidden');
   elements.loadingScreen.setAttribute('aria-hidden', 'true');
   elements.loadingScreen.removeAttribute('aria-busy');
@@ -18678,6 +21421,39 @@ function completeLoadingScreen() {
   });
 }
 
+function setManualLoadingProgress(value, statusText, { force = false, minDelta = 0.5 } = {}) {
+  const numericValue = Number.isFinite(value) ? value : 0;
+  const clampedValue = clamp(numericValue, 0, 100);
+  if (!hasManualLoadingProgress) {
+    stopLoadingProgressAnimation();
+    hasManualLoadingProgress = true;
+  }
+  if (!force && Math.abs(clampedValue - loadingProgressValue) < minDelta) {
+    if (statusText && elements.loadingStatus && elements.loadingStatus.textContent !== statusText) {
+      updateLoadingStatus(statusText);
+    }
+    return;
+  }
+  updateLoadingProgress(clampedValue);
+  if (statusText) {
+    updateLoadingStatus(statusText);
+  }
+}
+
+function waitForNextFrame() {
+  if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
+  });
+}
+
+async function updateLoadingProgressAndWait(value, statusText, options) {
+  setManualLoadingProgress(value, statusText, options);
+  await waitForNextFrame();
+}
+
 function runWithLoadingScreen(action, { statusText } = {}) {
   showLoadingScreen(statusText);
   return new Promise((resolve, reject) => {
@@ -18690,7 +21466,19 @@ function runWithLoadingScreen(action, { statusText } = {}) {
         reject(error);
         return;
       }
-      completeLoadingScreen().then(() => resolve(result));
+      const finalize = (resolvedResult) => {
+        completeLoadingScreen().then(() => resolve(resolvedResult));
+      };
+      if (result && typeof result.then === 'function') {
+        result
+          .then((asyncResult) => finalize(asyncResult))
+          .catch((error) => {
+            hideLoadingScreen();
+            reject(error);
+          });
+        return;
+      }
+      finalize(result);
     };
 
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
@@ -18714,9 +21502,7 @@ function beginGame() {
     elements.gameContainer.classList.add('hidden');
   }
   elements.seedDisplay.textContent = '';
-  runWithLoadingScreen(() => {
-    generateAndRender();
-  }, { statusText: 'Forging your world…' })
+  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
     .then(() => {
       if (elements.gameContainer) {
         elements.gameContainer.classList.remove('hidden');
@@ -18731,14 +21517,19 @@ function beginGame() {
     });
 }
 
-function generateAndRender(seedOverride) {
+async function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
   ensureLandMaskForProfile(state.settings.worldGenerationType);
   hideMapTooltip();
   hideLocalView({ suppressRedraw: true });
+  await updateLoadingProgressAndWait(12, 'Stabilizing ley lines…');
+  await updateLoadingProgressAndWait(28, 'Surveying continental plates…');
   const world = createWorld(seedToUse);
+  await updateLoadingProgressAndWait(68, 'Raising civilizations…');
   state.currentWorld = world;
+  await updateLoadingProgressAndWait(82, 'Rendering cartography…');
   drawWorld(world);
+  await updateLoadingProgressAndWait(92, 'Finalizing expedition briefs…', { force: true });
   elements.seedInput.value = world.seedString;
   if (elements.worldSeedInput) {
     elements.worldSeedInput.value = world.seedString;
@@ -18798,9 +21589,7 @@ function handleRegenerate() {
   }
   updateWorldInfoSeedDisplay(randomSeed);
   return runWithLoadingScreen(
-    () => {
-      generateAndRender(randomSeed);
-    },
+    () => generateAndRender(randomSeed),
     { statusText: 'Forging a new world…' }
   ).catch((error) => {
     console.error('Failed to regenerate world.', error);
@@ -18939,9 +21728,7 @@ function syncInputsWithSettings() {
     applyFormSettings();
     const previousSource = closeOptionsScreen();
     if (previousSource === 'game' && elements.gameContainer) {
-      runWithLoadingScreen(() => {
-        generateAndRender();
-      }, { statusText: 'Updating the realm…' }).catch((error) => {
+      runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
         console.error('Failed to apply new world settings.', error);
       });
     }
@@ -19116,6 +21903,7 @@ function syncInputsWithSettings() {
   if (elements.dwarfCustomizerForm) {
     elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      closeDwarfTest();
       beginGame();
       ensureMusicStarted();
     });
@@ -19207,7 +21995,7 @@ function syncInputsWithSettings() {
     const isFormControl =
       activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
-    if (isDwarfCustomizerVisible() && !isFormControl) {
+    if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
         changeActiveDwarf(-1);
@@ -19221,6 +22009,10 @@ function syncInputsWithSettings() {
     }
 
     if (event.key === 'Escape') {
+      if (isDwarfTestActive()) {
+        closeDwarfTest({ returnFocus: true });
+        return;
+      }
       if (state.localView && state.localView.active) {
         hideLocalView();
         return;
@@ -19251,8 +22043,10 @@ attachEvents(elements, {
   closeOptionsScreen,
   hideStructureDetails,
   showLocalViewAt,
+  showDwarfholdInterior,
   showStructureDetails,
   hideLocalView,
+  closeDwarfholdInterior,
   state,
   refreshOverlayToggleButtons,
   drawWorld,
@@ -19280,6 +22074,9 @@ attachEvents(elements, {
   setupTraitSliderControl,
   isDwarfCustomizerVisible,
   closeDwarfCustomizer,
+  toggleDwarfTest,
+  isDwarfTestActive,
+  closeDwarfTest,
   structureDetailsState,
   isOptionsVisible: () => optionsVisible,
   updateWorldInfoSeedDisplay,

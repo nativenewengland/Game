@@ -6,8 +6,10 @@ export function attachEvents(elements, deps) {
     closeOptionsScreen,
     hideStructureDetails,
     showLocalViewAt,
+    showDwarfholdInterior,
     showStructureDetails,
     hideLocalView,
+    closeDwarfholdInterior,
     state,
     refreshOverlayToggleButtons,
     drawWorld,
@@ -35,6 +37,9 @@ export function attachEvents(elements, deps) {
     setupTraitSliderControl,
     isDwarfCustomizerVisible,
     closeDwarfCustomizer,
+    toggleDwarfTest,
+    isDwarfTestActive,
+    closeDwarfTest,
     structureDetailsState,
     isOptionsVisible,
     updateWorldInfoSeedDisplay,
@@ -119,11 +124,98 @@ export function attachEvents(elements, deps) {
     });
   }
 
+  const dwarfholdStructureKeys = new Set(['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD', 'HILLHOLD']);
+  const isDwarfholdStructureTile = (tile) => {
+    if (!tile) {
+      return false;
+    }
+    if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+      return true;
+    }
+    const rawType = tile.structureDetails?.type;
+    if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+      return true;
+    }
+    if (typeof tile.structureName === 'string') {
+      const upperName = tile.structureName.toUpperCase();
+      for (const key of dwarfholdStructureKeys) {
+        if (upperName.includes(key)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const getWorldTileAt = (x, y) => {
+    const world = state.currentWorld;
+    if (!world || !Array.isArray(world.tiles)) {
+      return null;
+    }
+    if (!Number.isInteger(x) || !Number.isInteger(y)) {
+      return null;
+    }
+    const row = world.tiles[y];
+    if (!Array.isArray(row)) {
+      return null;
+    }
+    return row[x] || null;
+  };
+
+  const enrichWithDwarfholdDetails = (tile, x, y) => {
+    if (!tile) {
+      return null;
+    }
+    if (tile.structureDetails && Object.keys(tile.structureDetails).length > 0) {
+      return tile;
+    }
+
+    if (!isDwarfholdStructureTile(tile)) {
+      return tile;
+    }
+
+    const world = state.currentWorld;
+    if (!world || !Array.isArray(world.dwarfholds)) {
+      return tile;
+    }
+
+    const match = world.dwarfholds.find((hold) => hold && hold.x === x && hold.y === y);
+    if (!match) {
+      return tile;
+    }
+
+    const { x: holdX, y: holdY, ...details } = match;
+    const mergedDetails = { ...(tile.structureDetails || {}), ...details };
+    const resolvedName = mergedDetails.name || tile.structureName || tile.areaName;
+
+    tile.structureDetails = mergedDetails;
+    if (resolvedName) {
+      tile.structureName = resolvedName;
+    }
+
+    return tile;
+  };
+
+  const resolveTileForDetails = (tile, tileX, tileY) => {
+    const worldTile = getWorldTileAt(tileX, tileY);
+    const baseTile = worldTile || tile || null;
+    if (!baseTile) {
+      return null;
+    }
+    return enrichWithDwarfholdDetails(baseTile, tileX, tileY);
+  };
+
   if (elements.structureContextMenuBegin) {
     elements.structureContextMenuBegin.addEventListener('click', () => {
-      const { tileX, tileY } = structureContextMenuState;
+      const { tile, tileX, tileY } = structureContextMenuState;
       hideStructureContextMenu();
-      if (Number.isInteger(tileX) && Number.isInteger(tileY)) {
+      if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
+        return;
+      }
+      const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
+      if (isDwarfholdStructureTile(resolvedTile)) {
+        showDwarfholdInterior(resolvedTile, tileX, tileY);
+      } else {
         showLocalViewAt(tileX, tileY);
       }
     });
@@ -132,19 +224,23 @@ export function attachEvents(elements, deps) {
   if (elements.structureContextMenuMoreInfo) {
     elements.structureContextMenuMoreInfo.addEventListener('click', () => {
       const { tile, tileX, tileY } = structureContextMenuState;
+      const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
       hideStructureContextMenu();
-      if (tile && tile.structureName) {
-        showStructureDetails(tile, { tileX, tileY });
+      if (resolvedTile && resolvedTile.structureName) {
+        showStructureDetails(resolvedTile, { tileX, tileY });
       }
     });
   }
 
   if (elements.localMapClose) {
     elements.localMapClose.addEventListener('click', () => {
-      hideLocalView();
-      if (elements.canvasWrapper) {
-        elements.canvasWrapper.focus();
-      }
+      hideLocalView({ returnFocus: true });
+    });
+  }
+
+  if (elements.dwarfholdExit) {
+    elements.dwarfholdExit.addEventListener('click', () => {
+      closeDwarfholdInterior({ returnFocus: true });
     });
   }
 
@@ -453,8 +549,15 @@ export function attachEvents(elements, deps) {
   if (elements.dwarfCustomizerForm) {
     elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      closeDwarfTest();
       beginGame();
       ensureMusicStarted();
+    });
+  }
+
+  if (elements.dwarfTestButton) {
+    elements.dwarfTestButton.addEventListener('click', () => {
+      toggleDwarfTest();
     });
   }
 
@@ -536,7 +639,7 @@ export function attachEvents(elements, deps) {
     const activeElement = document.activeElement;
     const isFormControl = activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
-    if (isDwarfCustomizerVisible() && !isFormControl) {
+    if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
         changeActiveDwarf(-1);
@@ -550,8 +653,12 @@ export function attachEvents(elements, deps) {
     }
 
     if (event.key === 'Escape') {
+      if (isDwarfTestActive()) {
+        closeDwarfTest({ returnFocus: true });
+        return;
+      }
       if (state.localView && state.localView.active) {
-        hideLocalView();
+        hideLocalView({ returnFocus: true });
         return;
       }
       if (structureDetailsState.visible) {
