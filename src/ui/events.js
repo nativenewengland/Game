@@ -221,8 +221,8 @@ export function attachEvents(elements, deps) {
   if (elements.structureContextMenuMoreInfo) {
     elements.structureContextMenuMoreInfo.addEventListener('click', () => {
       const { tile, tileX, tileY } = structureContextMenuState;
-      hideStructureContextMenu();
       const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
+      hideStructureContextMenu();
       if (resolvedTile && resolvedTile.structureName) {
         showStructureDetails(resolvedTile, { tileX, tileY });
       }
