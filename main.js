@@ -904,13 +904,53 @@ const dwarfholdPopulationRaceOptions = [
 
 const dwarfholdNearbyTownRadius = 12;
 
-const evilWizardTowerPopulationRaceOptions = [
+const evilWizardTowerBasePopulationOptions = [
   { key: 'wizards', label: 'Wizards', color: '#9c5cff' },
   { key: 'apprentices', label: 'Apprentices', color: '#b389ff' },
-  { key: 'thralls', label: 'Thralls', color: '#646e78' },
-  { key: 'summoned', label: 'Summoned Entities', color: '#ff8ba7' },
-  { key: 'guards', label: 'Enslaved Guards', color: '#f2cd5c' },
-  { key: 'others', label: 'Others', color: '#9e9e9e' }
+  { key: 'attendants', label: 'Attendants', color: '#9e9e9e' }
+];
+
+const evilWizardArchetypes = [
+  {
+    key: 'necromancer',
+    label: 'Necromancer',
+    populationOptions: [
+      { key: 'undead', label: 'Undead Legions', color: '#b1b1b1' },
+      { key: 'graveAcolytes', label: 'Grave Acolytes', color: '#6f7a6b' }
+    ]
+  },
+  {
+    key: 'warlock',
+    label: 'Warlock',
+    populationOptions: [
+      { key: 'demons', label: 'Infernal Servitors', color: '#ff6b6b' },
+      { key: 'cultists', label: 'Fanatical Cultists', color: '#f4a259' }
+    ]
+  },
+  {
+    key: 'artificer',
+    label: 'Artificer',
+    populationOptions: [
+      { key: 'constructs', label: 'Arcane Constructs', color: '#6ca0dc' },
+      { key: 'boundSpirits', label: 'Bound Spirits', color: '#9b5de5' }
+    ]
+  },
+  {
+    key: 'elementalist',
+    label: 'Elementalist',
+    populationOptions: [
+      { key: 'elementals', label: 'Elemental Servitors', color: '#48cae4' },
+      { key: 'planarAllies', label: 'Planar Allies', color: '#ffb347' }
+    ]
+  },
+  {
+    key: 'voidcaller',
+    label: 'Voidcaller',
+    populationOptions: [
+      { key: 'eldritchHorrors', label: 'Eldritch Horrors', color: '#845ec2' },
+      { key: 'shadowbound', label: 'Shadowbound Shades', color: '#3f3d56' }
+    ]
+  }
 ];
 
 const towerCommanderTitles = [
@@ -2679,7 +2719,7 @@ function generateDwarfholdPopulationBreakdown(population, random, options = {}) 
   });
 }
 
-function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCount) {
+function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCount, archetype) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const resolvedPopulation = Math.max(0, Math.round(Number.isFinite(population) ? population : 0));
   const resolvedWizardCount = Math.max(
@@ -2691,22 +2731,46 @@ function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCo
   );
   const remainderPopulation = Math.max(0, resolvedPopulation - resolvedWizardCount);
 
-  const remainderBreakdown =
-    remainderPopulation > 0
-      ? generatePopulationBreakdownFromOptions(
-          evilWizardTowerPopulationRaceOptions.slice(1),
-          remainderPopulation,
-          randomFn,
-          {
-            majorityIndex: 1,
-            majorityShareRange: [0.35, 0.6],
-            ensureMajority: true
-          }
-        )
-      : [];
+  const baseOptions = Array.isArray(evilWizardTowerBasePopulationOptions)
+    ? evilWizardTowerBasePopulationOptions
+    : [];
+  const wizardOption = baseOptions[0] || null;
+  const remainderBaseOptions = baseOptions.length > 1 ? baseOptions.slice(1) : [];
+
+  const specializationOptions = Array.isArray(archetype?.populationOptions)
+    ? archetype.populationOptions.filter(
+        (option) =>
+          option &&
+          typeof option.key === 'string' &&
+          option.key &&
+          typeof option.label === 'string' &&
+          option.label.trim()
+      )
+    : [];
+
+  const remainderOptions = [...specializationOptions, ...remainderBaseOptions];
+
+  let remainderBreakdown = [];
+  if (remainderPopulation > 0 && remainderOptions.length > 0) {
+    const shareRange = specializationOptions.length > 0 ? [0.45, 0.7] : [0.35, 0.6];
+    remainderBreakdown = generatePopulationBreakdownFromOptions(
+      remainderOptions,
+      remainderPopulation,
+      randomFn,
+      {
+        majorityIndex: 0,
+        majorityShareRange: shareRange,
+        ensureMajority: true
+      }
+    );
+  }
+
+  if (!wizardOption) {
+    return remainderBreakdown;
+  }
 
   const wizardEntry = {
-    ...evilWizardTowerPopulationRaceOptions[0],
+    ...wizardOption,
     percentage:
       resolvedPopulation === 0
         ? 0
@@ -2718,16 +2782,15 @@ function generateEvilWizardTowerPopulationBreakdown(population, random, wizardCo
     return [wizardEntry];
   }
 
-  return [
-    wizardEntry,
-    ...remainderBreakdown.map((entry) => ({
-      ...entry,
-      percentage:
-        resolvedPopulation === 0
-          ? 0
-          : clamp((entry.population / resolvedPopulation) * 100, 0, 100)
-    }))
-  ];
+  const normalizedRemainder = remainderBreakdown.map((entry) => ({
+    ...entry,
+    percentage:
+      resolvedPopulation === 0
+        ? 0
+        : clamp((entry.population / resolvedPopulation) * 100, 0, 100)
+  }));
+
+  return [wizardEntry, ...normalizedRemainder];
 }
 
 function generateTownPopulationBreakdown(population, random) {
@@ -3141,10 +3204,12 @@ function generateEvilWizardTowerDetails(name, random) {
   const prominentGroup = cabal || null;
   const hallmark = pickRandomFrom(evilWizardTowerHallmarks, randomFn) ||
     'Shrouded in eldritch wards that thrum through the night.';
+  const wizardArchetype = pickRandomFrom(evilWizardArchetypes, randomFn) || null;
   const populationBreakdown = generateEvilWizardTowerPopulationBreakdown(
     population,
     randomFn,
-    resolvedWizardCount
+    resolvedWizardCount,
+    wizardArchetype
   );
 
   return {
@@ -3164,6 +3229,8 @@ function generateEvilWizardTowerDetails(name, random) {
     prominentGroupLabel: 'Dominant Cabal',
     hallmark,
     hallmarkLabel: 'Notorious For',
+    wizardTradition: wizardArchetype ? wizardArchetype.label : null,
+    wizardTraditionLabel: wizardArchetype ? 'Arcane Tradition' : null,
     populationBreakdown
   };
 }
@@ -4616,8 +4683,17 @@ const defaultCultureColorByKey = {
   beastmasters: '#b0f0d0',
   wizards: '#9c5cff',
   apprentices: '#b389ff',
-  thralls: '#646e78',
-  summoned: '#ff8ba7',
+  attendants: '#9e9e9e',
+  undead: '#b1b1b1',
+  graveAcolytes: '#6f7a6b',
+  demons: '#ff6b6b',
+  cultists: '#f4a259',
+  constructs: '#6ca0dc',
+  boundSpirits: '#9b5de5',
+  elementals: '#48cae4',
+  planarAllies: '#ffb347',
+  eldritchHorrors: '#845ec2',
+  shadowbound: '#3f3d56',
   guards: '#f2cd5c',
   others: '#9e9e9e'
 };
@@ -9445,6 +9521,11 @@ function buildStructureTooltipContent(tile) {
     if (prominentGroup) {
       const prominentLabel = details.prominentGroupLabel || (details.prominentClan ? 'Prominent Clan' : 'Prominent Group');
       entries.push({ label: prominentLabel, value: prominentGroup });
+    }
+
+    if (details.wizardTradition) {
+      const traditionLabel = details.wizardTraditionLabel || 'Arcane Tradition';
+      entries.push({ label: traditionLabel, value: details.wizardTradition });
     }
 
     if (Array.isArray(details.majorClans) && details.majorClans.length > 0) {
