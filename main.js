@@ -4132,13 +4132,13 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
   });
 
   const factionById = new Map(factions.map((faction) => [faction.id, faction]));
+  const connectedMarks = new Int32Array(width * height);
+  connectedMarks.fill(-1);
 
   const enforceFactionConnectivity = () => {
     if (factions.length === 0) {
       return;
     }
-
-    const connectedByFactionId = new Map();
 
     factions.forEach((faction) => {
       const capital = faction.capital || {};
@@ -4146,21 +4146,19 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       const cy = Number.isFinite(capital.y) ? capital.y : null;
 
       if (cx === null || cy === null || cx < 0 || cy < 0 || cx >= width || cy >= height) {
-        connectedByFactionId.set(faction.id, new Set());
         return;
       }
 
       const startRow = tiles[cy];
       const startTile = startRow ? startRow[cx] : null;
       if (!startTile || startTile.factionId !== faction.id) {
-        connectedByFactionId.set(faction.id, new Set());
         return;
       }
 
-      const visited = new Set();
       const queue = [[cx, cy]];
       let index = 0;
-      visited.add(toIndex(cx, cy));
+      const startIndex = toIndex(cx, cy);
+      connectedMarks[startIndex] = faction.id;
 
       while (index < queue.length) {
         const [tx, ty] = queue[index];
@@ -4182,14 +4180,12 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
           }
 
           const neighborIndex = toIndex(nx, ny);
-          if (!visited.has(neighborIndex)) {
-            visited.add(neighborIndex);
+          if (connectedMarks[neighborIndex] !== faction.id) {
+            connectedMarks[neighborIndex] = faction.id;
             queue.push([nx, ny]);
           }
         }
       }
-
-      connectedByFactionId.set(faction.id, visited);
     });
 
     for (let y = 0; y < height; y += 1) {
@@ -4202,17 +4198,12 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         if (!tile || tile.factionId === null || tile.factionId === undefined) {
           continue;
         }
-        const connectedIndices = connectedByFactionId.get(tile.factionId);
-        if (!connectedIndices) {
-          tile.factionId = null;
-          tile.factionInfluence = 0;
-          continue;
-        }
         const tileIndex = toIndex(x, y);
-        if (!connectedIndices.has(tileIndex)) {
+        if (connectedMarks[tileIndex] !== tile.factionId) {
           tile.factionId = null;
           tile.factionInfluence = 0;
         }
+        connectedMarks[tileIndex] = -1;
       }
     }
 
@@ -4236,6 +4227,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         }
       }
     }
+
+    connectedMarks.fill(-1);
   };
 
   const applyOverlordVassalRules = () => {
