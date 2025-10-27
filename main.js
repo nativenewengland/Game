@@ -5694,8 +5694,296 @@ const dwarfTestState = {
   lastFrameTime: null,
   rafId: null,
   backgroundOffset: 0,
-  position: { x: 0, y: 0 }
+  position: { x: 0, y: 0 },
+  map: null,
+  tileSize: 16,
+  tileScale: 2,
+  camera: { x: 0, y: 0 },
+  animationTime: 0
 };
+
+const dwarfTestTileSheetKey = 'dwarfTest';
+const dwarfTestTileSize = 16;
+const dwarfTestTileScale = 2;
+const dwarfTestMapDimensions = { columns: 42, rows: 24 };
+
+const dwarfTestTilePalette = {
+  grass: { sheet: dwarfTestTileSheetKey, col: 0, row: 2 },
+  grassAlt: { sheet: dwarfTestTileSheetKey, col: 3, row: 2 },
+  savanna: { sheet: dwarfTestTileSheetKey, col: 6, row: 2 },
+  swamp: { sheet: dwarfTestTileSheetKey, col: 4, row: 3 },
+  hills: { sheet: dwarfTestTileSheetKey, col: 2, row: 2 },
+  beach: { sheet: dwarfTestTileSheetKey, col: 12, row: 0 },
+  shore: {
+    sheet: dwarfTestTileSheetKey,
+    frames: [
+      { col: 12, row: 1 },
+      { col: 12, row: 2 },
+      { col: 12, row: 3 }
+    ],
+    animationSpeed: 1.2
+  },
+  tundra: { sheet: dwarfTestTileSheetKey, col: 13, row: 3 },
+  glacier: { sheet: dwarfTestTileSheetKey, col: 14, row: 2 },
+  desert: { sheet: dwarfTestTileSheetKey, col: 19, row: 2 },
+  lake: {
+    sheet: dwarfTestTileSheetKey,
+    frames: [
+      { col: 16, row: 1 },
+      { col: 16, row: 2 },
+      { col: 16, row: 3 }
+    ],
+    animationSpeed: 1.4
+  },
+  ocean: {
+    sheet: dwarfTestTileSheetKey,
+    frames: [
+      { col: 17, row: 1 },
+      { col: 17, row: 2 },
+      { col: 17, row: 3 }
+    ],
+    animationSpeed: 1.6
+  },
+  deepOcean: {
+    sheet: dwarfTestTileSheetKey,
+    frames: [
+      { col: 18, row: 1 },
+      { col: 18, row: 2 },
+      { col: 18, row: 3 }
+    ],
+    animationSpeed: 1.7
+  },
+  frozenOcean: {
+    sheet: dwarfTestTileSheetKey,
+    frames: [
+      { col: 15, row: 0 },
+      { col: 15, row: 1 },
+      { col: 15, row: 2 }
+    ],
+    animationSpeed: 1.1
+  }
+};
+
+function isDwarfTestWaterTileKey(tileKey) {
+  return tileKey === 'lake' || tileKey === 'ocean' || tileKey === 'deepOcean' || tileKey === 'frozenOcean';
+}
+
+function resolveDwarfTestTileFrame(tileKey) {
+  const entry = dwarfTestTilePalette[tileKey];
+  if (!entry) {
+    return null;
+  }
+  if (entry.frames && entry.frames.length > 0) {
+    const speed = entry.animationSpeed || 1;
+    const phase = Math.floor((dwarfTestState.animationTime || 0) * speed);
+    const frame = entry.frames[Math.abs(phase) % entry.frames.length] || entry.frames[0];
+    return { sheet: entry.sheet, col: frame.col, row: frame.row };
+  }
+  return entry;
+}
+
+function generateDwarfTestMap() {
+  const { columns, rows } = dwarfTestMapDimensions;
+  const tiles = Array.from({ length: rows }, () => new Array(columns));
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < columns; col += 1) {
+      const noise = Math.random();
+      let key = noise < 0.45 ? 'grassAlt' : 'grass';
+      if (noise > 0.92) {
+        key = 'savanna';
+      }
+      tiles[row][col] = key;
+    }
+  }
+
+  const desertRowStart = Math.floor(rows * 0.62);
+  const desertColEnd = Math.floor(columns * 0.28);
+  for (let row = desertRowStart; row < rows; row += 1) {
+    for (let col = 0; col < desertColEnd; col += 1) {
+      tiles[row][col] = 'desert';
+    }
+  }
+
+  const hillRowStart = Math.floor(rows * 0.34);
+  const hillRowEnd = Math.floor(rows * 0.6);
+  const hillColStart = Math.floor(columns * 0.18);
+  const hillColEnd = Math.floor(columns * 0.56);
+  for (let row = hillRowStart; row < hillRowEnd; row += 1) {
+    for (let col = hillColStart; col < hillColEnd; col += 1) {
+      if ((row + col) % 3 === 0) {
+        tiles[row][col] = 'hills';
+      }
+    }
+  }
+
+  const swampCenterCol = Math.floor(columns * 0.42);
+  const swampCenterRow = Math.floor(rows * 0.76);
+  const swampRadius = 3.6;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < columns; col += 1) {
+      const dx = col - swampCenterCol;
+      const dy = row - swampCenterRow;
+      if (Math.sqrt(dx * dx + dy * dy) <= swampRadius) {
+        tiles[row][col] = 'swamp';
+      }
+    }
+  }
+
+  const lakeCenterCol = Math.floor(columns * 0.58);
+  const lakeCenterRow = Math.floor(rows * 0.52);
+  const lakeRadius = 4.4;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < columns; col += 1) {
+      const dx = col - lakeCenterCol;
+      const dy = row - lakeCenterRow;
+      if (dx * dx + dy * dy <= lakeRadius * lakeRadius) {
+        tiles[row][col] = 'lake';
+      }
+    }
+  }
+
+  const oceanStartCol = columns - 8;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = oceanStartCol; col < columns; col += 1) {
+      const depth = columns - col - 1;
+      if (depth <= 1) {
+        tiles[row][col] = 'deepOcean';
+      } else if (row < 3) {
+        tiles[row][col] = 'frozenOcean';
+      } else {
+        tiles[row][col] = 'ocean';
+      }
+    }
+  }
+
+  for (let row = 0; row < rows; row += 1) {
+    const coastalCol = Math.max(0, oceanStartCol - 1);
+    tiles[row][coastalCol] = row < 4 ? 'glacier' : 'beach';
+  }
+
+  const tundraColStart = Math.max(Math.floor(columns * 0.64), oceanStartCol - 6);
+  const tundraRowEnd = Math.floor(rows * 0.28);
+  for (let row = 0; row < tundraRowEnd; row += 1) {
+    for (let col = tundraColStart; col < oceanStartCol - 1; col += 1) {
+      tiles[row][col] = row < 2 ? 'glacier' : 'tundra';
+    }
+  }
+
+  const neighborOffsets = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    [-1, -1],
+    [-1, 1],
+    [1, -1],
+    [1, 1]
+  ];
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < columns; col += 1) {
+      const key = tiles[row][col];
+      if (isDwarfTestWaterTileKey(key)) {
+        continue;
+      }
+      let touchesWater = false;
+      for (const [dx, dy] of neighborOffsets) {
+        const nx = col + dx;
+        const ny = row + dy;
+        if (nx < 0 || ny < 0 || nx >= columns || ny >= rows) {
+          continue;
+        }
+        if (isDwarfTestWaterTileKey(tiles[ny][nx])) {
+          touchesWater = true;
+          break;
+        }
+      }
+      if (!touchesWater) {
+        continue;
+      }
+      if (key === 'desert') {
+        tiles[row][col] = 'beach';
+      } else if (key !== 'glacier' && key !== 'tundra') {
+        tiles[row][col] = 'shore';
+      }
+    }
+  }
+
+  return { columns, rows, tiles };
+}
+
+function findNearestDwarfTestWalkableTile(map, startCol, startRow) {
+  if (!map || !Array.isArray(map.tiles)) {
+    return { col: startCol, row: startRow };
+  }
+  const clampedStartCol = clamp(startCol, 0, map.columns - 1);
+  const clampedStartRow = clamp(startRow, 0, map.rows - 1);
+  const maxRadius = Math.max(map.columns, map.rows);
+  for (let radius = 0; radius < maxRadius; radius += 1) {
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const col = clampedStartCol + dx;
+        const row = clampedStartRow + dy;
+        if (col < 0 || row < 0 || col >= map.columns || row >= map.rows) {
+          continue;
+        }
+        const tileKey = map.tiles[row][col];
+        if (!isDwarfTestWaterTileKey(tileKey)) {
+          return { col, row };
+        }
+      }
+    }
+  }
+  return { col: clampedStartCol, row: clampedStartRow };
+}
+
+function updateDwarfTestCamera(ctx, spriteDimensions, options = {}) {
+  const { immediate = false } = options;
+  const map = dwarfTestState.map;
+  if (!map) {
+    dwarfTestState.camera.x = 0;
+    dwarfTestState.camera.y = 0;
+    return dwarfTestState.camera;
+  }
+
+  const tileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const worldWidth = map.columns * tileSize;
+  const worldHeight = map.rows * tileSize;
+  const viewWidth = ctx.canvas.width;
+  const viewHeight = ctx.canvas.height;
+  const paddingY = Math.max(0, spriteDimensions.height * 0.35);
+
+  const targetX = clamp(
+    dwarfTestState.position.x - viewWidth / 2,
+    0,
+    Math.max(0, worldWidth - viewWidth)
+  );
+  const targetY = clamp(
+    dwarfTestState.position.y - viewHeight + paddingY,
+    0,
+    Math.max(0, worldHeight - viewHeight)
+  );
+
+  if (immediate || !Number.isFinite(dwarfTestState.lastFrameTime)) {
+    dwarfTestState.camera.x = targetX;
+    dwarfTestState.camera.y = targetY;
+    return dwarfTestState.camera;
+  }
+
+  const smoothing = 0.18;
+  dwarfTestState.camera.x += (targetX - dwarfTestState.camera.x) * smoothing;
+  dwarfTestState.camera.y += (targetY - dwarfTestState.camera.y) * smoothing;
+
+  if (Math.abs(targetX - dwarfTestState.camera.x) < 0.5) {
+    dwarfTestState.camera.x = targetX;
+  }
+  if (Math.abs(targetY - dwarfTestState.camera.y) < 0.5) {
+    dwarfTestState.camera.y = targetY;
+  }
+
+  return dwarfTestState.camera;
+}
 
 const musicTracks = [
   { title: 'Another Year', src: 'sound/tracks/another_year/AY_Full.ogg' },
@@ -7108,7 +7396,7 @@ function ensureDwarfTestContext() {
       dwarfTestState.ctx = null;
       return null;
     }
-    context.imageSmoothingEnabled = true;
+    context.imageSmoothingEnabled = false;
     dwarfTestState.canvas = canvas;
     dwarfTestState.ctx = context;
   }
@@ -7152,18 +7440,31 @@ function getDwarfTestSpriteDimensions(ctx) {
 }
 
 function getDwarfTestBounds(ctx, spriteDimensions) {
-  const { canvas } = ctx;
-  const paddingX = Math.max(16, canvas.width * 0.06);
-  const paddingY = Math.max(18, canvas.height * 0.1);
-  const minX = paddingX + spriteDimensions.width / 2;
-  const maxX = canvas.width - paddingX - spriteDimensions.width / 2;
-  const groundPadding = Math.max(paddingY, spriteDimensions.height * 0.2);
-  const minY = paddingY + spriteDimensions.height / 2;
-  const maxY = canvas.height - groundPadding;
+  const map = dwarfTestState.map;
+  const tileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  if (!map) {
+    const { canvas } = ctx;
+    const paddingX = Math.max(16, canvas.width * 0.06);
+    const paddingY = Math.max(18, canvas.height * 0.1);
+    const minX = paddingX + spriteDimensions.width / 2;
+    const maxX = canvas.width - paddingX - spriteDimensions.width / 2;
+    const groundPadding = Math.max(paddingY, spriteDimensions.height * 0.2);
+    const minY = paddingY + spriteDimensions.height / 2;
+    const maxY = canvas.height - groundPadding;
+    return { minX, maxX, minY, maxY };
+  }
+
+  const worldWidth = map.columns * tileSize;
+  const worldHeight = map.rows * tileSize;
+  const minX = spriteDimensions.width / 2;
+  const maxX = Math.max(minX, worldWidth - spriteDimensions.width / 2);
+  const minY = spriteDimensions.height / 2;
+  const groundPadding = Math.max(tileSize * 0.5, spriteDimensions.height * 0.25);
+  const maxY = Math.max(minY, worldHeight - groundPadding);
   return { minX, maxX, minY, maxY };
 }
 
-function drawDwarfTestBackground(ctx) {
+function drawDwarfTestFallbackBackground(ctx) {
   const { canvas } = ctx;
   const { width, height } = canvas;
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
@@ -7215,11 +7516,82 @@ function drawDwarfTestBackground(ctx) {
   ctx.fillRect(0, 0, width, height);
 }
 
+function drawDwarfTestBackground(ctx) {
+  const baseSheet = state.tileSheets[dwarfTestTileSheetKey];
+  const map = dwarfTestState.map;
+  if (!baseSheet?.image || !map || !Array.isArray(map.tiles)) {
+    drawDwarfTestFallbackBackground(ctx);
+    return;
+  }
+
+  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const { columns, rows, tiles } = map;
+  const camera = dwarfTestState.camera || { x: 0, y: 0 };
+  const { width, height } = ctx.canvas;
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#070c14';
+  ctx.fillRect(0, 0, width, height);
+
+  const startCol = Math.max(0, Math.floor(camera.x / destTileSize));
+  const startRow = Math.max(0, Math.floor(camera.y / destTileSize));
+  const offsetX = camera.x - startCol * destTileSize;
+  const offsetY = camera.y - startRow * destTileSize;
+  const visibleCols = Math.min(columns - startCol, Math.ceil((width + offsetX) / destTileSize) + 1);
+  const visibleRows = Math.min(rows - startRow, Math.ceil((height + offsetY) / destTileSize) + 1);
+
+  for (let row = 0; row < visibleRows; row += 1) {
+    const mapRow = startRow + row;
+    const destY = Math.round(row * destTileSize - offsetY);
+    for (let col = 0; col < visibleCols; col += 1) {
+      const mapCol = startCol + col;
+      const tileKey = tiles[mapRow][mapCol];
+      const frame = resolveDwarfTestTileFrame(tileKey) || resolveDwarfTestTileFrame('grass');
+      const sheetKey = frame?.sheet || dwarfTestTileSheetKey;
+      const sheet = state.tileSheets[sheetKey] || baseSheet;
+      if (!frame || !sheet?.image) {
+        continue;
+      }
+      const sx = frame.col * sheet.tileSize;
+      const sy = frame.row * sheet.tileSize;
+      const destX = Math.round(col * destTileSize - offsetX);
+      ctx.drawImage(sheet.image, sx, sy, sheet.tileSize, sheet.tileSize, destX, destY, destTileSize, destTileSize);
+    }
+  }
+
+  ctx.restore();
+
+  const skyGradient = ctx.createLinearGradient(0, 0, 0, Math.max(1, height * 0.45));
+  skyGradient.addColorStop(0, 'rgba(12, 19, 30, 0.9)');
+  skyGradient.addColorStop(1, 'rgba(12, 19, 30, 0)');
+  ctx.fillStyle = skyGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const groundGlow = ctx.createLinearGradient(0, height * 0.6, 0, height);
+  groundGlow.addColorStop(0, 'rgba(11, 18, 27, 0)');
+  groundGlow.addColorStop(1, 'rgba(7, 12, 20, 0.55)');
+  ctx.fillStyle = groundGlow;
+  ctx.fillRect(0, 0, width, height);
+}
+
 function drawDwarfTestCharacter(ctx, spriteDimensions) {
   const { width, height } = ctx.canvas;
   const position = dwarfTestState.position;
-  const baseX = clamp(position.x, 0, width);
-  const baseY = clamp(position.y, 0, height);
+  const camera = dwarfTestState.camera || { x: 0, y: 0 };
+  const baseX = position.x - camera.x;
+  const baseY = position.y - camera.y;
+  const margin = Math.max(spriteDimensions.width, spriteDimensions.height);
+  if (
+    baseX < -margin ||
+    baseX > width + margin ||
+    baseY < -margin ||
+    baseY > height + margin
+  ) {
+    return;
+  }
 
   const shadowWidth = spriteDimensions.width * 0.6;
   const shadowHeight = Math.max(6, spriteDimensions.height * 0.18);
@@ -7294,6 +7666,7 @@ function updateDwarfTestFrame(timestamp) {
   const deltaMs = timestamp - (dwarfTestState.lastFrameTime || timestamp);
   const delta = clamp(deltaMs / 1000, 0, 0.1);
   dwarfTestState.lastFrameTime = timestamp;
+  dwarfTestState.animationTime += delta;
 
   const direction = getDwarfTestDirectionVector();
   const moveSpeed = 160;
@@ -7311,6 +7684,7 @@ function updateDwarfTestFrame(timestamp) {
   dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
   dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
 
+  updateDwarfTestCamera(ctx, spriteDimensions);
   drawDwarfTestBackground(ctx);
   drawDwarfTestCharacter(ctx, spriteDimensions);
 
@@ -7377,13 +7751,24 @@ function resetDwarfTestState() {
   if (!ctx) {
     return;
   }
+  dwarfTestState.tileSize = dwarfTestTileSize;
+  dwarfTestState.tileScale = dwarfTestTileScale;
+  dwarfTestState.map = generateDwarfTestMap();
+  dwarfTestState.animationTime = 0;
   const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
+  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const defaultCol = Math.floor(dwarfTestMapDimensions.columns * 0.35);
+  const defaultRow = Math.max(0, dwarfTestMapDimensions.rows - 4);
+  const walkable = findNearestDwarfTestWalkableTile(dwarfTestState.map, defaultCol, defaultRow);
+  const spawnX = (walkable.col + 0.5) * destTileSize;
+  const spawnY = (walkable.row + 1) * destTileSize - destTileSize * 0.12;
   const bounds = getDwarfTestBounds(ctx, spriteDimensions);
-  dwarfTestState.position.x = (bounds.minX + bounds.maxX) / 2;
-  dwarfTestState.position.y = bounds.maxY - Math.max(12, spriteDimensions.height * 0.08);
+  dwarfTestState.position.x = clamp(spawnX, bounds.minX, bounds.maxX);
+  dwarfTestState.position.y = clamp(spawnY, bounds.minY, bounds.maxY);
   dwarfTestState.backgroundOffset = 0;
   dwarfTestState.lastFrameTime = null;
   dwarfTestState.pressed.clear();
+  updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
   drawDwarfTestBackground(ctx);
   drawDwarfTestCharacter(ctx, spriteDimensions);
 }
@@ -7435,6 +7820,7 @@ function closeDwarfTest(options = {}) {
   window.removeEventListener('keydown', handleDwarfTestKeyDown);
   window.removeEventListener('keyup', handleDwarfTestKeyUp);
   dwarfTestState.lastFrameTime = null;
+  dwarfTestState.animationTime = 0;
   if (elements.dwarfTestArea) {
     elements.dwarfTestArea.classList.add('hidden');
     elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
