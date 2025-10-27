@@ -4043,6 +4043,9 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       case 'town':
         baseRadius = 32;
         break;
+      case 'monastery':
+        baseRadius = 28;
+        break;
       case 'tower':
         baseRadius = 24;
         break;
@@ -4074,6 +4077,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         return `${label} Thanedom`;
       case 'hillhold':
         return `${label} Holdfast`;
+      case 'monastery':
+        return `${label} Cloister`;
       case 'woodElfGrove':
         return `${label} Canopy`;
       case 'lizardmenCity':
@@ -4786,6 +4791,16 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
     ];
   }
   if (type === 'monastery') {
+    return [
+      {
+        key: 'humans',
+        label: 'Humans',
+        percentage: 100,
+        color: defaultCultureColorByKey.humans
+      }
+    ];
+  }
+  if (type === 'saintShrine') {
     return [
       {
         key: 'humans',
@@ -20385,6 +20400,14 @@ function createWorld(seedString) {
       population: Number.isFinite(grove?.population) ? grove.population : null,
       settlementKind: typeof grove?.type === 'string' ? grove.type : null
     })),
+    ...monasteries.map((monastery) => ({
+      x: monastery.x,
+      y: monastery.y,
+      label: monastery.name || monastery.structureName || 'Monastery',
+      type: 'monastery',
+      population: Number.isFinite(monastery?.population) ? monastery.population : null,
+      settlementKind: typeof monastery?.type === 'string' ? monastery.type : null
+    })),
     ...castles.map((castle) => ({
       x: castle.x,
       y: castle.y,
@@ -20404,6 +20427,96 @@ function createWorld(seedString) {
     settlements: settlementSeeds
   });
   const factions = politicalData.factions || [];
+
+  if (saintShrines.length > 0 && factions.length > 0) {
+    const factionById = new Map(factions.map((faction) => [faction.id, faction]));
+    const saintShrineAttachmentTypes = new Set(['village', 'town', 'city']);
+    const candidateSettlements = [];
+
+    towns.forEach((town) => {
+      if (!town || !Number.isFinite(town.x) || !Number.isFinite(town.y)) {
+        return;
+      }
+      const settlementType = typeof town?.type === 'string' ? town.type : null;
+      if (settlementType && saintShrineAttachmentTypes.has(settlementType)) {
+        candidateSettlements.push(town);
+      }
+    });
+
+    castles.forEach((castle) => {
+      if (!castle || !Number.isFinite(castle.x) || !Number.isFinite(castle.y)) {
+        return;
+      }
+      candidateSettlements.push(castle);
+    });
+
+    if (candidateSettlements.length > 0) {
+      const saintShrineAttachmentRadius = 12;
+      const saintShrineAttachmentRadiusSq = saintShrineAttachmentRadius * saintShrineAttachmentRadius;
+
+      const findNearestCandidate = (x, y) => {
+        let best = null;
+        let bestDistanceSq = Infinity;
+        for (let i = 0; i < candidateSettlements.length; i += 1) {
+          const candidate = candidateSettlements[i];
+          const dx = x - candidate.x;
+          const dy = y - candidate.y;
+          const distanceSq = dx * dx + dy * dy;
+          if (distanceSq < bestDistanceSq && distanceSq <= saintShrineAttachmentRadiusSq) {
+            bestDistanceSq = distanceSq;
+            best = candidate;
+          }
+        }
+        return best;
+      };
+
+      for (let i = 0; i < saintShrines.length; i += 1) {
+        const shrine = saintShrines[i];
+        if (!shrine || !Number.isFinite(shrine.x) || !Number.isFinite(shrine.y)) {
+          continue;
+        }
+        const nearest = findNearestCandidate(shrine.x, shrine.y);
+        if (!nearest) {
+          continue;
+        }
+        const parentRow = tiles[nearest.y];
+        const parentTile = parentRow ? parentRow[nearest.x] : null;
+        const parentFactionId = parentTile ? parentTile.factionId : null;
+        if (parentFactionId === null || parentFactionId === undefined) {
+          continue;
+        }
+        const shrineRow = tiles[shrine.y];
+        const shrineTile = shrineRow ? shrineRow[shrine.x] : null;
+        if (!shrineTile) {
+          continue;
+        }
+        shrineTile.factionId = parentFactionId;
+        shrineTile.factionInfluence = Math.max(shrineTile.factionInfluence || 0, 0.85);
+      }
+
+      factions.forEach((faction) => {
+        faction.territory = 0;
+      });
+
+      for (let y = 0; y < height; y += 1) {
+        const row = tiles[y];
+        if (!row) {
+          continue;
+        }
+        for (let x = 0; x < width; x += 1) {
+          const tile = row[x];
+          if (!tile || tile.factionId === null || tile.factionId === undefined) {
+            continue;
+          }
+          const faction = factionById.get(tile.factionId);
+          if (faction) {
+            faction.territory += 1;
+          }
+        }
+      }
+    }
+  }
+
   applyCulturalInfluence({
     width,
     height,
@@ -20420,7 +20533,8 @@ function createWorld(seedString) {
       ...mines,
       ...castles,
       ...orcCamps,
-      ...roadsideTaverns
+      ...roadsideTaverns,
+      ...saintShrines
     ],
     factions,
     isLandBaseTile
