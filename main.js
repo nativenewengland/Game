@@ -5867,10 +5867,6 @@ function applyFormSettings() {
   updateWorldInfoSeedDisplay(state.settings.seedString);
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
 function sampleRange(randomFn, range, fallbackMin, fallbackMax) {
   const hasRange = Array.isArray(range) && range.length === 2;
   const min = hasRange && Number.isFinite(range[0]) ? range[0] : fallbackMin;
@@ -18560,9 +18556,13 @@ function syncInputsWithSettings() {
     elements.lizardmenSettlementFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
   }
-}
+  }
 
-     if (state.currentWorld) {
+  if (elements.politicalBordersToggle) {
+    elements.politicalBordersToggle.addEventListener('click', () => {
+      state.ui.showPoliticalBorders = !state.ui.showPoliticalBorders;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
         drawWorld(state.currentWorld);
       }
     });
@@ -18975,8 +18975,6 @@ function syncInputsWithSettings() {
   });
 
   refreshOverlayToggleButtons();
-}
-
 attachEvents(elements, {
   structureContextMenuState,
   hideStructureContextMenu,
