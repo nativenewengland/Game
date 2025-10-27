@@ -1595,6 +1595,10 @@ button:hover:not(:disabled) {
   width: clamp(170px, 20vw, 230px);
 }
 
+.customizer-sidebar__actions .return-button {
+  width: clamp(150px, 18vw, 210px);
+}
+
 .pixel-bar {
   display: flex;
   align-items: center;
@@ -2174,23 +2178,6 @@ button:hover:not(:disabled) {
   max-width: 100%;
 }
 
-.customizer-actions {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: center;
-  gap: clamp(0.75rem, 2vw, 1.25rem);
-  margin-top: clamp(0.5rem, 1.5vw, 1rem);
-}
-
-.customizer-actions__primary {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.75rem, 2vw, 1.25rem);
-  margin-left: auto;
-}
-
 .gender-toggle {
   display: flex;
   gap: 1.1rem;
@@ -2247,19 +2234,13 @@ button:hover:not(:disabled) {
 }
 
 @media (max-width: 720px) {
-  .customizer-actions {
+  .customizer-sidebar__actions {
     justify-content: center;
   }
 
-  .customizer-actions .return-button,
-  .customizer-actions .create-button--inline {
+  .customizer-sidebar__actions .return-button,
+  .customizer-sidebar__actions .create-button--inline {
     width: min(240px, 100%);
-  }
-
-  .customizer-actions__primary {
-    margin-left: 0;
-    width: 100%;
-    justify-content: center;
   }
 
   #dwarf-customizer-form {
