@@ -8889,6 +8889,190 @@ function getDominantCulturalInfluence(tile) {
   };
 }
 
+function summarizeTileResources(tile) {
+  if (!tile) {
+    return [];
+  }
+
+  const catalog = {
+    forest: ['Hardwood timber', 'Game animals', 'Medicinal herbs'],
+    jungle: ['Rare hardwoods', 'Exotic fruits', 'Alchemical resins'],
+    mountain: ['Metallic ores', 'Quarried stone', 'Crystal seams'],
+    desert: ['Trade spices', 'Glass sands', 'Hidden oasis wells'],
+    badlands: ['Scrap metals', 'Hardy grazing', 'Quartz outcrops'],
+    tundra: ['Fur-bearing fauna', 'Permafrost relics', 'Glacial ice'],
+    grassland: ['Grain harvests', 'Pasture livestock', 'Wildflower dyes'],
+    marsh: ['Peat bogs', 'Reed thickets', 'Bog iron deposits'],
+    ocean: ['Rich fisheries', 'Pearl beds', 'Kelp forests'],
+    lake: ['Freshwater catches', 'Boat timber', 'Shoreline clay']
+  };
+
+  const resources = new Set();
+  const biomeResources = catalog[tile.biomeType];
+  if (Array.isArray(biomeResources)) {
+    biomeResources.forEach((entry) => {
+      if (typeof entry === 'string' && entry.trim()) {
+        resources.add(entry.trim());
+      }
+    });
+  }
+
+  const coastProximity = clamp(Number(tile.coastProximity) || 0, 0, 1);
+  const marshProximity = clamp(Number(tile.marshProximity) || 0, 0, 1);
+  const desertProximity = clamp(Number(tile.desertProximity) || 0, 0, 1);
+  const volcanoProximity = clamp(Number(tile.volcanoProximity) || 0, 0, 1);
+  const canopyDensity = clamp(Number(tile.forestCanopyDensity) || 0, 0, 1);
+  const temperature = clamp(Number(tile.temperature) || 0, 0, 1);
+
+  if (coastProximity >= 0.65 || tile.biomeType === 'ocean' || tile.biomeType === 'lake') {
+    resources.add('Coastal fisheries');
+  }
+  if (marshProximity >= 0.55 && tile.biomeType !== 'marsh') {
+    resources.add('Peat and bog iron');
+  }
+  if (desertProximity >= 0.55 && tile.biomeType !== 'desert') {
+    resources.add('Trade caravans');
+  }
+  if (volcanoProximity >= 0.45) {
+    resources.add('Volcanic glass & obsidian');
+  }
+  if (canopyDensity >= 0.65) {
+    resources.add('Dense lumber stands');
+  }
+  if (temperature <= 0.25 && tile.biomeType !== 'tundra') {
+    resources.add('Fur-bearing game');
+  }
+
+  return Array.from(resources).slice(0, 5);
+}
+
+function describeTileClimate(tile) {
+  if (!tile) {
+    return null;
+  }
+
+  const temperature = clamp(Number(tile.temperature) || 0, 0, 1);
+  const moisture = clamp(Number(tile.moisture) || 0, 0, 1);
+
+  const temperatureBands = [
+    { threshold: 0.18, label: 'Polar chill' },
+    { threshold: 0.32, label: 'Cold climate' },
+    { threshold: 0.48, label: 'Cool climate' },
+    { threshold: 0.68, label: 'Temperate climate' },
+    { threshold: 0.85, label: 'Warm climate' },
+    { threshold: Infinity, label: 'Tropical heat' }
+  ];
+
+  const moistureBands = [
+    { threshold: 0.18, label: 'parched air' },
+    { threshold: 0.32, label: 'dry winds' },
+    { threshold: 0.52, label: 'balanced rainfall' },
+    { threshold: 0.7, label: 'humid air' },
+    { threshold: 0.85, label: 'wet seasons' },
+    { threshold: Infinity, label: 'waterlogged ground' }
+  ];
+
+  const resolveBandLabel = (bands, value) => {
+    for (let i = 0; i < bands.length; i += 1) {
+      if (value <= bands[i].threshold) {
+        return bands[i].label;
+      }
+    }
+    return null;
+  };
+
+  const temperatureLabel = resolveBandLabel(temperatureBands, temperature);
+  const moistureLabel = resolveBandLabel(moistureBands, moisture);
+
+  if (!temperatureLabel && !moistureLabel) {
+    return null;
+  }
+
+  const qualifiers = [];
+  const coastProximity = clamp(Number(tile.coastProximity) || 0, 0, 1);
+  const marshProximity = clamp(Number(tile.marshProximity) || 0, 0, 1);
+  const volcanoProximity = clamp(Number(tile.volcanoProximity) || 0, 0, 1);
+  const desertProximity = clamp(Number(tile.desertProximity) || 0, 0, 1);
+
+  if (coastProximity >= 0.65) {
+    qualifiers.push('coastal breezes');
+  }
+  if (desertProximity >= 0.55 && moisture < 0.4) {
+    qualifiers.push('dry trade winds');
+  }
+  if (marshProximity >= 0.6) {
+    qualifiers.push('lowland mists');
+  }
+  if (volcanoProximity >= 0.45) {
+    qualifiers.push('volcanic warmth');
+  }
+
+  const climateParts = [];
+  if (temperatureLabel) {
+    climateParts.push(temperatureLabel);
+  }
+  if (moistureLabel) {
+    climateParts.push(`with ${moistureLabel}`);
+  }
+
+  let description = climateParts.join(' ');
+  if (qualifiers.length > 0) {
+    description += ` (${formatListWithConjunction(qualifiers)})`;
+  }
+
+  return description;
+}
+
+function derivePopulationGroupsFromCulture(tile) {
+  if (!tile || !tile.culturalInfluence || !Array.isArray(tile.culturalInfluence.breakdown)) {
+    return { major: null, minor: null };
+  }
+
+  const breakdown = tile.culturalInfluence.breakdown
+    .map((entry) => {
+      if (!entry) {
+        return null;
+      }
+      const share = clamp(Number(entry.share) || 0, 0, 1);
+      if (share <= 0) {
+        return null;
+      }
+      const label =
+        typeof entry.label === 'string' && entry.label.trim()
+          ? entry.label.trim()
+          : formatCultureLabel(entry.key);
+      return { label, share };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.share - a.share);
+
+  if (breakdown.length === 0) {
+    return { major: null, minor: null };
+  }
+
+  const majors = [];
+  const minors = [];
+
+  breakdown.forEach((entry, index) => {
+    const percentage = Math.round(entry.share * 100);
+    const display = percentage >= 5 ? `${entry.label} (${percentage}%)` : entry.label;
+    if (index === 0 || entry.share >= 0.22 || (majors.length < 2 && entry.share >= 0.16)) {
+      majors.push(display);
+    } else if (entry.share >= 0.08 || minors.length < 2) {
+      minors.push(display);
+    }
+  });
+
+  if (majors.length === 0 && minors.length > 0) {
+    majors.push(minors.shift());
+  }
+
+  return {
+    major: majors.length > 0 ? formatListWithConjunction(majors) : null,
+    minor: minors.length > 0 ? formatListWithConjunction(minors) : null
+  };
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile) {
     return null;
@@ -8911,11 +9095,44 @@ function buildStructureTooltipContent(tile) {
       return null;
     }
     const sections = [`<div class="tooltip-title">${escapeHtml(resolvedTitle)}</div>`];
+    const entries = [];
     if (biomeLabel) {
-      const listItems =
-        `<li><span class="tooltip-term">Biome</span><span class="tooltip-value">${escapeHtml(biomeLabel)}</span></li>`;
+      entries.push({ label: 'Biome', value: biomeLabel });
+    }
+
+    const climateDescription = describeTileClimate(tile);
+    if (climateDescription) {
+      entries.push({ label: 'Climate', value: climateDescription });
+    }
+
+    const resourceSummary = summarizeTileResources(tile);
+    if (resourceSummary.length > 0) {
+      const formattedResources = formatListWithConjunction(resourceSummary);
+      if (formattedResources) {
+        entries.push({ label: 'Resources', value: formattedResources });
+      }
+    }
+
+    const populationGroups = derivePopulationGroupsFromCulture(tile);
+    if (populationGroups.major) {
+      entries.push({ label: 'Major Population Groups', value: populationGroups.major });
+    }
+    if (populationGroups.minor) {
+      entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
+    }
+
+    if (entries.length > 0) {
+      const listItems = entries
+        .map(
+          ({ label, value }) =>
+            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+              value
+            )}</span></li>`
+        )
+        .join('');
       sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
     }
+
     return sections.join('');
   }
 
