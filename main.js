@@ -9825,6 +9825,17 @@ function setupMapInteractions() {
     typeof navigator !== 'undefined' &&
     /Mac|iP(?:ad|hone|od)/.test((navigator.platform || navigator.userAgent || '').toString());
 
+  const openStructureContextMenu = (event) => {
+    hideMapTooltip();
+    const resolved = resolveTileAtPointer(event);
+    if (!resolved || !resolved.tile || !resolved.tile.structureName) {
+      hideStructureContextMenu();
+      return false;
+    }
+    showStructureContextMenu(resolved);
+    return true;
+  };
+
   const handlePointerDown = (event) => {
     if (activePointerId !== null) {
       return;
@@ -9842,6 +9853,9 @@ function setupMapInteractions() {
     hideStructureDetails();
     hideStructureContextMenu();
     if (!isPrimaryPointer) {
+      if (openStructureContextMenu(event)) {
+        event.preventDefault();
+      }
       return;
     }
     hideMapTooltip();
@@ -9915,13 +9929,7 @@ function setupMapInteractions() {
 
   const handleContextMenu = (event) => {
     event.preventDefault();
-    hideMapTooltip();
-    const resolved = resolveTileAtPointer(event);
-    if (!resolved || !resolved.tile || !resolved.tile.structureName) {
-      hideStructureContextMenu();
-      return;
-    }
-    showStructureContextMenu(resolved);
+    openStructureContextMenu(event);
   };
 
   elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
