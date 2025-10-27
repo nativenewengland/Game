@@ -1912,37 +1912,6 @@ button:hover:not(:disabled) {
   cursor: not-allowed;
 }
 
-.trait-slider-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(240, 198, 116, 0.28);
-  background: rgba(12, 15, 26, 0.75);
-  color: #f4ecdd;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-  min-height: 2.1rem;
-  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.12);
-}
-
-.trait-slider-value::before {
-  content: '';
-  width: 0.85rem;
-  height: 0.85rem;
-  border-radius: 50%;
-  border: 1px solid rgba(12, 10, 20, 0.8);
-  box-shadow: 0 0 0 1px rgba(240, 198, 116, 0.35);
-  background: var(--trait-color, transparent);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.trait-slider-value.has-color::before {
-  opacity: 1;
-}
-
 .customizer-detail-panel {
   display: flex;
   flex-direction: column;
