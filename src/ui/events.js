@@ -6,6 +6,7 @@ export function attachEvents(elements, deps) {
     closeOptionsScreen,
     hideStructureDetails,
     showLocalViewAt,
+    showDwarfholdInterior,
     showStructureDetails,
     hideLocalView,
     state,
@@ -119,11 +120,39 @@ export function attachEvents(elements, deps) {
     });
   }
 
+  const dwarfholdStructureKeys = new Set(['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD', 'HILLHOLD']);
+  const isDwarfholdStructureTile = (tile) => {
+    if (!tile) {
+      return false;
+    }
+    if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+      return true;
+    }
+    const rawType = tile.structureDetails?.type;
+    if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+      return true;
+    }
+    if (typeof tile.structureName === 'string') {
+      const upperName = tile.structureName.toUpperCase();
+      for (const key of dwarfholdStructureKeys) {
+        if (upperName.includes(key)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   if (elements.structureContextMenuBegin) {
     elements.structureContextMenuBegin.addEventListener('click', () => {
-      const { tileX, tileY } = structureContextMenuState;
+      const { tile, tileX, tileY } = structureContextMenuState;
       hideStructureContextMenu();
-      if (Number.isInteger(tileX) && Number.isInteger(tileY)) {
+      if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
+        return;
+      }
+      if (isDwarfholdStructureTile(tile)) {
+        showDwarfholdInterior(tile, tileX, tileY);
+      } else {
         showLocalViewAt(tileX, tileY);
       }
     });

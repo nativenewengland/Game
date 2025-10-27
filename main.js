@@ -19,6 +19,7 @@ import {
   registerCustomStructure
 } from './src/assets.js';
 import { clamp } from './src/utils/math.js';
+import { generateDwarfholdMap } from './src/local/dwarfhold-map.js';
 import { elements, getMusicToggleElements, getMusicVolumeInputs, getMusicNowPlayingDisplays } from './src/ui/elements.js';
 import { attachEvents } from './src/ui/events.js';
 
@@ -5069,7 +5070,10 @@ const state = {
     active: false,
     centerX: null,
     centerY: null,
-    bounds: null
+    bounds: null,
+    mode: 'world',
+    customMap: null,
+    structure: null
   }
 };
 
@@ -8760,8 +8764,9 @@ function refreshLocalMapPreview() {
   }
   const world = state.currentWorld;
   const localView = state.localView;
+  const worldHasTiles = Array.isArray(world?.tiles) && world.tiles.length > 0;
+
   if (
-    !world ||
     !localView ||
     !localView.active ||
     localView.centerX === null ||
@@ -8788,17 +8793,205 @@ function refreshLocalMapPreview() {
     return;
   }
 
-  const tiles = Array.isArray(world.tiles) ? world.tiles : null;
-  if (!tiles || tiles.length === 0) {
+  const focusTile =
+    worldHasTiles && Array.isArray(world.tiles[localView.centerY])
+      ? world.tiles[localView.centerY][localView.centerX] || null
+      : null;
+
+  if (localView.mode === 'dwarfhold' && localView.customMap) {
+    const customMap = localView.customMap;
+    const tiles = Array.isArray(customMap?.tiles) ? customMap.tiles : null;
+    const mapHeight = tiles ? tiles.length : 0;
+    const mapWidth = mapHeight > 0 && Array.isArray(tiles[0]) ? tiles[0].length : 0;
+    const canvas = elements.localMapCanvas;
+    const context = canvas ? canvas.getContext('2d') : null;
+    if (!tiles || mapWidth === 0 || mapHeight === 0 || !canvas || !context) {
+      return;
+    }
+
+    elements.localMapPanel.classList.remove('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'false');
+
+    if (elements.localMapTitle) {
+      elements.localMapTitle.textContent =
+        customMap.title || focusTile?.structureName || focusTile?.areaName || 'Dwarven Hold Interior';
+    }
+
+    if (elements.localMapSubtitle) {
+      const subtitle =
+        customMap.subtitle ||
+        (focusTile?.structureDetails?.displayType
+          ? `${focusTile.structureDetails.displayType} interior`
+          : 'Subterranean quarters of the hold');
+      elements.localMapSubtitle.textContent = subtitle;
+    }
+
+    if (elements.localMapCoordinates) {
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+        mapWidth
+      }×${mapHeight} tiles`;
+    }
+
+    if (elements.localMapDetails) {
+      const sections = [];
+      if (customMap.description) {
+        sections.push(`<p class="tooltip-note">${escapeHtml(customMap.description)}</p>`);
+      }
+      if (Array.isArray(customMap.features) && customMap.features.length > 0) {
+        const list = customMap.features
+          .map((feature) => `<li>${escapeHtml(feature)}</li>`)
+          .join('');
+        sections.push(`<ul class="tooltip-list">${list}</ul>`);
+      }
+      if (customMap.legend && typeof customMap.legend === 'object') {
+        const legendEntries = Object.entries(customMap.legend)
+          .filter(([type, definition]) => type !== 'rock' && definition && definition.label)
+          .map(([type, definition]) => {
+            const description = definition.description || definition.examples || type;
+            return `<li><span class="tooltip-term">${escapeHtml(definition.label)}</span><span class="tooltip-value">${escapeHtml(description)}</span></li>`;
+          });
+        if (legendEntries.length > 0) {
+          sections.push(`<ul class="tooltip-list">${legendEntries.join('')}</ul>`);
+        }
+      }
+      if (sections.length > 0) {
+        elements.localMapDetails.innerHTML = sections.join('');
+      } else {
+        elements.localMapDetails.textContent = localMapDefaultMessage;
+      }
+    }
+
+    const maxSize = localViewConfig.maxCanvasSize;
+    let tilePixelSize = 24;
+    while ((mapWidth * tilePixelSize > maxSize || mapHeight * tilePixelSize > maxSize) && tilePixelSize > 8) {
+      tilePixelSize -= 2;
+    }
+    if (mapWidth * tilePixelSize > maxSize || mapHeight * tilePixelSize > maxSize) {
+      const fallbackSize = Math.floor(maxSize / Math.max(mapWidth, mapHeight));
+      if (Number.isFinite(fallbackSize) && fallbackSize > 0) {
+        tilePixelSize = Math.max(6, Math.min(tilePixelSize, fallbackSize));
+      }
+    }
+    if (!Number.isFinite(tilePixelSize) || tilePixelSize < 6) {
+      tilePixelSize = 6;
+    }
+
+    const destWidth = Math.max(1, mapWidth * tilePixelSize);
+    const destHeight = Math.max(1, mapHeight * tilePixelSize);
+    canvas.width = destWidth;
+    canvas.height = destHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.setAttribute(
+      'aria-label',
+      `Procedural dwarfhold interior covering ${mapWidth} by ${mapHeight} tiles at world tile ${
+        localView.centerX + 1
+      }, ${localView.centerY + 1}.`
+    );
+    canvas.setAttribute('aria-hidden', 'false');
+
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, destWidth, destHeight);
+    context.fillStyle = '#05060b';
+    context.fillRect(0, 0, destWidth, destHeight);
+
+    const palette = customMap.legend || {};
+    for (let y = 0; y < mapHeight; y += 1) {
+      const row = Array.isArray(tiles[y]) ? tiles[y] : null;
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        const cell = row[x];
+        const type = typeof cell === 'string' ? cell : typeof cell?.type === 'string' ? cell.type : 'rock';
+        const definition = palette[type] || palette.rock || { color: '#1f2937' };
+        context.fillStyle = definition.color || '#1f2937';
+        context.fillRect(x * tilePixelSize, y * tilePixelSize, tilePixelSize, tilePixelSize);
+
+        if (definition.texture === 'speckled') {
+          context.save();
+          context.fillStyle = definition.accent || 'rgba(255, 255, 255, 0.08)';
+          const dot = Math.max(1, Math.round(tilePixelSize * 0.18));
+          for (let offsetY = dot; offsetY < tilePixelSize; offsetY += dot * 2) {
+            for (let offsetX = dot; offsetX < tilePixelSize; offsetX += dot * 2) {
+              context.fillRect(x * tilePixelSize + offsetX - dot / 2, y * tilePixelSize + offsetY - dot / 2, dot, dot);
+            }
+          }
+          context.restore();
+        }
+
+        if (definition.borderColor) {
+          context.save();
+          context.strokeStyle = definition.borderColor;
+          context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
+          context.strokeRect(
+            x * tilePixelSize + context.lineWidth / 2,
+            y * tilePixelSize + context.lineWidth / 2,
+            tilePixelSize - context.lineWidth,
+            tilePixelSize - context.lineWidth
+          );
+          context.restore();
+        }
+      }
+    }
+
+    if (Array.isArray(customMap.markers)) {
+      customMap.markers.forEach((marker) => {
+        if (!Number.isFinite(marker?.x) || !Number.isFinite(marker?.y)) {
+          return;
+        }
+        const centerX = (marker.x + 0.5) * tilePixelSize;
+        const centerY = (marker.y + 0.5) * tilePixelSize;
+        const radius = Math.max(2, tilePixelSize * (Number(marker.radius) || 0.32));
+        context.save();
+        if (marker.shadowColor) {
+          context.fillStyle = marker.shadowColor;
+          context.globalAlpha = 0.35;
+          context.beginPath();
+          context.arc(centerX, centerY, radius * 1.45, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.globalAlpha = 1;
+        context.fillStyle = marker.color || '#facc15';
+        context.beginPath();
+        context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        context.fill();
+        if (marker.stroke) {
+          context.strokeStyle = marker.stroke;
+          context.lineWidth = Math.max(1, tilePixelSize * 0.12);
+          context.stroke();
+        }
+        context.restore();
+      });
+    }
+
+    context.save();
+    context.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+    context.lineWidth = 1;
+    for (let x = 1; x < mapWidth; x += 1) {
+      const px = Math.round(x * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(px, 0);
+      context.lineTo(px, destHeight);
+      context.stroke();
+    }
+    for (let y = 1; y < mapHeight; y += 1) {
+      const py = Math.round(y * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(0, py);
+      context.lineTo(destWidth, py);
+      context.stroke();
+    }
+    context.restore();
+
     return;
   }
 
-  const centerRow = tiles[localView.centerY];
-  if (!Array.isArray(centerRow)) {
+  if (!worldHasTiles) {
     return;
   }
 
-  const focusTile = centerRow[localView.centerX] || null;
+  const tiles = world.tiles;
   const bounds = localView.bounds;
   const tileWidth = Math.max(1, bounds.width);
   const tileHeight = Math.max(1, bounds.height);
@@ -8918,6 +9111,9 @@ function hideLocalView(options = {}) {
   state.localView.centerX = null;
   state.localView.centerY = null;
   state.localView.bounds = null;
+  state.localView.mode = 'world';
+  state.localView.customMap = null;
+  state.localView.structure = null;
   if (elements.localMapPanel) {
     elements.localMapPanel.classList.add('hidden');
     elements.localMapPanel.setAttribute('aria-hidden', 'true');
@@ -8960,6 +9156,56 @@ function showLocalViewAt(tileX, tileY) {
   state.localView.centerX = clampedX;
   state.localView.centerY = clampedY;
   state.localView.bounds = bounds;
+  state.localView.mode = 'world';
+  state.localView.customMap = null;
+  state.localView.structure = null;
+  drawWorld(world, { preserveView: true });
+}
+
+function showDwarfholdInterior(tile, tileX, tileY) {
+  const world = state.currentWorld;
+  if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return;
+  }
+  const height = world.tiles.length;
+  const width = Array.isArray(world.tiles[0]) ? world.tiles[0].length : 0;
+  if (width === 0) {
+    return;
+  }
+
+  const clampedX = clamp(Number(tileX) || 0, 0, width - 1);
+  const clampedY = clamp(Number(tileY) || 0, 0, height - 1);
+  const bounds = computeLocalViewBounds(clampedX, clampedY, width, height, localViewConfig.radius);
+
+  const seedCandidates = [
+    typeof state.settings?.seedString === 'string' ? state.settings.seedString : null,
+    typeof state.settings?.lastSeedString === 'string' ? state.settings.lastSeedString : null,
+    typeof state.worldName === 'string' && state.worldName ? state.worldName : null
+  ];
+  const resolvedSeed = seedCandidates.find((value) => value && value.length > 0) || 'dwarfhold';
+
+  const customMap = generateDwarfholdMap({
+    structureKey: typeof tile?.structure === 'string' ? tile.structure : null,
+    structureName:
+      typeof tile?.structureName === 'string' && tile.structureName
+        ? tile.structureName
+        : typeof tile?.areaName === 'string' && tile.areaName
+        ? tile.areaName
+        : null,
+    faction: tile?.structureDetails?.owner || tile?.factionId || null,
+    tileX: clampedX,
+    tileY: clampedY,
+    worldSeed: resolvedSeed
+  });
+
+  state.localView.active = true;
+  state.localView.centerX = clampedX;
+  state.localView.centerY = clampedY;
+  state.localView.bounds = bounds;
+  state.localView.mode = 'dwarfhold';
+  state.localView.customMap = customMap;
+  state.localView.structure = tile || null;
+
   drawWorld(world, { preserveView: true });
 }
 
@@ -19251,6 +19497,7 @@ attachEvents(elements, {
   closeOptionsScreen,
   hideStructureDetails,
   showLocalViewAt,
+  showDwarfholdInterior,
   showStructureDetails,
   hideLocalView,
   state,
