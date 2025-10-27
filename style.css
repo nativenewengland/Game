@@ -1538,6 +1538,10 @@ button:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
 }
 
+.dwarf-nav-button--prev {
+  margin-right: clamp(0.85rem, 2.5vw, 1.5rem);
+}
+
 .dwarf-name-nav {
   display: inline-flex;
   align-items: center;
@@ -1632,13 +1636,15 @@ button:hover:not(:disabled) {
 .dwarf-name-field::before {
   content: "";
   position: absolute;
-  top: 0;
+  top: 50%;
   right: 0;
-  bottom: 0;
-  left: 0;
+  width: 200%;
+  height: 200%;
+  transform: translateY(-50%);
+  transform-origin: center right;
   background-image: url('tilesheet/nametype.png');
   background-repeat: no-repeat;
-  background-position: left center;
+  background-position: right center;
   background-size: 100% 100%;
   image-rendering: pixelated;
   pointer-events: none;
@@ -1647,8 +1653,7 @@ button:hover:not(:disabled) {
 
 @media (min-width: 1025px) {
   .customizer-sidebar__name .dwarf-name-field::before {
-    left: calc(-1 * clamp(1.25rem, 3vw, 2.5rem));
-    background-position: right center;
+    width: 220%;
   }
 }
 
