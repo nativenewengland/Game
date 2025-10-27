@@ -10088,6 +10088,11 @@ function setupMapInteractions() {
     if (activePointerId !== null) {
       return;
     }
+    const menuElement = elements.structureContextMenu;
+    const isPointerInsideMenu = Boolean(menuElement && menuElement.contains(event.target));
+    if (isPointerInsideMenu) {
+      return;
+    }
     const pointerType = event.pointerType || 'mouse';
     const isTouchPointer = pointerType === 'touch';
     const isNonPrimaryButton = event.button !== undefined && event.button !== 0;
@@ -10098,10 +10103,6 @@ function setupMapInteractions() {
       isMacLikePlatform;
     const isContextMenuClick = !isTouchPointer && (isNonPrimaryButton || isMacCtrlClick);
     const isPrimaryPointer = !isContextMenuClick;
-    const menuElement = elements.structureContextMenu;
-    if (menuElement && menuElement.contains(event.target)) {
-      return;
-    }
     hideStructureDetails();
     hideStructureContextMenu();
     if (!isPrimaryPointer) {
