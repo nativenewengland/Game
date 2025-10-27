@@ -1144,14 +1144,6 @@ button:hover:not(:disabled) {
   object-fit: cover;
 }
 
-.structure-details-art-caption {
-  margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-}
-
 .ruler-portrait {
   margin: 0;
   display: flex;

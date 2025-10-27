@@ -2918,6 +2918,14 @@ function generateDwarfholdDetails(name, random, options = {}) {
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn, {
     hasNearbyHumanSettlement: Boolean(options && options.hasNearbyHumanSettlement)
   });
+  const clanBreakdown = generateLabelBreakdown(majorClans, randomFn, {
+    keyPrefix: 'clan',
+    colorSeed: 'clan'
+  });
+  const guildBreakdown = generateLabelBreakdown(majorGuilds, randomFn, {
+    keyPrefix: 'guild',
+    colorSeed: 'guild'
+  });
 
   const classification = population >= 4000 ? 'greatDwarfhold' : 'dwarfhold';
   const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
@@ -2944,6 +2952,8 @@ function generateDwarfholdDetails(name, random, options = {}) {
     majorClans,
     majorClansLabel: 'Major Clans',
     populationBreakdown,
+    clanBreakdown,
+    guildBreakdown,
     description
   };
 }
@@ -3152,6 +3162,10 @@ function generateHillholdDetails(name, random, options = {}) {
   const populationBreakdown = generateDwarfholdPopulationBreakdown(population, randomFn, {
     hasNearbyHumanSettlement: Boolean(options?.hasNearbyHumanSettlement)
   });
+  const clanBreakdown = generateLabelBreakdown(majorClans, randomFn, {
+    keyPrefix: 'clan',
+    colorSeed: 'clan'
+  });
 
   return {
     type: 'hillhold',
@@ -3175,6 +3189,7 @@ function generateHillholdDetails(name, random, options = {}) {
     majorClans,
     majorClansLabel: 'Major Clans',
     populationBreakdown,
+    clanBreakdown,
     description
   };
 }
@@ -11453,66 +11468,99 @@ function formatStructureDetailLabel(value) {
     .join(' ');
 }
 
-function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
+function buildBreakdownPanelSection(resolvedName, breakdown, options = {}) {
   if (!Array.isArray(breakdown) || breakdown.length === 0) {
     return '';
   }
 
+  const heading = typeof options.heading === 'string' && options.heading.trim()
+    ? options.heading.trim()
+    : 'Breakdown';
+  const ariaLabelPrefix = typeof options.ariaLabelPrefix === 'string' && options.ariaLabelPrefix.trim()
+    ? options.ariaLabelPrefix.trim()
+    : heading;
+  const combineSmallEntries = options.combineSmallEntries !== false;
+  const smallEntryThreshold = Number.isFinite(options.smallEntryThreshold)
+    ? Math.max(0, options.smallEntryThreshold)
+    : 0.5;
+  const priorityKeys = Array.isArray(options.priorityKeys) ? options.priorityKeys : [];
+  const otherLabel = typeof options.otherLabel === 'string' && options.otherLabel.trim()
+    ? options.otherLabel.trim()
+    : 'Other';
+  const otherColor = typeof options.otherColor === 'string' && options.otherColor.trim()
+    ? options.otherColor.trim()
+    : '#666666';
+
   const resolvedEntries = breakdown
-    .filter((entry) => Number.isFinite(entry?.percentage) && entry.percentage > 0)
-    .map((entry) => {
+    .map((entry, index) => {
+      if (!entry || !Number.isFinite(entry.percentage) || entry.percentage <= 0) {
+        return null;
+      }
       const rawPercentage = Number(entry.percentage);
       const safePercentage = Number.isFinite(rawPercentage) ? Math.max(0, rawPercentage) : 0;
       const roundedPercentage = Math.round(safePercentage * 100) / 100;
+      const resolvedLabel = entry.label || entry.key || `Entry ${index + 1}`;
+      const key = typeof entry.key === 'string' && entry.key ? entry.key : null;
+      const color = entry.color || '#999999';
+      const population = Number.isFinite(entry.population) && entry.population > 0
+        ? Math.max(0, Math.round(entry.population))
+        : null;
       return {
-        key: typeof entry.key === 'string' && entry.key ? entry.key : null,
-        label: entry.label || entry.key || 'Unknown',
+        key,
+        label: resolvedLabel,
         percentage: roundedPercentage,
-        color: entry.color || '#999999',
-        population:
-          Number.isFinite(entry.population) && entry.population > 0
-            ? Math.max(0, Math.round(entry.population))
-            : null
+        color,
+        population
       };
-    });
+    })
+    .filter(Boolean);
 
-  const priorityEntries = [];
-  const majorEntries = [];
-  let otherPercentage = 0;
-  let otherPopulation = 0;
-  let otherPopulationKnown = true;
-
-  resolvedEntries.forEach((entry) => {
-    if (entry.key === 'wizards') {
-      priorityEntries.push(entry);
-      return;
-    }
-
-    if (entry.percentage < 0.5) {
-      otherPercentage += entry.percentage;
-      if (entry.population === null) {
-        otherPopulationKnown = false;
-      } else if (otherPopulationKnown) {
-        otherPopulation += entry.population;
-      }
-    } else {
-      majorEntries.push(entry);
-    }
-  });
-
-  const combinedEntries = [...priorityEntries, ...majorEntries];
-
-  if (otherPercentage > 0) {
-    const roundedOtherPercentage = Math.round(otherPercentage * 100) / 100;
-    combinedEntries.push({
-      label: 'Other',
-      percentage: roundedOtherPercentage,
-      color: '#666666',
-      population: otherPopulationKnown ? otherPopulation : null
-    });
+  if (resolvedEntries.length === 0) {
+    return '';
   }
 
-  const displayEntries = combinedEntries.length > 0 ? combinedEntries : resolvedEntries;
+  let displayEntries = resolvedEntries.slice();
+
+  if (combineSmallEntries) {
+    const priorityEntries = [];
+    const majorEntries = [];
+    let otherPercentage = 0;
+    let otherPopulation = 0;
+    let otherPopulationKnown = true;
+
+    resolvedEntries.forEach((entry) => {
+      if (entry.key && priorityKeys.includes(entry.key)) {
+        priorityEntries.push(entry);
+        return;
+      }
+
+      if (entry.percentage < smallEntryThreshold) {
+        otherPercentage += entry.percentage;
+        if (entry.population === null) {
+          otherPopulationKnown = false;
+        } else if (otherPopulationKnown) {
+          otherPopulation += entry.population;
+        }
+      } else {
+        majorEntries.push(entry);
+      }
+    });
+
+    const combinedEntries = [...priorityEntries, ...majorEntries];
+
+    if (otherPercentage > 0) {
+      const roundedOtherPercentage = Math.round(otherPercentage * 100) / 100;
+      combinedEntries.push({
+        key: 'other',
+        label: otherLabel,
+        percentage: roundedOtherPercentage,
+        color: otherColor,
+        population: otherPopulationKnown ? otherPopulation : null
+      });
+    }
+
+    displayEntries = combinedEntries.length > 0 ? combinedEntries : resolvedEntries;
+  }
 
   if (displayEntries.length === 0) {
     return '';
@@ -11534,7 +11582,7 @@ function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
   }
 
   const pieStyle = `background: conic-gradient(${stops.join(', ')});`;
-  const ariaLabelParts = ['Population breakdown'];
+  const ariaLabelParts = [ariaLabelPrefix];
   if (resolvedName) {
     ariaLabelParts.push(`for ${resolvedName}`);
   }
@@ -11558,7 +11606,7 @@ function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
 
   return `
     <section class="structure-details-section structure-details-section--chart">
-      <h3 class="structure-details-heading">Population Breakdown</h3>
+      <h3 class="structure-details-heading">${escapeHtml(heading)}</h3>
       <div class="structure-details-chart">
         <div
           class="structure-details-chart-pie"
@@ -11570,6 +11618,46 @@ function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
       </div>
     </section>
   `;
+}
+
+function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
+  return buildBreakdownPanelSection(resolvedName, breakdown, {
+    heading: 'Population Breakdown',
+    ariaLabelPrefix: 'Population breakdown',
+    combineSmallEntries: true,
+    smallEntryThreshold: 0.5,
+    priorityKeys: ['wizards'],
+    otherLabel: 'Other',
+    otherColor: '#666666'
+  });
+}
+
+function buildClanBreakdownPanelSection(resolvedName, breakdown, label) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) {
+    return '';
+  }
+
+  const heading = label && label.trim() ? label.trim() : 'Major Clans';
+
+  return buildBreakdownPanelSection(resolvedName, breakdown, {
+    heading,
+    ariaLabelPrefix: 'Clan breakdown',
+    combineSmallEntries: false
+  });
+}
+
+function buildGuildBreakdownPanelSection(resolvedName, breakdown, label) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) {
+    return '';
+  }
+
+  const heading = label && label.trim() ? label.trim() : 'Major Guilds';
+
+  return buildBreakdownPanelSection(resolvedName, breakdown, {
+    heading,
+    ariaLabelPrefix: 'Guild breakdown',
+    combineSmallEntries: false
+  });
 }
 
 function hashStringToNumber(value) {
@@ -11587,6 +11675,145 @@ function hashStringToNumber(value) {
     hash |= 0; // eslint-disable-line no-bitwise
   }
   return hash;
+}
+
+function sanitizeLabelKey(label) {
+  if (typeof label !== 'string') {
+    return '';
+  }
+  const trimmed = label.trim().toLowerCase();
+  if (!trimmed) {
+    return '';
+  }
+  return trimmed.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function generateLabelColor(label, index = 0, seed = '') {
+  const baseSeed = `${seed}|${label}|${index}`;
+  const hash = Math.abs(hashStringToNumber(baseSeed));
+  const hue = ((hash % 360) + 360) % 360;
+  const saturation = 44 + (hash % 28);
+  const lightness = 42 + (Math.floor(hash / 360) % 16);
+  const clampedSaturation = Math.max(35, Math.min(80, saturation));
+  const clampedLightness = Math.max(32, Math.min(70, lightness));
+  return `hsl(${hue}, ${clampedSaturation}%, ${clampedLightness}%)`;
+}
+
+function generateLabelBreakdown(labels, random, options = {}) {
+  if (!Array.isArray(labels) || labels.length === 0) {
+    return [];
+  }
+
+  const filteredLabels = labels
+    .map((label) => (typeof label === 'string' ? label.trim() : ''))
+    .filter(Boolean);
+
+  if (filteredLabels.length === 0) {
+    return [];
+  }
+
+  const uniqueLabels = Array.from(new Set(filteredLabels));
+  if (uniqueLabels.length === 0) {
+    return [];
+  }
+
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const keyPrefix = typeof options.keyPrefix === 'string' && options.keyPrefix.trim()
+    ? options.keyPrefix.trim()
+    : 'entry';
+  const colorSeed = typeof options.colorSeed === 'string' ? options.colorSeed : '';
+
+  const percentageDecimals = 2;
+  const percentageScale = 10 ** percentageDecimals;
+  const totalUnits = 100 * percentageScale;
+
+  const weightEntries = uniqueLabels.map((label, index) => {
+    const normalizedIndex = index + 1;
+    const baseSeed = `${label}|${colorSeed}|${normalizedIndex}`;
+    const hash = Math.abs(hashStringToNumber(baseSeed));
+    const baseWeight = (hash % 1000) / 1000;
+    const noise = 0.35 + randomFn() * 0.65;
+    const weight = Math.max(0.1, baseWeight + noise);
+    return {
+      label,
+      index,
+      weight
+    };
+  });
+
+  const totalWeight = weightEntries.reduce((sum, entry) => sum + entry.weight, 0) || 1;
+
+  const scaledEntries = weightEntries.map((entry) => {
+    const share = entry.weight / totalWeight;
+    const rawPercentage = share * 100;
+    const scaledRaw = rawPercentage * percentageScale;
+    const baseUnit = Math.floor(scaledRaw);
+    const fraction = Math.max(0, Math.min(1, scaledRaw - baseUnit));
+    return {
+      entry,
+      baseUnit,
+      fraction
+    };
+  });
+
+  let remainderUnits = totalUnits - scaledEntries.reduce((sum, item) => sum + item.baseUnit, 0);
+
+  const fractionalOrder = scaledEntries
+    .map((item, index) => ({ index, fraction: item.fraction }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  let incrementIndex = 0;
+  while (remainderUnits > 0 && fractionalOrder.length > 0) {
+    const target = fractionalOrder[incrementIndex % fractionalOrder.length];
+    scaledEntries[target.index].baseUnit += 1;
+    remainderUnits -= 1;
+    incrementIndex += 1;
+  }
+
+  const ascending = fractionalOrder.slice().reverse();
+  let decrementIndex = 0;
+  while (remainderUnits < 0 && ascending.length > 0) {
+    const target = ascending[decrementIndex % ascending.length];
+    if (scaledEntries[target.index].baseUnit > 0) {
+      scaledEntries[target.index].baseUnit -= 1;
+      remainderUnits += 1;
+    }
+    decrementIndex += 1;
+  }
+
+  if (remainderUnits !== 0 && scaledEntries.length > 0) {
+    const lastIndex = scaledEntries.length - 1;
+    const adjusted = Math.max(
+      0,
+      Math.min(totalUnits, scaledEntries[lastIndex].baseUnit + remainderUnits)
+    );
+    remainderUnits -= adjusted - scaledEntries[lastIndex].baseUnit;
+    scaledEntries[lastIndex].baseUnit = adjusted;
+  }
+
+  const usedKeys = new Set();
+
+  return scaledEntries.map(({ entry, baseUnit }) => {
+    const percentage = Math.min(100, Math.max(0, baseUnit / percentageScale));
+    let baseKey = sanitizeLabelKey(entry.label);
+    if (!baseKey) {
+      baseKey = `${keyPrefix}-${entry.index + 1}`;
+    }
+    let key = baseKey;
+    let suffix = 2;
+    while (usedKeys.has(key)) {
+      key = `${baseKey}-${suffix}`;
+      suffix += 1;
+    }
+    usedKeys.add(key);
+
+    return {
+      key,
+      label: entry.label,
+      percentage,
+      color: generateLabelColor(entry.label, entry.index, colorSeed || keyPrefix)
+    };
+  });
 }
 
 function buildRulerPortraitTheme(seed) {
@@ -11896,7 +12123,14 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   addListSection(details.majorGuilds, details.majorGuildsLabel || 'Major Guilds', 'majorGuilds');
   addListSection(details.majorExports, details.majorExportsLabel || 'Major Exports', 'majorExports');
 
-  const excludedArrayKeys = new Set(['populationBreakdown', 'majorGuilds', 'majorExports', 'majorClans']);
+  const excludedArrayKeys = new Set([
+    'populationBreakdown',
+    'majorGuilds',
+    'majorExports',
+    'majorClans',
+    'clanBreakdown',
+    'guildBreakdown'
+  ]);
   Object.entries(details).forEach(([key, value]) => {
     if (!Array.isArray(value) || excludedArrayKeys.has(key)) {
       return;
@@ -11915,7 +12149,20 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     addNarrativeSection(hallmarkLabel, details.hallmark);
   }
 
-  const breakdownSection = buildPopulationBreakdownPanelSection(resolvedName, details.populationBreakdown);
+  const populationBreakdownSection = buildPopulationBreakdownPanelSection(
+    resolvedName,
+    details.populationBreakdown
+  );
+  const clanBreakdownSection = buildClanBreakdownPanelSection(
+    resolvedName,
+    details.clanBreakdown,
+    details.majorClansLabel
+  );
+  const guildBreakdownSection = buildGuildBreakdownPanelSection(
+    resolvedName,
+    details.guildBreakdown,
+    details.majorGuildsLabel
+  );
 
   const columnSections = [[], [], []];
 
@@ -11943,8 +12190,16 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   }
 
-  if (breakdownSection) {
-    columnSections[1].push(breakdownSection);
+  if (populationBreakdownSection) {
+    columnSections[1].push(populationBreakdownSection);
+  }
+
+  if (clanBreakdownSection) {
+    columnSections[1].push(clanBreakdownSection);
+  }
+
+  if (guildBreakdownSection) {
+    columnSections[1].push(guildBreakdownSection);
   }
 
   if (listSections.length > 0) {
@@ -11988,9 +12243,6 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
           loading="lazy"
         />
       </div>
-      <figcaption class="structure-details-art-caption">
-        Concept illustration inspired by Dwarf Fortress settlement scenes.
-      </figcaption>
     </figure>
   `;
 
