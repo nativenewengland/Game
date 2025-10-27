@@ -24,6 +24,7 @@ import { attachEvents } from './src/ui/events.js';
 
 const drawSize = 32;
 const defaultWorldGenerationType = 'normal';
+const defaultLoadingStatusMessage = 'Calculating terrain layers…';
 
 function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
@@ -5023,6 +5024,9 @@ function resolveTileName(baseKey) {
 }
 
 const landMaskCache = new Map();
+
+let loadingProgressValue = 0;
+let loadingProgressIntervalId = null;
 
 const state = {
   settings: {
@@ -18413,15 +18417,144 @@ function drawWorld(world, options = {}) {
   elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}×${height}`;
 }
 
+function updateLoadingProgress(value) {
+  const numericValue = Number.isFinite(value) ? value : 0;
+  loadingProgressValue = clamp(numericValue, 0, 100);
+  if (elements.loadingProgressFill) {
+    elements.loadingProgressFill.style.width = `${loadingProgressValue}%`;
+  }
+  if (elements.loadingProgressBar) {
+    elements.loadingProgressBar.setAttribute('aria-valuenow', Math.round(loadingProgressValue).toString());
+  }
+}
+
+function updateLoadingStatus(text) {
+  if (!elements.loadingStatus) {
+    return;
+  }
+  const message = text && text.trim().length > 0 ? text : defaultLoadingStatusMessage;
+  elements.loadingStatus.textContent = message;
+}
+
+function stopLoadingProgressAnimation() {
+  if (typeof window !== 'undefined' && loadingProgressIntervalId !== null) {
+    window.clearInterval(loadingProgressIntervalId);
+  }
+  loadingProgressIntervalId = null;
+}
+
+function startLoadingProgressAnimation(maxProgress = 92) {
+  stopLoadingProgressAnimation();
+  updateLoadingProgress(0);
+  if (typeof window === 'undefined') {
+    return;
+  }
+  loadingProgressIntervalId = window.setInterval(() => {
+    const increment = Math.random() * 9 + 3;
+    const nextValue = Math.min(loadingProgressValue + increment, maxProgress);
+    updateLoadingProgress(nextValue);
+    if (nextValue >= maxProgress) {
+      stopLoadingProgressAnimation();
+    }
+  }, 350);
+}
+
+function showLoadingScreen(statusText = defaultLoadingStatusMessage) {
+  if (!elements.loadingScreen) {
+    return;
+  }
+  updateLoadingStatus(statusText);
+  elements.loadingScreen.classList.remove('hidden');
+  elements.loadingScreen.setAttribute('aria-hidden', 'false');
+  elements.loadingScreen.setAttribute('aria-busy', 'true');
+  if (elements.loadingPanel && typeof elements.loadingPanel.focus === 'function') {
+    elements.loadingPanel.focus();
+  }
+  startLoadingProgressAnimation();
+}
+
+function hideLoadingScreen({ resetStatus = true } = {}) {
+  stopLoadingProgressAnimation();
+  if (!elements.loadingScreen) {
+    return;
+  }
+  elements.loadingScreen.classList.add('hidden');
+  elements.loadingScreen.setAttribute('aria-hidden', 'true');
+  elements.loadingScreen.removeAttribute('aria-busy');
+  updateLoadingProgress(0);
+  if (resetStatus) {
+    updateLoadingStatus(defaultLoadingStatusMessage);
+  }
+}
+
+function completeLoadingScreen() {
+  stopLoadingProgressAnimation();
+  updateLoadingProgress(100);
+  updateLoadingStatus('World ready!');
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      hideLoadingScreen();
+      resolve();
+      return;
+    }
+    window.setTimeout(() => {
+      hideLoadingScreen();
+      resolve();
+    }, 400);
+  });
+}
+
+function runWithLoadingScreen(action, { statusText } = {}) {
+  showLoadingScreen(statusText);
+  return new Promise((resolve, reject) => {
+    const execute = () => {
+      let result;
+      try {
+        result = action();
+      } catch (error) {
+        hideLoadingScreen();
+        reject(error);
+        return;
+      }
+      completeLoadingScreen().then(() => resolve(result));
+    };
+
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+      execute();
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(execute);
+    });
+  });
+}
+
 function beginGame() {
   closeDwarfCustomizer({ keepWorldInfoHidden: true });
   closeWorldInfoModal({ keepTitleHidden: true });
   if (elements.titleScreen) {
     elements.titleScreen.classList.add('hidden');
   }
-  elements.gameContainer.classList.remove('hidden');
+  if (elements.gameContainer) {
+    elements.gameContainer.classList.add('hidden');
+  }
   elements.seedDisplay.textContent = '';
-  generateAndRender();
+  runWithLoadingScreen(() => {
+    generateAndRender();
+  }, { statusText: 'Forging your world…' })
+    .then(() => {
+      if (elements.gameContainer) {
+        elements.gameContainer.classList.remove('hidden');
+      }
+    })
+    .catch((error) => {
+      console.error('Failed to generate world.', error);
+      if (elements.titleScreen) {
+        elements.titleScreen.classList.remove('hidden');
+      }
+      openDwarfCustomizer();
+    });
 }
 
 function generateAndRender(seedOverride) {
@@ -18490,7 +18623,14 @@ function handleRegenerate() {
     elements.worldSeedInput.value = randomSeed;
   }
   updateWorldInfoSeedDisplay(randomSeed);
-  generateAndRender(randomSeed);
+  return runWithLoadingScreen(
+    () => {
+      generateAndRender(randomSeed);
+    },
+    { statusText: 'Forging a new world…' }
+  ).catch((error) => {
+    console.error('Failed to regenerate world.', error);
+  });
 }
 
 function syncInputsWithSettings() {
@@ -18674,7 +18814,11 @@ function syncInputsWithSettings() {
     applyFormSettings();
     const previousSource = closeOptionsScreen();
     if (previousSource === 'game' && elements.gameContainer) {
-      generateAndRender();
+      runWithLoadingScreen(() => {
+        generateAndRender();
+      }, { statusText: 'Updating the realm…' }).catch((error) => {
+        console.error('Failed to apply new world settings.', error);
+      });
     }
   });
 
