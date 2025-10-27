@@ -5072,6 +5072,13 @@ const state = {
     mode: 'world',
     customMap: null,
     structure: null
+  },
+  dwarfholdView: {
+    active: false,
+    map: null,
+    tileX: null,
+    tileY: null,
+    structure: null
   }
 };
 
@@ -8151,6 +8158,12 @@ const localViewConfig = {
   maxCanvasSize: 768
 };
 
+const dwarfholdScreenConfig = {
+  baseTileSize: 28,
+  minTileSize: 8,
+  maxCanvasSize: 960
+};
+
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
 
 const structureDetailsState = {
@@ -8756,6 +8769,342 @@ function resolveLocalSubtitle(tile) {
   return subtitleParts.length > 0 ? subtitleParts.join(' • ') : 'Local terrain preview';
 }
 
+function renderDwarfholdScreen() {
+  const view = state.dwarfholdView;
+  const customMap = view && view.active ? view.map : null;
+
+  if (elements.dwarfholdScreen) {
+    if (view && view.active) {
+      elements.dwarfholdScreen.setAttribute('aria-hidden', 'false');
+    } else {
+      elements.dwarfholdScreen.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  if (!customMap) {
+    if (elements.dwarfholdTitle) {
+      elements.dwarfholdTitle.textContent = 'Dwarven Hold Interior';
+    }
+    if (elements.dwarfholdSubtitle) {
+      elements.dwarfholdSubtitle.textContent = '';
+    }
+    if (elements.dwarfholdDescription) {
+      elements.dwarfholdDescription.textContent = '';
+    }
+    if (elements.dwarfholdCoordinates) {
+      elements.dwarfholdCoordinates.textContent = '';
+    }
+    if (elements.dwarfholdFeatures) {
+      elements.dwarfholdFeatures.innerHTML = '';
+    }
+    if (elements.dwarfholdLegend) {
+      elements.dwarfholdLegend.innerHTML = '';
+    }
+    if (elements.dwarfholdCanvas) {
+      const canvas = elements.dwarfholdCanvas;
+      const ctx = canvas.getContext('2d');
+      canvas.setAttribute('aria-hidden', 'true');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+      }
+    }
+    return;
+  }
+
+  const structure = view.structure;
+  const resolvedTitle =
+    customMap.title ||
+    (structure?.structureName || structure?.areaName || structure?.structureDetails?.displayType || 'Dwarven Hold Interior');
+  if (elements.dwarfholdTitle) {
+    elements.dwarfholdTitle.textContent = resolvedTitle;
+  }
+
+  const resolvedSubtitle =
+    customMap.subtitle ||
+    (structure?.structureDetails?.displayType
+      ? `${structure.structureDetails.displayType} interior`
+      : 'Subterranean stronghold overview');
+  if (elements.dwarfholdSubtitle) {
+    elements.dwarfholdSubtitle.textContent = resolvedSubtitle;
+  }
+
+  if (elements.dwarfholdDescription) {
+    elements.dwarfholdDescription.textContent = customMap.description || '';
+  }
+
+  if (elements.dwarfholdCoordinates) {
+    if (Number.isFinite(view.tileX) && Number.isFinite(view.tileY)) {
+      const baseLabel = `World Tile ${view.tileX + 1}, ${view.tileY + 1}`;
+      const sizeLabel =
+        Number.isFinite(customMap.width) && Number.isFinite(customMap.height)
+          ? ` — ${customMap.width}×${customMap.height} tiles`
+          : '';
+      elements.dwarfholdCoordinates.textContent = `${baseLabel}${sizeLabel}`;
+    } else {
+      elements.dwarfholdCoordinates.textContent = '';
+    }
+  }
+
+  if (elements.dwarfholdFeatures) {
+    elements.dwarfholdFeatures.innerHTML = '';
+    const featureList = Array.isArray(customMap.features) ? customMap.features : [];
+    if (featureList.length === 0) {
+      const emptyItem = document.createElement('li');
+      emptyItem.className = 'dwarfhold-feature-item dwarfhold-feature-item--empty';
+      emptyItem.textContent = 'No notable features recorded.';
+      elements.dwarfholdFeatures.appendChild(emptyItem);
+    } else {
+      featureList.forEach((feature) => {
+        const item = document.createElement('li');
+        item.className = 'dwarfhold-feature-item';
+        item.textContent = feature;
+        elements.dwarfholdFeatures.appendChild(item);
+      });
+    }
+  }
+
+  if (elements.dwarfholdLegend) {
+    elements.dwarfholdLegend.innerHTML = '';
+    const rawEntries = customMap.legend && typeof customMap.legend === 'object' ? customMap.legend : {};
+    const legendEntries = Object.entries(rawEntries).sort((a, b) => {
+      if (a[0] === 'rock') {
+        return b[0] === 'rock' ? 0 : 1;
+      }
+      if (b[0] === 'rock') {
+        return -1;
+      }
+      const labelA = typeof a[1]?.label === 'string' ? a[1].label : a[0];
+      const labelB = typeof b[1]?.label === 'string' ? b[1].label : b[0];
+      return labelA.localeCompare(labelB, undefined, { sensitivity: 'base' });
+    });
+
+    legendEntries.forEach(([type, definition]) => {
+      if (!definition) {
+        return;
+      }
+      const item = document.createElement('li');
+      item.className = 'dwarfhold-legend-item';
+
+      const swatch = document.createElement('span');
+      swatch.className = 'dwarfhold-legend-swatch';
+      swatch.style.backgroundColor = definition.color || '#1f2937';
+      swatch.style.backgroundImage = 'none';
+      swatch.style.backgroundSize = '';
+      swatch.style.borderColor = definition.borderColor || 'rgba(255, 255, 255, 0.18)';
+      if (definition.texture === 'speckled' && definition.accent) {
+        swatch.style.backgroundImage = `radial-gradient(${definition.accent} 18%, transparent 20%)`;
+        swatch.style.backgroundSize = '12px 12px';
+      }
+
+      const text = document.createElement('div');
+      text.className = 'dwarfhold-legend-text';
+
+      const label = document.createElement('p');
+      label.className = 'dwarfhold-legend-label';
+      label.textContent = definition.label || type;
+      text.appendChild(label);
+
+      const descriptionText = definition.description || definition.examples || null;
+      if (descriptionText) {
+        const description = document.createElement('p');
+        description.className = 'dwarfhold-legend-description';
+        description.textContent = descriptionText;
+        text.appendChild(description);
+      }
+
+      item.appendChild(swatch);
+      item.appendChild(text);
+      elements.dwarfholdLegend.appendChild(item);
+    });
+  }
+
+  const canvas = elements.dwarfholdCanvas;
+  if (canvas) {
+    const context = canvas.getContext('2d');
+    const tiles = Array.isArray(customMap.tiles) ? customMap.tiles : null;
+    const mapHeight = tiles ? tiles.length : 0;
+    const mapWidth = mapHeight > 0 && Array.isArray(tiles[0]) ? tiles[0].length : 0;
+
+    if (!context || !tiles || mapWidth === 0 || mapHeight === 0) {
+      canvas.setAttribute('aria-hidden', 'true');
+      if (context) {
+        context.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+      }
+      return;
+    }
+
+    let tilePixelSize = dwarfholdScreenConfig.baseTileSize;
+    const maxSize = dwarfholdScreenConfig.maxCanvasSize;
+    while (
+      (mapWidth * tilePixelSize > maxSize || mapHeight * tilePixelSize > maxSize) &&
+      tilePixelSize > dwarfholdScreenConfig.minTileSize
+    ) {
+      tilePixelSize -= 2;
+    }
+    if (!Number.isFinite(tilePixelSize) || tilePixelSize < dwarfholdScreenConfig.minTileSize) {
+      tilePixelSize = dwarfholdScreenConfig.minTileSize;
+    }
+
+    const destWidth = Math.max(1, Math.round(mapWidth * tilePixelSize));
+    const destHeight = Math.max(1, Math.round(mapHeight * tilePixelSize));
+    canvas.width = destWidth;
+    canvas.height = destHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.setAttribute(
+      'aria-label',
+      `Interior map for ${customMap.title || 'the dwarfhold'} covering ${mapWidth} by ${mapHeight} tiles.`
+    );
+    canvas.setAttribute('aria-hidden', 'false');
+
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, destWidth, destHeight);
+    context.fillStyle = '#05060b';
+    context.fillRect(0, 0, destWidth, destHeight);
+
+    const palette = customMap.legend || {};
+    for (let y = 0; y < mapHeight; y += 1) {
+      const row = Array.isArray(tiles[y]) ? tiles[y] : null;
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        const cell = row[x];
+        const type = typeof cell === 'string' ? cell : typeof cell?.type === 'string' ? cell.type : 'rock';
+        const definition = palette[type] || palette.rock || { color: '#1f2937' };
+        context.fillStyle = definition.color || '#1f2937';
+        context.fillRect(x * tilePixelSize, y * tilePixelSize, tilePixelSize, tilePixelSize);
+
+        if (definition.texture === 'speckled') {
+          context.save();
+          context.fillStyle = definition.accent || 'rgba(255, 255, 255, 0.08)';
+          const dot = Math.max(1, Math.round(tilePixelSize * 0.18));
+          for (let offsetY = dot; offsetY < tilePixelSize; offsetY += dot * 2) {
+            for (let offsetX = dot; offsetX < tilePixelSize; offsetX += dot * 2) {
+              context.fillRect(
+                x * tilePixelSize + offsetX - dot / 2,
+                y * tilePixelSize + offsetY - dot / 2,
+                dot,
+                dot
+              );
+            }
+          }
+          context.restore();
+        }
+
+        if (definition.borderColor) {
+          context.save();
+          context.strokeStyle = definition.borderColor;
+          context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
+          context.strokeRect(
+            x * tilePixelSize + context.lineWidth / 2,
+            y * tilePixelSize + context.lineWidth / 2,
+            tilePixelSize - context.lineWidth,
+            tilePixelSize - context.lineWidth
+          );
+          context.restore();
+        }
+      }
+    }
+
+    if (Array.isArray(customMap.markers)) {
+      customMap.markers.forEach((marker) => {
+        if (!Number.isFinite(marker?.x) || !Number.isFinite(marker?.y)) {
+          return;
+        }
+        const centerX = (marker.x + 0.5) * tilePixelSize;
+        const centerY = (marker.y + 0.5) * tilePixelSize;
+        const radius = Math.max(2, tilePixelSize * (Number(marker.radius) || 0.32));
+        context.save();
+        if (marker.shadowColor) {
+          context.fillStyle = marker.shadowColor;
+          context.globalAlpha = 0.35;
+          context.beginPath();
+          context.arc(centerX, centerY, radius * 1.45, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.globalAlpha = 1;
+        context.fillStyle = marker.color || '#facc15';
+        context.beginPath();
+        context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        context.fill();
+        if (marker.stroke) {
+          context.strokeStyle = marker.stroke;
+          context.lineWidth = Math.max(1, tilePixelSize * 0.12);
+          context.stroke();
+        }
+        context.restore();
+      });
+    }
+
+    context.save();
+    context.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+    context.lineWidth = 1;
+    for (let x = 1; x < mapWidth; x += 1) {
+      const px = Math.round(x * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(px, 0);
+      context.lineTo(px, destHeight);
+      context.stroke();
+    }
+    for (let y = 1; y < mapHeight; y += 1) {
+      const py = Math.round(y * tilePixelSize) + 0.5;
+      context.beginPath();
+      context.moveTo(0, py);
+      context.lineTo(destWidth, py);
+      context.stroke();
+    }
+    context.restore();
+  }
+}
+
+function openDwarfholdScreen() {
+  if (elements.gameContainer) {
+    elements.gameContainer.classList.add('hidden');
+    elements.gameContainer.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.localMapPanel) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.dwarfholdScreen) {
+    elements.dwarfholdScreen.classList.remove('hidden');
+    elements.dwarfholdScreen.setAttribute('aria-hidden', 'false');
+  }
+  renderDwarfholdScreen();
+  if (elements.dwarfholdExit) {
+    const focusTarget = elements.dwarfholdExit;
+    const focusElement = () => {
+      if (typeof focusTarget.focus === 'function') {
+        focusTarget.focus();
+      }
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(focusElement);
+    } else {
+      focusElement();
+    }
+  }
+}
+
+function closeDwarfholdScreen(options = {}) {
+  const { returnFocus = false } = options;
+  if (elements.dwarfholdScreen) {
+    elements.dwarfholdScreen.classList.add('hidden');
+    elements.dwarfholdScreen.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.dwarfholdCanvas) {
+    elements.dwarfholdCanvas.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.gameContainer) {
+    elements.gameContainer.classList.remove('hidden');
+    elements.gameContainer.setAttribute('aria-hidden', 'false');
+  }
+  if (returnFocus && elements.canvasWrapper) {
+    elements.canvasWrapper.focus();
+  }
+}
+
 function refreshLocalMapPreview() {
   if (!elements.localMapPanel || !elements.localMapCanvas) {
     return;
@@ -8763,6 +9112,14 @@ function refreshLocalMapPreview() {
   const world = state.currentWorld;
   const localView = state.localView;
   const worldHasTiles = Array.isArray(world?.tiles) && world.tiles.length > 0;
+
+  if (state.dwarfholdView && state.dwarfholdView.active) {
+    elements.localMapPanel.classList.add('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'true');
+    elements.localMapCanvas.setAttribute('aria-hidden', 'true');
+    renderDwarfholdScreen();
+    return;
+  }
 
   if (
     !localView ||
@@ -9105,6 +9462,7 @@ function refreshLocalMapPreview() {
 }
 
 function hideLocalView(options = {}) {
+  const { suppressRedraw = false, returnFocus = false } = options;
   state.localView.active = false;
   state.localView.centerX = null;
   state.localView.centerY = null;
@@ -9112,6 +9470,11 @@ function hideLocalView(options = {}) {
   state.localView.mode = 'world';
   state.localView.customMap = null;
   state.localView.structure = null;
+  state.dwarfholdView.active = false;
+  state.dwarfholdView.map = null;
+  state.dwarfholdView.tileX = null;
+  state.dwarfholdView.tileY = null;
+  state.dwarfholdView.structure = null;
   if (elements.localMapPanel) {
     elements.localMapPanel.classList.add('hidden');
     elements.localMapPanel.setAttribute('aria-hidden', 'true');
@@ -9132,7 +9495,9 @@ function hideLocalView(options = {}) {
   if (elements.localMapCoordinates) {
     elements.localMapCoordinates.textContent = '';
   }
-  if (!options.suppressRedraw && state.currentWorld) {
+  renderDwarfholdScreen();
+  closeDwarfholdScreen({ returnFocus });
+  if (!suppressRedraw && state.currentWorld) {
     drawWorld(state.currentWorld, { preserveView: true });
   }
 }
@@ -9204,7 +9569,19 @@ function showDwarfholdInterior(tile, tileX, tileY) {
   state.localView.customMap = customMap;
   state.localView.structure = tile || null;
 
+  state.dwarfholdView.active = true;
+  state.dwarfholdView.map = customMap;
+  state.dwarfholdView.tileX = clampedX;
+  state.dwarfholdView.tileY = clampedY;
+  state.dwarfholdView.structure = tile || null;
+
   drawWorld(world, { preserveView: true });
+  openDwarfholdScreen();
+}
+
+function closeDwarfholdInterior(options = {}) {
+  const { returnFocus = false, suppressRedraw = false } = options;
+  hideLocalView({ suppressRedraw, returnFocus });
 }
 
 function drawLocalSelectionOverlay(ctx) {
@@ -19549,6 +19926,7 @@ attachEvents(elements, {
   showDwarfholdInterior,
   showStructureDetails,
   hideLocalView,
+  closeDwarfholdInterior,
   state,
   refreshOverlayToggleButtons,
   drawWorld,
