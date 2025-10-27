@@ -5087,7 +5087,8 @@ const state = {
     bounds: null,
     mode: 'world',
     customMap: null,
-    structure: null
+    structure: null,
+    highResolution: null
   },
   dwarfholdView: {
     active: false,
@@ -8171,7 +8172,10 @@ const localViewConfig = {
   radius: 4,
   baseScale: 3,
   minScale: 2,
-  maxCanvasSize: 768
+  maxCanvasSize: 768,
+  highResolutionMapSize: 1000,
+  highResolutionMinScale: 2,
+  highResolutionMaxTileSize: 28
 };
 
 const dwarfholdScreenConfig = {
@@ -9169,6 +9173,90 @@ function refreshLocalMapPreview() {
       ? world.tiles[localView.centerY][localView.centerX] || null
       : null;
 
+  if (localView.mode === 'worldHighRes' && localView.highResolution) {
+    const patch = localView.highResolution;
+    const canvas = elements.localMapCanvas;
+    const context = canvas ? canvas.getContext('2d') : null;
+    if (!canvas || !context) {
+      return;
+    }
+
+    elements.localMapPanel.classList.remove('hidden');
+    elements.localMapPanel.setAttribute('aria-hidden', 'false');
+
+    if (elements.localMapTitle) {
+      elements.localMapTitle.textContent = focusTile
+        ? focusTile.structureName || focusTile.areaName || 'Local View'
+        : 'Local View';
+    }
+
+    if (elements.localMapSubtitle) {
+      elements.localMapSubtitle.textContent = 'High-resolution terrain sample';
+    }
+
+    if (elements.localMapCoordinates) {
+      const sourceLabel = `${patch.worldWidth}×${patch.worldHeight}`;
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+        patch.width
+      }×${patch.height} tiles (sampled from ${sourceLabel})`;
+    }
+
+    if (elements.localMapDetails) {
+      const tooltipContent = buildStructureTooltipContent(focusTile);
+      if (tooltipContent) {
+        elements.localMapDetails.innerHTML = tooltipContent;
+      } else {
+        elements.localMapDetails.textContent = localMapDefaultMessage;
+      }
+    }
+
+    const maxSize = localViewConfig.maxCanvasSize;
+    const maxTileSize = Number.isFinite(localViewConfig.highResolutionMaxTileSize)
+      ? Math.max(4, Math.floor(localViewConfig.highResolutionMaxTileSize))
+      : 24;
+    let tilePixelSize = maxTileSize;
+    const minTileSize = Number.isFinite(localViewConfig.highResolutionMinScale)
+      ? Math.max(2, Math.floor(localViewConfig.highResolutionMinScale))
+      : 2;
+    while (
+      (patch.width * tilePixelSize > maxSize || patch.height * tilePixelSize > maxSize) &&
+      tilePixelSize > minTileSize
+    ) {
+      tilePixelSize -= 1;
+    }
+    if (patch.width * tilePixelSize > maxSize || patch.height * tilePixelSize > maxSize) {
+      const fallbackSize = Math.floor(maxSize / Math.max(patch.width, patch.height));
+      tilePixelSize = Math.max(minTileSize, fallbackSize);
+    }
+    tilePixelSize = Math.max(minTileSize, tilePixelSize);
+
+    const destWidth = Math.max(1, patch.width * tilePixelSize);
+    const destHeight = Math.max(1, patch.height * tilePixelSize);
+    canvas.width = destWidth;
+    canvas.height = destHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.setAttribute(
+      'aria-label',
+      `High-resolution local preview covering ${patch.width} by ${patch.height} tiles around world tile ${
+        localView.centerX + 1
+      }, ${localView.centerY + 1}.`
+    );
+    canvas.setAttribute('aria-hidden', 'false');
+
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, destWidth, destHeight);
+    context.fillStyle = '#05060b';
+    context.fillRect(0, 0, destWidth, destHeight);
+
+    drawHighResolutionLocalPatch(context, patch, tilePixelSize, {
+      highlightX: patch.centerX,
+      highlightY: patch.centerY
+    });
+
+    return;
+  }
+
   if (localView.mode === 'dwarfhold' && localView.customMap) {
     const customMap = localView.customMap;
     const tiles = Array.isArray(customMap?.tiles) ? customMap.tiles : null;
@@ -9486,6 +9574,7 @@ function hideLocalView(options = {}) {
   state.localView.mode = 'world';
   state.localView.customMap = null;
   state.localView.structure = null;
+  state.localView.highResolution = null;
   state.dwarfholdView.active = false;
   state.dwarfholdView.map = null;
   state.dwarfholdView.tileX = null;
@@ -9518,6 +9607,276 @@ function hideLocalView(options = {}) {
   }
 }
 
+function generateHighResolutionLocalPatch(world, tileX, tileY) {
+  if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
+    return null;
+  }
+
+  const sourceTiles = world.tiles;
+  const sourceHeight = sourceTiles.length;
+  const sourceWidth = Array.isArray(sourceTiles[0]) ? sourceTiles[0].length : 0;
+  if (!sourceWidth || !sourceHeight) {
+    return null;
+  }
+
+  const seedCandidates = [
+    typeof world.seedString === 'string' ? world.seedString : null,
+    typeof state.settings?.seedString === 'string' ? state.settings.seedString : null,
+    typeof state.settings?.lastSeedString === 'string' ? state.settings.lastSeedString : null
+  ];
+  const resolvedSeed = seedCandidates.find((candidate) => candidate && candidate.length > 0) || 'local-view';
+
+  const targetSize = Number.isFinite(localViewConfig.highResolutionMapSize)
+    ? Math.max(1, Math.floor(localViewConfig.highResolutionMapSize))
+    : 0;
+  if (!targetSize) {
+    return null;
+  }
+
+  let highResolutionWorld = null;
+  try {
+    highResolutionWorld = createWorldWithDimensions(resolvedSeed, targetSize, targetSize);
+  } catch (error) {
+    console.error('Failed to generate high-resolution local preview.', error);
+    return null;
+  }
+
+  const highTiles = Array.isArray(highResolutionWorld?.tiles) ? highResolutionWorld.tiles : null;
+  const highHeight = highTiles ? highTiles.length : 0;
+  const highWidth = highHeight > 0 && Array.isArray(highTiles[0]) ? highTiles[0].length : 0;
+  if (!highTiles || !highWidth || !highHeight) {
+    return null;
+  }
+
+  const scaleX = highWidth / sourceWidth;
+  const scaleY = highHeight / sourceHeight;
+
+  const highCenterX = Math.round((tileX + 0.5) * scaleX - 0.5);
+  const highCenterY = Math.round((tileY + 0.5) * scaleY - 0.5);
+
+  const baseRadius = Math.max(1, localViewConfig.radius);
+  const scaledRadiusX = Math.max(
+    Math.round((baseRadius + 0.5) * scaleX),
+    Math.ceil(highWidth * 0.02)
+  );
+  const scaledRadiusY = Math.max(
+    Math.round((baseRadius + 0.5) * scaleY),
+    Math.ceil(highHeight * 0.02)
+  );
+  const padding = Math.max(Math.round(Math.max(scaleX, scaleY)), 2);
+
+  const startX = clamp(highCenterX - scaledRadiusX - padding, 0, highWidth - 1);
+  const endX = clamp(highCenterX + scaledRadiusX + padding, 0, highWidth - 1);
+  const startY = clamp(highCenterY - scaledRadiusY - padding, 0, highHeight - 1);
+  const endY = clamp(highCenterY + scaledRadiusY + padding, 0, highHeight - 1);
+
+  const patchWidth = Math.max(1, endX - startX + 1);
+  const patchHeight = Math.max(1, endY - startY + 1);
+  const patchTiles = [];
+  for (let y = startY; y <= endY; y += 1) {
+    const row = highTiles[y];
+    const slice = Array.isArray(row) ? row.slice(startX, endX + 1) : [];
+    patchTiles.push(slice);
+  }
+
+  return {
+    tiles: patchTiles,
+    width: patchWidth,
+    height: patchHeight,
+    centerX: clamp(highCenterX - startX, 0, patchWidth - 1),
+    centerY: clamp(highCenterY - startY, 0, patchHeight - 1),
+    worldOriginX: startX,
+    worldOriginY: startY,
+    worldWidth: highWidth,
+    worldHeight: highHeight,
+    scaleX,
+    scaleY,
+    metadata: {
+      seaLevel: highResolutionWorld.seaLevel,
+      waterTileKey: highResolutionWorld.waterTileKey || resolveTileName('WATER'),
+      grassTileKey: highResolutionWorld.grassTileKey || resolveTileName('GRASS'),
+      factions: Array.isArray(highResolutionWorld.factions) ? highResolutionWorld.factions : [],
+      seedString: highResolutionWorld.seedString || resolvedSeed
+    }
+  };
+}
+
+function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
+  if (!ctx || !patch || !Array.isArray(patch.tiles)) {
+    return;
+  }
+
+  const { highlightX = null, highlightY = null } = options;
+  const tiles = patch.tiles;
+  const width = patch.width;
+  const height = patch.height;
+  const metadata = patch.metadata || {};
+  const waterTileKey = metadata.waterTileKey || resolveTileName('WATER');
+  const grassTileKey = metadata.grassTileKey || resolveTileName('GRASS');
+  const patchWorld = {
+    tiles,
+    width,
+    height,
+    seaLevel: metadata.seaLevel,
+    factions: metadata.factions || []
+  };
+
+  for (let y = 0; y < height; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < width; x += 1) {
+      const cell = row[x];
+      if (!cell) {
+        ctx.fillStyle = '#05060b';
+        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        continue;
+      }
+
+      const baseKey = typeof cell.base === 'string' && cell.base ? cell.base : 'GRASS';
+      const baseDefinition = tileLookup.get(baseKey) || tileLookup.get('GRASS');
+      if (baseDefinition) {
+        const baseSheet = state.tileSheets[baseDefinition.sheet];
+        if (baseSheet && baseSheet.image) {
+          ctx.drawImage(
+            baseSheet.image,
+            baseDefinition.sx,
+            baseDefinition.sy,
+            baseDefinition.size,
+            baseDefinition.size,
+            x * tileSize,
+            y * tileSize,
+            tileSize,
+            tileSize
+          );
+        }
+      }
+
+      applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize);
+      applyVolcanoShading(ctx, cell, x, y, tileSize);
+
+      if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
+        const hillDefinition = tileLookup.get(cell.hillOverlay);
+        if (hillDefinition) {
+          const hillSheet = state.tileSheets[hillDefinition.sheet];
+          if (hillSheet && hillSheet.image) {
+            ctx.drawImage(
+              hillSheet.image,
+              hillDefinition.sx,
+              hillDefinition.sy,
+              hillDefinition.size,
+              hillDefinition.size,
+              x * tileSize,
+              y * tileSize,
+              tileSize,
+              tileSize
+            );
+          }
+        }
+      }
+
+      if (cell.overlay) {
+        const overlayDefinition = tileLookup.get(cell.overlay);
+        if (!overlayDefinition) {
+          drawCustomOverlay(ctx, cell.overlay, x, y, tiles, tileSize);
+        } else {
+          const overlaySheet = state.tileSheets[overlayDefinition.sheet];
+          if (overlaySheet && overlaySheet.image) {
+            ctx.drawImage(
+              overlaySheet.image,
+              overlayDefinition.sx,
+              overlayDefinition.sy,
+              overlayDefinition.size,
+              overlayDefinition.size,
+              x * tileSize,
+              y * tileSize,
+              tileSize,
+              tileSize
+            );
+          }
+        }
+      }
+
+      applyDesertMountainTint(ctx, cell, x, y, tileSize);
+      applyMountainShading(ctx, cell, x, y, tileSize);
+
+      if (cell.river) {
+        drawRiverSegment(ctx, cell.river, x, y, tileSize);
+      }
+
+      if (cell.structure) {
+        const structureDefinition = tileLookup.get(cell.structure);
+        if (structureDefinition) {
+          if (typeof structureDefinition.draw === 'function') {
+            structureDefinition.draw(ctx, {
+              x,
+              y,
+              pixelX: x * tileSize,
+              pixelY: y * tileSize,
+              size: tileSize,
+              cell,
+              world: patchWorld
+            });
+          } else {
+            const structureSheet = state.tileSheets[structureDefinition.sheet];
+            if (structureSheet && structureSheet.image) {
+              ctx.drawImage(
+                structureSheet.image,
+                structureDefinition.sx,
+                structureDefinition.sy,
+                structureDefinition.size,
+                structureDefinition.size,
+                x * tileSize,
+                y * tileSize,
+                tileSize,
+                tileSize
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.32)';
+  ctx.lineWidth = 1;
+  for (let x = 1; x < width; x += 1) {
+    const px = Math.round(x * tileSize) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, height * tileSize);
+    ctx.stroke();
+  }
+  for (let y = 1; y < height; y += 1) {
+    const py = Math.round(y * tileSize) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(0, py);
+    ctx.lineTo(width * tileSize, py);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if (Number.isFinite(highlightX) && Number.isFinite(highlightY)) {
+    const highlightPixelX = highlightX * tileSize;
+    const highlightPixelY = highlightY * tileSize;
+    const lineWidth = Math.max(2, Math.round(tileSize * 0.12));
+    ctx.save();
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = 'rgba(240, 198, 116, 0.9)';
+    ctx.fillStyle = 'rgba(240, 198, 116, 0.12)';
+    ctx.fillRect(highlightPixelX, highlightPixelY, tileSize, tileSize);
+    ctx.strokeRect(
+      highlightPixelX + lineWidth / 2,
+      highlightPixelY + lineWidth / 2,
+      tileSize - lineWidth,
+      tileSize - lineWidth
+    );
+    ctx.restore();
+  }
+}
+
 function showLocalViewAt(tileX, tileY) {
   const world = state.currentWorld;
   if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
@@ -9535,7 +9894,14 @@ function showLocalViewAt(tileX, tileY) {
   state.localView.centerX = clampedX;
   state.localView.centerY = clampedY;
   state.localView.bounds = bounds;
-  state.localView.mode = 'world';
+  const highResolutionPatch = generateHighResolutionLocalPatch(world, clampedX, clampedY);
+  if (highResolutionPatch) {
+    state.localView.mode = 'worldHighRes';
+    state.localView.highResolution = highResolutionPatch;
+  } else {
+    state.localView.mode = 'world';
+    state.localView.highResolution = null;
+  }
   state.localView.customMap = null;
   state.localView.structure = null;
   drawWorld(world, { preserveView: true });
@@ -9584,6 +9950,7 @@ function showDwarfholdInterior(tile, tileX, tileY) {
   state.localView.mode = 'dwarfhold';
   state.localView.customMap = customMap;
   state.localView.structure = tile || null;
+  state.localView.highResolution = null;
 
   state.dwarfholdView.active = true;
   state.dwarfholdView.map = customMap;
@@ -18586,11 +18953,32 @@ function createWorld(seedString) {
   };
 }
 
+function createWorldWithDimensions(seedString, width, height) {
+  const originalWidth = state.settings.width;
+  const originalHeight = state.settings.height;
+  const originalMapSize = state.settings.mapSize;
+
+  const safeWidth = Number.isFinite(width) && width > 0 ? Math.floor(width) : originalWidth;
+  const safeHeight = Number.isFinite(height) && height > 0 ? Math.floor(height) : originalHeight;
+
+  state.settings.width = safeWidth;
+  state.settings.height = safeHeight;
+  state.settings.mapSize = `${safeWidth}x${safeHeight}`;
+
+  try {
+    return createWorld(seedString);
+  } finally {
+    state.settings.width = originalWidth;
+    state.settings.height = originalHeight;
+    state.settings.mapSize = originalMapSize;
+  }
+}
+
 function generateSeedString(seedNumber) {
   return seedNumber.toString(16).padStart(8, '0');
 }
 
-function drawRiverSegment(ctx, river, x, y) {
+function drawRiverSegment(ctx, river, x, y, tileSize = drawSize) {
   if (!river) {
     return;
   }
@@ -18608,20 +18996,25 @@ function drawRiverSegment(ctx, river, x, y) {
     definition.sy,
     definition.size,
     definition.size,
-    x * drawSize,
-    y * drawSize,
-    drawSize,
-    drawSize
+    x * tileSize,
+    y * tileSize,
+    tileSize,
+    tileSize
   );
 }
 
-function computeRoadNeighborMask(x, y, overlayKey = TOWN_ROAD_OVERLAY_KEY) {
-  const world = state.currentWorld;
-  if (!world || !Array.isArray(world.tiles)) {
-    return 0;
+function computeRoadNeighborMask(x, y, overlayKey = TOWN_ROAD_OVERLAY_KEY, tilesOverride = null) {
+  let tiles = null;
+  if (Array.isArray(tilesOverride)) {
+    tiles = tilesOverride;
+  } else {
+    const world = state.currentWorld;
+    if (!world || !Array.isArray(world.tiles)) {
+      return 0;
+    }
+    tiles = world.tiles;
   }
 
-  const tiles = world.tiles;
   const height = tiles.length;
   if (!Number.isFinite(x) || !Number.isFinite(y) || y < 0 || y >= height) {
     return 0;
@@ -18721,7 +19114,7 @@ function selectRoadTileSprite(mask) {
   return { definition: roadTileSpriteDefinitions.cross, rotation: 0 };
 }
 
-function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
+function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0, tileSize = drawSize) {
   if (!ctx || !definition) {
     return false;
   }
@@ -18732,8 +19125,8 @@ function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
   }
 
   const normalizedRotation = ((Number.isFinite(rotationSteps) ? rotationSteps : 0) % 4 + 4) % 4;
-  const pixelX = x * drawSize;
-  const pixelY = y * drawSize;
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
 
   if (normalizedRotation === 0) {
     ctx.drawImage(
@@ -18744,14 +19137,14 @@ function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
       definition.size,
       pixelX,
       pixelY,
-      drawSize,
-      drawSize
+      tileSize,
+      tileSize
     );
     return true;
   }
 
   ctx.save();
-  ctx.translate(pixelX + drawSize / 2, pixelY + drawSize / 2);
+  ctx.translate(pixelX + tileSize / 2, pixelY + tileSize / 2);
   ctx.rotate((Math.PI / 2) * normalizedRotation);
   ctx.drawImage(
     sheet.image,
@@ -18759,37 +19152,44 @@ function drawRoadSprite(ctx, definition, x, y, rotationSteps = 0) {
     definition.sy,
     definition.size,
     definition.size,
-    -drawSize / 2,
-    -drawSize / 2,
-    drawSize,
-    drawSize
+    -tileSize / 2,
+    -tileSize / 2,
+    tileSize,
+    tileSize
   );
   ctx.restore();
   return true;
 }
 
-function drawRoadOverlay(ctx, x, y) {
+function drawRoadOverlay(ctx, x, y, tilesOverride = null, tileSize = drawSize) {
   if (!ctx || !roadTileSpriteDefinitions) {
     return false;
   }
 
-  const mask = computeRoadNeighborMask(x, y, TOWN_ROAD_OVERLAY_KEY);
+  const mask = computeRoadNeighborMask(x, y, TOWN_ROAD_OVERLAY_KEY, tilesOverride);
   const selection = selectRoadTileSprite(mask);
   if (!selection || !selection.definition) {
     return false;
   }
 
-  return drawRoadSprite(ctx, selection.definition, x, y, selection.rotation || 0);
+  return drawRoadSprite(
+    ctx,
+    selection.definition,
+    x,
+    y,
+    selection.rotation || 0,
+    tileSize
+  );
 }
 
-function drawCustomOverlay(ctx, overlayKey, x, y) {
+function drawCustomOverlay(ctx, overlayKey, x, y, tilesOverride = null, tileSize = drawSize) {
   if (overlayKey === TOWN_ROAD_OVERLAY_KEY) {
-    return drawRoadOverlay(ctx, x, y);
+    return drawRoadOverlay(ctx, x, y, tilesOverride, tileSize);
   }
   return false;
 }
 
-function drawOverlayCell(ctx, x, y, color, alpha = 0.3) {
+function drawOverlayCell(ctx, x, y, color, alpha = 0.3, tileSize = drawSize) {
   if (!ctx || !color) {
     return;
   }
@@ -18800,7 +19200,7 @@ function drawOverlayCell(ctx, x, y, color, alpha = 0.3) {
   ctx.save();
   ctx.globalAlpha = clampedAlpha;
   ctx.fillStyle = color;
-  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
 
@@ -18879,12 +19279,12 @@ function getBiomeOverlayColor(type) {
   return biomeOverlayColors[normalized] || null;
 }
 
-function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
+function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
-  const pixelX = x * drawSize;
-  const pixelY = y * drawSize;
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
   const hasDistinctWaterTile = Boolean(waterTileKey) && waterTileKey !== grassTileKey;
   const isWaterTile = hasDistinctWaterTile && cell.base === waterTileKey;
   if (isWaterTile) {
@@ -18893,7 +19293,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     if (shallowFactor > 0.01) {
       const alpha = shallowFactor * 0.32;
       ctx.fillStyle = `rgba(88, 164, 218, ${alpha})`;
-      ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+      ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     }
     return;
   }
@@ -18910,7 +19310,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(148, 205, 184, ${lightenAlpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
   const marshProximity = clamp(
@@ -18923,7 +19323,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(82, 64, 40, ${alpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
   const forestDensity = clamp(
@@ -18936,7 +19336,7 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(26, 74, 36, ${forestAlpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
   const desertProximity = clamp(
@@ -18949,12 +19349,12 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
     ctx.fillStyle = `rgba(228, 202, 146, ${desertAlpha})`;
-    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
     ctx.restore();
   }
 }
 
-function applyVolcanoShading(ctx, cell, x, y) {
+function applyVolcanoShading(ctx, cell, x, y, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
@@ -18972,17 +19372,17 @@ function applyVolcanoShading(ctx, cell, x, y) {
     return;
   }
 
-  const pixelX = x * drawSize;
-  const pixelY = y * drawSize;
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
   const alpha = proximity * 0.4;
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
   ctx.fillStyle = `rgba(28, 14, 10, ${alpha})`;
-  ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+  ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
   ctx.restore();
 }
 
-function applyMountainShading(ctx, cell, x, y) {
+function applyMountainShading(ctx, cell, x, y, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
@@ -19006,11 +19406,11 @@ function applyMountainShading(ctx, cell, x, y) {
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
   ctx.fillStyle = `rgba(24, 20, 18, ${shadingAlpha})`;
-  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
 
-function applyDesertMountainTint(ctx, cell, x, y) {
+function applyDesertMountainTint(ctx, cell, x, y, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
   }
@@ -19031,7 +19431,7 @@ function applyDesertMountainTint(ctx, cell, x, y) {
   ctx.globalCompositeOperation = 'source-atop';
   ctx.globalAlpha = isBadlandsBase ? 0.35 : 0.45;
   ctx.fillStyle = isBadlandsBase ? '#b38a5c' : '#dcbf7e';
-  ctx.fillRect(x * drawSize, y * drawSize, drawSize, drawSize);
+  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
 
