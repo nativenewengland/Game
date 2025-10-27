@@ -4690,6 +4690,16 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
       }
     ];
   }
+  if (type === 'monastery') {
+    return [
+      {
+        key: 'humans',
+        label: 'Humans',
+        percentage: 100,
+        color: defaultCultureColorByKey.humans
+      }
+    ];
+  }
   return null;
 }
 
@@ -4712,6 +4722,8 @@ function resolveFallbackClaimRadius(type) {
       return 26;
     case 'orcCamp':
       return 28;
+    case 'monastery':
+      return 27;
     default:
       return 24;
   }
@@ -4737,6 +4749,8 @@ function resolveCulturalRadiusMultiplier(type) {
       return 1.55;
     case 'orcCamp':
       return 1.75;
+    case 'monastery':
+      return 1.65;
     default:
       return 1.6;
   }
@@ -4759,6 +4773,8 @@ function resolveCulturalFalloffPower(type) {
       return 1.42;
     case 'orcCamp':
       return 1.3;
+    case 'monastery':
+      return 1.34;
     default:
       return 1.35;
   }
@@ -17388,7 +17404,10 @@ function createWorld(seedString) {
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
         const baseIsMarsh = hasMarshTile && tile.base === marshTileKey;
-        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+        if (baseIsSnow) {
+          continue;
+        }
+        if (!baseIsGrass && !baseIsMarsh) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -17427,7 +17446,7 @@ function createWorld(seedString) {
         const distanceScore = clamp((settlementDistance - 4) / 18, 0, 1) * 0.22;
         const elevationValue = elevationField[idx];
         const elevationScore = clamp((elevationValue - seaLevel) * 2, 0, 1) * 0.18;
-        const baseSuitability = baseIsGrass ? 0.18 : baseIsSnow ? 0.12 : 0.08;
+        const baseSuitability = baseIsGrass ? 0.18 : baseIsMarsh ? 0.08 : 0;
         const latitude = (y + 0.5) / height;
         const latitudeNoise =
           hashCoords(x, Math.floor(latitude * 1024), monasteryLatitudeSeed) - 0.5;
@@ -17483,7 +17502,10 @@ function createWorld(seedString) {
         const baseIsGrass = tile.base === grassTileKey;
         const baseIsSnow = hasSnowTile && tile.base === snowTileKey;
         const baseIsMarsh = hasMarshTile && tile.base === marshTileKey;
-        if (!baseIsGrass && !baseIsSnow && !baseIsMarsh) {
+        if (baseIsSnow) {
+          continue;
+        }
+        if (!baseIsGrass && !baseIsMarsh) {
           continue;
         }
         if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
@@ -18482,6 +18504,7 @@ function createWorld(seedString) {
       ...evilWizardTowers,
       ...lizardmenCities,
       ...woodElfGroves,
+      ...monasteries,
       ...mines,
       ...castles,
       ...orcCamps
