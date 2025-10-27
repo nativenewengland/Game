@@ -11978,12 +11978,19 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   });
 
-  const artPlaceholder = `
-    <figure class="structure-details-art-placeholder">
-      <div class="structure-details-art-frame" role="img" aria-label="Artwork placeholder">
-        <span class="structure-details-art-text">Artwork Placeholder</span>
+  const settlementArtwork = `
+    <figure class="structure-details-art">
+      <div class="structure-details-art-frame">
+        <img
+          class="structure-details-art-image"
+          src="titlescreen/Dwarf-Fortress_1.webp"
+          alt="Illustration of a dwarven settlement"
+          loading="lazy"
+        />
       </div>
-      <figcaption class="structure-details-art-caption">Reserve this space for concept art or GIF previews of the area.</figcaption>
+      <figcaption class="structure-details-art-caption">
+        Concept illustration inspired by Dwarf Fortress settlement scenes.
+      </figcaption>
     </figure>
   `;
 
@@ -11992,7 +11999,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   let body;
 
   if (hasSectionContent) {
-    columnSections[2].push(artPlaceholder);
+    columnSections[2].push(settlementArtwork);
 
     const populatedColumns = columnSections
       .map((items, index) => {
@@ -12013,7 +12020,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
       ? populatedColumns.join('')
       : `
         <div class="structure-details-column structure-details-column--tertiary">
-          ${artPlaceholder}
+          ${settlementArtwork}
         </div>
       `;
   } else {
@@ -12022,7 +12029,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
         <p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>
       </div>
       <div class="structure-details-column structure-details-column--tertiary">
-        ${artPlaceholder}
+        ${settlementArtwork}
       </div>
     `;
   }

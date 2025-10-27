@@ -1107,43 +1107,41 @@ button:hover:not(:disabled) {
   align-items: center;
 }
 
-.structure-details-art-placeholder {
+.structure-details-art {
   margin: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  width: min(18rem, 100%);
+  max-width: 18rem;
+  width: 100%;
   justify-self: end;
   align-self: end;
   margin-left: auto;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .structure-details-art-frame {
   width: 100%;
   aspect-ratio: 4 / 3;
   border-radius: 0.75rem;
-  border: 2px dashed rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.08),
       rgba(255, 255, 255, 0.02)
     );
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem;
-  text-align: center;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 12px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
 }
 
-.structure-details-art-text {
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.55);
+.structure-details-art-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .structure-details-art-caption {
@@ -1387,7 +1385,7 @@ button:hover:not(:disabled) {
 }
 
 @media (max-width: 720px) {
-  .structure-details-art-placeholder {
+  .structure-details-art {
     width: 100%;
     max-width: 20rem;
     align-self: center;
