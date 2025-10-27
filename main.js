@@ -12163,6 +12163,7 @@ function createWorld(seedString) {
         marshProximity: 0,
         desertProximity: 0,
         volcanoProximity: 0,
+        forestCanopyDensity: 0,
         elevation: 0,
         temperature: 0,
         moisture: 0
@@ -17517,6 +17518,52 @@ function createWorld(seedString) {
     }
   }
 
+  const forestMask = new Uint8Array(width * height);
+  let forestTileCount = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      const tile = tiles[y][x];
+      if (!tile) {
+        continue;
+      }
+      if (tile.base === grassTileKey && tile.biomeType === 'forest') {
+        forestMask[idx] = 1;
+        forestTileCount += 1;
+      } else {
+        tile.forestCanopyDensity = 0;
+      }
+    }
+  }
+
+  if (forestTileCount > 0) {
+    const nonForestMask = new Uint8Array(width * height);
+    for (let i = 0; i < nonForestMask.length; i += 1) {
+      nonForestMask[i] = forestMask[i] ? 0 : 1;
+    }
+    const forestEdgeDistanceField = computeEuclideanDistanceField(
+      nonForestMask,
+      width,
+      height
+    );
+    const forestShadeFalloff = 4.2;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        if (!forestMask[idx]) {
+          continue;
+        }
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        const distanceToEdge = Math.sqrt(forestEdgeDistanceField[idx]);
+        const density = clamp(distanceToEdge / forestShadeFalloff, 0, 1);
+        tile.forestCanopyDensity = density;
+      }
+    }
+  }
+
   if (volcanoOverlayKeys.length > 0) {
     const volcanoMask = new Uint8Array(width * height);
     let hasVolcanoTile = false;
@@ -18025,6 +18072,19 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
   if (!grassTileKey || cell.base !== grassTileKey) {
     return;
   }
+  const coastProximity = clamp(
+    Number.isFinite(cell.coastProximity) ? cell.coastProximity : 0,
+    0,
+    1
+  );
+  if (coastProximity > 0.01) {
+    const lightenAlpha = coastProximity * 0.32;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = `rgba(148, 205, 184, ${lightenAlpha})`;
+    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.restore();
+  }
   const marshProximity = clamp(
     Number.isFinite(cell.marshProximity) ? cell.marshProximity : 0,
     0,
@@ -18038,16 +18098,29 @@ function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey) {
     ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
     ctx.restore();
   }
+  const forestDensity = clamp(
+    Number.isFinite(cell.forestCanopyDensity) ? cell.forestCanopyDensity : 0,
+    0,
+    1
+  );
+  if (cell.biomeType === 'forest' && forestDensity > 0.01) {
+    const forestAlpha = forestDensity * 0.55;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = `rgba(26, 74, 36, ${forestAlpha})`;
+    ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
+    ctx.restore();
+  }
   const desertProximity = clamp(
     Number.isFinite(cell.desertProximity) ? cell.desertProximity : 0,
     0,
     1
   );
   if (desertProximity > 0.01) {
-    const desertAlpha = desertProximity * 0.45;
+    const desertAlpha = desertProximity * 0.4;
     ctx.save();
     ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = `rgba(96, 74, 42, ${desertAlpha})`;
+    ctx.fillStyle = `rgba(228, 202, 146, ${desertAlpha})`;
     ctx.fillRect(pixelX, pixelY, drawSize, drawSize);
     ctx.restore();
   }
