@@ -4700,6 +4700,28 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
       }
     ];
   }
+  if (type === 'roadsideTavern') {
+    return [
+      {
+        key: 'humans',
+        label: 'Humans',
+        percentage: 65,
+        color: defaultCultureColorByKey.humans
+      },
+      {
+        key: 'dwarves',
+        label: 'Dwarves',
+        percentage: 20,
+        color: defaultCultureColorByKey.dwarves
+      },
+      {
+        key: 'halflings',
+        label: 'Halflings',
+        percentage: 15,
+        color: defaultCultureColorByKey.halflings
+      }
+    ];
+  }
   return null;
 }
 
@@ -4724,6 +4746,8 @@ function resolveFallbackClaimRadius(type) {
       return 28;
     case 'monastery':
       return 27;
+    case 'roadsideTavern':
+      return 18;
     default:
       return 24;
   }
@@ -4751,6 +4775,8 @@ function resolveCulturalRadiusMultiplier(type) {
       return 1.75;
     case 'monastery':
       return 1.65;
+    case 'roadsideTavern':
+      return 1.25;
     default:
       return 1.6;
   }
@@ -4775,6 +4801,8 @@ function resolveCulturalFalloffPower(type) {
       return 1.3;
     case 'monastery':
       return 1.34;
+    case 'roadsideTavern':
+      return 1.4;
     default:
       return 1.35;
   }
@@ -19307,7 +19335,8 @@ function createWorld(seedString) {
       ...monasteries,
       ...mines,
       ...castles,
-      ...orcCamps
+      ...orcCamps,
+      ...roadsideTaverns
     ],
     factions,
     isLandBaseTile
