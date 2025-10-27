@@ -17371,6 +17371,8 @@ function createWorld(seedString) {
 
   const biomeVisited = new Uint8Array(width * height);
   const biomeClusters = [];
+  const clusterIndexMap = new Int32Array(width * height);
+  clusterIndexMap.fill(-1);
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -17417,7 +17419,38 @@ function createWorld(seedString) {
           }
         }
       }
+      const clusterIndex = biomeClusters.length;
+      for (let i = 0; i < members.length; i += 1) {
+        clusterIndexMap[members[i]] = clusterIndex;
+      }
       biomeClusters.push({ type: baseBiome, indices: members, touchesEdge, size: members.length });
+    }
+  }
+
+  const clusterAdjacency = new Array(biomeClusters.length);
+  for (let i = 0; i < clusterAdjacency.length; i += 1) {
+    clusterAdjacency[i] = new Set();
+  }
+
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      const cx = clusterIdx % width;
+      const cy = Math.floor(clusterIdx / width);
+      for (let k = 0; k < cardinalOffsets.length; k += 1) {
+        const nx = cx + cardinalOffsets[k][0];
+        const ny = cy + cardinalOffsets[k][1];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const neighborClusterIndex = clusterIndexMap[ny * width + nx];
+        if (neighborClusterIndex === -1 || neighborClusterIndex === i) {
+          continue;
+        }
+        clusterAdjacency[i].add(neighborClusterIndex);
+        clusterAdjacency[neighborClusterIndex].add(i);
+      }
     }
   }
 
@@ -17456,6 +17489,52 @@ function createWorld(seedString) {
         const clusterIdx = cluster.indices[j];
         biomeField[clusterIdx] = 'desert';
       }
+    }
+  }
+
+  const reachableNonBadlands = new Uint8Array(biomeClusters.length);
+  const queue = [];
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    if (cluster.type === 'badlands') {
+      continue;
+    }
+    if (cluster.touchesEdge) {
+      reachableNonBadlands[i] = 1;
+      queue.push(i);
+    }
+  }
+
+  let queueIndex = 0;
+  while (queueIndex < queue.length) {
+    const current = queue[queueIndex];
+    queueIndex += 1;
+    const neighbors = clusterAdjacency[current];
+    neighbors.forEach((neighbor) => {
+      if (reachableNonBadlands[neighbor]) {
+        return;
+      }
+      const neighborCluster = biomeClusters[neighbor];
+      if (neighborCluster.type === 'badlands') {
+        return;
+      }
+      reachableNonBadlands[neighbor] = 1;
+      queue.push(neighbor);
+    });
+  }
+
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    if (cluster.type === 'badlands' || cluster.type === 'water' || cluster.type === 'mountain') {
+      continue;
+    }
+    if (reachableNonBadlands[i]) {
+      continue;
+    }
+    cluster.type = 'badlands';
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      biomeField[clusterIdx] = 'badlands';
     }
   }
 
