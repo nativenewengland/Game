@@ -4209,7 +4209,9 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       if (ax === null || ay === null || bx === null || by === null) {
         return Infinity;
       }
-      return Math.hypot(bx - ax, by - ay);
+      const dx = bx - ax;
+      const dy = by - ay;
+      return dx * dx + dy * dy;
     };
 
     factions.forEach((faction) => {
@@ -4248,7 +4250,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         assignmentCandidates.push({
           vassalId: neighborFaction.id,
           overlordId: faction.id,
-          distance: resolveDistanceBetween(faction, neighborFaction)
+          distanceSquared: resolveDistanceBetween(faction, neighborFaction)
         });
       });
     });
@@ -4258,8 +4260,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     }
 
     assignmentCandidates.sort((a, b) => {
-      const distA = Number.isFinite(a.distance) ? a.distance : Infinity;
-      const distB = Number.isFinite(b.distance) ? b.distance : Infinity;
+      const distA = Number.isFinite(a.distanceSquared) ? a.distanceSquared : Infinity;
+      const distB = Number.isFinite(b.distanceSquared) ? b.distanceSquared : Infinity;
       return distA - distB;
     });
 
