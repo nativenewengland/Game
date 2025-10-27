@@ -4888,6 +4888,7 @@ function applyCulturalInfluence({
 
   for (let i = 0; i < culturalSources.length; i += 1) {
     const { x, y, radius, entries, falloff } = culturalSources[i];
+    const radiusSquared = radius * radius;
     const minX = Math.max(0, Math.floor(x - radius));
     const maxX = Math.min(mapWidth - 1, Math.ceil(x + radius));
     const minY = Math.max(0, Math.floor(y - radius));
@@ -4908,10 +4909,11 @@ function applyCulturalInfluence({
         }
         const dx = tx - x;
         const dy = ty - y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > radius) {
+        const distanceSquared = dx * dx + dy * dy;
+        if (distanceSquared > radiusSquared) {
           continue;
         }
+        const distance = Math.sqrt(distanceSquared);
         const proximity = clamp(1 - distance / radius, 0, 1);
         if (proximity <= 0) {
           continue;
