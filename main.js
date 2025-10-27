@@ -18728,6 +18728,7 @@ function syncInputsWithSettings() {
     elements.worldSeedInput.value = state.settings.seedString;
   }
   updateWorldInfoSeedDisplay(state.settings.seedString);
+  // Overlay toggle buttons are bound inside attachEvents to avoid duplicate listeners.
   if (elements.forestFrequencyInput) {
     const value = sanitizeFrequencyValue(
       state.settings.forestFrequency,
@@ -18769,56 +18770,6 @@ function syncInputsWithSettings() {
     elements.lizardmenSettlementFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
   }
-  }
-
-  if (elements.politicalBordersToggle) {
-    elements.politicalBordersToggle.addEventListener('click', () => {
-      state.ui.showPoliticalBorders = !state.ui.showPoliticalBorders;
-      refreshOverlayToggleButtons();
-      if (state.currentWorld) {
-        drawWorld(state.currentWorld);
-      }
-    });
-  }
-
-  if (elements.politicalInfluenceToggle) {
-    elements.politicalInfluenceToggle.addEventListener('click', () => {
-      state.ui.showPoliticalInfluence = !state.ui.showPoliticalInfluence;
-      refreshOverlayToggleButtons();
-      if (state.currentWorld) {
-        drawWorld(state.currentWorld);
-      }
-    });
-  }
-
-  if (elements.elevationToggle) {
-    elements.elevationToggle.addEventListener('click', () => {
-      state.ui.showElevation = !state.ui.showElevation;
-      refreshOverlayToggleButtons();
-      if (state.currentWorld) {
-        drawWorld(state.currentWorld);
-      }
-    });
-  }
-
-  if (elements.biomeToggle) {
-    elements.biomeToggle.addEventListener('click', () => {
-      state.ui.showBiomes = !state.ui.showBiomes;
-      refreshOverlayToggleButtons();
-      if (state.currentWorld) {
-        drawWorld(state.currentWorld);
-      }
-    });
-  }
-
-  if (elements.temperatureToggle) {
-    elements.temperatureToggle.addEventListener('click', () => {
-      state.ui.showTemperature = !state.ui.showTemperature;
-      refreshOverlayToggleButtons();
-      if (state.currentWorld) {
-        drawWorld(state.currentWorld);
-      }
-    });
   }
 
   if (elements.forestFrequencyInput) {
