@@ -2159,7 +2159,7 @@ button:hover:not(:disabled) {
   align-items: flex-start;
   text-align: left;
   gap: 0.6rem;
-  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+  margin-top: clamp(2.2rem, 7.8vw, 5.5rem);
 }
 
 .field-group--hair-colour .hair-colour-controls {
