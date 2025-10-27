@@ -5605,6 +5605,21 @@ const soundEffects = {
   })
 };
 
+const wizardTowerAmbienceTracks = [
+  'sound/ambience/Blizzard.ogg',
+  'sound/ambience/Evil.ogg',
+  'sound/ambience/Glacier.ogg'
+];
+
+const structureAmbienceState = {
+  currentTrack: null
+};
+
+if (elements.structureAmbienceAudio) {
+  elements.structureAmbienceAudio.loop = true;
+  elements.structureAmbienceAudio.volume = clamp(audioState.effectsVolume, 0, 1);
+}
+
 
 
 function createSoundEffect(src, options = {}) {
@@ -8594,6 +8609,243 @@ const localMapDefaultMessage = 'Click the world map to open a local preview.';
 const structureDetailsState = {
   visible: false
 };
+
+function gatherStructureDescriptorInfo(tile) {
+  const descriptors = new Set();
+  const tokens = new Set();
+
+  const addTokenVariant = (token) => {
+    if (!token) {
+      return;
+    }
+    tokens.add(token);
+    if (token.length > 3 && token.endsWith('ies')) {
+      tokens.add(`${token.slice(0, -3)}y`);
+    } else if (token.length > 2 && token.endsWith('es')) {
+      tokens.add(token.slice(0, -2));
+    } else if (token.length > 1 && token.endsWith('s')) {
+      tokens.add(token.slice(0, -1));
+    }
+  };
+
+  const addValue = (value) => {
+    if (!value) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => addValue(item));
+      return;
+    }
+    if (typeof value !== 'string') {
+      return;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return;
+    }
+    const lower = trimmed.toLowerCase();
+    const normalized = lower.replace(/[_-]+/g, ' ');
+    const candidates = [lower, normalized, normalized.replace(/[’']/g, '')];
+    candidates.forEach((candidate) => {
+      if (!candidate) {
+        return;
+      }
+      descriptors.add(candidate);
+      candidate
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .forEach((token) => addTokenVariant(token));
+      const compact = candidate.replace(/\s+/g, '');
+      if (compact) {
+        addTokenVariant(compact);
+      }
+    });
+  };
+
+  if (tile) {
+    addValue(tile.structure);
+    addValue(tile.structureName);
+    addValue(tile.areaName);
+  }
+
+  const details = tile?.structureDetails || {};
+  addValue(details.type);
+  addValue(details.displayType);
+  addValue(details.classification);
+  addValue(details.displayName);
+  addValue(details.label);
+  addValue(details.tags);
+
+  return { descriptors, tokens };
+}
+
+function selectStructureAmbienceTrack(tile) {
+  const { descriptors, tokens } = gatherStructureDescriptorInfo(tile);
+  if (descriptors.size === 0 && tokens.size === 0) {
+    return null;
+  }
+
+  const descriptorList = Array.from(descriptors);
+  const hasDescriptorKeyword = (keywords) => {
+    const keywordList = Array.isArray(keywords) ? keywords : [keywords];
+    return descriptorList.some((descriptor) =>
+      keywordList.some((keyword) => descriptor.includes(keyword))
+    );
+  };
+  const hasAnyToken = (keywords) => {
+    const keywordList = Array.isArray(keywords) ? keywords : [keywords];
+    return keywordList.some((keyword) => tokens.has(keyword));
+  };
+  const hasAllTokens = (keywords) => {
+    const keywordList = Array.isArray(keywords) ? keywords : [keywords];
+    return keywordList.every((keyword) => tokens.has(keyword));
+  };
+
+  const isDwarfhold =
+    hasDescriptorKeyword(['dwarfhold', 'dwarven hold']) ||
+    hasAnyToken(['dwarfhold', 'hillhold']) ||
+    (tokens.has('dwarf') && tokens.has('hold'));
+  if (isDwarfhold) {
+    return 'sound/ambience/Workshop.ogg';
+  }
+
+  const isWoodElfGrove =
+    (hasAllTokens(['wood', 'elf']) && hasAnyToken(['grove'])) ||
+    hasDescriptorKeyword(['wood elf grove', 'woodelfgrove']);
+  if (isWoodElfGrove) {
+    return 'sound/ambience/Forest.ogg';
+  }
+
+  const isCave = hasAnyToken(['cave', 'cavern']);
+  if (isCave) {
+    return 'sound/ambience/Cavern.ogg';
+  }
+
+  const isWizardTower =
+    hasDescriptorKeyword(['evil wizard tower', "evil wizard's tower", 'evil wizards tower']) ||
+    hasAllTokens(['evil', 'wizard', 'tower']);
+  if (isWizardTower) {
+    const randomIndex = Math.floor(Math.random() * wizardTowerAmbienceTracks.length);
+    return wizardTowerAmbienceTracks[randomIndex] || null;
+  }
+
+  const isMonastery = hasDescriptorKeyword(['monaster']) || hasAnyToken(['monastery', 'monastic']);
+  if (isMonastery) {
+    return 'sound/ambience/Good.ogg';
+  }
+
+  const isHamletOrHillock = hasAnyToken(['hamlet', 'hillock']);
+  if (isHamletOrHillock) {
+    return 'sound/ambience/Grasslands.ogg';
+  }
+
+  const isLizardmenCity =
+    hasAnyToken(['lizardmen', 'lizardman', 'lizardfolk']) && hasAnyToken(['city']);
+  if (isLizardmenCity) {
+    return 'sound/ambience/Rainforest.ogg';
+  }
+
+  const isTavern = hasAnyToken(['tavern']);
+  if (isTavern) {
+    return 'sound/ambience/Tavern.ogg';
+  }
+
+  const isCastleOrTown = hasAnyToken(['castle', 'town', 'city']);
+  if (isCastleOrTown) {
+    return 'sound/ambience/Trade_Depot.ogg';
+  }
+
+  return null;
+}
+
+function playStructureAmbienceForTile(tile) {
+  if (!elements.structureAmbienceAudio) {
+    return;
+  }
+  const track = selectStructureAmbienceTrack(tile);
+  if (!track) {
+    stopStructureAmbience();
+    return;
+  }
+
+  const encodedTrack = encodeURI(track);
+  const shouldReload = structureAmbienceState.currentTrack !== encodedTrack;
+  structureAmbienceState.currentTrack = encodedTrack;
+
+  if (shouldReload) {
+    try {
+      elements.structureAmbienceAudio.pause();
+    } catch (error) {
+      /* ignore */
+    }
+    elements.structureAmbienceAudio.src = encodedTrack;
+    elements.structureAmbienceAudio.load();
+  }
+
+  if (audioState.effectsMuted || audioState.effectsVolume <= 0) {
+    return;
+  }
+
+  elements.structureAmbienceAudio.volume = clamp(audioState.effectsVolume, 0, 1);
+  try {
+    elements.structureAmbienceAudio.currentTime = 0;
+  } catch (error) {
+    /* ignore reset errors */
+  }
+  try {
+    const playPromise = elements.structureAmbienceAudio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {
+    /* ignore playback errors */
+  }
+}
+
+function stopStructureAmbience() {
+  if (!elements.structureAmbienceAudio) {
+    return;
+  }
+  structureAmbienceState.currentTrack = null;
+  try {
+    elements.structureAmbienceAudio.pause();
+  } catch (error) {
+    /* ignore */
+  }
+  try {
+    elements.structureAmbienceAudio.currentTime = 0;
+  } catch (error) {
+    /* ignore */
+  }
+}
+
+function updateStructureAmbienceVolume() {
+  if (!elements.structureAmbienceAudio) {
+    return;
+  }
+  const finalVolume = audioState.effectsMuted ? 0 : clamp(audioState.effectsVolume, 0, 1);
+  elements.structureAmbienceAudio.volume = finalVolume;
+  if (finalVolume <= 0) {
+    try {
+      elements.structureAmbienceAudio.pause();
+    } catch (error) {
+      /* ignore */
+    }
+    return;
+  }
+  if (!structureDetailsState.visible || !structureAmbienceState.currentTrack) {
+    return;
+  }
+  try {
+    const playPromise = elements.structureAmbienceAudio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {
+    /* ignore */
+  }
+}
 
 const structureContextMenuState = {
   visible: false,
@@ -11701,6 +11953,8 @@ function showStructureDetails(tile, context = {}) {
     elements.structureDetailsContent.innerHTML = content.body;
   }
 
+  playStructureAmbienceForTile(tile);
+
   if (elements.structureDetailsClose && typeof elements.structureDetailsClose.focus === 'function') {
     elements.structureDetailsClose.focus();
   }
@@ -11711,6 +11965,8 @@ function hideStructureDetails(options = {}) {
   if (!elements.structureDetailsPanel) {
     return;
   }
+
+  stopStructureAmbience();
 
   elements.structureDetailsPanel.classList.add('hidden');
   elements.structureDetailsPanel.setAttribute('aria-hidden', 'true');
@@ -12271,6 +12527,7 @@ function updateSoundEffectsToggleLabel() {
       audio.volume = finalVolume;
     }
   });
+  updateStructureAmbienceVolume();
 }
 
 function setupSoundEffectControls() {

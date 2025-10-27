@@ -74,6 +74,7 @@ export const elements = {
   sfxToggle: document.getElementById('sfx-toggle'),
   sfxVolume: document.getElementById('sfx-volume'),
   audioElement: document.getElementById('background-music'),
+  structureAmbienceAudio: document.getElementById('structure-ambience'),
   worldInfoModal: document.getElementById('world-info'),
   worldInfoForm: document.getElementById('world-info-form'),
   worldInfoSize: document.getElementById('world-info-size'),
