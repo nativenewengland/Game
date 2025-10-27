@@ -1630,7 +1630,7 @@ button:hover:not(:disabled) {
   background-image: url('tilesheet/nametype.png');
   background-repeat: no-repeat;
   background-position: left center;
-  background-size: 108% 100%;
+  background-size: 100% 100%;
   image-rendering: pixelated;
   pointer-events: none;
   z-index: 0;
