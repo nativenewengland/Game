@@ -1736,6 +1736,9 @@ button:hover:not(:disabled) {
   background-position: center;
   background-size: contain;
   image-rendering: pixelated;
+  border: none;
+  outline: none;
+  box-shadow: none;
 }
 
 .dwarf-nav-button:focus-visible {
