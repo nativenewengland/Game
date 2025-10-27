@@ -10098,6 +10098,10 @@ function setupMapInteractions() {
       isMacLikePlatform;
     const isContextMenuClick = !isTouchPointer && (isNonPrimaryButton || isMacCtrlClick);
     const isPrimaryPointer = !isContextMenuClick;
+    const menuElement = elements.structureContextMenu;
+    if (menuElement && menuElement.contains(event.target)) {
+      return;
+    }
     hideStructureDetails();
     hideStructureContextMenu();
     if (!isPrimaryPointer) {
