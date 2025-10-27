@@ -8173,7 +8173,8 @@ const localViewConfig = {
   baseScale: 3,
   minScale: 2,
   maxCanvasSize: 768,
-  highResolutionMapSize: 1000,
+  highResolutionTileSubdivisions: 4,
+  highResolutionExtraPadding: 2,
   highResolutionMinScale: 2,
   highResolutionMaxTileSize: 28
 };
@@ -9607,6 +9608,27 @@ function hideLocalView(options = {}) {
   }
 }
 
+function cloneTileForHighResolution(tile) {
+  if (!tile || typeof tile !== 'object') {
+    return tile || null;
+  }
+
+  const clone = { ...tile };
+  if (tile.river && typeof tile.river === 'object') {
+    clone.river = { ...tile.river };
+  }
+  if (tile.road && typeof tile.road === 'object') {
+    clone.road = { ...tile.road };
+  }
+  if (tile.structureDetails && typeof tile.structureDetails === 'object') {
+    clone.structureDetails = { ...tile.structureDetails };
+  }
+  if (Array.isArray(tile.features)) {
+    clone.features = tile.features.slice();
+  }
+  return clone;
+}
+
 function generateHighResolutionLocalPatch(world, tileX, tileY) {
   if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
     return null;
@@ -9619,84 +9641,77 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
     return null;
   }
 
-  const seedCandidates = [
-    typeof world.seedString === 'string' ? world.seedString : null,
-    typeof state.settings?.seedString === 'string' ? state.settings.seedString : null,
-    typeof state.settings?.lastSeedString === 'string' ? state.settings.lastSeedString : null
-  ];
-  const resolvedSeed = seedCandidates.find((candidate) => candidate && candidate.length > 0) || 'local-view';
-
-  const targetSize = Number.isFinite(localViewConfig.highResolutionMapSize)
-    ? Math.max(1, Math.floor(localViewConfig.highResolutionMapSize))
+  const subdivisions = Number.isFinite(localViewConfig.highResolutionTileSubdivisions)
+    ? Math.max(1, Math.floor(localViewConfig.highResolutionTileSubdivisions))
+    : 1;
+  const paddingTiles = Number.isFinite(localViewConfig.highResolutionExtraPadding)
+    ? Math.max(0, Math.floor(localViewConfig.highResolutionExtraPadding))
     : 0;
-  if (!targetSize) {
-    return null;
-  }
-
-  let highResolutionWorld = null;
-  try {
-    highResolutionWorld = createWorldWithDimensions(resolvedSeed, targetSize, targetSize);
-  } catch (error) {
-    console.error('Failed to generate high-resolution local preview.', error);
-    return null;
-  }
-
-  const highTiles = Array.isArray(highResolutionWorld?.tiles) ? highResolutionWorld.tiles : null;
-  const highHeight = highTiles ? highTiles.length : 0;
-  const highWidth = highHeight > 0 && Array.isArray(highTiles[0]) ? highTiles[0].length : 0;
-  if (!highTiles || !highWidth || !highHeight) {
-    return null;
-  }
-
-  const scaleX = highWidth / sourceWidth;
-  const scaleY = highHeight / sourceHeight;
-
-  const highCenterX = Math.round((tileX + 0.5) * scaleX - 0.5);
-  const highCenterY = Math.round((tileY + 0.5) * scaleY - 0.5);
 
   const baseRadius = Math.max(1, localViewConfig.radius);
-  const scaledRadiusX = Math.max(
-    Math.round((baseRadius + 0.5) * scaleX),
-    Math.ceil(highWidth * 0.02)
-  );
-  const scaledRadiusY = Math.max(
-    Math.round((baseRadius + 0.5) * scaleY),
-    Math.ceil(highHeight * 0.02)
-  );
-  const padding = Math.max(Math.round(Math.max(scaleX, scaleY)), 2);
+  const startX = clamp(tileX - baseRadius - paddingTiles, 0, sourceWidth - 1);
+  const endX = clamp(tileX + baseRadius + paddingTiles, 0, sourceWidth - 1);
+  const startY = clamp(tileY - baseRadius - paddingTiles, 0, sourceHeight - 1);
+  const endY = clamp(tileY + baseRadius + paddingTiles, 0, sourceHeight - 1);
 
-  const startX = clamp(highCenterX - scaledRadiusX - padding, 0, highWidth - 1);
-  const endX = clamp(highCenterX + scaledRadiusX + padding, 0, highWidth - 1);
-  const startY = clamp(highCenterY - scaledRadiusY - padding, 0, highHeight - 1);
-  const endY = clamp(highCenterY + scaledRadiusY + padding, 0, highHeight - 1);
+  const areaWidth = Math.max(1, endX - startX + 1);
+  const areaHeight = Math.max(1, endY - startY + 1);
+  const patchWidth = areaWidth * subdivisions;
+  const patchHeight = areaHeight * subdivisions;
 
-  const patchWidth = Math.max(1, endX - startX + 1);
-  const patchHeight = Math.max(1, endY - startY + 1);
-  const patchTiles = [];
-  for (let y = startY; y <= endY; y += 1) {
-    const row = highTiles[y];
-    const slice = Array.isArray(row) ? row.slice(startX, endX + 1) : [];
-    patchTiles.push(slice);
+  const patchTiles = new Array(patchHeight);
+  for (let y = 0; y < patchHeight; y += 1) {
+    patchTiles[y] = new Array(patchWidth);
   }
+
+  for (let coarseY = 0; coarseY < areaHeight; coarseY += 1) {
+    const sourceRow = sourceTiles[startY + coarseY];
+    for (let coarseX = 0; coarseX < areaWidth; coarseX += 1) {
+      const baseTile = Array.isArray(sourceRow) ? sourceRow[startX + coarseX] || null : null;
+      const clone = baseTile ? cloneTileForHighResolution(baseTile) : null;
+      for (let subY = 0; subY < subdivisions; subY += 1) {
+        const targetRow = patchTiles[coarseY * subdivisions + subY];
+        if (!Array.isArray(targetRow)) {
+          continue;
+        }
+        for (let subX = 0; subX < subdivisions; subX += 1) {
+          targetRow[coarseX * subdivisions + subX] = clone;
+        }
+      }
+    }
+  }
+
+  const centerX = clamp(
+    (tileX - startX) * subdivisions + Math.floor(subdivisions / 2),
+    0,
+    Math.max(0, patchWidth - 1)
+  );
+  const centerY = clamp(
+    (tileY - startY) * subdivisions + Math.floor(subdivisions / 2),
+    0,
+    Math.max(0, patchHeight - 1)
+  );
 
   return {
     tiles: patchTiles,
     width: patchWidth,
     height: patchHeight,
-    centerX: clamp(highCenterX - startX, 0, patchWidth - 1),
-    centerY: clamp(highCenterY - startY, 0, patchHeight - 1),
+    centerX,
+    centerY,
     worldOriginX: startX,
     worldOriginY: startY,
-    worldWidth: highWidth,
-    worldHeight: highHeight,
-    scaleX,
-    scaleY,
+    worldWidth: areaWidth,
+    worldHeight: areaHeight,
+    scaleX: subdivisions,
+    scaleY: subdivisions,
     metadata: {
-      seaLevel: highResolutionWorld.seaLevel,
-      waterTileKey: highResolutionWorld.waterTileKey || resolveTileName('WATER'),
-      grassTileKey: highResolutionWorld.grassTileKey || resolveTileName('GRASS'),
-      factions: Array.isArray(highResolutionWorld.factions) ? highResolutionWorld.factions : [],
-      seedString: highResolutionWorld.seedString || resolvedSeed
+      seaLevel: world.seaLevel,
+      waterTileKey: world.waterTileKey || resolveTileName('WATER'),
+      grassTileKey: world.grassTileKey || resolveTileName('GRASS'),
+      factions: Array.isArray(world.factions) ? world.factions : [],
+      seedString:
+        (typeof world.seedString === 'string' && world.seedString) ||
+        (typeof state.settings?.seedString === 'string' ? state.settings.seedString : null)
     }
   };
 }
