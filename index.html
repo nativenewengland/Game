@@ -116,137 +116,139 @@
               World seed
               <input type="text" id="world-seed" name="worldSeed" placeholder="Random" />
             </label>
-            <label for="forest-frequency">
-              Forest frequency
-              <div class="slider-control">
-                <input
-                  id="forest-frequency"
-                  name="forestFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="35"
-                />
-                <span id="forest-frequency-value" class="slider-value" aria-live="polite"
-                  >35% — Low</span
-                >
-              </div>
-            </label>
-            <label for="mountain-frequency">
-              Mountain frequency
-              <div class="slider-control">
-                <input
-                  id="mountain-frequency"
-                  name="mountainFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="35"
-                />
-                <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
-                  >35% — Low</span
-                >
-              </div>
-            </label>
-            <label for="river-frequency">
-              River frequency
-              <div class="slider-control">
-                <input
-                  id="river-frequency"
-                  name="riverFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span id="river-frequency-value" class="slider-value" aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="human-settlement-frequency">
-              Human settlement frequency
-              <div class="slider-control">
-                <input
-                  id="human-settlement-frequency"
-                  name="humanSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="human-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="dwarf-settlement-frequency">
-              Dwarf settlement frequency
-              <div class="slider-control">
-                <input
-                  id="dwarf-settlement-frequency"
-                  name="dwarfSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="dwarf-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="wood-elf-settlement-frequency">
-              Wood elf settlement frequency
-              <div class="slider-control">
-                <input
-                  id="wood-elf-settlement-frequency"
-                  name="woodElfSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="wood-elf-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
-            <label for="lizardmen-settlement-frequency">
-              Lizardmen temple-city frequency
-              <div class="slider-control">
-                <input
-                  id="lizardmen-settlement-frequency"
-                  name="lizardmenSettlementFrequency"
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="50"
-                />
-                <span
-                  id="lizardmen-settlement-frequency-value"
-                  class="slider-value"
-                  aria-live="polite"
-                  >50% — Balanced</span
-                >
-              </div>
-            </label>
+            <div class="world-generation-sliders">
+              <label for="forest-frequency">
+                Forest frequency
+                <div class="slider-control">
+                  <input
+                    id="forest-frequency"
+                    name="forestFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="35"
+                  />
+                  <span id="forest-frequency-value" class="slider-value" aria-live="polite"
+                    >35% — Low</span
+                  >
+                </div>
+              </label>
+              <label for="mountain-frequency">
+                Mountain frequency
+                <div class="slider-control">
+                  <input
+                    id="mountain-frequency"
+                    name="mountainFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="35"
+                  />
+                  <span id="mountain-frequency-value" class="slider-value" aria-live="polite"
+                    >35% — Low</span
+                  >
+                </div>
+              </label>
+              <label for="river-frequency">
+                River frequency
+                <div class="slider-control">
+                  <input
+                    id="river-frequency"
+                    name="riverFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span id="river-frequency-value" class="slider-value" aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="human-settlement-frequency">
+                Human settlement frequency
+                <div class="slider-control">
+                  <input
+                    id="human-settlement-frequency"
+                    name="humanSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="human-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="dwarf-settlement-frequency">
+                Dwarf settlement frequency
+                <div class="slider-control">
+                  <input
+                    id="dwarf-settlement-frequency"
+                    name="dwarfSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="dwarf-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="wood-elf-settlement-frequency">
+                Wood elf settlement frequency
+                <div class="slider-control">
+                  <input
+                    id="wood-elf-settlement-frequency"
+                    name="woodElfSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="wood-elf-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+              <label for="lizardmen-settlement-frequency">
+                Lizardmen temple-city frequency
+                <div class="slider-control">
+                  <input
+                    id="lizardmen-settlement-frequency"
+                    name="lizardmenSettlementFrequency"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
+                  <span
+                    id="lizardmen-settlement-frequency-value"
+                    class="slider-value"
+                    aria-live="polite"
+                    >50% — Balanced</span
+                  >
+                </div>
+              </label>
+            </div>
             <div class="options-card__actions">
               <button type="submit" class="primary">Apply</button>
             </div>
