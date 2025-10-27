@@ -1729,8 +1729,8 @@ button:hover:not(:disabled) {
   position: absolute;
   top: 50%;
   right: 0;
-  width: 200%;
-  height: 200%;
+  width: 160%;
+  height: 160%;
   transform: translateY(-50%);
   transform-origin: center right;
   background-image: url('tilesheet/nametype.png');
@@ -1744,7 +1744,7 @@ button:hover:not(:disabled) {
 
 @media (min-width: 1025px) {
   .customizer-sidebar__name .dwarf-name-field::before {
-    width: 220%;
+    width: 176%;
   }
 }
 
