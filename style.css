@@ -1548,7 +1548,7 @@ button:hover:not(:disabled) {
 .customizer-sidebar__name .dwarf-name-field {
   width: min(100%, clamp(34rem, 56vw, 48rem));
   margin: 0;
-  margin-left: clamp(-1.5rem, -2.5vw, -0.75rem);
+  margin-left: clamp(0.45rem, 1.5vw, 0.9rem);
 }
 
 .customizer-sidebar__image {
@@ -1630,7 +1630,7 @@ button:hover:not(:disabled) {
 }
 
 .dwarf-nav-button--prev {
-  margin-right: clamp(0.85rem, 2.5vw, 1.5rem);
+  margin-right: clamp(0.35rem, 1.25vw, 0.85rem);
 }
 
 .dwarf-name-nav {
@@ -2159,7 +2159,7 @@ button:hover:not(:disabled) {
   align-items: flex-start;
   text-align: left;
   gap: 0.6rem;
-  margin-top: clamp(1rem, 2.5vw, 1.6rem);
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
 }
 
 .field-group--hair-colour .hair-colour-controls {
