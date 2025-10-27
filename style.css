@@ -288,6 +288,17 @@ select,
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .embark-backdrop::before,
+  .options-backdrop::before {
+    animation: none;
+    transform: none;
+    background-size: 110%;
+    background-position: center top 30%;
+    filter: blur(9px) saturate(112%) brightness(0.95);
+  }
+}
+
 .title-overlay {
   position: relative;
   z-index: 1;
