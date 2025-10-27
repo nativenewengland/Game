@@ -10250,6 +10250,389 @@ function cloneTileForHighResolution(tile) {
   return clone;
 }
 
+function hashString32(value) {
+  if (typeof value !== 'string') {
+    value = JSON.stringify(value);
+  }
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+    hash >>>= 0;
+  }
+  return hash >>> 0;
+}
+
+function createDeterministicNoiseSampler(seedValue) {
+  const baseSeed = hashString32(seedValue || 'local');
+  return (x, y, channel = 0) => {
+    let state = baseSeed;
+    state ^= Math.imul(0x45d9f3b, x + 0x9e3779b9);
+    state ^= Math.imul(0x632be5ab, y + 0x9e3779b9);
+    state ^= Math.imul(0x27d4eb2d, channel + 0x9e3779b9);
+    state = Math.imul(state ^ (state >>> 15), 1 | state);
+    state ^= state + Math.imul(state ^ (state >>> 7), 61 | state);
+    state ^= state >>> 14;
+    return (state >>> 0) / 4294967296;
+  };
+}
+
+function getWorldTileAt(tiles, width, height, x, y) {
+  if (!Array.isArray(tiles) || width <= 0 || height <= 0) {
+    return null;
+  }
+  if (x < 0 || y < 0 || x >= width || y >= height) {
+    return null;
+  }
+  const row = tiles[y];
+  if (!Array.isArray(row) || x >= row.length) {
+    return null;
+  }
+  return row[x] || null;
+}
+
+function buildNeighborDetails(tiles, width, height, x, y, waterTileKey) {
+  const result = {};
+  const offsets = [
+    { key: 'north', dx: 0, dy: -1 },
+    { key: 'south', dx: 0, dy: 1 },
+    { key: 'west', dx: -1, dy: 0 },
+    { key: 'east', dx: 1, dy: 0 },
+    { key: 'northWest', dx: -1, dy: -1 },
+    { key: 'northEast', dx: 1, dy: -1 },
+    { key: 'southWest', dx: -1, dy: 1 },
+    { key: 'southEast', dx: 1, dy: 1 }
+  ];
+
+  for (let i = 0; i < offsets.length; i += 1) {
+    const { key, dx, dy } = offsets[i];
+    const tile = getWorldTileAt(tiles, width, height, x + dx, y + dy);
+    if (!tile) {
+      result[key] = null;
+      continue;
+    }
+    const overlayKey = typeof tile.overlay === 'string' ? tile.overlay : null;
+    const hillOverlayKey = typeof tile.hillOverlay === 'string' ? tile.hillOverlay : null;
+    const baseKey = typeof tile.base === 'string' ? tile.base : null;
+    result[key] = {
+      overlayKey,
+      hillOverlayKey,
+      hasForestOverlay: overlayKey ? isTreeOverlayKey(overlayKey) : false,
+      hasHillOverlay: hillOverlayKey ? hillOverlayKeySet.has(hillOverlayKey) : false,
+      baseKey,
+      isWater: Boolean(waterTileKey) && baseKey === waterTileKey
+    };
+  }
+
+  return result;
+}
+
+function computeRiverSubtileVariation(river, subdivisions, worldX, worldY, sampleNoise) {
+  if (!river || subdivisions <= 1) {
+    return null;
+  }
+  const mask = Number.isFinite(river.mask) ? river.mask : 0;
+  if (mask === 0) {
+    return null;
+  }
+  const baseWidth = subdivisions > 3 ? 2 : 1;
+  const centerBase = subdivisions / 2;
+
+  const computeRange = (channel) => {
+    const offsetNoise = sampleNoise(worldX, worldY, channel);
+    const offset = Math.round((offsetNoise - 0.5) * Math.min(1, Math.floor(subdivisions / 3)));
+    const start = clamp(
+      Math.round(centerBase - baseWidth / 2) + offset,
+      0,
+      Math.max(0, subdivisions - baseWidth)
+    );
+    return { start, end: Math.min(subdivisions - 1, start + baseWidth - 1) };
+  };
+
+  return {
+    mask,
+    vertical: computeRange(21),
+    horizontal: computeRange(22)
+  };
+}
+
+function applyRiverSubtileVariation(subTile, variation, subX, subY) {
+  if (!subTile || !variation || !subTile.river) {
+    return;
+  }
+  const { NORTH, SOUTH, EAST, WEST } = ROAD_DIRECTION_BITS;
+  const mask = variation.mask;
+  let keep = false;
+
+  if (mask & (NORTH | SOUTH)) {
+    const vertical = variation.vertical;
+    if (vertical && subX >= vertical.start && subX <= vertical.end) {
+      keep = true;
+    }
+  }
+
+  if (mask & (EAST | WEST)) {
+    const horizontal = variation.horizontal;
+    if (horizontal && subY >= horizontal.start && subY <= horizontal.end) {
+      keep = true;
+    }
+  }
+
+  if (!keep) {
+    subTile.river = null;
+  }
+}
+
+function applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt) {
+  if (!subTile || !baseTile) {
+    return;
+  }
+  const hillOverlayKey = typeof baseTile.hillOverlay === 'string' ? baseTile.hillOverlay : null;
+  if (!hillOverlayKey || !hillOverlayKeySet.has(hillOverlayKey)) {
+    return;
+  }
+
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.32;
+  let keepHill = true;
+
+  if (normalizedY < edgeThreshold && !(neighbors.north && neighbors.north.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(40) > 0.25 + normalizedY * 0.6;
+  }
+  if (normalizedY > 1 - edgeThreshold && !(neighbors.south && neighbors.south.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(41) > 0.25 + (1 - normalizedY) * 0.6;
+  }
+  if (normalizedX < edgeThreshold && !(neighbors.west && neighbors.west.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(42) > 0.25 + normalizedX * 0.6;
+  }
+  if (normalizedX > 1 - edgeThreshold && !(neighbors.east && neighbors.east.hasHillOverlay)) {
+    keepHill = keepHill && noiseAt(43) > 0.25 + (1 - normalizedX) * 0.6;
+  }
+
+  const interiorNoise = noiseAt(44);
+  if (keepHill && interiorNoise < 0.1) {
+    keepHill = false;
+  }
+
+  subTile.hillOverlay = keepHill ? hillOverlayKey : null;
+}
+
+function applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey) {
+  if (!subTile || !baseTile) {
+    return;
+  }
+  const overlayKey = typeof baseTile.overlay === 'string' ? baseTile.overlay : null;
+  const hasForestOverlay = overlayKey ? isTreeOverlayKey(overlayKey) : false;
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.3;
+
+  if (hasForestOverlay) {
+    let keepOverlay = subTile.base !== waterTileKey;
+    if (keepOverlay && normalizedY < edgeThreshold && !(neighbors.north && neighbors.north.hasForestOverlay)) {
+      keepOverlay = noiseAt(31) > 0.28 + normalizedY * 0.65;
+    }
+    if (keepOverlay && normalizedY > 1 - edgeThreshold && !(neighbors.south && neighbors.south.hasForestOverlay)) {
+      keepOverlay = noiseAt(32) > 0.28 + (1 - normalizedY) * 0.65;
+    }
+    if (keepOverlay && normalizedX < edgeThreshold && !(neighbors.west && neighbors.west.hasForestOverlay)) {
+      keepOverlay = noiseAt(33) > 0.28 + normalizedX * 0.65;
+    }
+    if (keepOverlay && normalizedX > 1 - edgeThreshold && !(neighbors.east && neighbors.east.hasForestOverlay)) {
+      keepOverlay = noiseAt(34) > 0.28 + (1 - normalizedX) * 0.65;
+    }
+    if (
+      keepOverlay &&
+      normalizedX < edgeThreshold &&
+      normalizedY < edgeThreshold &&
+      !(neighbors.northWest && neighbors.northWest.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(35) > 0.25 + (normalizedX + normalizedY) * 0.35;
+    }
+    if (
+      keepOverlay &&
+      normalizedX > 1 - edgeThreshold &&
+      normalizedY < edgeThreshold &&
+      !(neighbors.northEast && neighbors.northEast.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(36) > 0.25 + (1 - normalizedX + normalizedY) * 0.35;
+    }
+    if (
+      keepOverlay &&
+      normalizedX < edgeThreshold &&
+      normalizedY > 1 - edgeThreshold &&
+      !(neighbors.southWest && neighbors.southWest.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(37) > 0.25 + (normalizedX + (1 - normalizedY)) * 0.35;
+    }
+    if (
+      keepOverlay &&
+      normalizedX > 1 - edgeThreshold &&
+      normalizedY > 1 - edgeThreshold &&
+      !(neighbors.southEast && neighbors.southEast.hasForestOverlay)
+    ) {
+      keepOverlay = noiseAt(38) > 0.25 + (2 - normalizedX - normalizedY) * 0.35;
+    }
+
+    if (keepOverlay && noiseAt(39) < 0.08) {
+      keepOverlay = false;
+    }
+
+    if (!keepOverlay) {
+      subTile.overlay = null;
+      if (Number.isFinite(subTile.forestCanopyDensity)) {
+        subTile.forestCanopyDensity = Math.min(subTile.forestCanopyDensity, 0.2);
+      }
+    } else {
+      subTile.overlay = overlayKey;
+      if (Number.isFinite(subTile.forestCanopyDensity)) {
+        subTile.forestCanopyDensity = clamp(subTile.forestCanopyDensity + (noiseAt(47) - 0.5) * 0.12, 0, 1);
+      } else {
+        subTile.forestCanopyDensity = 0.6;
+      }
+    }
+    return;
+  }
+
+  if (subTile.base === waterTileKey) {
+    subTile.overlay = null;
+    if (Number.isFinite(subTile.forestCanopyDensity)) {
+      subTile.forestCanopyDensity = Math.min(subTile.forestCanopyDensity, 0.15);
+    }
+    return;
+  }
+
+  if (subTile.overlay) {
+    return;
+  }
+
+  const candidateOverlays = [];
+  if (normalizedY < edgeThreshold && neighbors.north && neighbors.north.hasForestOverlay) {
+    candidateOverlays.push(neighbors.north.overlayKey);
+  }
+  if (normalizedY > 1 - edgeThreshold && neighbors.south && neighbors.south.hasForestOverlay) {
+    candidateOverlays.push(neighbors.south.overlayKey);
+  }
+  if (normalizedX < edgeThreshold && neighbors.west && neighbors.west.hasForestOverlay) {
+    candidateOverlays.push(neighbors.west.overlayKey);
+  }
+  if (normalizedX > 1 - edgeThreshold && neighbors.east && neighbors.east.hasForestOverlay) {
+    candidateOverlays.push(neighbors.east.overlayKey);
+  }
+
+  if (candidateOverlays.length === 0) {
+    if (Number.isFinite(subTile.forestCanopyDensity)) {
+      subTile.forestCanopyDensity = clamp(subTile.forestCanopyDensity * 0.9, 0, 1);
+    }
+    return;
+  }
+
+  const addChance = noiseAt(48);
+  if (addChance > 0.78) {
+    const index = Math.floor(noiseAt(49) * candidateOverlays.length) % candidateOverlays.length;
+    const selected = candidateOverlays[index];
+    if (selected) {
+      subTile.overlay = selected;
+      subTile.forestCanopyDensity = 0.55 + (addChance - 0.78) * 0.3;
+    }
+  }
+}
+
+function applyCoastlineVariation(
+  subTile,
+  baseTile,
+  neighbors,
+  subdivisions,
+  subX,
+  subY,
+  noiseAt,
+  { waterTileKey, defaultLandKey }
+) {
+  if (!subTile || !baseTile || !waterTileKey || subdivisions <= 1) {
+    return;
+  }
+  if (baseTile.structure || baseTile.structureDetails || baseTile.river) {
+    if (Number.isFinite(subTile.coastProximity)) {
+      subTile.coastProximity = clamp(subTile.coastProximity + (noiseAt(55) - 0.5) * 0.1, 0, 1);
+    }
+    return;
+  }
+
+  const baseKey = typeof baseTile.base === 'string' ? baseTile.base : null;
+  const isWater = baseKey === waterTileKey;
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.34;
+
+  const directions = [
+    { key: 'north', proximity: normalizedY, nearEdge: normalizedY < edgeThreshold },
+    { key: 'south', proximity: 1 - normalizedY, nearEdge: normalizedY > 1 - edgeThreshold },
+    { key: 'west', proximity: normalizedX, nearEdge: normalizedX < edgeThreshold },
+    { key: 'east', proximity: 1 - normalizedX, nearEdge: normalizedX > 1 - edgeThreshold }
+  ];
+
+  let converted = false;
+
+  if (isWater) {
+    for (let i = 0; i < directions.length; i += 1) {
+      const { key, proximity, nearEdge } = directions[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !neighbor.baseKey || neighbor.baseKey === waterTileKey) {
+        continue;
+      }
+      const threshold = 0.35 + proximity * 0.5;
+      if (noiseAt(60 + i) > threshold) {
+        subTile.base = neighbor.baseKey || defaultLandKey;
+        subTile.overlay = null;
+        subTile.hillOverlay = null;
+        subTile.waterDepth = 0;
+        subTile.coastProximity = Math.max(Number.isFinite(subTile.coastProximity) ? subTile.coastProximity : 0.6, 0.75);
+        converted = true;
+        break;
+      }
+    }
+  }
+
+  if (!converted && !isWater) {
+    for (let i = 0; i < directions.length; i += 1) {
+      const { key, proximity, nearEdge } = directions[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !neighbor.isWater) {
+        continue;
+      }
+      const threshold = 0.62 - proximity * 0.35;
+      if (noiseAt(70 + i) > threshold) {
+        subTile.base = waterTileKey;
+        subTile.overlay = null;
+        subTile.hillOverlay = null;
+        subTile.forestCanopyDensity = Number.isFinite(subTile.forestCanopyDensity)
+          ? Math.min(subTile.forestCanopyDensity, 0.18)
+          : subTile.forestCanopyDensity;
+        subTile.coastProximity = Math.max(Number.isFinite(subTile.coastProximity) ? subTile.coastProximity : 0.7, 0.85);
+        subTile.waterDepth = clamp(noiseAt(80 + i) * 0.45, 0, 0.6);
+        converted = true;
+        break;
+      }
+    }
+  }
+
+  if (!converted) {
+    if (Number.isFinite(subTile.coastProximity)) {
+      subTile.coastProximity = clamp(subTile.coastProximity + (noiseAt(90) - 0.5) * 0.12, 0, 1);
+    }
+    if (Number.isFinite(subTile.waterDepth)) {
+      subTile.waterDepth = clamp(subTile.waterDepth + (noiseAt(91) - 0.5) * 0.15, 0, 1);
+    }
+  }
+}
+
 function generateHighResolutionLocalPatch(world, tileX, tileY) {
   if (!world || !Array.isArray(world.tiles) || world.tiles.length === 0) {
     return null;
@@ -10285,18 +10668,73 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
     patchTiles[y] = new Array(patchWidth);
   }
 
+  const seedString =
+    (typeof world.seedString === 'string' && world.seedString) ||
+    (typeof state.settings?.seedString === 'string' ? state.settings.seedString : 'local');
+  const noiseSampler = createDeterministicNoiseSampler(
+    `${seedString}:${startX},${startY}:${patchWidth}x${patchHeight}`
+  );
+  const waterTileKey = world.waterTileKey || resolveTileName('WATER');
+  const defaultLandKey = world.grassTileKey || resolveTileName('GRASS');
+
   for (let coarseY = 0; coarseY < areaHeight; coarseY += 1) {
     const sourceRow = sourceTiles[startY + coarseY];
     for (let coarseX = 0; coarseX < areaWidth; coarseX += 1) {
       const baseTile = Array.isArray(sourceRow) ? sourceRow[startX + coarseX] || null : null;
-      const clone = baseTile ? cloneTileForHighResolution(baseTile) : null;
+      if (!baseTile) {
+        for (let subY = 0; subY < subdivisions; subY += 1) {
+          const targetRow = patchTiles[coarseY * subdivisions + subY];
+          if (!Array.isArray(targetRow)) {
+            continue;
+          }
+          for (let subX = 0; subX < subdivisions; subX += 1) {
+            targetRow[coarseX * subdivisions + subX] = null;
+          }
+        }
+        continue;
+      }
+
+      if (subdivisions <= 1) {
+        const targetRow = patchTiles[coarseY];
+        if (Array.isArray(targetRow)) {
+          targetRow[coarseX] = cloneTileForHighResolution(baseTile);
+        }
+        continue;
+      }
+
+      const worldX = startX + coarseX;
+      const worldY = startY + coarseY;
+      const neighbors = buildNeighborDetails(sourceTiles, sourceWidth, sourceHeight, worldX, worldY, waterTileKey);
+      const riverVariation = baseTile.river
+        ? computeRiverSubtileVariation(baseTile.river, subdivisions, worldX, worldY, noiseSampler)
+        : null;
+
       for (let subY = 0; subY < subdivisions; subY += 1) {
         const targetRow = patchTiles[coarseY * subdivisions + subY];
         if (!Array.isArray(targetRow)) {
           continue;
         }
         for (let subX = 0; subX < subdivisions; subX += 1) {
-          targetRow[coarseX * subdivisions + subX] = clone;
+          const subTile = cloneTileForHighResolution(baseTile);
+          const globalSubX = worldX * subdivisions + subX;
+          const globalSubY = worldY * subdivisions + subY;
+          const noiseAt = (channel) => noiseSampler(globalSubX, globalSubY, channel);
+
+          applyCoastlineVariation(
+            subTile,
+            baseTile,
+            neighbors,
+            subdivisions,
+            subX,
+            subY,
+            noiseAt,
+            { waterTileKey, defaultLandKey }
+          );
+          applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
+          applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey);
+          applyRiverSubtileVariation(subTile, riverVariation, subX, subY);
+
+          targetRow[coarseX * subdivisions + subX] = subTile;
         }
       }
     }
