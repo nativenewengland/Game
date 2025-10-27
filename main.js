@@ -3367,6 +3367,24 @@ function generateHamletDetails(name, random, options = {}) {
   const hallmark = pickRandomFrom(townHallmarks, randomFn) || baseDetails.hallmark;
   const exportCount = clamp(Math.floor(randomFn() * 2) + 1, 1, townExportOptions.length);
   const majorExports = pickUniqueFrom(townExportOptions, exportCount, randomFn);
+  const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+  let populationBreakdown = baseDetails.populationBreakdown;
+  if (isSnowHamlet) {
+    const humanEntry = Array.isArray(baseDetails.populationBreakdown)
+      ? baseDetails.populationBreakdown.find((entry) => entry && entry.key === 'humans')
+      : null;
+    const humanLabel = (humanEntry && humanEntry.label) || 'Humans';
+    const humanColor = (humanEntry && humanEntry.color) || '#9bb6d8';
+    populationBreakdown = [
+      {
+        key: 'humans',
+        label: humanLabel,
+        color: humanColor,
+        percentage: 100,
+        population: resolvedPopulation
+      }
+    ];
+  }
   return {
     ...baseDetails,
     type: 'village',
@@ -3375,7 +3393,8 @@ function generateHamletDetails(name, random, options = {}) {
     populationDescriptor: 'villagers',
     majorGuilds: [],
     majorExports,
-    hallmark
+    hallmark,
+    populationBreakdown
   };
 }
 
@@ -17288,7 +17307,7 @@ function createWorld(seedString) {
         }
         const baseIsSnowPlacement = hasSnowTile && tile.base === snowTileKey;
         const name = baseIsSnowPlacement ? generateSnowVillageName(rng) : generateTownName(rng);
-        const details = generateTownDetails(name, rng, { snowVillage: baseIsSnowPlacement });
+        let details = generateTownDetails(name, rng, { snowVillage: baseIsSnowPlacement });
         const isSmallVillage = details.type === 'village' && details.population < 100;
         if (baseIsSnowPlacement && !isSmallVillage) {
           continue;
@@ -17327,6 +17346,9 @@ function createWorld(seedString) {
             structureKey = hamletKey;
             isHamletStructure = true;
           }
+        }
+        if (isHamletStructure) {
+          details = generateHamletDetails(name, rng, { snowHamlet: baseIsSnowPlacement });
         }
         tile.structure = structureKey;
         tile.structureName = name;
