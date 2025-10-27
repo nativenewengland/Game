@@ -262,6 +262,92 @@ select,
   display: none !important;
 }
 
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 5vw, 4rem);
+  background:
+      radial-gradient(circle at 18% 22%, rgba(240, 198, 116, 0.08), transparent 58%),
+      radial-gradient(circle at 82% 18%, rgba(118, 172, 214, 0.08), transparent 62%),
+      linear-gradient(165deg, rgba(8, 9, 15, 0.94), rgba(6, 8, 16, 0.98));
+  backdrop-filter: blur(18px);
+}
+
+.loading-panel {
+  width: min(520px, 94vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.35rem;
+  text-align: center;
+  padding: clamp(2rem, 3vw, 3rem);
+  border-radius: 28px;
+  background: rgba(10, 12, 22, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1.5rem 3.5rem rgba(0, 0, 0, 0.55);
+}
+
+.loading-eyebrow {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(240, 198, 116, 0.75);
+}
+
+.loading-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  letter-spacing: 0.1em;
+}
+
+.loading-status {
+  margin: 0;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.loading-progress {
+  width: min(440px, 86vw);
+  height: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(15, 18, 28, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.loading-progress__fill {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(120deg, rgba(240, 198, 116, 0.95), rgba(196, 155, 63, 0.95), rgba(240, 198, 116, 0.95));
+  background-size: 200% 100%;
+  animation: loading-gradient 2.5s ease-in-out infinite;
+  transition: width 0.45s ease;
+}
+
+.loading-hint {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+@keyframes loading-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .title-background {
   position: absolute;
   inset: 0;
@@ -294,6 +380,11 @@ select,
     background-size: 110%;
     background-position: center top 30%;
     filter: blur(9px) saturate(112%) brightness(0.95);
+  }
+
+  .loading-progress__fill {
+    animation: none;
+    transition: none;
   }
 }
 
