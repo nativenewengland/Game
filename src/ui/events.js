@@ -9,6 +9,7 @@ export function attachEvents(elements, deps) {
     showDwarfholdInterior,
     showStructureDetails,
     hideLocalView,
+    closeDwarfholdInterior,
     state,
     refreshOverlayToggleButtons,
     drawWorld,
@@ -170,10 +171,13 @@ export function attachEvents(elements, deps) {
 
   if (elements.localMapClose) {
     elements.localMapClose.addEventListener('click', () => {
-      hideLocalView();
-      if (elements.canvasWrapper) {
-        elements.canvasWrapper.focus();
-      }
+      hideLocalView({ returnFocus: true });
+    });
+  }
+
+  if (elements.dwarfholdExit) {
+    elements.dwarfholdExit.addEventListener('click', () => {
+      closeDwarfholdInterior({ returnFocus: true });
     });
   }
 
@@ -580,7 +584,7 @@ export function attachEvents(elements, deps) {
 
     if (event.key === 'Escape') {
       if (state.localView && state.localView.active) {
-        hideLocalView();
+        hideLocalView({ returnFocus: true });
         return;
       }
       if (structureDetailsState.visible) {
