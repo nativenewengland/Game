@@ -19038,6 +19038,45 @@ function createWorld(seedString) {
     }
   }
 
+  const badlandsMinimumSize = 10;
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    const cluster = biomeClusters[i];
+    if (cluster.type !== 'badlands' || cluster.size >= badlandsMinimumSize) {
+      continue;
+    }
+    const neighborCounts = new Map();
+    clusterAdjacency[i].forEach((neighborIndex) => {
+      const neighborCluster = biomeClusters[neighborIndex];
+      if (!neighborCluster) {
+        return;
+      }
+      const neighborType = neighborCluster.type;
+      if (!neighborType || neighborType === 'badlands') {
+        return;
+      }
+      neighborCounts.set(neighborType, (neighborCounts.get(neighborType) || 0) + 1);
+    });
+    if (!neighborCounts.size) {
+      continue;
+    }
+    let replacementType = null;
+    let replacementCount = -1;
+    neighborCounts.forEach((count, type) => {
+      if (count > replacementCount) {
+        replacementType = type;
+        replacementCount = count;
+      }
+    });
+    if (!replacementType) {
+      continue;
+    }
+    cluster.type = replacementType;
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      biomeField[clusterIdx] = replacementType;
+    }
+  }
+
   const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
 
   for (let i = 0; i < biomeClusters.length; i += 1) {
