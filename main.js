@@ -9821,13 +9821,24 @@ function setupMapInteractions() {
     applyViewTransform();
   };
 
+  const isMacLikePlatform =
+    typeof navigator !== 'undefined' &&
+    /Mac|iP(?:ad|hone|od)/.test((navigator.platform || navigator.userAgent || '').toString());
+
   const handlePointerDown = (event) => {
     if (activePointerId !== null) {
       return;
     }
-    const isPrimaryPointer = !(
-      event.button !== undefined && event.button !== 0 && event.pointerType !== 'touch'
-    );
+    const pointerType = event.pointerType || 'mouse';
+    const isTouchPointer = pointerType === 'touch';
+    const isNonPrimaryButton = event.button !== undefined && event.button !== 0;
+    const isMacCtrlClick =
+      !isTouchPointer &&
+      event.button === 0 &&
+      event.ctrlKey &&
+      isMacLikePlatform;
+    const isContextMenuClick = !isTouchPointer && (isNonPrimaryButton || isMacCtrlClick);
+    const isPrimaryPointer = !isContextMenuClick;
     hideStructureDetails();
     hideStructureContextMenu();
     if (!isPrimaryPointer) {
