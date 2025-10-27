@@ -5533,6 +5533,17 @@ const dwarfBodyPortraitState = {
   ctx: null
 };
 
+const dwarfTestState = {
+  canvas: null,
+  ctx: null,
+  active: false,
+  pressed: new Set(),
+  lastFrameTime: null,
+  rafId: null,
+  backgroundOffset: 0,
+  position: { x: 0, y: 0 }
+};
+
 const musicTracks = [
   { title: 'Another Year', src: 'sound/tracks/another_year/AY_Full.ogg' },
   { title: 'Craftsdwarfship', src: 'sound/tracks/craftsdwarfship/CS_Full.ogg' },
@@ -6915,6 +6926,369 @@ function ensureBodyPortraitContext() {
   return dwarfBodyPortraitState.ctx;
 }
 
+function ensureDwarfTestContext() {
+  const canvas = elements.dwarfTestCanvas || null;
+  if (!canvas) {
+    dwarfTestState.canvas = null;
+    dwarfTestState.ctx = null;
+    return null;
+  }
+  if (canvas !== dwarfTestState.canvas) {
+    const context = canvas.getContext('2d');
+    if (!context) {
+      dwarfTestState.canvas = null;
+      dwarfTestState.ctx = null;
+      return null;
+    }
+    context.imageSmoothingEnabled = true;
+    dwarfTestState.canvas = canvas;
+    dwarfTestState.ctx = context;
+  }
+  return dwarfTestState.ctx;
+}
+
+function updateDwarfTestButtonState() {
+  const button = elements.dwarfTestButton;
+  if (!button) {
+    return;
+  }
+  if (dwarfTestState.active) {
+    button.textContent = 'Close Test';
+    button.setAttribute('aria-pressed', 'true');
+    button.classList.add('active');
+  } else {
+    button.textContent = 'Test';
+    button.setAttribute('aria-pressed', 'false');
+    button.classList.remove('active');
+  }
+}
+
+function getDwarfTestSpriteDimensions(ctx) {
+  const source = elements.dwarfBodyPortraitCanvas;
+  const { canvas } = ctx;
+  const maxHeight = Math.max(70, canvas.height * 0.62);
+  if (!source || source.width === 0 || source.height === 0) {
+    const height = clamp(maxHeight, 70, canvas.height * 0.7);
+    return {
+      width: height * 0.7,
+      height
+    };
+  }
+  const aspectRatio = source.width / source.height;
+  const targetHeight = clamp(maxHeight, 70, Math.min(source.height, canvas.height * 0.7));
+  const targetWidth = targetHeight * aspectRatio;
+  return {
+    width: targetWidth,
+    height: targetHeight
+  };
+}
+
+function getDwarfTestBounds(ctx, spriteDimensions) {
+  const { canvas } = ctx;
+  const paddingX = Math.max(16, canvas.width * 0.06);
+  const paddingY = Math.max(18, canvas.height * 0.1);
+  const minX = paddingX + spriteDimensions.width / 2;
+  const maxX = canvas.width - paddingX - spriteDimensions.width / 2;
+  const groundPadding = Math.max(paddingY, spriteDimensions.height * 0.2);
+  const minY = paddingY + spriteDimensions.height / 2;
+  const maxY = canvas.height - groundPadding;
+  return { minX, maxX, minY, maxY };
+}
+
+function drawDwarfTestBackground(ctx) {
+  const { canvas } = ctx;
+  const { width, height } = canvas;
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, '#101926');
+  gradient.addColorStop(1, '#070c14');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const groundHeight = Math.max(32, Math.round(height * 0.32));
+  const groundY = height - groundHeight;
+  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
+  groundGradient.addColorStop(0, '#1e3a2f');
+  groundGradient.addColorStop(1, '#14261f');
+  ctx.fillStyle = groundGradient;
+  ctx.fillRect(0, groundY, width, groundHeight);
+
+  const stripeSpacing = Math.max(18, Math.round(width / 14));
+  const offset = ((dwarfTestState.backgroundOffset % stripeSpacing) + stripeSpacing) % stripeSpacing;
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = -stripeSpacing + offset; x < width + stripeSpacing; x += stripeSpacing) {
+    ctx.moveTo(x, groundY);
+    ctx.lineTo(x, height);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.beginPath();
+  const horizontalSpacing = Math.max(14, stripeSpacing * 0.6);
+  for (let y = groundY; y < height; y += horizontalSpacing) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+  }
+  ctx.stroke();
+
+  const glowGradient = ctx.createRadialGradient(
+    width / 2,
+    groundY,
+    Math.max(10, width * 0.15),
+    width / 2,
+    groundY,
+    Math.max(60, width * 0.7)
+  );
+  glowGradient.addColorStop(0, 'rgba(88, 137, 196, 0.2)');
+  glowGradient.addColorStop(1, 'rgba(16, 25, 38, 0)');
+  ctx.fillStyle = glowGradient;
+  ctx.fillRect(0, 0, width, height);
+}
+
+function drawDwarfTestCharacter(ctx, spriteDimensions) {
+  const { width, height } = ctx.canvas;
+  const position = dwarfTestState.position;
+  const baseX = clamp(position.x, 0, width);
+  const baseY = clamp(position.y, 0, height);
+
+  const shadowWidth = spriteDimensions.width * 0.6;
+  const shadowHeight = Math.max(6, spriteDimensions.height * 0.18);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(baseX, baseY - 4, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const source = elements.dwarfBodyPortraitCanvas;
+  if (source && source.width > 0 && source.height > 0) {
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(
+      source,
+      baseX - spriteDimensions.width / 2,
+      baseY - spriteDimensions.height,
+      spriteDimensions.width,
+      spriteDimensions.height
+    );
+    ctx.restore();
+    return;
+  }
+
+  ctx.fillStyle = '#d0b89a';
+  ctx.beginPath();
+  ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5b473c';
+  ctx.fillRect(
+    baseX - spriteDimensions.width / 4,
+    baseY - spriteDimensions.height + spriteDimensions.height * 0.2,
+    spriteDimensions.width / 2,
+    spriteDimensions.height * 0.6
+  );
+}
+
+function getDwarfTestDirectionVector() {
+  let dx = 0;
+  let dy = 0;
+  if (dwarfTestState.pressed.has('left')) {
+    dx -= 1;
+  }
+  if (dwarfTestState.pressed.has('right')) {
+    dx += 1;
+  }
+  if (dwarfTestState.pressed.has('up')) {
+    dy -= 1;
+  }
+  if (dwarfTestState.pressed.has('down')) {
+    dy += 1;
+  }
+  if (dx === 0 && dy === 0) {
+    return { dx: 0, dy: 0 };
+  }
+  const length = Math.hypot(dx, dy) || 1;
+  return { dx: dx / length, dy: dy / length };
+}
+
+function updateDwarfTestFrame(timestamp) {
+  if (!dwarfTestState.active) {
+    return;
+  }
+  const ctx = ensureDwarfTestContext();
+  if (!ctx) {
+    closeDwarfTest();
+    return;
+  }
+
+  if (!Number.isFinite(dwarfTestState.lastFrameTime)) {
+    dwarfTestState.lastFrameTime = timestamp;
+  }
+  const deltaMs = timestamp - (dwarfTestState.lastFrameTime || timestamp);
+  const delta = clamp(deltaMs / 1000, 0, 0.1);
+  dwarfTestState.lastFrameTime = timestamp;
+
+  const direction = getDwarfTestDirectionVector();
+  const moveSpeed = 160;
+  const distance = moveSpeed * delta;
+  if (direction.dx !== 0 || direction.dy !== 0) {
+    dwarfTestState.position.x += direction.dx * distance;
+    dwarfTestState.position.y += direction.dy * distance;
+    dwarfTestState.backgroundOffset += direction.dx * distance * 0.6;
+  } else {
+    dwarfTestState.backgroundOffset *= 0.9;
+  }
+
+  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
+  const bounds = getDwarfTestBounds(ctx, spriteDimensions);
+  dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
+  dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
+
+  drawDwarfTestBackground(ctx);
+  drawDwarfTestCharacter(ctx, spriteDimensions);
+
+  dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
+}
+
+function normaliseDwarfTestKey(rawKey) {
+  switch (rawKey) {
+    case 'ArrowUp':
+    case 'Up':
+    case 'w':
+    case 'W':
+      return 'up';
+    case 'ArrowDown':
+    case 'Down':
+    case 's':
+    case 'S':
+      return 'down';
+    case 'ArrowLeft':
+    case 'Left':
+    case 'a':
+    case 'A':
+      return 'left';
+    case 'ArrowRight':
+    case 'Right':
+    case 'd':
+    case 'D':
+      return 'right';
+    default:
+      return null;
+  }
+}
+
+function handleDwarfTestKeyDown(event) {
+  if (!dwarfTestState.active) {
+    return;
+  }
+  const target = event.target;
+  if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+    return;
+  }
+  const key = normaliseDwarfTestKey(event.key);
+  if (!key) {
+    return;
+  }
+  event.preventDefault();
+  dwarfTestState.pressed.add(key);
+}
+
+function handleDwarfTestKeyUp(event) {
+  if (!dwarfTestState.active) {
+    return;
+  }
+  const key = normaliseDwarfTestKey(event.key);
+  if (!key) {
+    return;
+  }
+  event.preventDefault();
+  dwarfTestState.pressed.delete(key);
+}
+
+function resetDwarfTestState() {
+  const ctx = ensureDwarfTestContext();
+  if (!ctx) {
+    return;
+  }
+  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
+  const bounds = getDwarfTestBounds(ctx, spriteDimensions);
+  dwarfTestState.position.x = (bounds.minX + bounds.maxX) / 2;
+  dwarfTestState.position.y = bounds.maxY - Math.max(12, spriteDimensions.height * 0.08);
+  dwarfTestState.backgroundOffset = 0;
+  dwarfTestState.lastFrameTime = null;
+  dwarfTestState.pressed.clear();
+  drawDwarfTestBackground(ctx);
+  drawDwarfTestCharacter(ctx, spriteDimensions);
+}
+
+function openDwarfTest() {
+  const area = elements.dwarfTestArea;
+  if (!area) {
+    return;
+  }
+  if (dwarfTestState.active) {
+    return;
+  }
+  area.classList.remove('hidden');
+  area.setAttribute('aria-hidden', 'false');
+  const ctx = ensureDwarfTestContext();
+  if (!ctx) {
+    area.classList.add('hidden');
+    area.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  dwarfTestState.active = true;
+  resetDwarfTestState();
+  updateDwarfTestButtonState();
+  window.addEventListener('keydown', handleDwarfTestKeyDown);
+  window.addEventListener('keyup', handleDwarfTestKeyUp);
+  dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
+  window.requestAnimationFrame(() => {
+    if (typeof area.focus === 'function') {
+      area.focus();
+    }
+  });
+}
+
+function closeDwarfTest(options = {}) {
+  const { returnFocus = false } = options;
+  if (!dwarfTestState.active) {
+    updateDwarfTestButtonState();
+    if (returnFocus && elements.dwarfTestButton) {
+      elements.dwarfTestButton.focus();
+    }
+    return;
+  }
+  dwarfTestState.active = false;
+  dwarfTestState.pressed.clear();
+  if (dwarfTestState.rafId !== null) {
+    window.cancelAnimationFrame(dwarfTestState.rafId);
+    dwarfTestState.rafId = null;
+  }
+  window.removeEventListener('keydown', handleDwarfTestKeyDown);
+  window.removeEventListener('keyup', handleDwarfTestKeyUp);
+  dwarfTestState.lastFrameTime = null;
+  if (elements.dwarfTestArea) {
+    elements.dwarfTestArea.classList.add('hidden');
+    elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
+  }
+  updateDwarfTestButtonState();
+  if (returnFocus && elements.dwarfTestButton) {
+    elements.dwarfTestButton.focus();
+  }
+}
+
+function toggleDwarfTest() {
+  if (dwarfTestState.active) {
+    closeDwarfTest();
+  } else {
+    openDwarfTest();
+  }
+}
+
+function isDwarfTestActive() {
+  return dwarfTestState.active;
+}
+
 function getBaseBodyFrame(dwarf) {
   const frames = dwarfPortraitConfig.baseFrames;
   const gender = dwarf?.gender;
@@ -7636,6 +8010,7 @@ function updateCustomizerUI() {
   updateDwarfPortrait(dwarf);
   updateDwarfTraitSummary();
   updateRosterList();
+  updateDwarfTestButtonState();
 }
 
 function setActiveDwarf(index) {
@@ -7757,6 +8132,7 @@ function openDwarfCustomizer(options = {}) {
 
 function closeDwarfCustomizer(options = {}) {
   const { keepWorldInfoHidden = false, returnFocus = false } = options;
+  closeDwarfTest();
   if (elements.dwarfCustomizer) {
     elements.dwarfCustomizer.classList.add('hidden');
   }
@@ -20657,6 +21033,7 @@ function syncInputsWithSettings() {
   if (elements.dwarfCustomizerForm) {
     elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      closeDwarfTest();
       beginGame();
       ensureMusicStarted();
     });
@@ -20748,7 +21125,7 @@ function syncInputsWithSettings() {
     const isFormControl =
       activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
-    if (isDwarfCustomizerVisible() && !isFormControl) {
+    if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
         changeActiveDwarf(-1);
@@ -20762,6 +21139,10 @@ function syncInputsWithSettings() {
     }
 
     if (event.key === 'Escape') {
+      if (isDwarfTestActive()) {
+        closeDwarfTest({ returnFocus: true });
+        return;
+      }
       if (state.localView && state.localView.active) {
         hideLocalView();
         return;
@@ -20823,6 +21204,9 @@ attachEvents(elements, {
   setupTraitSliderControl,
   isDwarfCustomizerVisible,
   closeDwarfCustomizer,
+  toggleDwarfTest,
+  isDwarfTestActive,
+  closeDwarfTest,
   structureDetailsState,
   isOptionsVisible: () => optionsVisible,
   updateWorldInfoSeedDisplay,

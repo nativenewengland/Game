@@ -37,6 +37,9 @@ export function attachEvents(elements, deps) {
     setupTraitSliderControl,
     isDwarfCustomizerVisible,
     closeDwarfCustomizer,
+    toggleDwarfTest,
+    isDwarfTestActive,
+    closeDwarfTest,
     structureDetailsState,
     isOptionsVisible,
     updateWorldInfoSeedDisplay,
@@ -546,8 +549,15 @@ export function attachEvents(elements, deps) {
   if (elements.dwarfCustomizerForm) {
     elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      closeDwarfTest();
       beginGame();
       ensureMusicStarted();
+    });
+  }
+
+  if (elements.dwarfTestButton) {
+    elements.dwarfTestButton.addEventListener('click', () => {
+      toggleDwarfTest();
     });
   }
 
@@ -629,7 +639,7 @@ export function attachEvents(elements, deps) {
     const activeElement = document.activeElement;
     const isFormControl = activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
-    if (isDwarfCustomizerVisible() && !isFormControl) {
+    if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
         changeActiveDwarf(-1);
@@ -643,6 +653,10 @@ export function attachEvents(elements, deps) {
     }
 
     if (event.key === 'Escape') {
+      if (isDwarfTestActive()) {
+        closeDwarfTest({ returnFocus: true });
+        return;
+      }
       if (state.localView && state.localView.active) {
         hideLocalView({ returnFocus: true });
         return;

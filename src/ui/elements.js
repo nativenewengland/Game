@@ -114,6 +114,9 @@ export const elements = {
   dwarfPortrait: document.getElementById('dwarf-portrait'),
   dwarfPortraitCanvas: document.getElementById('dwarf-portrait-canvas'),
   dwarfBodyPortraitCanvas: document.getElementById('dwarf-body-portrait-canvas'),
+  dwarfTestArea: document.getElementById('dwarf-test-area'),
+  dwarfTestCanvas: document.getElementById('dwarf-test-canvas'),
+  dwarfTestButton: document.getElementById('dwarf-test'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary'),
   dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes')
 };
