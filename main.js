@@ -18279,6 +18279,26 @@ function createWorld(seedString) {
       }
       clusterTile.biomeType = resolvedType;
       clusterTile.areaName = resolvedName;
+      if (hasBadlandsTile && resolvedType === 'badlands') {
+        const isWaterTile =
+          (waterMask && waterMask[clusterIdx]) || clusterTile.base === waterTileKey;
+        if (!isWaterTile) {
+          clusterTile.base = badlandsTileKey;
+          if (badlandsMask) {
+            badlandsMask[clusterIdx] = 1;
+          }
+          if (desertMask) {
+            desertMask[clusterIdx] = 1;
+          }
+        } else {
+          if (badlandsMask) {
+            badlandsMask[clusterIdx] = 0;
+          }
+          if (desertMask) {
+            desertMask[clusterIdx] = 0;
+          }
+        }
+      }
     }
   }
 
