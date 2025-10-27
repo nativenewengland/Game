@@ -97,7 +97,6 @@ export const elements = {
   dwarfNameInput: document.getElementById('dwarf-name-input'),
   dwarfGenderButtons: document.getElementById('dwarf-gender-buttons'),
   dwarfClanSelect: document.getElementById('dwarf-clan-select'),
-  dwarfGuildSelect: document.getElementById('dwarf-guild-select'),
   dwarfProfessionSelect: document.getElementById('dwarf-profession-select'),
   dwarfSkinSlider: document.getElementById('dwarf-skin-slider'),
   dwarfSkinSliderValue: document.getElementById('dwarf-skin-slider-value'),

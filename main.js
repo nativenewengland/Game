@@ -8125,11 +8125,6 @@ function updateCustomizerUI() {
     dwarfOptions.clan[0].value
   );
   ensureSelectValue(
-    elements.dwarfGuildSelect,
-    dwarf.guild,
-    dwarfOptions.guild[0].value
-  );
-  ensureSelectValue(
     elements.dwarfProfessionSelect,
     dwarf.profession,
     dwarfOptions.profession[0].value
@@ -22223,12 +22218,6 @@ function syncInputsWithSettings() {
   if (elements.dwarfClanSelect) {
     elements.dwarfClanSelect.addEventListener('change', (event) => {
       updateDwarfTrait('clan', event.target.value);
-    });
-  }
-
-  if (elements.dwarfGuildSelect) {
-    elements.dwarfGuildSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('guild', event.target.value);
     });
   }
 

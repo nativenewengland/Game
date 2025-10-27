@@ -2258,8 +2258,7 @@ button:hover:not(:disabled) {
   grid-column: 1;
 }
 
-.customizer-fields .field-group[data-draggable-id='field-profession'],
-.customizer-fields .field-group[data-draggable-id='field-guild'] {
+.customizer-fields .field-group[data-draggable-id='field-profession'] {
   grid-column: 1;
 }
 
