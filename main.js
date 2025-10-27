@@ -15089,7 +15089,6 @@ function createWorld(seedString) {
             const overlayKey = baseIsSnow ? snowHillOverlayKey : selectBaseHillOverlayKey(x, y);
             if (overlayKey) {
               tile.hillOverlay = overlayKey;
-              tile.overlay = overlayKey;
             }
           }
         }
