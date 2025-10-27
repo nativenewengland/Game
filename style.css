@@ -1948,7 +1948,7 @@ button:hover:not(:disabled) {
 .trait-preview-sliders {
   display: grid;
   gap: clamp(0.6rem, 1.7vw, 0.9rem);
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   text-align: left;
 }
 
@@ -1961,11 +1961,17 @@ button:hover:not(:disabled) {
   width: 100%;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 640px) {
   .trait-preview-sliders {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  #dwarf-beard-field-group {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 960px) {
   #dwarf-beard-field-group {
     grid-column: 1 / -1;
   }
