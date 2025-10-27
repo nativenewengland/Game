@@ -1871,10 +1871,7 @@ const woodElfGrovePopulationRoleOptions = [
 ];
 
 const lizardmenCityPopulationRoleOptions = [
-  { key: 'skinks', label: 'Skink Artisans', color: '#6bd38f' },
-  { key: 'saurus', label: 'Saurus Cohorts', color: '#3a9f68' },
-  { key: 'priests', label: 'Temple Acolytes', color: '#8cd1c6' },
-  { key: 'beastmasters', label: 'Beastmasters', color: '#b0f0d0' }
+  { key: 'lizardmen', label: 'Lizardmen', color: '#3a9f68' }
 ];
 
 const lizardmenCityPrefixes = ['Ix', 'Zan', 'Tla', 'Chal', 'Maz', 'Quet', 'Ssz', 'Olo', 'Yax', 'Huac'];
