@@ -3842,7 +3842,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     return { factions: [] };
   }
 
-  const toKey = (x, y) => `${x},${y}`;
+  const toIndex = (x, y) => y * width + x;
   const cardinalNeighborOffsets = [
     [1, 0],
     [-1, 0],
@@ -3896,11 +3896,11 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
     if (normalizedType === 'abandoneddwarfhold' || normalizedKind === 'abandoneddwarfhold') {
       return;
     }
-    const key = toKey(seed.x, seed.y);
-    if (seenSeeds.has(key)) {
+    const seedIndex = toIndex(seed.x, seed.y);
+    if (seenSeeds.has(seedIndex)) {
       return;
     }
-    seenSeeds.add(key);
+    seenSeeds.add(seedIndex);
     uniqueSeeds.push({
       x: seed.x,
       y: seed.y,
@@ -4056,7 +4056,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
       const visited = new Set();
       const queue = [[cx, cy]];
       let index = 0;
-      visited.add(toKey(cx, cy));
+      visited.add(toIndex(cx, cy));
 
       while (index < queue.length) {
         const [tx, ty] = queue[index];
@@ -4077,9 +4077,9 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
             continue;
           }
 
-          const neighborKey = toKey(nx, ny);
-          if (!visited.has(neighborKey)) {
-            visited.add(neighborKey);
+          const neighborIndex = toIndex(nx, ny);
+          if (!visited.has(neighborIndex)) {
+            visited.add(neighborIndex);
             queue.push([nx, ny]);
           }
         }
@@ -4098,14 +4098,14 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         if (!tile || tile.factionId === null || tile.factionId === undefined) {
           continue;
         }
-        const connectedKeys = connectedByFactionId.get(tile.factionId);
-        if (!connectedKeys) {
+        const connectedIndices = connectedByFactionId.get(tile.factionId);
+        if (!connectedIndices) {
           tile.factionId = null;
           tile.factionInfluence = 0;
           continue;
         }
-        const key = toKey(x, y);
-        if (!connectedKeys.has(key)) {
+        const tileIndex = toIndex(x, y);
+        if (!connectedIndices.has(tileIndex)) {
           tile.factionId = null;
           tile.factionInfluence = 0;
         }
@@ -4473,8 +4473,8 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
           continue;
         }
 
-        const key = toKey(x, y);
-        if (visited.has(key)) {
+        const tileIndex = toIndex(x, y);
+        if (visited.has(tileIndex)) {
           continue;
         }
 
@@ -4483,7 +4483,7 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
         let queueIndex = 0;
         let touchesEdge = false;
         const borderingFactions = new Set();
-        visited.add(key);
+        visited.add(tileIndex);
 
         while (queueIndex < queue.length) {
           const [cx, cy] = queue[queueIndex];
@@ -4513,9 +4513,9 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
             }
 
             if (neighborTile.factionId === null || neighborTile.factionId === undefined) {
-              const neighborKey = toKey(nx, ny);
-              if (!visited.has(neighborKey)) {
-                visited.add(neighborKey);
+              const neighborIndex = toIndex(nx, ny);
+              if (!visited.has(neighborIndex)) {
+                visited.add(neighborIndex);
                 queue.push([nx, ny]);
               }
               continue;
