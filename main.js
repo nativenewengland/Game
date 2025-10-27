@@ -8187,7 +8187,8 @@ const dwarfholdScreenConfig = {
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
 
 const structureDetailsState = {
-  visible: false
+  visible: false,
+  tabIdCounter: 0
 };
 
 const structureContextMenuState = {
@@ -10131,6 +10132,126 @@ function buildPopulationBreakdownPanelSection(resolvedName, breakdown) {
   `;
 }
 
+function buildSettlementDemographicsSummary(details) {
+  if (!details) {
+    return '';
+  }
+
+  const breakdown = Array.isArray(details.populationBreakdown) ? details.populationBreakdown : [];
+  const entries = breakdown
+    .filter((entry) => Number.isFinite(entry?.percentage) && entry.percentage > 0)
+    .map((entry) => ({
+      label: entry.label || entry.key || 'Unknown',
+      percentage: Math.round(Math.max(0, Number(entry.percentage)) * 100) / 100,
+      population: Number.isFinite(entry.population) ? Math.max(0, Math.round(entry.population)) : null
+    }))
+    .sort((a, b) => b.percentage - a.percentage);
+
+  if (entries.length === 0) {
+    return '';
+  }
+
+  const descriptor =
+    typeof details.populationDescriptor === 'string' && details.populationDescriptor.trim()
+      ? details.populationDescriptor.trim().toLowerCase()
+      : 'residents';
+  const resolvedPopulation = Number.isFinite(details.population)
+    ? Math.max(0, Math.round(details.population))
+    : null;
+
+  const summaryParts = [];
+  const majority = entries[0];
+  if (majority) {
+    const majorityPercentage = formatPercentageDisplay(majority.percentage);
+    const majorityPopulation = Number.isFinite(majority.population) ? majority.population : null;
+    const majorityFragments = [`Most ${descriptor} are ${majority.label}`];
+    if (majorityPercentage) {
+      majorityFragments.push(`(${majorityPercentage}%)`);
+    }
+    if (majorityPopulation) {
+      majorityFragments.push(`— roughly ${majorityPopulation.toLocaleString('en-US')} individuals`);
+    }
+    if (resolvedPopulation && !majorityPopulation) {
+      majorityFragments.push(`among about ${resolvedPopulation.toLocaleString('en-US')} inhabitants`);
+    }
+    summaryParts.push(`${majorityFragments.join(' ')}.`);
+  }
+
+  const secondaryEntries = entries.slice(1, 3);
+  if (secondaryEntries.length > 0) {
+    const secondaryDescriptions = secondaryEntries
+      .map((entry) => {
+        const percent = formatPercentageDisplay(entry.percentage);
+        return percent ? `${entry.label} (${percent}%)` : entry.label;
+      })
+      .filter(Boolean);
+    const secondaryList = formatListWithConjunction(secondaryDescriptions);
+    if (secondaryList) {
+      summaryParts.push(`Other notable groups include ${secondaryList}.`);
+    }
+  }
+
+  if (entries.length > 3) {
+    summaryParts.push('Smaller communities round out the remaining populace.');
+  }
+
+  if (summaryParts.length === 0 && resolvedPopulation) {
+    summaryParts.push(
+      `Records note approximately ${resolvedPopulation.toLocaleString('en-US')} ${descriptor} reside here.`
+    );
+  }
+
+  return summaryParts.join(' ');
+}
+
+function buildSettlementCulturalSummary(resolvedName, details) {
+  if (!details) {
+    return '';
+  }
+
+  const settlementName = resolvedName || 'the settlement';
+  const summaryParts = [];
+
+  if (details.ruler && (details.ruler.title || details.ruler.name || details.ruler.label)) {
+    const label =
+      typeof details.ruler.label === 'string' && details.ruler.label.trim()
+        ? details.ruler.label.trim().toLowerCase()
+        : 'ruler';
+    const nameSegments = [];
+    if (details.ruler.title && details.ruler.title.trim()) {
+      nameSegments.push(details.ruler.title.trim());
+    }
+    if (details.ruler.name && details.ruler.name.trim()) {
+      nameSegments.push(details.ruler.name.trim());
+    }
+    const displayName = nameSegments.join(' ').trim();
+    if (displayName) {
+      summaryParts.push(`${displayName} serves as ${label} of ${settlementName}.`);
+    } else {
+      summaryParts.push(`The ${label} oversees ${settlementName}.`);
+    }
+  }
+
+  if (Number.isFinite(details.foundedYearsAgo)) {
+    const founded = Math.max(1, Math.round(details.foundedYearsAgo));
+    summaryParts.push(`${settlementName} was founded ${founded} years ago.`);
+  }
+
+  if (details.prominentGroup && typeof details.prominentGroup === 'string') {
+    const influenceLabel =
+      typeof details.prominentGroupLabel === 'string' && details.prominentGroupLabel.trim()
+        ? details.prominentGroupLabel.trim().toLowerCase()
+        : 'prominent group';
+    summaryParts.push(`The ${influenceLabel} ${details.prominentGroup} influences daily life.`);
+  }
+
+  if (details.hallmark && typeof details.hallmark === 'string' && details.hallmark.trim()) {
+    summaryParts.push(details.hallmark.trim());
+  }
+
+  return summaryParts.join(' ');
+}
+
 function hashStringToNumber(value) {
   if (value === null || value === undefined) {
     return 0;
@@ -10273,6 +10394,8 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     subtitleParts.push(typeLabel);
   }
   const subtitle = subtitleParts.join(' • ') || null;
+  const isSettlementDetail =
+    details && (details.isSettlement === true || (details.type && settlementDetailTypes.has(details.type)));
 
   const overviewEntries = [];
   const addOverviewEntry = (label, value) => {
@@ -10483,6 +10606,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     columnSections[0].push(rulerPortraitSection);
   }
 
+  let overviewSectionMarkup = '';
   if (overviewEntries.length > 0) {
     const overviewItems = overviewEntries
       .map(
@@ -10494,18 +10618,20 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
         `
       )
       .join('');
-    columnSections[0].push(`
+    overviewSectionMarkup = `
       <section class="structure-details-section structure-details-section--overview">
         <h3 class="structure-details-heading">Overview</h3>
         <dl class="structure-details-list">${overviewItems}</dl>
       </section>
-    `);
+    `;
+    columnSections[0].push(overviewSectionMarkup);
   }
 
   if (breakdownSection) {
     columnSections[1].push(breakdownSection);
   }
 
+  let collectionsSectionMarkup = '';
   if (listSections.length > 0) {
     const collections = listSections
       .map((section) => {
@@ -10520,22 +10646,27 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
         `;
       })
       .join('');
-    columnSections[2].push(`
+    collectionsSectionMarkup = `
       <section class="structure-details-section structure-details-section--collections">
         <h3 class="structure-details-heading">Notable Groups &amp; Orders</h3>
         <div class="structure-details-collections-grid">${collections}</div>
       </section>
-    `);
+    `;
+    columnSections[2].push(collectionsSectionMarkup);
   }
 
-  narrativeSections.forEach((section) => {
-    columnSections[2].push(`
+  const narrativeSectionMarkupList = narrativeSections.map(
+    (section) => `
       <section class="structure-details-section structure-details-section--narrative">
         <h3 class="structure-details-heading">${escapeHtml(section.label)}</h3>
         <p class="structure-details-paragraph">${escapeHtml(section.text)}</p>
       </section>
-    `);
+    `
+  );
+  narrativeSectionMarkupList.forEach((markup) => {
+    columnSections[2].push(markup);
   });
+  const narrativeSectionsMarkup = narrativeSectionMarkupList.join('');
 
   const populatedColumns = columnSections
     .map((items, index) => {
@@ -10552,15 +10683,230 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     })
     .filter(Boolean);
 
-  const body = populatedColumns.length > 0
-    ? populatedColumns.join('')
-    : '<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>';
+  let body = '';
+  let contentClass = null;
+
+  if (isSettlementDetail) {
+    structureDetailsState.tabIdCounter += 1;
+    const tabIdBase = `structure-details-tab-${structureDetailsState.tabIdCounter}`;
+    const wrapColumn = (sections, columnClass = 'primary') => {
+      if (!Array.isArray(sections) || sections.length === 0) {
+        return '';
+      }
+      return `
+        <div class="structure-details-column structure-details-column--${columnClass}">
+          ${sections.join('')}
+        </div>
+      `;
+    };
+    const buildEmptyPanel = (message) => `
+      <div class="structure-details-tab-panel-body structure-details-tab-panel-body--empty">
+        <p class="structure-details-empty">${escapeHtml(message)}</p>
+      </div>
+    `;
+
+    const overviewSections = [];
+    if (rulerPortraitSection) {
+      overviewSections.push(rulerPortraitSection);
+    }
+    if (overviewSectionMarkup) {
+      overviewSections.push(overviewSectionMarkup);
+    }
+    const overviewPanelContent =
+      overviewSections.length > 0
+        ? `
+            <div class="structure-details-tab-panel-body">
+              ${wrapColumn(overviewSections)}
+            </div>
+          `
+        : buildEmptyPanel('Records for this settlement have not been catalogued yet.');
+
+    const demographicsSections = [];
+    const demographicsSummary = buildSettlementDemographicsSummary(details);
+    if (demographicsSummary) {
+      demographicsSections.push(`
+        <section class="structure-details-section structure-details-section--narrative">
+          <p class="structure-details-paragraph">${escapeHtml(demographicsSummary)}</p>
+        </section>
+      `);
+    }
+    if (breakdownSection) {
+      demographicsSections.push(breakdownSection);
+    }
+    const demographicsPanelContent =
+      demographicsSections.length > 0
+        ? `
+            <div class="structure-details-tab-panel-body">
+              ${wrapColumn(demographicsSections)}
+            </div>
+          `
+        : buildEmptyPanel('No demographic records were preserved for this site.');
+
+    const cultureSections = [];
+    const cultureSummary = buildSettlementCulturalSummary(resolvedName, details);
+    if (cultureSummary) {
+      cultureSections.push(`
+        <section class="structure-details-section structure-details-section--narrative">
+          <p class="structure-details-paragraph">${escapeHtml(cultureSummary)}</p>
+        </section>
+      `);
+    }
+    if (collectionsSectionMarkup) {
+      cultureSections.push(collectionsSectionMarkup);
+    }
+    if (narrativeSectionsMarkup) {
+      cultureSections.push(narrativeSectionsMarkup);
+    }
+    const culturePanelContent =
+      cultureSections.length > 0
+        ? `
+            <div class="structure-details-tab-panel-body">
+              ${wrapColumn(cultureSections)}
+            </div>
+          `
+        : buildEmptyPanel('No cultural or trade records were found.');
+
+    const tabs = [
+      { key: 'overview', label: 'Overview', content: overviewPanelContent },
+      { key: 'demographics', label: 'Demographics', content: demographicsPanelContent },
+      { key: 'culture', label: 'Culture & Trade', content: culturePanelContent }
+    ];
+
+    const tabButtonsMarkup = tabs
+      .map((tab, index) => {
+        const tabId = `${tabIdBase}-${tab.key}`;
+        const panelId = `${tabId}-panel`;
+        const isActive = index === 0;
+        tab.tabId = tabId;
+        tab.panelId = panelId;
+        return `
+          <button
+            type="button"
+            class="structure-details-tab${isActive ? ' is-active' : ''}"
+            role="tab"
+            aria-selected="${isActive ? 'true' : 'false'}"
+            aria-controls="${panelId}"
+            id="${tabId}"
+            tabindex="${isActive ? '0' : '-1'}"
+          >
+            ${escapeHtml(tab.label)}
+          </button>
+        `;
+      })
+      .join('');
+
+    const panelsMarkup = tabs
+      .map((tab, index) => {
+        const isActive = index === 0;
+        const hiddenAttr = isActive ? '' : ' hidden';
+        const activeClass = isActive ? ' is-active' : '';
+        return `
+          <div
+            id="${tab.panelId}"
+            class="structure-details-tab-panel${activeClass}"
+            role="tabpanel"
+            aria-labelledby="${tab.tabId}"${hiddenAttr}
+          >
+            ${tab.content}
+          </div>
+        `;
+      })
+      .join('');
+
+    body = `
+      <div class="structure-details-tabs" data-structure-tabs>
+        <div class="structure-details-tablist" role="tablist" aria-label="Settlement details">
+          ${tabButtonsMarkup}
+        </div>
+        <div class="structure-details-tab-panels">
+          ${panelsMarkup}
+        </div>
+      </div>
+    `;
+    contentClass = 'structure-details-content--tabbed';
+  } else {
+    body =
+      populatedColumns.length > 0
+        ? populatedColumns.join('')
+        : '<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>';
+  }
 
   return {
     title: resolvedName,
     subtitle,
-    body
+    body,
+    contentClass
   };
+}
+
+function initializeStructureDetailsTabs(container) {
+  if (!container) {
+    return;
+  }
+
+  const tabContainers = container.querySelectorAll('[data-structure-tabs]');
+  tabContainers.forEach((tabContainer) => {
+    const tabs = Array.from(tabContainer.querySelectorAll('[role="tab"]'));
+    const panels = Array.from(tabContainer.querySelectorAll('[role="tabpanel"]'));
+    if (tabs.length === 0 || panels.length === 0) {
+      return;
+    }
+
+    const activateTab = (tabToActivate, shouldFocus) => {
+      if (!tabToActivate) {
+        return;
+      }
+      const panelId = tabToActivate.getAttribute('aria-controls');
+      tabs.forEach((tab) => {
+        const isActive = tab === tabToActivate;
+        tab.classList.toggle('is-active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        tab.setAttribute('tabindex', isActive ? '0' : '-1');
+      });
+      panels.forEach((panel) => {
+        const shouldShow = panel.id === panelId;
+        panel.classList.toggle('is-active', shouldShow);
+        if (shouldShow) {
+          panel.removeAttribute('hidden');
+        } else {
+          panel.setAttribute('hidden', '');
+        }
+      });
+      if (shouldFocus && typeof tabToActivate.focus === 'function') {
+        tabToActivate.focus();
+      }
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => {
+        activateTab(tab, false);
+      });
+      tab.addEventListener('keydown', (event) => {
+        const { key } = event;
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+          event.preventDefault();
+          const nextIndex = (index + 1) % tabs.length;
+          activateTab(tabs[nextIndex], true);
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+          event.preventDefault();
+          const prevIndex = (index - 1 + tabs.length) % tabs.length;
+          activateTab(tabs[prevIndex], true);
+        } else if (key === 'Home') {
+          event.preventDefault();
+          activateTab(tabs[0], true);
+        } else if (key === 'End') {
+          event.preventDefault();
+          activateTab(tabs[tabs.length - 1], true);
+        } else if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+          event.preventDefault();
+          activateTab(tab, true);
+        }
+      });
+    });
+
+    const initialTab = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true') || tabs[0];
+    activateTab(initialTab, false);
+  });
 }
 
 function showStructureDetails(tile, context = {}) {
@@ -10594,7 +10940,17 @@ function showStructureDetails(tile, context = {}) {
   }
 
   if (elements.structureDetailsContent) {
+    elements.structureDetailsContent.classList.remove('structure-details-content--tabbed');
     elements.structureDetailsContent.innerHTML = content.body;
+    if (content.contentClass) {
+      content.contentClass
+        .split(/\s+/)
+        .filter(Boolean)
+        .forEach((className) => {
+          elements.structureDetailsContent.classList.add(className);
+        });
+    }
+    initializeStructureDetailsTabs(elements.structureDetailsContent);
   }
 
   if (elements.structureDetailsClose && typeof elements.structureDetailsClose.focus === 'function') {
@@ -10612,6 +10968,7 @@ function hideStructureDetails(options = {}) {
   elements.structureDetailsPanel.setAttribute('aria-hidden', 'true');
   if (elements.structureDetailsContent) {
     elements.structureDetailsContent.innerHTML = '';
+    elements.structureDetailsContent.classList.remove('structure-details-content--tabbed');
   }
   structureDetailsState.visible = false;
 
