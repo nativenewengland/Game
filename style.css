@@ -1545,6 +1545,10 @@ button:hover:not(:disabled) {
   width: 100%;
 }
 
+.customizer-sidebar__name .dwarf-nav-button--prev {
+  margin-left: clamp(-1.35rem, -3.2vw, -0.85rem);
+}
+
 .customizer-sidebar__name .dwarf-name-field {
   width: min(100%, clamp(34rem, 56vw, 48rem));
   margin: 0;
@@ -2316,6 +2320,10 @@ button:hover:not(:disabled) {
   .customizer-sidebar__name .dwarf-name-nav {
     justify-content: center;
     width: 100%;
+  }
+
+  .customizer-sidebar__name .dwarf-nav-button--prev {
+    margin-left: 0;
   }
 
   .customizer-sidebar__name .dwarf-name-field {
