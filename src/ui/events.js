@@ -144,6 +144,64 @@ export function attachEvents(elements, deps) {
     return false;
   };
 
+  const getWorldTileAt = (x, y) => {
+    const world = state.currentWorld;
+    if (!world || !Array.isArray(world.tiles)) {
+      return null;
+    }
+    if (!Number.isInteger(x) || !Number.isInteger(y)) {
+      return null;
+    }
+    const row = world.tiles[y];
+    if (!Array.isArray(row)) {
+      return null;
+    }
+    return row[x] || null;
+  };
+
+  const enrichWithDwarfholdDetails = (tile, x, y) => {
+    if (!tile) {
+      return null;
+    }
+    if (tile.structureDetails && Object.keys(tile.structureDetails).length > 0) {
+      return tile;
+    }
+
+    if (!isDwarfholdStructureTile(tile)) {
+      return tile;
+    }
+
+    const world = state.currentWorld;
+    if (!world || !Array.isArray(world.dwarfholds)) {
+      return tile;
+    }
+
+    const match = world.dwarfholds.find((hold) => hold && hold.x === x && hold.y === y);
+    if (!match) {
+      return tile;
+    }
+
+    const { x: holdX, y: holdY, ...details } = match;
+    const mergedDetails = { ...(tile.structureDetails || {}), ...details };
+    const resolvedName = mergedDetails.name || tile.structureName || tile.areaName;
+
+    tile.structureDetails = mergedDetails;
+    if (resolvedName) {
+      tile.structureName = resolvedName;
+    }
+
+    return tile;
+  };
+
+  const resolveTileForDetails = (tile, tileX, tileY) => {
+    const worldTile = getWorldTileAt(tileX, tileY);
+    const baseTile = worldTile || tile || null;
+    if (!baseTile) {
+      return null;
+    }
+    return enrichWithDwarfholdDetails(baseTile, tileX, tileY);
+  };
+
   if (elements.structureContextMenuBegin) {
     elements.structureContextMenuBegin.addEventListener('click', () => {
       const { tile, tileX, tileY } = structureContextMenuState;
@@ -151,8 +209,9 @@ export function attachEvents(elements, deps) {
       if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
         return;
       }
-      if (isDwarfholdStructureTile(tile)) {
-        showDwarfholdInterior(tile, tileX, tileY);
+      const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
+      if (isDwarfholdStructureTile(resolvedTile)) {
+        showDwarfholdInterior(resolvedTile, tileX, tileY);
       } else {
         showLocalViewAt(tileX, tileY);
       }
@@ -163,8 +222,9 @@ export function attachEvents(elements, deps) {
     elements.structureContextMenuMoreInfo.addEventListener('click', () => {
       const { tile, tileX, tileY } = structureContextMenuState;
       hideStructureContextMenu();
-      if (tile && tile.structureName) {
-        showStructureDetails(tile, { tileX, tileY });
+      const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
+      if (resolvedTile && resolvedTile.structureName) {
+        showStructureDetails(resolvedTile, { tileX, tileY });
       }
     });
   }
