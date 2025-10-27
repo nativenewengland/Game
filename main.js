@@ -11173,24 +11173,54 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   });
 
-  const populatedColumns = columnSections
-    .map((items, index) => {
-      if (items.length === 0) {
-        return '';
-      }
-      const columnNames = ['primary', 'secondary', 'tertiary'];
-      const columnClass = columnNames[index] || `col-${index + 1}`;
-      return `
-        <div class="structure-details-column structure-details-column--${columnClass}">
-          ${items.join('')}
+  const artPlaceholder = `
+    <figure class="structure-details-art-placeholder">
+      <div class="structure-details-art-frame" role="img" aria-label="Artwork placeholder">
+        <span class="structure-details-art-text">Artwork Placeholder</span>
+      </div>
+      <figcaption class="structure-details-art-caption">Reserve this space for concept art or GIF previews of the area.</figcaption>
+    </figure>
+  `;
+
+  const hasSectionContent = columnSections.some((items) => items.length > 0);
+
+  let body;
+
+  if (hasSectionContent) {
+    columnSections[2].push(artPlaceholder);
+
+    const populatedColumns = columnSections
+      .map((items, index) => {
+        if (items.length === 0) {
+          return '';
+        }
+        const columnNames = ['primary', 'secondary', 'tertiary'];
+        const columnClass = columnNames[index] || `col-${index + 1}`;
+        return `
+          <div class="structure-details-column structure-details-column--${columnClass}">
+            ${items.join('')}
+          </div>
+        `;
+      })
+      .filter(Boolean);
+
+    body = populatedColumns.length > 0
+      ? populatedColumns.join('')
+      : `
+        <div class="structure-details-column structure-details-column--tertiary">
+          ${artPlaceholder}
         </div>
       `;
-    })
-    .filter(Boolean);
-
-  const body = populatedColumns.length > 0
-    ? populatedColumns.join('')
-    : '<p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>';
+  } else {
+    body = `
+      <div class="structure-details-column structure-details-column--primary">
+        <p class="structure-details-empty structure-details-empty--standalone">No additional records found for this location.</p>
+      </div>
+      <div class="structure-details-column structure-details-column--tertiary">
+        ${artPlaceholder}
+      </div>
+    `;
+  }
 
   return {
     title: resolvedName,
