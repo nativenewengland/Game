@@ -10548,10 +10548,32 @@ function setupMapInteractions() {
     hideStructureContextMenu();
   };
 
-  const handleDoubleClick = () => {
+  const handleDoubleClick = (event) => {
     if (!viewState.worldSize.width || !viewState.worldSize.height) {
       return;
     }
+
+    if (typeof event?.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    const resolved = resolveTileAtPointer(event);
+    if (resolved && resolved.tile) {
+      const { tile, tileX, tileY } = resolved;
+      const details = tile.structureDetails || null;
+      const detailType = typeof details?.type === 'string' ? details.type : null;
+      const isSettlement =
+        (details && details.isSettlement === true) ||
+        (detailType ? settlementDetailTypes.has(detailType) : false);
+
+      if (isSettlement && tile.structureName) {
+        hideStructureContextMenu();
+        hideLocalView({ suppressRedraw: true });
+        showStructureDetails(tile, { tileX, tileY });
+        return;
+      }
+    }
+
     hideStructureContextMenu();
     hideStructureDetails();
     resetView(viewState.worldSize.width, viewState.worldSize.height);
