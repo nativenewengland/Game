@@ -11983,7 +11983,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
       <div class="structure-details-art-frame">
         <img
           class="structure-details-art-image"
-          src="titlescreen/Dwarf-Fortress_1.webp"
+          src="tilesheet/settlement%20art/Dwarf-Fortress_1.webp"
           alt="Illustration of a dwarven settlement"
           loading="lazy"
         />
