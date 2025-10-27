@@ -12396,6 +12396,8 @@ function createWorld(seedString) {
   const marshThresholdStrength = hasMarshTile ? 0.05 + rng() * 0.05 : 0;
   const marshDistributionStrength = hasMarshTile ? 0.1 + rng() * 0.1 : 0;
   const baseMarshThreshold = 0.65;
+  // Require more rainfall-driven wetness before marshes can form to reduce their frequency.
+  const marshWetnessThreshold = 0.66;
   const marshSuitabilityField = hasMarshTile ? new Float32Array(width * height) : null;
   const marshMaskField = hasMarshTile ? new Uint8Array(width * height) : null;
   const desertNoiseSeed = hasSandTile ? (seedNumber + 0x51b74f03) >>> 0 : 0;
@@ -12516,7 +12518,7 @@ function createWorld(seedString) {
     const wetness = clamp(rainfallValue * 0.75 + (1 - drainageValue) * 0.25, 0, 1);
     const lowlandFactor = clamp(1 - positiveElevation * 4.2, 0, 1);
     const baseSuitability = clamp(wetness * 0.68 + lowlandFactor * 0.2 + heat * 0.12, 0, 1);
-    if (wetness <= 0.6 || lowlandFactor <= 0.22 || heat <= 0.45) {
+    if (wetness <= marshWetnessThreshold || lowlandFactor <= 0.22 || heat <= 0.45) {
       if (recordFields && marshSuitabilityField) {
         marshSuitabilityField[idx] = baseSuitability;
       }
