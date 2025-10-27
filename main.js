@@ -5029,6 +5029,7 @@ const landMaskCache = new Map();
 
 let loadingProgressValue = 0;
 let loadingProgressIntervalId = null;
+let hasManualLoadingProgress = false;
 
 const state = {
   settings: {
@@ -18880,6 +18881,7 @@ function showLoadingScreen(statusText = defaultLoadingStatusMessage) {
   if (!elements.loadingScreen) {
     return;
   }
+  hasManualLoadingProgress = false;
   updateLoadingStatus(statusText);
   elements.loadingScreen.classList.remove('hidden');
   elements.loadingScreen.setAttribute('aria-hidden', 'false');
@@ -18895,6 +18897,7 @@ function hideLoadingScreen({ resetStatus = true } = {}) {
   if (!elements.loadingScreen) {
     return;
   }
+  hasManualLoadingProgress = false;
   elements.loadingScreen.classList.add('hidden');
   elements.loadingScreen.setAttribute('aria-hidden', 'true');
   elements.loadingScreen.removeAttribute('aria-busy');
@@ -18921,6 +18924,39 @@ function completeLoadingScreen() {
   });
 }
 
+function setManualLoadingProgress(value, statusText, { force = false, minDelta = 0.5 } = {}) {
+  const numericValue = Number.isFinite(value) ? value : 0;
+  const clampedValue = clamp(numericValue, 0, 100);
+  if (!hasManualLoadingProgress) {
+    stopLoadingProgressAnimation();
+    hasManualLoadingProgress = true;
+  }
+  if (!force && Math.abs(clampedValue - loadingProgressValue) < minDelta) {
+    if (statusText && elements.loadingStatus && elements.loadingStatus.textContent !== statusText) {
+      updateLoadingStatus(statusText);
+    }
+    return;
+  }
+  updateLoadingProgress(clampedValue);
+  if (statusText) {
+    updateLoadingStatus(statusText);
+  }
+}
+
+function waitForNextFrame() {
+  if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
+  });
+}
+
+async function updateLoadingProgressAndWait(value, statusText, options) {
+  setManualLoadingProgress(value, statusText, options);
+  await waitForNextFrame();
+}
+
 function runWithLoadingScreen(action, { statusText } = {}) {
   showLoadingScreen(statusText);
   return new Promise((resolve, reject) => {
@@ -18933,7 +18969,19 @@ function runWithLoadingScreen(action, { statusText } = {}) {
         reject(error);
         return;
       }
-      completeLoadingScreen().then(() => resolve(result));
+      const finalize = (resolvedResult) => {
+        completeLoadingScreen().then(() => resolve(resolvedResult));
+      };
+      if (result && typeof result.then === 'function') {
+        result
+          .then((asyncResult) => finalize(asyncResult))
+          .catch((error) => {
+            hideLoadingScreen();
+            reject(error);
+          });
+        return;
+      }
+      finalize(result);
     };
 
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
@@ -18957,9 +19005,7 @@ function beginGame() {
     elements.gameContainer.classList.add('hidden');
   }
   elements.seedDisplay.textContent = '';
-  runWithLoadingScreen(() => {
-    generateAndRender();
-  }, { statusText: 'Forging your world…' })
+  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
     .then(() => {
       if (elements.gameContainer) {
         elements.gameContainer.classList.remove('hidden');
@@ -18974,14 +19020,19 @@ function beginGame() {
     });
 }
 
-function generateAndRender(seedOverride) {
+async function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
   ensureLandMaskForProfile(state.settings.worldGenerationType);
   hideMapTooltip();
   hideLocalView({ suppressRedraw: true });
+  await updateLoadingProgressAndWait(12, 'Stabilizing ley lines…');
+  await updateLoadingProgressAndWait(28, 'Surveying continental plates…');
   const world = createWorld(seedToUse);
+  await updateLoadingProgressAndWait(68, 'Raising civilizations…');
   state.currentWorld = world;
+  await updateLoadingProgressAndWait(82, 'Rendering cartography…');
   drawWorld(world);
+  await updateLoadingProgressAndWait(92, 'Finalizing expedition briefs…', { force: true });
   elements.seedInput.value = world.seedString;
   if (elements.worldSeedInput) {
     elements.worldSeedInput.value = world.seedString;
@@ -19041,9 +19092,7 @@ function handleRegenerate() {
   }
   updateWorldInfoSeedDisplay(randomSeed);
   return runWithLoadingScreen(
-    () => {
-      generateAndRender(randomSeed);
-    },
+    () => generateAndRender(randomSeed),
     { statusText: 'Forging a new world…' }
   ).catch((error) => {
     console.error('Failed to regenerate world.', error);
@@ -19182,9 +19231,7 @@ function syncInputsWithSettings() {
     applyFormSettings();
     const previousSource = closeOptionsScreen();
     if (previousSource === 'game' && elements.gameContainer) {
-      runWithLoadingScreen(() => {
-        generateAndRender();
-      }, { statusText: 'Updating the realm…' }).catch((error) => {
+      runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
         console.error('Failed to apply new world settings.', error);
       });
     }
