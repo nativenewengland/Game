@@ -12607,14 +12607,44 @@ function createWorld(seedString) {
         1;
       threshold = clamp(threshold + thresholdNoise * marshThresholdStrength, 0.5, 0.7);
     }
-    const qualifies = suitability > threshold;
+    const qualifiesByScore = suitability > threshold;
     if (recordFields && marshSuitabilityField) {
       marshSuitabilityField[idx] = suitability;
     }
-    if (recordFields && marshMaskField) {
-      marshMaskField[idx] = qualifies ? 1 : 0;
+    if (!qualifiesByScore) {
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: suitability, threshold, qualifies: false };
     }
-    return { score: suitability, threshold, qualifies };
+    let touchesSurfaceWater = false;
+    for (let dy = -1; dy <= 1 && !touchesSurfaceWater; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        if (dx === 0 && dy === 0) {
+          continue;
+        }
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+          continue;
+        }
+        const nIdx = ny * width + nx;
+        if (elevationField[nIdx] <= seaLevel) {
+          touchesSurfaceWater = true;
+          break;
+        }
+      }
+    }
+    if (!touchesSurfaceWater) {
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: -Infinity, threshold, qualifies: false };
+    }
+    if (recordFields && marshMaskField) {
+      marshMaskField[idx] = 1;
+    }
+    return { score: suitability, threshold, qualifies: true };
   };
 
   const computeMarshSuitabilityScore = (x, y, heightValue) => {
