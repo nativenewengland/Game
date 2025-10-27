@@ -617,12 +617,6 @@ export function attachEvents(elements, deps) {
     });
   }
 
-  if (elements.dwarfGuildSelect) {
-    elements.dwarfGuildSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('guild', event.target.value);
-    });
-  }
-
   if (elements.dwarfProfessionSelect) {
     elements.dwarfProfessionSelect.addEventListener('change', (event) => {
       updateDwarfTrait('profession', event.target.value);
