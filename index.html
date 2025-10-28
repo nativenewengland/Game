@@ -781,9 +781,26 @@
               Select a site to examine the surrounding terrain.
             </p>
           </div>
-          <button id="local-map-close" type="button" class="secondary" aria-label="Close local map">
-            Close
-          </button>
+          <div class="local-map-header-actions">
+            <div
+              class="local-map-zoom-controls"
+              role="group"
+              aria-label="Local map zoom controls"
+            >
+              <button id="local-map-zoom-out" type="button" class="tertiary" aria-label="Zoom out">
+                −
+              </button>
+              <button id="local-map-zoom-reset" type="button" class="tertiary" aria-label="Reset zoom">
+                1×
+              </button>
+              <button id="local-map-zoom-in" type="button" class="tertiary" aria-label="Zoom in">
+                +
+              </button>
+            </div>
+            <button id="local-map-close" type="button" class="secondary" aria-label="Close local map">
+              Close
+            </button>
+          </div>
         </div>
         <canvas
           id="local-map-canvas"
