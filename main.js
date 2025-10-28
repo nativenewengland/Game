@@ -195,6 +195,89 @@ function drawAmbientFarmStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawAmbientHomesteadStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const yardWidth = size * 0.82;
+  const yardHeight = size * 0.38;
+  const yardX = (size - yardWidth) / 2;
+  const yardY = size * 0.54;
+
+  ctx.fillStyle = '#7f9c4a';
+  ctx.beginPath();
+  ctx.ellipse(size * 0.5, yardY + yardHeight * 0.5, yardWidth * 0.5, yardHeight * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#b38c61';
+  const pathWidth = size * 0.18;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5 - pathWidth / 2, yardY + yardHeight * 0.2);
+  ctx.lineTo(size * 0.5 + pathWidth / 2, yardY + yardHeight * 0.2);
+  ctx.lineTo(size * 0.5 + pathWidth * 0.6, yardY + yardHeight);
+  ctx.lineTo(size * 0.5 - pathWidth * 0.6, yardY + yardHeight);
+  ctx.closePath();
+  ctx.fill();
+
+  const houseWidth = size * 0.5;
+  const houseHeight = size * 0.3;
+  const houseX = (size - houseWidth) / 2;
+  const houseY = size * 0.3;
+
+  ctx.fillStyle = '#d5b38a';
+  ctx.fillRect(houseX, houseY, houseWidth, houseHeight);
+
+  ctx.fillStyle = '#8b5a2b';
+  ctx.beginPath();
+  ctx.moveTo(houseX - size * 0.05, houseY);
+  ctx.lineTo(size * 0.5, houseY - size * 0.2);
+  ctx.lineTo(houseX + houseWidth + size * 0.05, houseY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#63351d';
+  const doorWidth = houseWidth * 0.22;
+  const doorHeight = houseHeight * 0.65;
+  ctx.fillRect(size * 0.5 - doorWidth / 2, houseY + houseHeight - doorHeight, doorWidth, doorHeight);
+
+  ctx.fillStyle = '#f8f0d2';
+  const windowSize = houseWidth * 0.18;
+  ctx.fillRect(houseX + houseWidth * 0.18 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
+  ctx.fillRect(houseX + houseWidth * 0.82 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
+
+  ctx.fillStyle = '#4f3420';
+  ctx.fillRect(houseX + houseWidth * 0.72, houseY - size * 0.06, size * 0.06, size * 0.18);
+
+  ctx.globalAlpha = 0.6;
+  ctx.fillStyle = '#d8d8d8';
+  ctx.beginPath();
+  ctx.ellipse(houseX + houseWidth * 0.74, houseY - size * 0.12, size * 0.09, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.ellipse(houseX + houseWidth * 0.66, houseY - size * 0.22, size * 0.07, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.ellipse(houseX + houseWidth * 0.6, houseY - size * 0.3, size * 0.06, size * 0.09, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  const fenceY = yardY + yardHeight * 0.55;
+  const fenceWidth = size * 0.74;
+  const fenceX = (size - fenceWidth) / 2;
+  const postCount = 5;
+  ctx.strokeStyle = '#8d653a';
+  ctx.lineWidth = Math.max(1, size * 0.025);
+  ctx.beginPath();
+  ctx.moveTo(fenceX, fenceY);
+  ctx.lineTo(fenceX + fenceWidth, fenceY);
+  ctx.stroke();
+  for (let i = 0; i <= postCount; i += 1) {
+    const px = fenceX + (fenceWidth * i) / postCount;
+    ctx.beginPath();
+    ctx.moveTo(px, fenceY - size * 0.08);
+    ctx.lineTo(px, fenceY + size * 0.08);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -307,6 +390,87 @@ function drawAmbientLumberMillStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawAmbientSleepingDragonStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const groundRadiusX = size * 0.42;
+  const groundRadiusY = size * 0.22;
+  const groundCenterX = size * 0.5;
+  const groundCenterY = size * 0.72;
+  ctx.fillStyle = '#5f6c7a';
+  ctx.beginPath();
+  ctx.ellipse(groundCenterX, groundCenterY, groundRadiusX, groundRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4b5563';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.2, groundCenterY);
+  ctx.lineTo(size * 0.38, size * 0.28);
+  ctx.lineTo(size * 0.5, size * 0.18);
+  ctx.lineTo(size * 0.62, size * 0.34);
+  ctx.lineTo(size * 0.78, groundCenterY);
+  ctx.closePath();
+  ctx.fill();
+
+  const bodyCenterX = size * 0.52;
+  const bodyCenterY = size * 0.56;
+  const bodyRadiusX = size * 0.24;
+  const bodyRadiusY = size * 0.18;
+  ctx.fillStyle = '#b45309';
+  ctx.beginPath();
+  ctx.ellipse(bodyCenterX, bodyCenterY, bodyRadiusX, bodyRadiusY, Math.PI / 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.ellipse(bodyCenterX + size * 0.02, bodyCenterY + size * 0.02, bodyRadiusX * 0.45, bodyRadiusY * 0.5, Math.PI / 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  const headX = size * 0.32;
+  const headY = size * 0.46;
+  const headRadius = size * 0.1;
+  ctx.fillStyle = '#b45309';
+  ctx.beginPath();
+  ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#fde68a';
+  ctx.beginPath();
+  ctx.arc(headX + size * 0.03, headY, headRadius * 0.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(headX + size * 0.05, headY - size * 0.015, headRadius * 0.15, 0, Math.PI * 2);
+  ctx.arc(headX + size * 0.04, headY + size * 0.02, headRadius * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#92400e';
+  ctx.lineWidth = Math.max(1, size * 0.025);
+  ctx.beginPath();
+  ctx.moveTo(bodyCenterX + bodyRadiusX * 0.6, bodyCenterY + bodyRadiusY * 0.3);
+  ctx.quadraticCurveTo(size * 0.76, bodyCenterY + size * 0.12, size * 0.74, bodyCenterY - size * 0.02);
+  ctx.stroke();
+
+  ctx.fillStyle = '#f97316';
+  ctx.beginPath();
+  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.8);
+  ctx.lineTo(headX - size * 0.06, headY - headRadius * 1.3);
+  ctx.lineTo(headX + size * 0.01, headY - headRadius);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath();
+  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.4);
+  ctx.quadraticCurveTo(headX - size * 0.16, headY - headRadius * 0.24, headX - size * 0.08, headY + size * 0.04);
+  ctx.quadraticCurveTo(headX - size * 0.02, headY - headRadius * 0.05, headX + size * 0.02, headY - headRadius * 0.2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
@@ -314,11 +478,17 @@ registerTiles('base', icebergTileCoords);
 registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
 registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTavernStructure(ctx, drawOptions));
 registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
+registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
+  drawAmbientHomesteadStructure(ctx, drawOptions)
+);
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
   drawAmbientHuntingLodgeStructure(ctx, drawOptions)
 );
 registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
   drawAmbientLumberMillStructure(ctx, drawOptions)
+);
+registerCustomStructure('AMBIENT_SLEEPING_DRAGON', (ctx, drawOptions) =>
+  drawAmbientSleepingDragonStructure(ctx, drawOptions)
 );
 
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
@@ -5478,7 +5648,8 @@ const ambientStructureOptionsByCulture = {
     'Molten Perch',
     'Treasure Scatter',
     'Windworn Ledge',
-    'Skycoil Outlook'
+    'Skycoil Outlook',
+    { label: 'Sleeping Dragon', requiresMountainOverlay: true }
   ]),
   elwetritsch: createAmbientStructureOptions([
     'Briar Nest',
@@ -6852,12 +7023,20 @@ function applyCulturalInfluence({
         continue;
       }
       let adjacentToTreeCache = null;
+      let isMountainTileCache = null;
       const eligibleOptions = options.filter((option) => {
         if (option.requiresTreeNeighbor) {
           if (adjacentToTreeCache === null) {
             adjacentToTreeCache = isTileAdjacentToTree(x, y);
           }
           return adjacentToTreeCache;
+        }
+        if (option.requiresMountainOverlay) {
+          if (isMountainTileCache === null) {
+            isMountainTileCache =
+              isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+          }
+          return isMountainTileCache;
         }
         return true;
       });
@@ -6880,14 +7059,22 @@ function applyCulturalInfluence({
           formatCultureLabel(cultureKey || 'others')
       };
 
-      if (option.key === 'lumber_mill') {
-        tile.structure = 'AMBIENT_LUMBER_MILL';
+      const assignAmbientStructureToTile = (structureKey) => {
+        tile.structure = structureKey;
         tile.structureName = option.label;
         tile.structureDetails = {
           isAmbientStructure: true,
           ambientStructure: ambientStructureData,
           displayType: option.label
         };
+      };
+
+      if (option.key === 'lumber_mill') {
+        assignAmbientStructureToTile('AMBIENT_LUMBER_MILL');
+      } else if (option.key === 'homestead') {
+        assignAmbientStructureToTile('AMBIENT_HOMESTEAD');
+      } else if (option.key === 'sleeping_dragon') {
+        assignAmbientStructureToTile('AMBIENT_SLEEPING_DRAGON');
       }
 
       tile.ambientStructure = ambientStructureData;
@@ -7093,8 +7280,8 @@ const structureHighlightGroups = {
     strokeColor: '#bef264',
     fillAlpha: 0.2,
     strokeAlpha: 0.75,
-    keys: ['AMBIENT_FARM', 'AMBIENT_HUNTING_LODGE'],
-    types: ['farm', 'huntingLodge']
+    keys: ['AMBIENT_FARM', 'AMBIENT_HUNTING_LODGE', 'AMBIENT_HOMESTEAD'],
+    types: ['farm', 'huntingLodge', 'homestead']
   })
 };
 
