@@ -5432,6 +5432,7 @@ function applyCulturalInfluence({
         }
       ]
     });
+  };
   const beastmanAmbientBaseSeed = (ambientSeedBase + 0xb5297a4d) >>> 0;
   const beastmanRadiusBaseSeed = (ambientSeedBase + 0x9e3779b1) >>> 0;
 
