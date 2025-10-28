@@ -4933,6 +4933,8 @@ const defaultCultureColorByKey = {
   giants: '#cfa372',
   fimir: '#6b8f59',
   demons: '#b14646',
+  snakemen: '#7b8f6d',
+  dragons: '#d97706',
   others: '#9e9e9e'
 };
 
@@ -5372,17 +5374,25 @@ function applyCulturalInfluence({
   const mountainAmbientSeed = (ambientSeedBase + 0x85ebca6b) >>> 0;
   const mountainRadiusSeed = (ambientSeedBase + 0xc2b2ae35) >>> 0;
   const mountainCultureSeed = (ambientSeedBase + 0x27d4eb2f) >>> 0;
+  const mountainDragonSeed = (ambientSeedBase + 0x3c8bfbbd) >>> 0;
+  const mountainDragonRadiusSeed = (ambientSeedBase + 0x1ed558b3) >>> 0;
   const marshAmbientSeed = (ambientSeedBase + 0x4cf5ad43) >>> 0;
   const marshRadiusSeed = (ambientSeedBase + 0x94d049bb) >>> 0;
   const marshCultureSeed = (ambientSeedBase + 0xcbf29ce4) >>> 0;
   const badlandsAmbientSeed = (ambientSeedBase + 0xd56f0b27) >>> 0;
   const badlandsRadiusSeed = (ambientSeedBase + 0x68b57a19) >>> 0;
+  const jungleAmbientSeed = (ambientSeedBase + 0x9e3779b9) >>> 0;
+  const jungleRadiusSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
+  const desertAmbientSeed = (ambientSeedBase + 0x6a09e667) >>> 0;
+  const desertRadiusSeed = (ambientSeedBase + 0xbb67ae85) >>> 0;
   const halflingHillAmbientSeed = (ambientSeedBase + 0x1cf11a13) >>> 0;
   const halflingHillRadiusSeed = (ambientSeedBase + 0xf5a5a6b9) >>> 0;
   const waterAmbientSeed = (ambientSeedBase + 0x3c6ef35f) >>> 0;
   const waterRadiusSeed = (ambientSeedBase + 0xa54ff53a) >>> 0;
   const demonAmbientSeed = (ambientSeedBase + 0x1f83d9ab) >>> 0;
   const demonRadiusSeed = (ambientSeedBase + 0x5be0cd19) >>> 0;
+  const caveDragonAmbientSeed = (ambientSeedBase + 0x2c1b2138) >>> 0;
+  const caveDragonRadiusSeed = (ambientSeedBase + 0x297a2d39) >>> 0;
 
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
@@ -5412,6 +5422,25 @@ function applyCulturalInfluence({
                 key: 'demons',
                 share: 1,
                 label: 'Demons'
+              }
+            ]
+          });
+        }
+      } else if (structureType === 'cave') {
+        const roll = hashCoords(x, y, caveDragonAmbientSeed);
+        if (roll < 0.0018) {
+          const radiusRoll = hashCoords(x, y, caveDragonRadiusSeed);
+          const radius = lerp(10, 20, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.37,
+            entries: [
+              {
+                key: 'dragons',
+                share: 1,
+                label: 'Dragons'
               }
             ]
           });
@@ -5482,7 +5511,47 @@ function applyCulturalInfluence({
         continue;
       }
 
+      if (biomeType === 'jungle') {
+        const roll = hashCoords(x, y, jungleAmbientSeed);
+        if (roll < 0.0034) {
+          const radiusRoll = hashCoords(x, y, jungleRadiusSeed);
+          const radius = lerp(12, 24, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.34,
+            entries: [
+              {
+                key: 'snakemen',
+                share: 1,
+                label: 'Snakemen'
+              }
+            ]
+          });
+        }
+        continue;
+      }
+
       if (biomeType === 'mountain') {
+        const dragonRoll = hashCoords(x, y, mountainDragonSeed);
+        if (dragonRoll < 0.00085) {
+          const radiusRoll = hashCoords(x, y, mountainDragonRadiusSeed);
+          const radius = lerp(14, 26, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.4,
+            entries: [
+              {
+                key: 'dragons',
+                share: 1,
+                label: 'Dragons'
+              }
+            ]
+          });
+        }
         const roll = hashCoords(x, y, mountainAmbientSeed);
         if (roll < 0.0035) {
           const radiusRoll = hashCoords(x, y, mountainRadiusSeed);
@@ -5517,6 +5586,28 @@ function applyCulturalInfluence({
                 key,
                 share: 1,
                 label
+              }
+            ]
+          });
+        }
+        continue;
+      }
+
+      if (biomeType === 'desert') {
+        const roll = hashCoords(x, y, desertAmbientSeed);
+        if (roll < 0.0026) {
+          const radiusRoll = hashCoords(x, y, desertRadiusSeed);
+          const radius = lerp(11, 23, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.32,
+            entries: [
+              {
+                key: 'snakemen',
+                share: 1,
+                label: 'Snakemen'
               }
             ]
           });
