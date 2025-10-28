@@ -902,6 +902,13 @@ const dwarfholdPopulationRaceOptions = [
   { key: 'others', label: 'Others', color: '#9e9e9e' }
 ];
 
+const dwarfholdOccupationRaces = [
+  { key: 'orcs', label: 'Orcs', color: '#6b8f23' },
+  { key: 'trolls', label: 'Trolls', color: '#4f6d7a' },
+  { key: 'ratkin', label: 'Ratkin', color: '#7b5e57' },
+  { key: 'kobolds', label: 'Kobolds', color: '#b1c8ff' }
+];
+
 const dwarfholdNearbyTownRadius = 12;
 
 const evilWizardTowerBasePopulationOptions = [
@@ -2852,23 +2859,99 @@ function generateDwarfholdDetails(name, random, options = {}) {
   const isAbandoned = Boolean(options && options.isAbandoned);
 
   if (isAbandoned) {
+    const variantRoll = randomFn();
+    if (variantRoll < 0.33) {
+      return {
+        type: 'abandonedDwarfhold',
+        classification: 'Abandoned Dwarfhold',
+        name,
+        population: 0,
+        populationLabel: 'Population',
+        populationDescriptor: 'dwarves',
+        isSettlement: true,
+        ruler: null,
+        foundedYearsAgo: null,
+        prominentClan: null,
+        prominentGroup: null,
+        prominentGroupLabel: null,
+        hallmark: 'Empty halls lie silent beneath the mountain.',
+        majorGuilds: [],
+        majorExports: [],
+        populationBreakdown: [],
+        description: 'Dust-choked corridors and sealed vaults are all that remain of the dwarves who once dwelt here.'
+      };
+    }
+
+    if (variantRoll < 0.66) {
+      const hasSurvivors = randomFn() < 0.45;
+      const ruinedPopulation = hasSurvivors ? Math.max(8, Math.floor(20 + randomFn() * 220)) : 0;
+      const ruinedBreakdown = hasSurvivors
+        ? [
+            {
+              key: 'dwarvenSurvivors',
+              label: 'Dwarven Survivors',
+              population: ruinedPopulation,
+              percentage: 1,
+              color: '#c08452'
+            }
+          ]
+        : [];
+      return {
+        type: 'ruinedDwarfhold',
+        classification: 'Ruined Dwarfhold',
+        name,
+        population: ruinedPopulation,
+        populationLabel: 'Population',
+        populationDescriptor: hasSurvivors ? 'dwarven survivors' : 'dwarves',
+        isSettlement: true,
+        ruler: null,
+        foundedYearsAgo: null,
+        prominentClan: null,
+        prominentGroup: null,
+        prominentGroupLabel: null,
+        hallmark: 'Collapsed chambers and shattered gates hint at the calamity that broke the hold.',
+        majorGuilds: [],
+        majorExports: [],
+        populationBreakdown: ruinedBreakdown,
+        description: hasSurvivors
+          ? 'A battered handful of survivors keep watch over the broken halls.'
+          : 'Only ruins and echoes remain after the fall of this hold.'
+      };
+    }
+
+    const occupation = pickRandomFrom(dwarfholdOccupationRaces, randomFn) || dwarfholdOccupationRaces[0];
+    const occupationLabel = occupation?.label || 'Orcs';
+    const occupationKey = occupation?.key || 'orcs';
+    const occupationColor = occupation?.color || '#6b8f23';
+    const occupiedPopulation = Math.max(40, Math.floor(120 + randomFn() * 1500));
+    const occupiedBreakdown = [
+      {
+        key: occupationKey,
+        label: occupationLabel,
+        population: occupiedPopulation,
+        percentage: 1,
+        color: occupationColor
+      }
+    ];
+    const occupationDescriptor = occupationLabel.toLowerCase();
     return {
-      type: 'abandonedDwarfhold',
-      classification: 'Ruined Dwarfhold',
+      type: 'occupiedDwarfhold',
+      classification: 'Occupied Dwarfhold',
       name,
-      population: 0,
+      population: occupiedPopulation,
       populationLabel: 'Population',
-      populationDescriptor: 'dwarves',
+      populationDescriptor: occupationDescriptor,
       isSettlement: true,
       ruler: null,
       foundedYearsAgo: null,
       prominentClan: null,
       prominentGroup: null,
       prominentGroupLabel: null,
-      hallmark: null,
+      hallmark: `Warbands of ${occupationDescriptor} have claimed these once-dwarven halls.`,
       majorGuilds: [],
       majorExports: [],
-      populationBreakdown: []
+      populationBreakdown: occupiedBreakdown,
+      description: `${occupationLabel} have seized the hold and repurposed its vaulted chambers as their lair.`
     };
   }
 
@@ -7191,7 +7274,11 @@ function tryPlaceDwarfhold(candidate, options) {
     isAbandoned
   });
   let structureKey = dwarfholdKey;
-  if (details.type === 'abandonedDwarfhold') {
+  if (
+    details.type === 'abandonedDwarfhold' ||
+    details.type === 'ruinedDwarfhold' ||
+    details.type === 'occupiedDwarfhold'
+  ) {
     structureKey = abandonedDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
   } else if (details.type === 'greatDwarfhold') {
     structureKey = greatDwarfholdKey || dwarfholdKey || null;
