@@ -2929,11 +2929,11 @@ function generateDwarfholdDetails(name, random, options = {}) {
       const ruinedBreakdown = hasSurvivors
         ? [
             {
-              key: 'dwarvenSurvivors',
-              label: 'Dwarven Survivors',
+              key: 'dwarves',
+              label: 'Dwarves',
               population: ruinedPopulation,
               percentage: 1,
-              color: '#c08452'
+              color: defaultCultureColorByKey.dwarves
             }
           ]
         : [];
@@ -3465,6 +3465,34 @@ function generateTownDetails(name, random, options = {}) {
   const majorExportCount = clamp(Math.floor(1 + randomFn() * 3), 1, townExportOptions.length);
   const majorExports = pickUniqueFrom(townExportOptions, majorExportCount, randomFn);
   const populationBreakdown = generateTownPopulationBreakdown(population, randomFn);
+
+  if (classification === 'Village' && Array.isArray(populationBreakdown) && populationBreakdown.length > 0) {
+    const gnomeIndex = populationBreakdown.findIndex((entry) => entry && entry.key === 'gnomes');
+    const majorityEntry = populationBreakdown[0];
+    if (gnomeIndex >= 0 && gnomeIndex !== 0 && majorityEntry) {
+      const gnomeEntry = populationBreakdown[gnomeIndex];
+      const villageGnomeCap = 6;
+      const adjustedGnomeShare = Math.max(
+        0,
+        Math.min(villageGnomeCap, Number.isFinite(gnomeEntry.percentage) ? gnomeEntry.percentage : 0)
+      );
+      const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+      if (adjustedGnomeShare < (Number.isFinite(gnomeEntry.percentage) ? gnomeEntry.percentage : 0)) {
+        const shareDelta = (gnomeEntry.percentage || 0) - adjustedGnomeShare;
+        gnomeEntry.percentage = adjustedGnomeShare;
+        if (resolvedPopulation !== null) {
+          gnomeEntry.population = Math.max(0, Math.round((resolvedPopulation * adjustedGnomeShare) / 100));
+        }
+
+        const majorityShare = Number.isFinite(majorityEntry.percentage) ? majorityEntry.percentage : 0;
+        const adjustedMajorityShare = clamp(majorityShare + shareDelta, 0, 100);
+        majorityEntry.percentage = adjustedMajorityShare;
+        if (resolvedPopulation !== null) {
+          majorityEntry.population = Math.max(0, Math.round((resolvedPopulation * adjustedMajorityShare) / 100));
+        }
+      }
+    }
+  }
   let populationDescriptor = 'residents';
   if (classification === 'City') {
     populationDescriptor = 'citizens';
@@ -4895,15 +4923,16 @@ const defaultCultureColorByKey = {
   satyrs: '#c18c5d',
   nymphs: '#9bd4a9',
   ents: '#8bbbcf',
-  skinks: '#6bd38f',
-  saurus: '#3a9f68',
-  priests: '#8cd1c6',
   beastmasters: '#b0f0d0',
   wizards: '#9c5cff',
   undead: '#b1b1b1',
   elementals: '#48cae4',
   mindflayers: '#845ec2',
-  guards: '#f2cd5c',
+  merfolks: '#49b6d4',
+  fae: '#d8a8ff',
+  giants: '#cfa372',
+  fimir: '#6b8f59',
+  demons: '#b14646',
   others: '#9e9e9e'
 };
 
@@ -5185,7 +5214,7 @@ function applyCulturalInfluence({
     }
   };
 
-  const addCulturalSource = ({ x, y, radius, entries, falloff }) => {
+  const addCulturalSource = ({ x, y, radius, entries, falloff, tileFilter }) => {
     if (!Number.isFinite(x) || !Number.isFinite(y)) {
       return;
     }
@@ -5220,8 +5249,65 @@ function applyCulturalInfluence({
       y,
       radius: effectiveRadius,
       entries: normalizedEntries,
-      falloff: effectiveFalloff
+      falloff: effectiveFalloff,
+      tileFilter: typeof tileFilter === 'function' ? tileFilter : null
     });
+  };
+
+  const isTileWater = (tile) => {
+    if (!tile) {
+      return false;
+    }
+    if (isLandFn) {
+      return !isLandFn(tile.base);
+    }
+    if (typeof tile.base === 'string') {
+      const baseKey = tile.base.toUpperCase();
+      if (baseKey.includes('WATER') || baseKey.includes('OCEAN') || baseKey.includes('SEA')) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const isTileLand = (tile) => {
+    if (!tile) {
+      return false;
+    }
+    if (isLandFn) {
+      return Boolean(isLandFn(tile.base));
+    }
+    if (typeof tile.base === 'string') {
+      return !isTileWater(tile);
+    }
+    return true;
+  };
+
+  const tileTouchesWater = (tx, ty) => {
+    if (tx < 0 || ty < 0 || tx >= mapWidth || ty >= mapHeight) {
+      return false;
+    }
+    for (let dy = -1; dy <= 1; dy += 1) {
+      const ny = ty + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      const row = tiles[ny];
+      if (!row) {
+        continue;
+      }
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const nx = tx + dx;
+        if (nx < 0 || nx >= mapWidth) {
+          continue;
+        }
+        const neighbor = row[nx];
+        if (isTileWater(neighbor)) {
+          return true;
+        }
+      }
+    }
+    return false;
   };
 
   if (Array.isArray(settlements)) {
@@ -5282,11 +5368,13 @@ function applyCulturalInfluence({
   const ambientSeedBase = Number.isFinite(seedNumber) ? seedNumber >>> 0 : 0;
   const forestAmbientSeed = (ambientSeedBase + 0x6d2b79f5) >>> 0;
   const forestRadiusSeed = (ambientSeedBase + 0x1b873593) >>> 0;
+  const forestCultureSeed = (ambientSeedBase + 0xe6546b64) >>> 0;
   const mountainAmbientSeed = (ambientSeedBase + 0x85ebca6b) >>> 0;
   const mountainRadiusSeed = (ambientSeedBase + 0xc2b2ae35) >>> 0;
   const mountainCultureSeed = (ambientSeedBase + 0x27d4eb2f) >>> 0;
   const marshAmbientSeed = (ambientSeedBase + 0x4cf5ad43) >>> 0;
   const marshRadiusSeed = (ambientSeedBase + 0x94d049bb) >>> 0;
+  const marshCultureSeed = (ambientSeedBase + 0xcbf29ce4) >>> 0;
   const badlandsAmbientSeed = (ambientSeedBase + 0xd56f0b27) >>> 0;
   const badlandsRadiusSeed = (ambientSeedBase + 0x68b57a19) >>> 0;
   const halflingHillAmbientSeed = (ambientSeedBase + 0x1cf11a13) >>> 0;
@@ -5328,6 +5416,10 @@ function applyCulturalInfluence({
     }
     return beastmanSeedCache.get(type);
   };
+  const waterAmbientSeed = (ambientSeedBase + 0x3c6ef35f) >>> 0;
+  const waterRadiusSeed = (ambientSeedBase + 0xa54ff53a) >>> 0;
+  const demonAmbientSeed = (ambientSeedBase + 0x1f83d9ab) >>> 0;
+  const demonRadiusSeed = (ambientSeedBase + 0x5be0cd19) >>> 0;
 
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
@@ -5339,9 +5431,63 @@ function applyCulturalInfluence({
       if (!tile) {
         continue;
       }
-      if (isLandFn && !isLandFn(tile.base)) {
+
+      const structureType =
+        typeof tile?.structureDetails?.type === 'string' ? tile.structureDetails.type : null;
+      if (structureType === 'dungeon' || structureType === 'evilWizardTower') {
+        const roll = hashCoords(x, y, demonAmbientSeed);
+        if (roll < 0.62) {
+          const radiusRoll = hashCoords(x, y, demonRadiusSeed);
+          const radius = lerp(11, 23, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.38,
+            entries: [
+              {
+                key: 'demons',
+                share: 1,
+                label: 'Demons'
+              }
+            ]
+          });
+        }
+      }
+
+      const landTile = isTileLand(tile);
+      if (!landTile) {
+        const waterRoll = hashCoords(x, y, waterAmbientSeed);
+        if (waterRoll < 0.0045) {
+          const radiusRoll = hashCoords(x, y, waterRadiusSeed);
+          const radius = lerp(8, 16, radiusRoll);
+          const merfolkFilter = (candidate, tx, ty) => {
+            if (!candidate) {
+              return false;
+            }
+            if (isTileWater(candidate)) {
+              return true;
+            }
+            return tileTouchesWater(tx, ty);
+          };
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.32,
+            entries: [
+              {
+                key: 'merfolks',
+                share: 1,
+                label: 'Merfolks'
+              }
+            ],
+            tileFilter: merfolkFilter
+          });
+        }
         continue;
       }
+
       const biomeType = tile.biomeType;
       if (!biomeType) {
         continue;
@@ -5354,6 +5500,8 @@ function applyCulturalInfluence({
         if (roll < threshold) {
           const radiusRoll = hashCoords(x, y, forestRadiusSeed);
           const radius = lerp(12, 24, radiusRoll);
+          const cultureRoll = hashCoords(x, y, forestCultureSeed);
+          const isFae = cultureRoll < 0.4;
           addCulturalSource({
             x,
             y,
@@ -5361,9 +5509,9 @@ function applyCulturalInfluence({
             falloff: 1.34,
             entries: [
               {
-                key: 'beastmen',
+                key: isFae ? 'fae' : 'beastmen',
                 share: 1,
-                label: 'Beastmen'
+                label: isFae ? 'Fae' : 'Beastmen'
               }
             ]
           });
@@ -5379,18 +5527,21 @@ function applyCulturalInfluence({
           const cultureRoll = hashCoords(x, y, mountainCultureSeed);
           let key = 'gnomes';
           let label = 'Gnomes';
-          if (cultureRoll < 0.25) {
+          if (cultureRoll < 0.22) {
             key = 'gnomes';
             label = 'Gnomes';
-          } else if (cultureRoll < 0.55) {
+          } else if (cultureRoll < 0.47) {
             key = 'ogres';
             label = 'Ogres';
-          } else if (cultureRoll < 0.8) {
+          } else if (cultureRoll < 0.72) {
             key = 'trolls';
             label = 'Trolls';
-          } else {
+          } else if (cultureRoll < 0.88) {
             key = 'harpies';
             label = 'Harpies';
+          } else {
+            key = 'giants';
+            label = 'Giants';
           }
 
           addCulturalSource({
@@ -5436,6 +5587,8 @@ function applyCulturalInfluence({
         if (roll < 0.0038) {
           const radiusRoll = hashCoords(x, y, marshRadiusSeed);
           const radius = lerp(12, 22, radiusRoll);
+          const cultureRoll = hashCoords(x, y, marshCultureSeed);
+          const isFimir = cultureRoll >= 0.5;
           addCulturalSource({
             x,
             y,
@@ -5443,9 +5596,9 @@ function applyCulturalInfluence({
             falloff: 1.33,
             entries: [
               {
-                key: 'ogres',
+                key: isFimir ? 'fimir' : 'ogres',
                 share: 1,
-                label: 'Ogres'
+                label: isFimir ? 'Fimir' : 'Ogres'
               }
             ]
           });
@@ -5532,7 +5685,7 @@ function applyCulturalInfluence({
   }
 
   for (let i = 0; i < culturalSources.length; i += 1) {
-    const { x, y, radius, entries, falloff } = culturalSources[i];
+    const { x, y, radius, entries, falloff, tileFilter } = culturalSources[i];
     const radiusSquared = radius * radius;
     const minX = Math.max(0, Math.floor(x - radius));
     const maxX = Math.min(mapWidth - 1, Math.ceil(x + radius));
@@ -5549,7 +5702,16 @@ function applyCulturalInfluence({
         if (!tile) {
           continue;
         }
-        if (isLandFn && !isLandFn(tile.base)) {
+        const land = isTileLand(tile);
+        let passesFilter = true;
+        if (tileFilter) {
+          passesFilter = tileFilter(tile, tx, ty) === true;
+        }
+        if (!land) {
+          if (!tileFilter || !passesFilter) {
+            continue;
+          }
+        } else if (tileFilter && !passesFilter) {
           continue;
         }
         const dx = tx - x;
