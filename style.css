@@ -2067,7 +2067,8 @@ button:hover:not(:disabled) {
   background: url('tilesheet/menuslider.png') center/100% 100% no-repeat;
   image-rendering: pixelated;
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.65rem 1.4rem rgba(0, 0, 0, 0.4);
-  width: calc(100% + var(--customizer-preview-padding, 0px));
+  width: calc(100% + (var(--customizer-preview-padding, 0px) * 2));
+  margin-left: calc(-1 * var(--customizer-preview-padding, 0px));
   margin-right: calc(-1 * var(--customizer-preview-padding, 0px));
 }
 
