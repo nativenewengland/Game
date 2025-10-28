@@ -5046,24 +5046,62 @@ const defaultCultureColorByKey = {
   others: '#9e9e9e'
 };
 
-function createAmbientStructureOptions(labels) {
-  if (!Array.isArray(labels)) {
+function createAmbientStructureOptions(entries) {
+  if (!Array.isArray(entries)) {
     return [];
   }
-  return labels
-    .map((label) => {
-      const trimmed = typeof label === 'string' ? label.trim() : '';
-      if (!trimmed) {
+  return entries
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        const trimmed = entry.trim();
+        if (!trimmed) {
+          return null;
+        }
+        const key = trimmed
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '');
+        if (!key) {
+          return null;
+        }
+        return { key, label: trimmed };
+      }
+
+      if (!entry || typeof entry !== 'object') {
         return null;
       }
-      const key = trimmed
+
+      const rawLabel = typeof entry.label === 'string' ? entry.label.trim() : '';
+      const rawKey =
+        typeof entry.key === 'string' && entry.key.trim()
+          ? entry.key.trim()
+          : rawLabel;
+      if (!rawKey) {
+        return null;
+      }
+
+      const key = rawKey
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
       if (!key) {
         return null;
       }
-      return { key, label: trimmed };
+
+      const fallbackLabel = rawKey
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+      const label = rawLabel || fallbackLabel;
+
+      const option = { key, label };
+      Object.entries(entry).forEach(([propKey, propValue]) => {
+        if (propKey === 'label' || propKey === 'key') {
+          return;
+        }
+        option[propKey] = propValue;
+      });
+
+      return option;
     })
     .filter(Boolean);
 }
@@ -5073,7 +5111,8 @@ const ambientStructureOptionsByCulture = {
     'Wayside Shrine',
     'Market Cross',
     'Village Green',
-    'Riverside Ferry Landing'
+    'Riverside Ferry Landing',
+    { label: 'Lumber Mill', requiresTreeNeighbor: true }
   ]),
   dwarves: createAmbientStructureOptions([
     'Ancestral Cairn',
@@ -5617,6 +5656,26 @@ function applyCulturalInfluence({
   if (mapWidth <= 0 || mapHeight <= 0) {
     return;
   }
+
+  const isTileAdjacentToTree = (x, y) => {
+    for (let dy = -1; dy <= 1; dy += 1) {
+      const ny = y + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const nx = x + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (tileHasTreeOverlay(neighborTile)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
 
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
@@ -6583,9 +6642,22 @@ function applyCulturalInfluence({
       if (placementRoll >= chance) {
         continue;
       }
+      let adjacentToTreeCache = null;
+      const eligibleOptions = options.filter((option) => {
+        if (option.requiresTreeNeighbor) {
+          if (adjacentToTreeCache === null) {
+            adjacentToTreeCache = isTileAdjacentToTree(x, y);
+          }
+          return adjacentToTreeCache;
+        }
+        return true;
+      });
+      if (eligibleOptions.length === 0) {
+        continue;
+      }
       const selectionRoll = hashCoords(x, y, seeds.selection);
-      const index = Math.floor(selectionRoll * options.length) % options.length;
-      const option = options[index] || options[0];
+      const index = Math.floor(selectionRoll * eligibleOptions.length) % eligibleOptions.length;
+      const option = eligibleOptions[index] || eligibleOptions[0];
       if (!option) {
         continue;
       }
