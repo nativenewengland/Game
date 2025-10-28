@@ -2072,6 +2072,22 @@ button:hover:not(:disabled) {
   margin-right: calc(-1 * var(--customizer-preview-padding, 0px));
 }
 
+.field-group[data-draggable-id='trait-eye-colour'] .trait-slider-visual,
+.field-group[data-draggable-id='trait-hair-style'] .trait-slider-visual {
+  --trait-slider-extra-left: clamp(1rem, 3vw, 1.6rem);
+  --trait-slider-extra-right: clamp(1.6rem, 5vw, 3rem);
+  margin-left: calc(
+    -1 * var(--customizer-preview-padding, 0px) + var(--trait-slider-extra-left)
+  );
+  margin-right: calc(
+    -1 * var(--customizer-preview-padding, 0px) - var(--trait-slider-extra-right)
+  );
+  width: calc(
+    100% + (var(--customizer-preview-padding, 0px) * 2) + var(--trait-slider-extra-right) -
+      var(--trait-slider-extra-left)
+  );
+}
+
 .trait-slider-input {
   flex: 1;
   appearance: none;
