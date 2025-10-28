@@ -9,6 +9,8 @@ export function attachEvents(elements, deps) {
     showDwarfholdInterior,
     showStructureDetails,
     hideLocalView,
+    adjustLocalMapZoom,
+    resetLocalMapZoom,
     closeDwarfholdInterior,
     state,
     refreshOverlayToggleButtons,
@@ -236,6 +238,45 @@ export function attachEvents(elements, deps) {
     elements.localMapClose.addEventListener('click', () => {
       hideLocalView({ returnFocus: true });
     });
+  }
+
+  if (elements.localMapZoomIn) {
+    elements.localMapZoomIn.addEventListener('click', () => {
+      adjustLocalMapZoom('in');
+    });
+  }
+
+  if (elements.localMapZoomOut) {
+    elements.localMapZoomOut.addEventListener('click', () => {
+      adjustLocalMapZoom('out');
+    });
+  }
+
+  if (elements.localMapZoomReset) {
+    elements.localMapZoomReset.addEventListener('click', () => {
+      resetLocalMapZoom();
+    });
+  }
+
+  if (elements.localMapCanvas) {
+    elements.localMapCanvas.addEventListener(
+      'wheel',
+      (event) => {
+        if (!state.localView || !state.localView.active) {
+          return;
+        }
+        if (event.ctrlKey || event.metaKey) {
+          return;
+        }
+        event.preventDefault();
+        if (event.deltaY < 0) {
+          adjustLocalMapZoom('in');
+        } else if (event.deltaY > 0) {
+          adjustLocalMapZoom('out');
+        }
+      },
+      { passive: false }
+    );
   }
 
   if (elements.dwarfholdExit) {

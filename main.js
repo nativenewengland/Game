@@ -6652,7 +6652,8 @@ const state = {
     mode: 'world',
     customMap: null,
     structure: null,
-    highResolution: null
+    highResolution: null,
+    zoom: localViewConfig.defaultZoom || 1
   },
   dwarfholdView: {
     active: false,
@@ -10665,7 +10666,13 @@ const localViewConfig = {
   highResolutionTileSubdivisions: 4,
   highResolutionExtraPadding: 2,
   highResolutionMinScale: 2,
-  highResolutionMaxTileSize: 28
+  highResolutionMaxTileSize: 28,
+  minZoom: 0.5,
+  maxZoom: 3,
+  zoomStep: 0.2,
+  defaultZoom: 1,
+  absoluteMinScale: 0.5,
+  structureScaleCap: 1
 };
 
 const dwarfholdScreenConfig = {
@@ -12154,6 +12161,185 @@ function closeDwarfholdScreen(options = {}) {
   }
 }
 
+function clampLocalMapZoom(value) {
+  const minZoom = Number.isFinite(localViewConfig.minZoom) ? localViewConfig.minZoom : 0.5;
+  const maxZoom = Number.isFinite(localViewConfig.maxZoom) ? localViewConfig.maxZoom : 3;
+  if (!Number.isFinite(value)) {
+    return localViewConfig.defaultZoom || 1;
+  }
+  return clamp(value, minZoom, maxZoom);
+}
+
+function drawLocalCustomOverlay(ctx, overlayKey, localX, localY, bounds, tileSize) {
+  if (overlayKey === TOWN_ROAD_OVERLAY_KEY) {
+    const worldX = bounds.startX + localX;
+    const worldY = bounds.startY + localY;
+    const mask = computeRoadNeighborMask(worldX, worldY, overlayKey);
+    const selection = selectRoadTileSprite(mask);
+    if (selection && selection.definition) {
+      drawRoadSprite(
+        ctx,
+        selection.definition,
+        localX,
+        localY,
+        selection.rotation || 0,
+        tileSize
+      );
+      return true;
+    }
+  }
+  return drawCustomOverlay(ctx, overlayKey, localX, localY, null, tileSize);
+}
+
+function drawLocalWorldPatch(ctx, options = {}) {
+  const {
+    world,
+    bounds,
+    tileWidth,
+    tileHeight,
+    tilePixelWidth,
+    tilePixelHeight
+  } = options;
+  if (!ctx || !world || !bounds) {
+    return;
+  }
+  const tiles = Array.isArray(world.tiles) ? world.tiles : null;
+  if (!tiles) {
+    return;
+  }
+  const waterTileKey = world.waterTileKey || null;
+  const grassTileKey = world.grassTileKey || null;
+  const tileSize = Math.min(tilePixelWidth, tilePixelHeight);
+
+  for (let localY = 0; localY < tileHeight; localY += 1) {
+    const worldY = bounds.startY + localY;
+    const row = Array.isArray(tiles[worldY]) ? tiles[worldY] : null;
+    if (!row) {
+      continue;
+    }
+    for (let localX = 0; localX < tileWidth; localX += 1) {
+      const worldX = bounds.startX + localX;
+      const cell = row[worldX];
+      if (!cell) {
+        continue;
+      }
+      const pixelX = localX * tilePixelWidth;
+      const pixelY = localY * tilePixelHeight;
+
+      const baseDefinition = tileLookup.get(cell.base) || tileLookup.get('GRASS');
+      if (!baseDefinition) {
+        continue;
+      }
+      const baseSheet = state.tileSheets[baseDefinition.sheet];
+      if (!baseSheet || !baseSheet.image) {
+        continue;
+      }
+      ctx.drawImage(
+        baseSheet.image,
+        baseDefinition.sx,
+        baseDefinition.sy,
+        baseDefinition.size,
+        baseDefinition.size,
+        pixelX,
+        pixelY,
+        tilePixelWidth,
+        tilePixelHeight
+      );
+
+      if (cell.hillOverlay && cell.hillOverlay !== cell.overlay) {
+        const hillDefinition = tileLookup.get(cell.hillOverlay);
+        if (hillDefinition) {
+          const hillSheet = state.tileSheets[hillDefinition.sheet];
+          if (hillSheet && hillSheet.image) {
+            ctx.drawImage(
+              hillSheet.image,
+              hillDefinition.sx,
+              hillDefinition.sy,
+              hillDefinition.size,
+              hillDefinition.size,
+              pixelX,
+              pixelY,
+              tilePixelWidth,
+              tilePixelHeight
+            );
+          }
+        }
+      }
+
+      if (cell.overlay) {
+        const overlayDefinition = tileLookup.get(cell.overlay);
+        if (!overlayDefinition) {
+          drawLocalCustomOverlay(ctx, cell.overlay, localX, localY, bounds, tileSize);
+        } else {
+          const overlaySheet = state.tileSheets[overlayDefinition.sheet];
+          if (overlaySheet && overlaySheet.image) {
+            ctx.drawImage(
+              overlaySheet.image,
+              overlayDefinition.sx,
+              overlayDefinition.sy,
+              overlayDefinition.size,
+              overlayDefinition.size,
+              pixelX,
+              pixelY,
+              tilePixelWidth,
+              tilePixelHeight
+            );
+          }
+        }
+      }
+
+      applyCoastalShading(ctx, cell, localX, localY, waterTileKey, grassTileKey, tileSize);
+      applyDesertMountainTint(ctx, cell, localX, localY, tileSize);
+      applyVolcanoShading(ctx, cell, localX, localY, tileSize);
+      applyMountainShading(ctx, cell, localX, localY, tileSize);
+
+      if (cell.river) {
+        drawRiverSegment(ctx, cell.river, localX, localY, tileSize);
+      }
+
+      if (cell.structure) {
+        const structureDefinition = tileLookup.get(cell.structure);
+        if (structureDefinition) {
+          if (typeof structureDefinition.draw === 'function') {
+            structureDefinition.draw(ctx, {
+              x: localX,
+              y: localY,
+              pixelX,
+              pixelY,
+              size: tileSize,
+              cell,
+              world
+            });
+          } else {
+            const structureSheet = state.tileSheets[structureDefinition.sheet];
+            if (structureSheet && structureSheet.image) {
+              const spriteSize = structureDefinition.size || drawSize;
+              const maxSpriteSize = spriteSize * (localViewConfig.structureScaleCap || 1);
+              const allowedSize = Math.min(tileSize, maxSpriteSize, spriteSize);
+              const scale = allowedSize / spriteSize;
+              const destWidth = spriteSize * scale;
+              const destHeight = spriteSize * scale;
+              const offsetX = pixelX + (tilePixelWidth - destWidth) / 2;
+              const offsetY = pixelY + (tilePixelHeight - destHeight) / 2;
+              ctx.drawImage(
+                structureSheet.image,
+                structureDefinition.sx,
+                structureDefinition.sy,
+                structureDefinition.size,
+                structureDefinition.size,
+                offsetX,
+                offsetY,
+                destWidth,
+                destHeight
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 function refreshLocalMapPreview() {
   if (!elements.localMapPanel || !elements.localMapCanvas) {
     return;
@@ -12201,6 +12387,11 @@ function refreshLocalMapPreview() {
     worldHasTiles && Array.isArray(world.tiles[localView.centerY])
       ? world.tiles[localView.centerY][localView.centerX] || null
       : null;
+
+  const zoom = clampLocalMapZoom(localView.zoom ?? localViewConfig.defaultZoom || 1);
+  if (localView.zoom !== zoom) {
+    localView.zoom = zoom;
+  }
 
   if (localView.mode === 'worldHighRes' && localView.highResolution) {
     const patch = localView.highResolution;
@@ -12258,6 +12449,19 @@ function refreshLocalMapPreview() {
       tilePixelSize = Math.max(minTileSize, fallbackSize);
     }
     tilePixelSize = Math.max(minTileSize, tilePixelSize);
+
+    const absoluteMinTileSize = Math.max(2, Math.floor(minTileSize * 0.5));
+    const minZoomedSize = Math.max(absoluteMinTileSize, Math.floor(minTileSize * Math.min(zoom, 1)));
+    let zoomedTileSize = tilePixelSize * zoom;
+    zoomedTileSize = Math.max(minZoomedSize, zoomedTileSize);
+    const maxAllowedTileSize = Math.min(
+      maxSize / Math.max(1, patch.width),
+      maxSize / Math.max(1, patch.height)
+    );
+    if (Number.isFinite(maxAllowedTileSize) && maxAllowedTileSize > 0 && zoomedTileSize > maxAllowedTileSize) {
+      zoomedTileSize = Math.max(minZoomedSize, maxAllowedTileSize);
+    }
+    tilePixelSize = Math.max(absoluteMinTileSize, zoomedTileSize);
 
     const destWidth = Math.max(1, patch.width * tilePixelSize);
     const destHeight = Math.max(1, patch.height * tilePixelSize);
@@ -12363,6 +12567,16 @@ function refreshLocalMapPreview() {
     if (!Number.isFinite(tilePixelSize) || tilePixelSize < 6) {
       tilePixelSize = 6;
     }
+
+    const absoluteMinTileSize = Math.max(4, Math.floor(6 * 0.5));
+    const minZoomedSize = Math.max(absoluteMinTileSize, Math.floor(6 * Math.min(zoom, 1)));
+    let zoomedTileSize = tilePixelSize * zoom;
+    zoomedTileSize = Math.max(minZoomedSize, zoomedTileSize);
+    const maxAllowedTileSize = Math.min(maxSize / Math.max(1, mapWidth), maxSize / Math.max(1, mapHeight));
+    if (Number.isFinite(maxAllowedTileSize) && maxAllowedTileSize > 0 && zoomedTileSize > maxAllowedTileSize) {
+      zoomedTileSize = Math.max(minZoomedSize, maxAllowedTileSize);
+    }
+    tilePixelSize = Math.max(absoluteMinTileSize, zoomedTileSize);
 
     const destWidth = Math.max(1, mapWidth * tilePixelSize);
     const destHeight = Math.max(1, mapHeight * tilePixelSize);
@@ -12514,24 +12728,37 @@ function refreshLocalMapPreview() {
 
   const canvas = elements.localMapCanvas;
   const context = canvas ? canvas.getContext('2d') : null;
-  if (!canvas || !context || !elements.canvas) {
+  if (!canvas || !context) {
     return;
   }
 
-  const sourceX = bounds.startX * drawSize;
-  const sourceY = bounds.startY * drawSize;
   const sourceWidth = tileWidth * drawSize;
   const sourceHeight = tileHeight * drawSize;
-  const baseScale = localViewConfig.baseScale;
   const maxSize = localViewConfig.maxCanvasSize;
-  const baseWidth = sourceWidth * baseScale;
-  let scale = baseScale;
-  if (baseWidth > maxSize) {
-    const possibleScale = Math.floor(maxSize / Math.max(1, sourceWidth));
-    scale = Math.max(localViewConfig.minScale, possibleScale);
-    if (!Number.isFinite(scale) || scale < 1) {
-      scale = 1;
+  const absoluteMinScale = Number.isFinite(localViewConfig.absoluteMinScale)
+    ? Math.max(0.1, localViewConfig.absoluteMinScale)
+    : 0.5;
+  const desiredScale = localViewConfig.baseScale * zoom;
+  let scale = Number.isFinite(desiredScale) && desiredScale > 0 ? desiredScale : localViewConfig.baseScale;
+  const minScale = Math.max(
+    absoluteMinScale,
+    Number.isFinite(localViewConfig.minScale) ? localViewConfig.minScale * Math.min(zoom, 1) : absoluteMinScale
+  );
+  const maxScaleByWidth = maxSize / Math.max(1, sourceWidth);
+  const maxScaleByHeight = maxSize / Math.max(1, sourceHeight);
+  const maxAllowedScale = Math.min(maxScaleByWidth, maxScaleByHeight);
+  if (Number.isFinite(maxAllowedScale) && maxAllowedScale > 0) {
+    scale = Math.min(scale, maxAllowedScale);
+    if (maxAllowedScale < minScale) {
+      scale = Math.max(absoluteMinScale, maxAllowedScale);
+    } else if (scale < minScale) {
+      scale = minScale;
     }
+  } else if (scale < minScale) {
+    scale = minScale;
+  }
+  if (!Number.isFinite(scale) || scale <= 0) {
+    scale = absoluteMinScale;
   }
 
   const destWidth = Math.max(1, Math.round(sourceWidth * scale));
@@ -12544,7 +12771,7 @@ function refreshLocalMapPreview() {
     'aria-label',
     `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${
       localView.centerY + 1
-    }.`
+    } at approximately ${zoom.toFixed(2)}× zoom.`
   );
   canvas.setAttribute('aria-hidden', 'false');
 
@@ -12552,10 +12779,18 @@ function refreshLocalMapPreview() {
   context.clearRect(0, 0, destWidth, destHeight);
   context.fillStyle = '#05060b';
   context.fillRect(0, 0, destWidth, destHeight);
-  context.drawImage(elements.canvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, destWidth, destHeight);
 
   const tilePixelWidth = destWidth / tileWidth;
   const tilePixelHeight = destHeight / tileHeight;
+
+  drawLocalWorldPatch(context, {
+    world,
+    bounds,
+    tileWidth,
+    tileHeight,
+    tilePixelWidth,
+    tilePixelHeight
+  });
 
   context.save();
   context.strokeStyle = 'rgba(12, 14, 22, 0.6)';
@@ -12594,6 +12829,43 @@ function refreshLocalMapPreview() {
   context.restore();
 }
 
+function setLocalMapZoom(value, options = {}) {
+  const { suppressRedraw = false } = options;
+  const clampedZoom = clampLocalMapZoom(value);
+  if (!state.localView) {
+    return clampedZoom;
+  }
+  if (state.localView.zoom === clampedZoom) {
+    return clampedZoom;
+  }
+  state.localView.zoom = clampedZoom;
+  if (!suppressRedraw) {
+    refreshLocalMapPreview();
+  }
+  return clampedZoom;
+}
+
+function adjustLocalMapZoom(direction) {
+  if (!state.localView) {
+    return;
+  }
+  const step = Number.isFinite(localViewConfig.zoomStep) ? localViewConfig.zoomStep : 0.2;
+  const current = clampLocalMapZoom(state.localView.zoom ?? localViewConfig.defaultZoom || 1);
+  let next = current;
+  if (direction === 'in') {
+    next = current + step;
+  } else if (direction === 'out') {
+    next = current - step;
+  } else if (typeof direction === 'number' && Number.isFinite(direction)) {
+    next = current + direction;
+  }
+  setLocalMapZoom(next);
+}
+
+function resetLocalMapZoom() {
+  setLocalMapZoom(localViewConfig.defaultZoom || 1);
+}
+
 function hideLocalView(options = {}) {
   const { suppressRedraw = false, returnFocus = false } = options;
   state.localView.active = false;
@@ -12604,6 +12876,7 @@ function hideLocalView(options = {}) {
   state.localView.customMap = null;
   state.localView.structure = null;
   state.localView.highResolution = null;
+  state.localView.zoom = localViewConfig.defaultZoom || 1;
   state.dwarfholdView.active = false;
   state.dwarfholdView.map = null;
   state.dwarfholdView.tileX = null;
@@ -24565,6 +24838,8 @@ attachEvents(elements, {
   showDwarfholdInterior,
   showStructureDetails,
   hideLocalView,
+  adjustLocalMapZoom,
+  resetLocalMapZoom,
   closeDwarfholdInterior,
   state,
   refreshOverlayToggleButtons,
