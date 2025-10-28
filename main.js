@@ -7778,10 +7778,12 @@ function openDwarfTest() {
     return;
   }
   area.classList.remove('hidden');
+  area.classList.add('fullscreen');
   area.setAttribute('aria-hidden', 'false');
   const ctx = ensureDwarfTestContext();
   if (!ctx) {
     area.classList.add('hidden');
+    area.classList.remove('fullscreen');
     area.setAttribute('aria-hidden', 'true');
     return;
   }
@@ -7819,6 +7821,7 @@ function closeDwarfTest(options = {}) {
   dwarfTestState.animationTime = 0;
   if (elements.dwarfTestArea) {
     elements.dwarfTestArea.classList.add('hidden');
+    elements.dwarfTestArea.classList.remove('fullscreen');
     elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
   }
   updateDwarfTestButtonState();
