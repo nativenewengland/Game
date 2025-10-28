@@ -26,6 +26,7 @@ import { attachEvents } from './src/ui/events.js';
 const drawSize = 32;
 const defaultWorldGenerationType = 'normal';
 const defaultLoadingStatusMessage = 'Calculating terrain layers…';
+const icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
 
 function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
@@ -12662,7 +12663,10 @@ function applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, 
   }
 
   if (subTile.base === waterTileKey) {
-    subTile.overlay = null;
+    const subOverlayKey = typeof subTile.overlay === 'string' ? subTile.overlay : null;
+    if (!subOverlayKey || !icebergOverlayKeySet.has(subOverlayKey)) {
+      subTile.overlay = null;
+    }
     if (Number.isFinite(subTile.forestCanopyDensity)) {
       subTile.forestCanopyDensity = Math.min(subTile.forestCanopyDensity, 0.15);
     }
@@ -12727,6 +12731,8 @@ function applyCoastlineVariation(
 
   const baseKey = typeof baseTile.base === 'string' ? baseTile.base : null;
   const isWater = baseKey === waterTileKey;
+  const existingOverlayKey = typeof subTile.overlay === 'string' ? subTile.overlay : null;
+  const preserveWaterOverlay = existingOverlayKey && icebergOverlayKeySet.has(existingOverlayKey);
   const normalizedX = (subX + 0.5) / subdivisions;
   const normalizedY = (subY + 0.5) / subdivisions;
   const edgeThreshold = 0.34;
@@ -12776,7 +12782,7 @@ function applyCoastlineVariation(
       const threshold = 0.62 - proximity * 0.35;
       if (noiseAt(70 + i) > threshold) {
         subTile.base = waterTileKey;
-        subTile.overlay = null;
+        subTile.overlay = preserveWaterOverlay ? existingOverlayKey : null;
         subTile.hillOverlay = null;
         subTile.forestCanopyDensity = Number.isFinite(subTile.forestCanopyDensity)
           ? Math.min(subTile.forestCanopyDensity, 0.18)
