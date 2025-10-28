@@ -2067,6 +2067,8 @@ button:hover:not(:disabled) {
   background: url('tilesheet/menuslider.png') center/100% 100% no-repeat;
   image-rendering: pixelated;
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.65rem 1.4rem rgba(0, 0, 0, 0.4);
+  width: calc(100% + var(--customizer-preview-padding, 0px));
+  margin-right: calc(-1 * var(--customizer-preview-padding, 0px));
 }
 
 .trait-slider-input {
@@ -2185,13 +2187,14 @@ button:hover:not(:disabled) {
 }
 
 .customizer-preview {
+  --customizer-preview-padding: clamp(0.85rem, 2vw, 1.3rem);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   text-align: center;
   gap: clamp(0.65rem, 1.8vw, 1rem);
   width: 100%;
-  padding: clamp(0.85rem, 2vw, 1.3rem);
+  padding: var(--customizer-preview-padding);
   margin-top: clamp(-0.35rem, -1.2vw, -0.2rem);
 }
 
