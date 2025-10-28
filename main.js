@@ -9404,6 +9404,28 @@ function hideStructureContextMenu() {
   elements.structureContextMenu.style.top = '';
 }
 
+function updateStructureContextMenuActions(tile) {
+  const beginButton = elements.structureContextMenuBegin;
+  if (beginButton) {
+    beginButton.disabled = false;
+    beginButton.setAttribute('aria-disabled', 'false');
+  }
+
+  const moreInfoButton = elements.structureContextMenuMoreInfo;
+  if (!moreInfoButton) {
+    return;
+  }
+
+  const hasStructureDetails = Boolean(tile && tile.structureName);
+  if (hasStructureDetails) {
+    moreInfoButton.disabled = false;
+    moreInfoButton.setAttribute('aria-disabled', 'false');
+  } else {
+    moreInfoButton.disabled = true;
+    moreInfoButton.setAttribute('aria-disabled', 'true');
+  }
+}
+
 function showStructureContextMenu(resolved) {
   if (!resolved || !elements.structureContextMenu) {
     hideStructureContextMenu();
@@ -9419,6 +9441,8 @@ function showStructureContextMenu(resolved) {
   structureContextMenuState.tile = tile || null;
   structureContextMenuState.tileX = Number.isFinite(tileX) ? tileX : null;
   structureContextMenuState.tileY = Number.isFinite(tileY) ? tileY : null;
+
+  updateStructureContextMenuActions(tile);
 
   const menu = elements.structureContextMenu;
   const margin = 16;
@@ -12950,7 +12974,7 @@ function setupMapInteractions() {
   const openStructureContextMenu = (event) => {
     hideMapTooltip();
     const resolved = resolveTileAtPointer(event);
-    if (!resolved || !resolved.tile || !resolved.tile.structureName) {
+    if (!resolved || !resolved.tile) {
       hideStructureContextMenu();
       return false;
     }

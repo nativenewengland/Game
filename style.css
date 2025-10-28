@@ -3166,12 +3166,30 @@ button:hover:not(:disabled) {
   transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
+.context-menu__item[disabled],
+.context-menu__item[aria-disabled='true'] {
+  background: rgba(240, 198, 116, 0.08);
+  border-color: rgba(240, 198, 116, 0.18);
+  color: rgba(245, 247, 255, 0.6);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .context-menu__item:hover,
 .context-menu__item:focus-visible {
   background: rgba(240, 198, 116, 0.3);
   border-color: rgba(240, 198, 116, 0.6);
   outline: none;
   transform: translateY(-1px);
+}
+
+.context-menu__item[disabled]:hover,
+.context-menu__item[disabled]:focus-visible,
+.context-menu__item[aria-disabled='true']:hover,
+.context-menu__item[aria-disabled='true']:focus-visible {
+  background: rgba(240, 198, 116, 0.08);
+  border-color: rgba(240, 198, 116, 0.18);
+  transform: none;
 }
 
 .context-menu__item:active {
