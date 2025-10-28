@@ -17339,6 +17339,8 @@ function createWorld(seedString) {
   const hasMarshTile = tileLookup.has('MARSH');
   const marshTileKey = hasMarshTile ? 'MARSH' : grassTileKey;
   const waterTileKey = resolveTileName('WATER');
+  const hasLavaTile = tileLookup.has('LAVA');
+  const lavaTileKey = hasLavaTile ? 'LAVA' : null;
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
   // Enable desert generation so sand tiles can appear on the world map.
@@ -17365,6 +17367,9 @@ function createWorld(seedString) {
   }
   if (hasMarshTile) {
     landBaseKeys.add(marshTileKey);
+  }
+  if (hasLavaTile && lavaTileKey) {
+    landBaseKeys.add(lavaTileKey);
   }
   const snowLatitudeStart = 0.7;
   const snowLatitudeFull = 0.86;
@@ -19492,6 +19497,51 @@ function createWorld(seedString) {
             }
 
             placedVolcanoes.push({ x: candidate.x, y: candidate.y, overlayKey });
+          }
+
+          if (lavaTileKey && placedVolcanoes.length > 0) {
+            for (let i = 0; i < placedVolcanoes.length; i += 1) {
+              const volcano = placedVolcanoes[i];
+              if (!volcano) {
+                continue;
+              }
+              for (let j = 0; j < neighborOffsets8.length; j += 1) {
+                const offset = neighborOffsets8[j];
+                const nx = volcano.x + offset[0];
+                const ny = volcano.y + offset[1];
+                if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                  continue;
+                }
+                const neighborIdx = ny * width + nx;
+                if (!waterMask[neighborIdx]) {
+                  continue;
+                }
+                const neighborTile = tiles[ny][nx];
+                if (!neighborTile || neighborTile.base !== waterTileKey) {
+                  continue;
+                }
+                if (neighborTile.biomeType !== 'lake') {
+                  continue;
+                }
+                neighborTile.base = lavaTileKey;
+                neighborTile.overlay = null;
+                neighborTile.hillOverlay = null;
+                neighborTile.structure = null;
+                neighborTile.structureName = null;
+                neighborTile.structureDetails = null;
+                neighborTile.ambientStructure = null;
+                neighborTile.river = null;
+                neighborTile.biomeType = null;
+                neighborTile.areaName = null;
+                neighborTile.waterDepth = 0;
+                neighborTile.coastProximity = 0;
+                neighborTile.marshProximity = 0;
+                neighborTile.desertProximity = 0;
+                const currentProximity = Number(neighborTile.volcanoProximity) || 0;
+                neighborTile.volcanoProximity = Math.max(currentProximity, 1);
+                waterMask[neighborIdx] = 0;
+              }
+            }
           }
         }
       }
@@ -23654,7 +23704,9 @@ function createWorld(seedString) {
     const volcanoMask = new Uint8Array(width * height);
     let hasVolcanoTile = false;
     const volcanoEligibleBases = new Set(
-      [grassTileKey, stoneTileKey, sandTileKey, snowTileKey].filter((key) => typeof key === 'string')
+      [grassTileKey, stoneTileKey, sandTileKey, snowTileKey, lavaTileKey].filter(
+        (key) => typeof key === 'string'
+      )
     );
 
     for (let y = 0; y < height; y += 1) {

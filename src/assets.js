@@ -572,6 +572,7 @@ export const baseTileCoords = {
   HAMLET: { row: 1, col: 13 },
   ACTIVE_VOLCANO: { row: 2, col: 12 },
   VOLCANO: { row: 2, col: 13 },
+  LAVA: { row: 2, col: 14 },
   OASIS: { row: 0, col: 12 },
   HAMLET_SNOW: { row: 0, col: 13 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
