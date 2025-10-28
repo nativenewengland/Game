@@ -5287,6 +5287,10 @@ function applyCulturalInfluence({
   const mountainCultureSeed = (ambientSeedBase + 0x27d4eb2f) >>> 0;
   const marshAmbientSeed = (ambientSeedBase + 0x4cf5ad43) >>> 0;
   const marshRadiusSeed = (ambientSeedBase + 0x94d049bb) >>> 0;
+  const badlandsAmbientSeed = (ambientSeedBase + 0xd56f0b27) >>> 0;
+  const badlandsRadiusSeed = (ambientSeedBase + 0x68b57a19) >>> 0;
+  const halflingHillAmbientSeed = (ambientSeedBase + 0x1cf11a13) >>> 0;
+  const halflingHillRadiusSeed = (ambientSeedBase + 0xf5a5a6b9) >>> 0;
 
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
@@ -5369,6 +5373,27 @@ function applyCulturalInfluence({
         continue;
       }
 
+      if (biomeType === 'badlands') {
+        const roll = hashCoords(x, y, badlandsAmbientSeed);
+        if (roll < 0.0032) {
+          const radiusRoll = hashCoords(x, y, badlandsRadiusSeed);
+          const radius = lerp(11, 21, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.31,
+            entries: [
+              {
+                key: 'centaurs',
+                share: 1,
+                label: 'Centaurs'
+              }
+            ]
+          });
+        }
+      }
+
       if (biomeType === 'marsh') {
         const roll = hashCoords(x, y, marshAmbientSeed);
         if (roll < 0.0038) {
@@ -5387,6 +5412,53 @@ function applyCulturalInfluence({
               }
             ]
           });
+        }
+      }
+
+      const hasHillOverlay = isHillOverlayKey(tile.overlay) || isHillOverlayKey(tile.hillOverlay);
+      if (hasHillOverlay) {
+        const hillMountainSearchRadius = 4;
+        let nearMountain = false;
+        for (let dy = -hillMountainSearchRadius; dy <= hillMountainSearchRadius && !nearMountain; dy += 1) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= mapHeight) {
+            continue;
+          }
+          for (let dx = -hillMountainSearchRadius; dx <= hillMountainSearchRadius; dx += 1) {
+            const nx = x + dx;
+            if (nx < 0 || nx >= mapWidth) {
+              continue;
+            }
+            const neighbor = tiles[ny]?.[nx];
+            if (!neighbor) {
+              continue;
+            }
+            if (isMountainOverlayKey(neighbor.overlay) || isMountainOverlayKey(neighbor.hillOverlay)) {
+              nearMountain = true;
+              break;
+            }
+          }
+        }
+
+        if (nearMountain) {
+          const roll = hashCoords(x, y, halflingHillAmbientSeed);
+          if (roll < 0.0011) {
+            const radiusRoll = hashCoords(x, y, halflingHillRadiusSeed);
+            const radius = lerp(9, 18, radiusRoll);
+            addCulturalSource({
+              x,
+              y,
+              radius,
+              falloff: 1.29,
+              entries: [
+                {
+                  key: 'halflings',
+                  share: 1,
+                  label: 'Halflings'
+                }
+              ]
+            });
+          }
         }
       }
     }
