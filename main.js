@@ -8367,21 +8367,23 @@ function updateDwarfTestButtonState() {
 
 function getDwarfTestSpriteDimensions(ctx) {
   const source = elements.dwarfBodyPortraitCanvas;
-  const { canvas } = ctx;
-  const maxHeight = Math.max(70, canvas.height * 0.62);
+  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const height = Math.max(1, destTileSize);
+
   if (!source || source.width === 0 || source.height === 0) {
-    const height = clamp(maxHeight, 70, canvas.height * 0.7);
     return {
-      width: height * 0.7,
+      width: Math.max(1, height * 0.7),
       height
     };
   }
+
   const aspectRatio = source.width / source.height;
-  const targetHeight = clamp(maxHeight, 70, Math.min(source.height, canvas.height * 0.7));
-  const targetWidth = targetHeight * aspectRatio;
+  const clampedAspectRatio = Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : 1;
+  const width = Math.max(1, height * clampedAspectRatio);
+
   return {
-    width: targetWidth,
-    height: targetHeight
+    width,
+    height
   };
 }
 
