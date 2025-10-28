@@ -1762,6 +1762,7 @@ button:hover:not(:disabled) {
   box-shadow: 0 0.75rem 1.5rem rgba(8, 12, 20, 0.35);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: clamp(0.75rem, 2vw, 1rem);
   width: min(360px, 88vw);
   max-height: calc(100vh - clamp(1.5rem, 4vw, 3rem));
@@ -1790,8 +1791,9 @@ button:hover:not(:disabled) {
   backdrop-filter: blur(18px);
   gap: clamp(1rem, 3vw, 2rem);
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   z-index: 12;
+  overflow: hidden;
 }
 
 .dwarf-test-canvas {
@@ -1804,10 +1806,11 @@ button:hover:not(:disabled) {
 }
 
 .dwarf-test-area.fullscreen .dwarf-test-canvas {
-  max-width: min(90vw, 960px);
-  max-height: min(70vh, 540px);
-  width: 100%;
-  height: auto;
+  flex: 1 1 auto;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
 }
 
 .dwarf-test-instructions {
@@ -1816,6 +1819,11 @@ button:hover:not(:disabled) {
   color: rgba(220, 230, 255, 0.76);
   text-align: center;
   max-width: min(70ch, 90vw);
+}
+
+.dwarf-test-area.fullscreen .dwarf-test-instructions {
+  align-self: center;
+  margin-top: clamp(1.25rem, 3vw, 2.5rem);
 }
 
 .pixel-bar {
