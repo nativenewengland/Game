@@ -2163,6 +2163,76 @@ const orcWarLeaders = [
   'Druza Stormchant'
 ];
 const orcThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Menacing'];
+const centaurHerdAdjectives = [
+  'Swiftwind',
+  'Stormhoof',
+  'Sunmane',
+  'Moonstride',
+  'Galeheart',
+  'Starhoof',
+  'Dawnrunner',
+  'Thunderleaf',
+  'Mistveil',
+  'Wildsong'
+];
+const centaurHerdNouns = [
+  'Herd',
+  'Circle',
+  'Moot',
+  'Outriders',
+  'Gathering',
+  'Courers',
+  'Skyriders',
+  'Wardens'
+];
+const centaurEncampmentPurposes = [
+  'holds council over the roaming tribes',
+  'guards the border trails against marauders',
+  'drills its outriders for the next great hunt',
+  'prepares offerings to the sky-spirits',
+  'keeps watch on encroaching warbands',
+  'tends the wounded after a clash on the plains',
+  'celebrates the seasonal moot beneath streaming banners'
+];
+const centaurEncampmentFeatures = [
+  'Hoofbeat drums echo across a packed-earth arena.',
+  'Banners woven from tall grasses ripple between painted wagons.',
+  'Stone cairns ring a central fire that never dies.',
+  'Archery buttes bristle with moon-feathered shafts.',
+  'Totem poles carved with galloping figures mark each quarter of the camp.',
+  'Bronze-lashed chariots gleam beside neatly stacked spear racks.'
+];
+const centaurLeaderTitles = [
+  'Herdspeaker',
+  'Skycaller',
+  'Trail-Warden',
+  'High Courser',
+  'Windseer',
+  'Spear Marshal'
+];
+const centaurLeaderNames = [
+  'Thandros',
+  'Mirael',
+  'Koryn',
+  'Ilys',
+  'Brastan',
+  'Velith',
+  'Serane',
+  'Oran',
+  'Kaelith',
+  'Drevan'
+];
+const centaurMajorClans = [
+  'Sunmane Banner',
+  'Stormhoof Lodge',
+  'Mistplain Riders',
+  'Starbrook Company',
+  'Galehorn Cohort',
+  'Ambertrail Scouts',
+  'Stonehoof Fellowship',
+  'Larksong Reavers'
+];
+const centaurSacredVows = ['Sky Oaths', 'Trailwatch Pledge', 'Galloping Accord', 'Sunfire Pact'];
 const travelerCampHosts = [
   'the Emberlane siblings',
   'Matron Heila Oakshaw',
@@ -3987,6 +4057,60 @@ function generateOrcCampDetails(name, random) {
   };
 }
 
+function generateCentaurEncampmentName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(centaurHerdAdjectives, randomFn) || 'Swiftwind';
+  const noun = pickRandomFrom(centaurHerdNouns, randomFn) || 'Herd';
+  const style = randomFn();
+  if (style < 0.34) {
+    return `${adjective} ${noun} Encampment`;
+  }
+  if (style < 0.68) {
+    return `${noun} of the ${adjective} Plains`;
+  }
+  return `${adjective} ${noun} Moot`;
+}
+
+function generateCentaurEncampmentDetails(name, random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const herdAdjective = pickRandomFrom(centaurHerdAdjectives, randomFn) || 'Swiftwind';
+  const herdNoun = pickRandomFrom(centaurHerdNouns, randomFn) || 'Herd';
+  const herdName = `${herdAdjective} ${herdNoun}`;
+  const leaderTitle = pickRandomFrom(centaurLeaderTitles, randomFn) || 'Herdspeaker';
+  const leaderName = pickRandomFrom(centaurLeaderNames, randomFn) || 'Thandros';
+  const focus = pickRandomFrom(centaurEncampmentPurposes, randomFn) || 'keeps vigil over the border trails';
+  const feature = pickRandomFrom(centaurEncampmentFeatures, randomFn) ||
+    'Hoofbeat drums echo across a packed-earth arena.';
+  const vow = pickRandomFrom(centaurSacredVows, randomFn) || 'Sky Oaths';
+  const prominentClan = pickRandomFrom(centaurMajorClans, randomFn) || 'Sunmane Banner';
+  const clanCount = clamp(Math.floor(1 + randomFn() * 2), 1, centaurMajorClans.length);
+  const majorClans = pickUniqueFrom(centaurMajorClans, clanCount, randomFn);
+  const herdSize = Math.max(80, Math.round(160 + randomFn() * 220));
+
+  return {
+    type: 'centaurEncampment',
+    name,
+    displayType: 'Centaur Encampment',
+    classification: 'Nomadic Moot',
+    population: herdSize,
+    populationLabel: 'Herd Strength',
+    populationDescriptor: 'hooves in the herd',
+    tribe: herdName,
+    ruler: {
+      title: leaderTitle,
+      name: leaderName,
+      label: 'Herdspeaker'
+    },
+    vow,
+    prominentClan,
+    prominentClanLabel: 'Champion Banner',
+    majorClans,
+    majorClansLabel: 'Banners Present',
+    inhabitants: `${herdName} riders`,
+    description: `The ${herdName} ${focus}. ${feature}`
+  };
+}
+
 function generateTravelerCampName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const adjectives = ['Lantern', 'Amber', 'Star', 'Frontier', 'Drift', 'Iron', 'Wayfarer', 'Cedar'];
@@ -5031,6 +5155,7 @@ const defaultCultureColorByKey = {
   mindflayers: '#845ec2',
   merfolks: '#49b6d4',
   fae: '#d8a8ff',
+  centaurs: '#d8c070',
   giants: '#cfa372',
   fimir: '#6b8f59',
   demons: '#b14646',
@@ -5380,6 +5505,16 @@ function resolveCultureColor(color, key) {
 
 function getDefaultCulturalBreakdownForSettlement(settlement) {
   const type = typeof settlement?.type === 'string' ? settlement.type.trim() : '';
+  if (type === 'centaurEncampment') {
+    return [
+      {
+        key: 'centaurs',
+        label: 'Centaurs',
+        percentage: 100,
+        color: defaultCultureColorByKey.centaurs
+      }
+    ];
+  }
   if (type === 'orcCamp') {
     return [
       {
@@ -5480,6 +5615,8 @@ function resolveFallbackClaimRadius(type) {
       return 26;
     case 'orcCamp':
       return 28;
+    case 'centaurEncampment':
+      return 27;
     case 'monastery':
       return 27;
     case 'roadsideTavern':
@@ -5511,6 +5648,8 @@ function resolveCulturalRadiusMultiplier(type) {
       return 1.55;
     case 'orcCamp':
       return 1.75;
+    case 'centaurEncampment':
+      return 1.7;
     case 'monastery':
       return 1.65;
     case 'roadsideTavern':
@@ -5539,6 +5678,8 @@ function resolveCulturalFalloffPower(type) {
       return 1.42;
     case 'orcCamp':
       return 1.3;
+    case 'centaurEncampment':
+      return 1.32;
     case 'monastery':
       return 1.34;
     case 'roadsideTavern':
@@ -17256,6 +17397,7 @@ function createWorld(seedString) {
   const woodElfGroves = [];
   const lizardmenCities = [];
   const orcCamps = [];
+  const centaurEncampments = [];
   const travelerCamps = [];
   const dungeons = [];
   const monasteries = [];
@@ -21279,6 +21421,7 @@ function createWorld(seedString) {
     overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
   const mapArea = width * height;
   const orcCampNoiseSeed = (seedNumber + 0x4a1d2b7f) >>> 0;
+  const centaurEncampmentNoiseSeed = (seedNumber + 0x53d1c87b) >>> 0;
   const travelerCampNoiseSeed = (seedNumber + 0x579c3d11) >>> 0;
   const dungeonNoiseSeed = (seedNumber + 0x5c8d3a1f) >>> 0;
   const monasteryNoiseSeed = (seedNumber + 0x6f12c43d) >>> 0;
@@ -21417,6 +21560,140 @@ function createWorld(seedString) {
     }
   }
 
+  const centaurEncampmentKey = tileLookup.has('CENTAUR_ENCAMPMENT') ? 'CENTAUR_ENCAMPMENT' : null;
+  if (centaurEncampmentKey) {
+    const allowedCentaurBases = new Set(
+      [grassTileKey, badlandsTileKey, snowTileKey].filter((key) => typeof key === 'string')
+    );
+    let centaurGrassDistanceField = null;
+    if (allowedCentaurBases.size > 0) {
+      const grassMask = new Uint8Array(width * height);
+      let hasGrass = false;
+      for (let y = 0; y < height; y += 1) {
+        const row = tiles[y];
+        if (!row) {
+          continue;
+        }
+        for (let x = 0; x < width; x += 1) {
+          const tile = row[x];
+          if (tile && tile.base === grassTileKey) {
+            grassMask[y * width + x] = 1;
+            hasGrass = true;
+          }
+        }
+      }
+      if (hasGrass) {
+        centaurGrassDistanceField = computeEuclideanDistanceField(grassMask, width, height);
+      }
+    }
+
+    if (centaurGrassDistanceField) {
+      const centaurEncampmentCandidates = [];
+      const requiredGrassDistanceSq = 15 * 15;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const idx = y * width + x;
+          if (waterMask[idx]) {
+            continue;
+          }
+          const tile = tiles[y][x];
+          if (!tile || tile.structure || tile.river) {
+            continue;
+          }
+          if (!allowedCentaurBases.has(tile.base)) {
+            continue;
+          }
+          if (centaurGrassDistanceField[idx] > requiredGrassDistanceSq) {
+            continue;
+          }
+          if (mountainOverlayKey && isMountainOverlay(tile.overlay)) {
+            continue;
+          }
+          const settlementDistSq = computeNearestDistanceSq(x, y, majorSettlementPoints);
+          if (settlementDistSq < 49) {
+            continue;
+          }
+          const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+          if (distanceToOrcsSq < 64) {
+            continue;
+          }
+          const rainfallValue = clamp(rainfallField[idx], 0, 1);
+          const rainfallScore = clamp(1 - Math.abs(rainfallValue - 0.55) * 1.6, 0, 1);
+          const canopyDensity = clamp(tile.forestCanopyDensity || 0, 0, 1);
+          const opennessScore = clamp(1 - canopyDensity, 0, 1);
+          const distanceToGrass = Math.sqrt(centaurGrassDistanceField[idx]);
+          const grassProximity = clamp(1 - Math.min(distanceToGrass, 15) / 15, 0, 1);
+          const baseScore =
+            tile.base === grassTileKey ? 0.43 : tile.base === badlandsTileKey ? 0.41 : 0.38;
+          const hillPenalty =
+            isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay)
+              ? 0.12
+              : 0;
+          const noise = hashCoords(x, y, centaurEncampmentNoiseSeed) - 0.5;
+          const score =
+            baseScore +
+            grassProximity * 0.35 +
+            rainfallScore * 0.25 +
+            opennessScore * 0.2 -
+            hillPenalty +
+            noise * 0.18;
+          if (score > 0.3) {
+            centaurEncampmentCandidates.push({ x, y, score });
+          }
+        }
+      }
+
+      if (centaurEncampmentCandidates.length > 0) {
+        centaurEncampmentCandidates.sort((a, b) => b.score - a.score);
+        const baseTarget = Math.max(1, Math.round(mapArea / 15000));
+        const maxEncampments = computeStructurePlacementLimit(baseTarget, 14, 1);
+        const minDistance = 9;
+        const minDistanceSq = minDistance * minDistance;
+        const placed = [];
+
+        for (let i = 0; i < centaurEncampmentCandidates.length; i += 1) {
+          if (placed.length >= maxEncampments) {
+            break;
+          }
+          const candidate = centaurEncampmentCandidates[i];
+          if (candidate.score < 0.32) {
+            continue;
+          }
+          let tooClose = false;
+          for (let j = 0; j < placed.length; j += 1) {
+            const other = placed[j];
+            const dx = candidate.x - other.x;
+            const dy = candidate.y - other.y;
+            if (dx * dx + dy * dy < minDistanceSq) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose) {
+            continue;
+          }
+          const tile = tiles[candidate.y][candidate.x];
+          if (!tile || tile.structure || tile.river) {
+            continue;
+          }
+          if (!allowedCentaurBases.has(tile.base)) {
+            continue;
+          }
+          if (centaurGrassDistanceField[candidate.y * width + candidate.x] > requiredGrassDistanceSq) {
+            continue;
+          }
+          const name = generateCentaurEncampmentName(rng);
+          const details = generateCentaurEncampmentDetails(name, rng);
+          tile.structure = centaurEncampmentKey;
+          tile.structureName = name;
+          tile.structureDetails = details;
+          placed.push(candidate);
+          centaurEncampments.push({ x: candidate.x, y: candidate.y, ...details });
+        }
+      }
+    }
+  }
+
   const travelerCampKey = tileLookup.has('TRAVELERS_CAMP') ? 'TRAVELERS_CAMP' : null;
   if (travelerCampKey) {
     const travelerCampCandidates = [];
@@ -21450,6 +21727,10 @@ function createWorld(seedString) {
         }
         const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
         if (distanceToOrcsSq < 49) {
+          continue;
+        }
+        const distanceToCentaurSq = computeNearestDistanceSq(x, y, centaurEncampments);
+        if (distanceToCentaurSq < 64) {
           continue;
         }
         let waterAdjacency = 0;
@@ -21644,6 +21925,12 @@ function createWorld(seedString) {
         if (!tooClose) {
           const distanceToOrcSq = computeNearestDistanceSq(candidate.x, candidate.y, orcCamps);
           if (distanceToOrcSq < 64) {
+            tooClose = true;
+          }
+        }
+        if (!tooClose) {
+          const distanceToCentaurSq = computeNearestDistanceSq(candidate.x, candidate.y, centaurEncampments);
+          if (distanceToCentaurSq < 49) {
             tooClose = true;
           }
         }
@@ -21871,6 +22158,10 @@ function createWorld(seedString) {
         }
         const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
         if (distanceToOrcsSq < 49) {
+          continue;
+        }
+        const distanceToCentaurSq = computeNearestDistanceSq(x, y, centaurEncampments);
+        if (distanceToCentaurSq < 64) {
           continue;
         }
         let riverAdjacency = 0;
@@ -23111,6 +23402,7 @@ function createWorld(seedString) {
       ...mines,
       ...castles,
       ...orcCamps,
+      ...centaurEncampments,
       ...caves,
       ...roadsideTaverns,
       ...saintShrines
@@ -23148,6 +23440,7 @@ function createWorld(seedString) {
     lizardmenCities,
     woodElfGroves,
     orcCamps,
+    centaurEncampments,
     travelerCamps,
     dungeons,
     monasteries,

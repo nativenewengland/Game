@@ -579,7 +579,8 @@ export const baseTileCoords = {
   MONASTERY: { row: 2, col: 2 },
   ORC_CAMP: { row: 6, col: 0 },
   TRAVELERS_CAMP: { row: 6, col: 0 },
-  DUNGEON: { row: 2, col: 7 }
+  DUNGEON: { row: 2, col: 7 },
+  CENTAUR_ENCAMPMENT: { row: 2, col: 10 }
 };
 
 export const ROAD_DIRECTION_BITS = {
