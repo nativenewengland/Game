@@ -15707,11 +15707,9 @@ function setupAudioControls() {
   }
 
   const initialVolumeSource = volumeInputs[0];
-  const initialVolume = clamp(
-    parseFloat(initialVolumeSource ? initialVolumeSource.value : elements.audioElement.volume) || 0.5,
-    0,
-    1
-  );
+  const parsedInputVolume = initialVolumeSource ? Number.parseFloat(initialVolumeSource.value) : Number.NaN;
+  const fallbackVolume = Number.isNaN(parsedInputVolume) ? elements.audioElement.volume : parsedInputVolume;
+  const initialVolume = clamp(Number.isNaN(fallbackVolume) ? 0.5 : fallbackVolume, 0, 1);
   elements.audioElement.volume = initialVolume;
   volumeInputs.forEach((input) => {
     input.value = initialVolume.toString();
