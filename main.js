@@ -5387,6 +5387,43 @@ function applyCulturalInfluence({
   const desertRadiusSeed = (ambientSeedBase + 0xbb67ae85) >>> 0;
   const halflingHillAmbientSeed = (ambientSeedBase + 0x1cf11a13) >>> 0;
   const halflingHillRadiusSeed = (ambientSeedBase + 0xf5a5a6b9) >>> 0;
+  const beastmanAmbientBaseSeed = (ambientSeedBase + 0xb5297a4d) >>> 0;
+  const beastmanRadiusBaseSeed = (ambientSeedBase + 0x9e3779b1) >>> 0;
+
+  const defaultBeastmanAmbientConfig = {
+    threshold: 0.0019,
+    radiusRange: [11, 22],
+    falloff: 1.33
+  };
+
+  const beastmanAmbientConfigByBiome = {
+    jungle: { threshold: 0.0026, radiusRange: [12, 24], falloff: 1.34 },
+    desert: { threshold: 0.0021, radiusRange: [11, 22], falloff: 1.32 },
+    badlands: { threshold: 0.002, radiusRange: [11, 21], falloff: 1.32 },
+    marsh: { threshold: 0.0024, radiusRange: [11, 22], falloff: 1.33 },
+    grassland: { threshold: 0.002, radiusRange: [11, 23], falloff: 1.32 },
+    ocean: { threshold: 0.0012, radiusRange: [10, 20], falloff: 1.35 },
+    lake: { threshold: 0.0014, radiusRange: [9, 18], falloff: 1.34 }
+  };
+
+  const beastmanSeedCache = new Map();
+  const getBeastmanSeedsForBiome = (type) => {
+    if (!type) {
+      return {
+        ambient: beastmanAmbientBaseSeed,
+        radius: beastmanRadiusBaseSeed
+      };
+    }
+    if (!beastmanSeedCache.has(type)) {
+      const typeHash = hashString32(type);
+      const radiusHash = hashString32(`${type}:radius`);
+      beastmanSeedCache.set(type, {
+        ambient: beastmanAmbientBaseSeed ^ typeHash,
+        radius: beastmanRadiusBaseSeed ^ radiusHash
+      });
+    }
+    return beastmanSeedCache.get(type);
+  };
   const waterAmbientSeed = (ambientSeedBase + 0x3c6ef35f) >>> 0;
   const waterRadiusSeed = (ambientSeedBase + 0xa54ff53a) >>> 0;
   const demonAmbientSeed = (ambientSeedBase + 0x1f83d9ab) >>> 0;
@@ -5653,6 +5690,32 @@ function applyCulturalInfluence({
                 key: isFimir ? 'fimir' : 'ogres',
                 share: 1,
                 label: isFimir ? 'Fimir' : 'Ogres'
+              }
+            ]
+          });
+        }
+      }
+
+      if (biomeType !== 'forest' && biomeType !== 'mountain' && biomeType !== 'tundra') {
+        const config = beastmanAmbientConfigByBiome[biomeType] || defaultBeastmanAmbientConfig;
+        const seeds = getBeastmanSeedsForBiome(biomeType);
+        const roll = hashCoords(x, y, seeds.ambient);
+        if (roll < config.threshold) {
+          const radiusRoll = hashCoords(x, y, seeds.radius);
+          const [minRadius, maxRadius] = Array.isArray(config.radiusRange) && config.radiusRange.length === 2
+            ? config.radiusRange
+            : defaultBeastmanAmbientConfig.radiusRange;
+          const radius = lerp(minRadius, maxRadius, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: Number.isFinite(config.falloff) ? config.falloff : defaultBeastmanAmbientConfig.falloff,
+            entries: [
+              {
+                key: 'beastmen',
+                share: 1,
+                label: 'Beastmen'
               }
             ]
           });
