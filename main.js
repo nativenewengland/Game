@@ -6919,6 +6919,23 @@ let loadingProgressValue = 0;
 let loadingProgressIntervalId = null;
 let hasManualLoadingProgress = false;
 
+const localViewConfig = {
+  radius: 4,
+  baseScale: 3,
+  minScale: 2,
+  maxCanvasSize: 768,
+  highResolutionTileSubdivisions: 4,
+  highResolutionExtraPadding: 2,
+  highResolutionMinScale: 2,
+  highResolutionMaxTileSize: 28,
+  minZoom: 0.5,
+  maxZoom: 3,
+  zoomStep: 0.2,
+  defaultZoom: 1,
+  absoluteMinScale: 0.5,
+  structureScaleCap: 1
+};
+
 const state = {
   settings: {
     mapSize: defaultMapSize.key,
@@ -11075,23 +11092,6 @@ const viewState = {
   hasInteracted: false
 };
 
-const localViewConfig = {
-  radius: 4,
-  baseScale: 3,
-  minScale: 2,
-  maxCanvasSize: 768,
-  highResolutionTileSubdivisions: 4,
-  highResolutionExtraPadding: 2,
-  highResolutionMinScale: 2,
-  highResolutionMaxTileSize: 28,
-  minZoom: 0.5,
-  maxZoom: 3,
-  zoomStep: 0.2,
-  defaultZoom: 1,
-  absoluteMinScale: 0.5,
-  structureScaleCap: 1
-};
-
 const dwarfholdScreenConfig = {
   baseTileSize: 28,
   minTileSize: 8,
@@ -12805,7 +12805,8 @@ function refreshLocalMapPreview() {
       ? world.tiles[localView.centerY][localView.centerX] || null
       : null;
 
-  const zoom = clampLocalMapZoom(localView.zoom ?? localViewConfig.defaultZoom || 1);
+  const zoomSource = (localView.zoom ?? localViewConfig.defaultZoom) || 1;
+  const zoom = clampLocalMapZoom(zoomSource);
   if (localView.zoom !== zoom) {
     localView.zoom = zoom;
   }
@@ -13267,7 +13268,8 @@ function adjustLocalMapZoom(direction) {
     return;
   }
   const step = Number.isFinite(localViewConfig.zoomStep) ? localViewConfig.zoomStep : 0.2;
-  const current = clampLocalMapZoom(state.localView.zoom ?? localViewConfig.defaultZoom || 1);
+  const currentZoomSource = (state.localView.zoom ?? localViewConfig.defaultZoom) || 1;
+  const current = clampLocalMapZoom(currentZoomSource);
   let next = current;
   if (direction === 'in') {
     next = current + step;
