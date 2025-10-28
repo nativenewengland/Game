@@ -102,6 +102,14 @@ select,
   backdrop-filter: blur(18px);
 }
 
+#world-info .embark-panel {
+  max-width: min(960px, 88vw);
+  max-height: min(860px, 92vh);
+  overflow-y: auto;
+  gap: clamp(1.25rem, 2vw, 1.75rem);
+  padding: clamp(1.75rem, 2.5vw, 2.25rem);
+}
+
 #dwarf-customizer {
   justify-content: flex-start;
   align-items: flex-start;
@@ -174,11 +182,19 @@ select,
   align-items: stretch;
 }
 
+#world-info .embark-content {
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+
 .embark-summary {
   grid-column: span 5;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+#world-info .embark-summary {
+  grid-column: span 4;
 }
 
 .embark-form {
@@ -191,6 +207,11 @@ select,
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: clamp(1.5rem, 2.5vw, 2rem);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+#world-info .embark-form {
+  grid-column: span 8;
+  padding: clamp(1.25rem, 2vw, 1.85rem);
 }
 
 .embark-form .trait-summary {
