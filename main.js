@@ -14896,13 +14896,41 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     `);
   });
 
+  const settlementArtVariants = [
+    {
+      file: 'Dwarf-Fortress_1.webp',
+      alt: 'Illustration of a dwarven settlement'
+    },
+    {
+      file: 'Dwarf-Fortress_2.webp',
+      alt: 'Illustration of a dwarven stronghold'
+    }
+  ];
+  const settlementArtSeedParts = [
+    tile?.structureName,
+    details?.name,
+    details?.type,
+    tile?.structure,
+    Number.isFinite(context?.tileX) ? `x${context.tileX}` : null,
+    Number.isFinite(context?.tileY) ? `y${context.tileY}` : null
+  ]
+    .map((value) => (value != null ? String(value).trim() : ''))
+    .filter((value) => value.length > 0);
+  const settlementArtSeedString =
+    settlementArtSeedParts.length > 0 ? settlementArtSeedParts.join('|') : 'default-settlement-art';
+  const settlementArtSeed = (stringToSeed(settlementArtSeedString) + 0x5f1f4d5b) >>> 0;
+  const settlementArtRandom = mulberry32(settlementArtSeed || 1);
+  const settlementArtIndex = Math.floor(settlementArtRandom() * settlementArtVariants.length) || 0;
+  const settlementArtVariant =
+    settlementArtVariants[Math.min(Math.max(settlementArtIndex, 0), settlementArtVariants.length - 1)] ||
+    settlementArtVariants[0];
   const settlementArtwork = `
     <figure class="structure-details-art">
       <div class="structure-details-art-frame">
         <img
           class="structure-details-art-image"
-          src="tilesheet/settlement%20art/Dwarf-Fortress_1.webp"
-          alt="Illustration of a dwarven settlement"
+          src="tilesheet/settlement%20art/${encodeURI(settlementArtVariant.file)}"
+          alt="${escapeHtml(settlementArtVariant.alt || 'Illustration of a dwarven settlement')}"
           loading="lazy"
         />
       </div>
