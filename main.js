@@ -6607,6 +6607,12 @@ const dwarfTestTileSheetKey = 'dwarfTest';
 const dwarfTestTileSize = 16;
 const dwarfTestTileScale = 2;
 const dwarfTestMapDimensions = { columns: 42, rows: 24 };
+const dwarfTestScaleConfig = {
+  min: 2,
+  max: 4,
+  targetVisibleColumns: 18,
+  targetVisibleRows: 12
+};
 
 const dwarfTestTilePalette = {
   grass: { sheet: dwarfTestTileSheetKey, col: 0, row: 2 },
@@ -6812,6 +6818,64 @@ function generateDwarfTestMap() {
   }
 
   return { columns, rows, tiles };
+}
+
+function calculateDwarfTestTileScale(canvas) {
+  const { min, max, targetVisibleColumns, targetVisibleRows } = dwarfTestScaleConfig;
+  if (!canvas) {
+    return clamp(dwarfTestTileScale, min, max);
+  }
+  const width = Math.max(canvas.width || 0, canvas.clientWidth || 0);
+  const height = Math.max(canvas.height || 0, canvas.clientHeight || 0);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return clamp(dwarfTestTileScale, min, max);
+  }
+  const safeColumns = Math.max(1, targetVisibleColumns);
+  const safeRows = Math.max(1, targetVisibleRows);
+  const columnScale = width / (dwarfTestTileSize * safeColumns);
+  const rowScale = height / (dwarfTestTileSize * safeRows);
+  const rawScale = Math.min(columnScale, rowScale);
+  const roundedScale = Math.round(rawScale);
+  const baseScale = Number.isFinite(roundedScale) && roundedScale > 0 ? roundedScale : dwarfTestTileScale;
+  return clamp(baseScale, min, max);
+}
+
+function applyDwarfTestScaleChange(newScale) {
+  const previousScale = dwarfTestState.tileScale || dwarfTestTileScale;
+  if (!Number.isFinite(newScale) || newScale <= 0 || newScale === previousScale) {
+    return false;
+  }
+
+  const baseTileSize = dwarfTestState.tileSize || dwarfTestTileSize;
+  const previousDestTileSize = baseTileSize * previousScale;
+  const nextDestTileSize = baseTileSize * newScale;
+
+  if (previousDestTileSize > 0 && nextDestTileSize > 0) {
+    const positionTileX = dwarfTestState.position.x / previousDestTileSize;
+    const positionTileY = dwarfTestState.position.y / previousDestTileSize;
+    if (Number.isFinite(positionTileX)) {
+      dwarfTestState.position.x = positionTileX * nextDestTileSize;
+    }
+    if (Number.isFinite(positionTileY)) {
+      dwarfTestState.position.y = positionTileY * nextDestTileSize;
+    }
+
+    const cameraTileX = dwarfTestState.camera.x / previousDestTileSize;
+    const cameraTileY = dwarfTestState.camera.y / previousDestTileSize;
+    if (Number.isFinite(cameraTileX)) {
+      dwarfTestState.camera.x = cameraTileX * nextDestTileSize;
+    }
+    if (Number.isFinite(cameraTileY)) {
+      dwarfTestState.camera.y = cameraTileY * nextDestTileSize;
+    }
+
+    if (Number.isFinite(dwarfTestState.backgroundOffset)) {
+      dwarfTestState.backgroundOffset *= nextDestTileSize / previousDestTileSize;
+    }
+  }
+
+  dwarfTestState.tileScale = newScale;
+  return true;
 }
 
 function findNearestDwarfTestWalkableTile(map, startCol, startRow) {
@@ -8343,7 +8407,14 @@ function handleDwarfTestResize() {
   if (!ctx) {
     return;
   }
+  const targetScale = calculateDwarfTestTileScale(ctx.canvas);
+  const scaleChanged = applyDwarfTestScaleChange(targetScale);
   const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
+  if (scaleChanged) {
+    const bounds = getDwarfTestBounds(ctx, spriteDimensions);
+    dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
+    dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
+  }
   updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
   drawDwarfTestBackground(ctx);
   drawDwarfTestCharacter(ctx, spriteDimensions);
@@ -8700,7 +8771,8 @@ function resetDwarfTestState() {
     return;
   }
   dwarfTestState.tileSize = dwarfTestTileSize;
-  dwarfTestState.tileScale = dwarfTestTileScale;
+  const resolvedScale = calculateDwarfTestTileScale(ctx.canvas);
+  dwarfTestState.tileScale = resolvedScale;
   dwarfTestState.map = generateDwarfTestMap();
   dwarfTestState.animationTime = 0;
   const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
