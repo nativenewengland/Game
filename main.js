@@ -245,6 +245,68 @@ function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawAmbientLumberMillStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const groundWidth = size * 0.8;
+  const groundHeight = size * 0.36;
+  const groundX = (size - groundWidth) / 2;
+  const groundY = size * 0.54;
+
+  ctx.fillStyle = '#8c6d45';
+  ctx.fillRect(groundX, groundY, groundWidth, groundHeight);
+
+  const millWidth = size * 0.42;
+  const millHeight = size * 0.32;
+  const millX = size * 0.18;
+  const millY = size * 0.32;
+
+  ctx.fillStyle = '#a47546';
+  ctx.fillRect(millX, millY, millWidth, millHeight);
+
+  ctx.fillStyle = '#6b4a2a';
+  ctx.beginPath();
+  ctx.moveTo(millX - size * 0.04, millY);
+  ctx.lineTo(millX + millWidth / 2, millY - size * 0.18);
+  ctx.lineTo(millX + millWidth + size * 0.04, millY);
+  ctx.closePath();
+  ctx.fill();
+
+  const doorWidth = millWidth * 0.22;
+  const doorHeight = millHeight * 0.48;
+  ctx.fillStyle = '#3f2b19';
+  ctx.fillRect(millX + millWidth * 0.38, millY + millHeight - doorHeight, doorWidth, doorHeight);
+
+  const wheelRadius = size * 0.18;
+  const wheelCenterX = size * 0.68;
+  const wheelCenterY = size * 0.6;
+  ctx.strokeStyle = '#4b3826';
+  ctx.lineWidth = Math.max(1, size * 0.04);
+  ctx.beginPath();
+  ctx.arc(wheelCenterX, wheelCenterY, wheelRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  for (let i = 0; i < 4; i += 1) {
+    const angle = (Math.PI / 2) * i;
+    ctx.beginPath();
+    ctx.moveTo(wheelCenterX, wheelCenterY);
+    ctx.lineTo(
+      wheelCenterX + Math.cos(angle) * wheelRadius,
+      wheelCenterY + Math.sin(angle) * wheelRadius
+    );
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#6aa6d1';
+  ctx.beginPath();
+  ctx.ellipse(wheelCenterX + wheelRadius * 0.35, groundY + groundHeight * 0.5, size * 0.16, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
@@ -254,6 +316,9 @@ registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTav
 registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
   drawAmbientHuntingLodgeStructure(ctx, drawOptions)
+);
+registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
+  drawAmbientLumberMillStructure(ctx, drawOptions)
 );
 
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
@@ -5747,6 +5812,7 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
     for (let x = 0; x < mapWidth; x += 1) {
       const tile = row[x];
       if (!tile || tile.structure || tile.river) {
+        // Preserve existing structures (including ambient lumber mills) and river tiles.
         continue;
       }
       const humanIntensity = resolveHumanPresenceIntensity(tile);
@@ -6804,7 +6870,8 @@ function applyCulturalInfluence({
       if (!option) {
         continue;
       }
-      tile.ambientStructure = {
+
+      const ambientStructureData = {
         key: option.key,
         label: option.label,
         culture: cultureKey || 'others',
@@ -6812,6 +6879,18 @@ function applyCulturalInfluence({
           (typeof influence.label === 'string' && influence.label.trim()) ||
           formatCultureLabel(cultureKey || 'others')
       };
+
+      if (option.key === 'lumber_mill') {
+        tile.structure = 'AMBIENT_LUMBER_MILL';
+        tile.structureName = option.label;
+        tile.structureDetails = {
+          isAmbientStructure: true,
+          ambientStructure: ambientStructureData,
+          displayType: option.label
+        };
+      }
+
+      tile.ambientStructure = ambientStructureData;
     }
   }
 }
@@ -11848,64 +11927,76 @@ function buildStructureTooltipContent(tile) {
     return null;
   }
 
+  const details = tile.structureDetails;
+
+  const buildAmbientTooltip = (ambientStructure) => {
+    if (!ambientStructure || !ambientStructure.label) {
+      return null;
+    }
+    const sections = [`<div class="tooltip-title">${escapeHtml(ambientStructure.label)}</div>`];
+    const entries = [];
+    const cultureLabel = ambientStructure.cultureLabel || tile.culturalInfluence?.label || null;
+    const influenceDescription = tile.culturalInfluence
+      ? describeInfluenceStrength(tile.culturalInfluence.strength)
+      : null;
+    if (cultureLabel) {
+      const value = influenceDescription ? `${cultureLabel} — ${influenceDescription}` : cultureLabel;
+      entries.push({ label: 'Cultural Tie', value });
+    }
+    const areaName = tile.areaName;
+    if (areaName) {
+      entries.push({ label: 'Region', value: areaName });
+    }
+    const biomeType = tile.biomeType;
+    if (biomeType) {
+      const definition = biomeTypeDefinitions[biomeType] || null;
+      let biomeLabel = definition && definition.label ? definition.label : null;
+      if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
+        biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
+      }
+      if (biomeLabel) {
+        entries.push({ label: 'Biome', value: biomeLabel });
+      }
+    }
+    const climateDescription = describeTileClimate(tile);
+    if (climateDescription) {
+      entries.push({ label: 'Climate', value: climateDescription });
+    }
+    const resourceSummary = summarizeTileResources(tile);
+    if (resourceSummary.length > 0) {
+      const formattedResources = formatListWithConjunction(resourceSummary);
+      if (formattedResources) {
+        entries.push({ label: 'Resources', value: formattedResources });
+      }
+    }
+    const populationGroups = derivePopulationGroupsFromCulture(tile);
+    if (populationGroups.major) {
+      entries.push({ label: 'Major Population Groups', value: populationGroups.major });
+    }
+    if (populationGroups.minor) {
+      entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
+    }
+    if (entries.length > 0) {
+      const listItems = entries
+        .map(
+          ({ label, value }) =>
+            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+              value
+            )}</span></li>`
+        )
+        .join('');
+      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+    return sections.join('');
+  };
+
   if (!tile.structureName) {
     const ambientStructure = tile.ambientStructure;
-    const biomeType = tile.biomeType;
     const areaName = tile.areaName;
-    if (ambientStructure && ambientStructure.label) {
-      const sections = [`<div class="tooltip-title">${escapeHtml(ambientStructure.label)}</div>`];
-      const entries = [];
-      const cultureLabel = ambientStructure.cultureLabel || tile.culturalInfluence?.label || null;
-      const influenceDescription = tile.culturalInfluence
-        ? describeInfluenceStrength(tile.culturalInfluence.strength)
-        : null;
-      if (cultureLabel) {
-        const value = influenceDescription ? `${cultureLabel} — ${influenceDescription}` : cultureLabel;
-        entries.push({ label: 'Cultural Tie', value });
-      }
-      if (areaName) {
-        entries.push({ label: 'Region', value: areaName });
-      }
-      if (biomeType) {
-        const definition = biomeTypeDefinitions[biomeType] || null;
-        let biomeLabel = definition && definition.label ? definition.label : null;
-        if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
-          biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
-        }
-        if (biomeLabel) {
-          entries.push({ label: 'Biome', value: biomeLabel });
-        }
-      }
-      const climateDescription = describeTileClimate(tile);
-      if (climateDescription) {
-        entries.push({ label: 'Climate', value: climateDescription });
-      }
-      const resourceSummary = summarizeTileResources(tile);
-      if (resourceSummary.length > 0) {
-        const formattedResources = formatListWithConjunction(resourceSummary);
-        if (formattedResources) {
-          entries.push({ label: 'Resources', value: formattedResources });
-        }
-      }
-      const populationGroups = derivePopulationGroupsFromCulture(tile);
-      if (populationGroups.major) {
-        entries.push({ label: 'Major Population Groups', value: populationGroups.major });
-      }
-      if (populationGroups.minor) {
-        entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
-      }
-      if (entries.length > 0) {
-        const listItems = entries
-          .map(
-            ({ label, value }) =>
-              `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
-                value
-              )}</span></li>`
-          )
-          .join('');
-        sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
-      }
-      return sections.join('');
+    const biomeType = tile.biomeType;
+    const ambientContent = buildAmbientTooltip(ambientStructure);
+    if (ambientContent) {
+      return ambientContent;
     }
     if (!biomeType && !areaName) {
       return null;
@@ -11962,7 +12053,13 @@ function buildStructureTooltipContent(tile) {
     return sections.join('');
   }
 
-  const details = tile.structureDetails;
+  if (details?.isAmbientStructure) {
+    const ambientContent = buildAmbientTooltip(details.ambientStructure);
+    if (ambientContent) {
+      return ambientContent;
+    }
+  }
+
   const isSettlement =
     details && (details.isSettlement || (details.type && settlementDetailTypes.has(details.type)));
   if (isSettlement) {
