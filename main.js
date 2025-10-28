@@ -7399,6 +7399,40 @@ function ensureDwarfTestContext() {
   return dwarfTestState.ctx;
 }
 
+function resizeDwarfTestCanvas() {
+  const canvas = elements.dwarfTestCanvas;
+  if (!canvas) {
+    return;
+  }
+  const width = Math.floor(canvas.clientWidth || 0);
+  const height = Math.floor(canvas.clientHeight || 0);
+  if (width > 0 && canvas.width !== width) {
+    canvas.width = width;
+  }
+  if (height > 0 && canvas.height !== height) {
+    canvas.height = height;
+  }
+}
+
+function handleDwarfTestResize() {
+  const area = elements.dwarfTestArea;
+  if (!area || area.classList.contains('hidden')) {
+    return;
+  }
+  resizeDwarfTestCanvas();
+  if (!dwarfTestState.active) {
+    return;
+  }
+  const ctx = ensureDwarfTestContext();
+  if (!ctx) {
+    return;
+  }
+  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
+  updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
+  drawDwarfTestBackground(ctx);
+  drawDwarfTestCharacter(ctx, spriteDimensions);
+}
+
 function updateDwarfTestButtonState() {
   const button = elements.dwarfTestButton;
   if (!button) {
@@ -7780,6 +7814,7 @@ function openDwarfTest() {
   area.classList.remove('hidden');
   area.classList.add('fullscreen');
   area.setAttribute('aria-hidden', 'false');
+  resizeDwarfTestCanvas();
   const ctx = ensureDwarfTestContext();
   if (!ctx) {
     area.classList.add('hidden');
@@ -7792,8 +7827,10 @@ function openDwarfTest() {
   updateDwarfTestButtonState();
   window.addEventListener('keydown', handleDwarfTestKeyDown);
   window.addEventListener('keyup', handleDwarfTestKeyUp);
+  handleDwarfTestResize();
   dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
   window.requestAnimationFrame(() => {
+    handleDwarfTestResize();
     if (typeof area.focus === 'function') {
       area.focus();
     }
@@ -12791,6 +12828,7 @@ function resetView(worldWidth, worldHeight) {
 }
 
 function handleResize() {
+  handleDwarfTestResize();
   if (!elements.canvasWrapper) {
     return;
   }
