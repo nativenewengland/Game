@@ -7883,6 +7883,7 @@ function tryPlaceDwarfhold(candidate, options) {
     abandonedDwarfholdKey,
     abandonedDwarfholdChance,
     rng,
+    mountainRuggednessSeed,
     dwarfholds,
     towns,
     nearbyTownDistanceSq
@@ -7928,6 +7929,12 @@ function tryPlaceDwarfhold(candidate, options) {
 
   if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
     tile.overlay = mountainOverlayKey;
+    if (mountainRuggednessSeed) {
+      const ruggednessNoise = hashCoords(candidate.x, candidate.y, mountainRuggednessSeed ^ 0x51a3b1f7);
+      tile.mountainRuggedness = clamp(0.4 + ruggednessNoise * 0.45, 0, 1);
+    } else {
+      tile.mountainRuggedness = Math.max(Number(tile.mountainRuggedness) || 0, 0.45);
+    }
   }
 
   const resolvedTownDistanceSq =
@@ -11922,11 +11929,15 @@ function buildNeighborDetails(tiles, width, height, x, y, waterTileKey) {
     const overlayKey = typeof tile.overlay === 'string' ? tile.overlay : null;
     const hillOverlayKey = typeof tile.hillOverlay === 'string' ? tile.hillOverlay : null;
     const baseKey = typeof tile.base === 'string' ? tile.base : null;
+    const overlayIsMountain = overlayKey ? isMountainOverlayKey(overlayKey) : false;
+    const hillIsMountain = hillOverlayKey ? isMountainOverlayKey(hillOverlayKey) : false;
     result[key] = {
       overlayKey,
       hillOverlayKey,
       hasForestOverlay: overlayKey ? isTreeOverlayKey(overlayKey) : false,
       hasHillOverlay: hillOverlayKey ? hillOverlayKeySet.has(hillOverlayKey) : false,
+      hasMountainOverlay: overlayIsMountain || hillIsMountain,
+      mountainOverlayKey: overlayIsMountain ? overlayKey : hillIsMountain ? hillOverlayKey : null,
       baseKey,
       isWater: Boolean(waterTileKey) && baseKey === waterTileKey
     };
@@ -12024,6 +12035,141 @@ function applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, s
   }
 
   subTile.hillOverlay = keepHill ? hillOverlayKey : null;
+}
+
+function applyMountainVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt) {
+  if (!subTile || !baseTile) {
+    return;
+  }
+
+  const overlayKey = typeof baseTile.overlay === 'string' ? baseTile.overlay : null;
+  const hillOverlayKey = typeof baseTile.hillOverlay === 'string' ? baseTile.hillOverlay : null;
+  const overlayIsMountain = overlayKey ? isMountainOverlayKey(overlayKey) : false;
+  const hillIsMountain = hillOverlayKey ? isMountainOverlayKey(hillOverlayKey) : false;
+  const hasMountain = overlayIsMountain || hillIsMountain;
+
+  const updateRuggedness = (value) => {
+    const existing = Number.isFinite(subTile.mountainRuggedness)
+      ? subTile.mountainRuggedness
+      : 0;
+    const clamped = clamp(value, 0, 1);
+    subTile.mountainRuggedness = clamp(existing * 0.4 + clamped * 0.6, 0, 1);
+  };
+
+  if (!hasMountain) {
+    if (Number.isFinite(subTile.mountainRuggedness)) {
+      subTile.mountainRuggedness = clamp(subTile.mountainRuggedness * 0.35, 0, 1);
+    } else {
+      subTile.mountainRuggedness = 0;
+    }
+    return;
+  }
+
+  const mountainOverlayKey = overlayIsMountain ? overlayKey : hillOverlayKey;
+  const useHillSlot = !overlayIsMountain && hillIsMountain;
+
+  if (!mountainOverlayKey) {
+    return;
+  }
+
+  if (isVolcanoOverlayKey(mountainOverlayKey) || mountainOverlayKey.includes('PEAK')) {
+    if (useHillSlot) {
+      subTile.hillOverlay = mountainOverlayKey;
+    } else {
+      subTile.overlay = mountainOverlayKey;
+    }
+    updateRuggedness(0.7 + (noiseAt(111) - 0.5) * 0.3);
+    return;
+  }
+
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.32;
+
+  const hasNeighborMountain = (key) => Boolean(neighbors[key] && neighbors[key].hasMountainOverlay);
+
+  let keep = true;
+
+  if (normalizedY < edgeThreshold && !hasNeighborMountain('north')) {
+    keep = keep && noiseAt(100) > 0.24 + normalizedY * 0.7;
+  }
+  if (keep && normalizedY > 1 - edgeThreshold && !hasNeighborMountain('south')) {
+    keep = noiseAt(101) > 0.24 + (1 - normalizedY) * 0.7;
+  }
+  if (keep && normalizedX < edgeThreshold && !hasNeighborMountain('west')) {
+    keep = noiseAt(102) > 0.24 + normalizedX * 0.7;
+  }
+  if (keep && normalizedX > 1 - edgeThreshold && !hasNeighborMountain('east')) {
+    keep = noiseAt(103) > 0.24 + (1 - normalizedX) * 0.7;
+  }
+
+  if (
+    keep &&
+    normalizedX < edgeThreshold &&
+    normalizedY < edgeThreshold &&
+    !hasNeighborMountain('northWest')
+  ) {
+    keep = noiseAt(104) > 0.2 + (normalizedX + normalizedY) * 0.42;
+  }
+  if (
+    keep &&
+    normalizedX > 1 - edgeThreshold &&
+    normalizedY < edgeThreshold &&
+    !hasNeighborMountain('northEast')
+  ) {
+    keep = noiseAt(105) > 0.2 + (1 - normalizedX + normalizedY) * 0.42;
+  }
+  if (
+    keep &&
+    normalizedX < edgeThreshold &&
+    normalizedY > 1 - edgeThreshold &&
+    !hasNeighborMountain('southWest')
+  ) {
+    keep = noiseAt(106) > 0.2 + (normalizedX + (1 - normalizedY)) * 0.42;
+  }
+  if (
+    keep &&
+    normalizedX > 1 - edgeThreshold &&
+    normalizedY > 1 - edgeThreshold &&
+    !hasNeighborMountain('southEast')
+  ) {
+    keep = noiseAt(107) > 0.2 + (2 - normalizedX - normalizedY) * 0.42;
+  }
+
+  if (keep) {
+    const edgeDistance = Math.min(
+      Math.min(normalizedX, 1 - normalizedX),
+      Math.min(normalizedY, 1 - normalizedY)
+    );
+    const erosionThreshold = 0.08 + (0.4 - edgeDistance) * 0.22;
+    if (noiseAt(108) < erosionThreshold) {
+      keep = false;
+    }
+  }
+
+  if (!keep) {
+    if (useHillSlot) {
+      subTile.hillOverlay = null;
+    } else {
+      subTile.overlay = null;
+    }
+    if (Number.isFinite(subTile.mountainRuggedness)) {
+      subTile.mountainRuggedness = clamp(subTile.mountainRuggedness * 0.5, 0, 1);
+    } else {
+      subTile.mountainRuggedness = 0;
+    }
+    return;
+  }
+
+  if (useHillSlot) {
+    subTile.hillOverlay = mountainOverlayKey;
+  } else {
+    subTile.overlay = mountainOverlayKey;
+  }
+
+  const ruggednessBase = 0.38 + noiseAt(109) * 0.45;
+  const detailVariance = (noiseAt(110) - 0.5) * 0.2;
+  updateRuggedness(ruggednessBase + detailVariance);
 }
 
 function applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey) {
@@ -12339,6 +12485,7 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
             { waterTileKey, defaultLandKey }
           );
           applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
+          applyMountainVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
           applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey);
           applyRiverSubtileVariation(subTile, riverVariation, subX, subY);
 
@@ -16215,6 +16362,7 @@ function createWorld(seedString) {
         marshProximity: 0,
         desertProximity: 0,
         volcanoProximity: 0,
+        mountainRuggedness: 0,
         forestCanopyDensity: 0,
         elevation: 0,
         temperature: 0,
@@ -16312,6 +16460,7 @@ function createWorld(seedString) {
   const volcanoOverlayKeys = hasMountainTile
     ? [activeVolcanoKey, dormantVolcanoKey].filter(Boolean)
     : [];
+  const mountainRuggednessSeed = hasMountainTile ? (seedNumber + 0x8f3a3c4d) >>> 0 : 0;
   const mountainPeakHeightThreshold = 0.97;
   const mountainTopVariantKeys = hasMountainTile
     ? ['MOUNTAIN_TOP_A', 'MOUNTAIN_TOP_B'].filter((key) => tileLookup.has(key))
@@ -17692,6 +17841,17 @@ function createWorld(seedString) {
         const usePeakOverlay =
           mountainPeakKey && normalizedHeight >= mountainPeakHeightThreshold;
         tile.overlay = usePeakOverlay ? mountainPeakKey : mountainOverlayKey;
+        const ruggednessNoise = mountainRuggednessSeed
+          ? hashCoords(x, y, mountainRuggednessSeed)
+          : 0.5;
+        const baseRuggedness = usePeakOverlay
+          ? 0.55 + normalizedHeight * 0.35
+          : 0.35 + normalizedHeight * 0.45;
+        tile.mountainRuggedness = clamp(
+          baseRuggedness + (ruggednessNoise - 0.5) * 0.3,
+          0,
+          1
+        );
         const isSandBase = hasSandTile && tile.base === sandTileKey;
         const isBadlandsBase = hasBadlandsTile && tile.base === badlandsTileKey;
         if (isSandBase || isBadlandsBase) {
@@ -17798,6 +17958,10 @@ function createWorld(seedString) {
             }
 
             tile.overlay = overlayKey;
+            const volcanoRuggednessNoise = mountainRuggednessSeed
+              ? hashCoords(candidate.x, candidate.y, mountainRuggednessSeed ^ 0x9e3779b9)
+              : 0.65;
+            tile.mountainRuggedness = clamp(0.65 + (volcanoRuggednessNoise - 0.5) * 0.35, 0, 1);
             if (stoneTileKey && tile.base !== stoneTileKey) {
               tile.base = stoneTileKey;
             }
@@ -17914,6 +18078,7 @@ function createWorld(seedString) {
           abandonedDwarfholdKey,
           abandonedDwarfholdChance,
           rng,
+          mountainRuggednessSeed,
           dwarfholds,
           towns,
           nearbyTownDistanceSq: dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius
@@ -18622,6 +18787,24 @@ function createWorld(seedString) {
         if (tile.overlay && isMountainOverlay(tile.overlay)) {
           tile.overlay = null;
           tile.hillOverlay = null;
+        }
+      }
+    }
+  }
+
+  if (mountainOverlayKey) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const tile = tiles[y][x];
+        if (!tile) {
+          continue;
+        }
+        const overlayIsMountain = isMountainOverlay(tile.overlay);
+        const hillIsMountain = isMountainOverlay(tile.hillOverlay);
+        if (!overlayIsMountain && !hillIsMountain) {
+          tile.mountainRuggedness = 0;
+        } else if (!Number.isFinite(tile.mountainRuggedness)) {
+          tile.mountainRuggedness = 0.45;
         }
       }
     }
@@ -22513,10 +22696,19 @@ function applyMountainShading(ctx, cell, x, y, tileSize = drawSize) {
     1
   );
   const volcanoAlphaBoost = volcanoProximity > 0 ? volcanoProximity * 0.35 : 0;
-  const shadingAlpha = clamp(baseAlpha + volcanoAlphaBoost, 0, 0.75);
+  const ruggedness = clamp(
+    Number.isFinite(cell.mountainRuggedness) ? cell.mountainRuggedness : 0,
+    0,
+    1
+  );
+  const ruggednessBoost = (ruggedness - 0.45) * 0.22;
+  const shadingAlpha = clamp(baseAlpha + volcanoAlphaBoost + ruggednessBoost, 0.18, 0.85);
+  const shadeRed = Math.round(24 + ruggedness * 8);
+  const shadeGreen = Math.round(20 + ruggedness * 6);
+  const shadeBlue = Math.round(18 + ruggedness * 4);
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
-  ctx.fillStyle = `rgba(24, 20, 18, ${shadingAlpha})`;
+  ctx.fillStyle = `rgba(${shadeRed}, ${shadeGreen}, ${shadeBlue}, ${shadingAlpha})`;
   ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
