@@ -9033,12 +9033,15 @@ function renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption) {
   } else {
     ctx.drawImage(bodyImage, offsetX, offsetY, drawWidth, drawHeight);
   }
-  const headLayers = getCharacterCreatorSkinTintLayers('headDefault', skinColor);
-  if (headLayers) {
-    ctx.drawImage(headLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
-    ctx.drawImage(headLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
-  } else {
-    ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+  const shouldRenderHead = gender !== 'female';
+  if (shouldRenderHead) {
+    const headLayers = getCharacterCreatorSkinTintLayers('headDefault', skinColor);
+    if (headLayers) {
+      ctx.drawImage(headLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.drawImage(headLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
+    } else {
+      ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+    }
   }
   const hairAssetKey = getCharacterCreatorHairAssetKey(dwarf);
   const hairTintLayers = getCharacterCreatorHairTintLayers(
@@ -9070,7 +9073,8 @@ function renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption) {
       }
     }
   }
-  const noseImage = characterCreatorPortraitAssets.nose?.image;
+  const shouldRenderNose = gender !== 'female';
+  const noseImage = shouldRenderNose ? characterCreatorPortraitAssets.nose?.image : null;
   if (noseImage) {
     ctx.drawImage(noseImage, offsetX, offsetY, drawWidth, drawHeight);
   }
