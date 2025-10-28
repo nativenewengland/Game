@@ -5403,6 +5403,7 @@ const defaultCultureColorByKey = {
   half_orc_half_elf: '#708f76',
   dryad: '#58b072',
   leshy: '#3f7a4d',
+  tuskar: '#7e91a8',
   others: '#9e9e9e'
 };
 
@@ -5692,6 +5693,12 @@ const ambientStructureOptionsByCulture = {
     'Totem Thicket',
     'Carved Bark Gate',
     'Frostbough Hide'
+  ]),
+  tuskar: createAmbientStructureOptions([
+    'Carved Tusk Stele',
+    'Icewind Moot Ring',
+    'Frosttusk Longhouse',
+    'Snowdrift Watch'
   ]),
   others: createAmbientStructureOptions([
     "Wanderer's Obelisk",
@@ -6276,6 +6283,8 @@ function applyCulturalInfluence({
   const jungleRadiusSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
   const desertAmbientSeed = (ambientSeedBase + 0x6a09e667) >>> 0;
   const desertRadiusSeed = (ambientSeedBase + 0xbb67ae85) >>> 0;
+  const tundraAmbientSeed = (ambientSeedBase + 0x4ed8aa4a) >>> 0;
+  const tundraRadiusSeed = (ambientSeedBase + 0xa953fd4e) >>> 0;
   const halflingHillAmbientSeed = (ambientSeedBase + 0x1cf11a13) >>> 0;
   const halflingHillRadiusSeed = (ambientSeedBase + 0xf5a5a6b9) >>> 0;
   const humanAmbientSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
@@ -6695,6 +6704,28 @@ function applyCulturalInfluence({
             ]
           });
         }
+      }
+
+      if (biomeType === 'tundra') {
+        const roll = hashCoords(x, y, tundraAmbientSeed);
+        if (roll < 0.0029) {
+          const radiusRoll = hashCoords(x, y, tundraRadiusSeed);
+          const radius = lerp(10, 22, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.32,
+            entries: [
+              {
+                key: 'tuskar',
+                share: 1,
+                label: 'Tuskar'
+              }
+            ]
+          });
+        }
+        continue;
       }
 
       if (biomeType === 'desert') {
