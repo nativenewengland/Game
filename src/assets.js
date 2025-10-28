@@ -595,7 +595,7 @@ export const roadTileSpriteDefinitions = (() => {
     return null;
   }
   const tileSize = sheet.tileSize;
-  const row = 5;
+  const row = 4;
   const makeDefinition = (column) => ({
     sheetKey: sheet.key,
     sx: column * tileSize,
@@ -605,17 +605,17 @@ export const roadTileSpriteDefinitions = (() => {
 
   return {
     isolated: makeDefinition(18),
-    deadEndWest: makeDefinition(2),
+    deadEndWest: makeDefinition(21),
     straightEastWest: makeDefinition(8),
     cornerNorthEast: makeDefinition(11),
     cornerSouthEast: makeDefinition(9),
     cornerSouthWest: makeDefinition(10),
     cornerNorthWest: makeDefinition(12),
-    teeMissingWest: makeDefinition(7),
-    teeMissingEast: makeDefinition(1),
+    teeMissingWest: makeDefinition(13),
+    teeMissingEast: makeDefinition(16),
     teeMissingNorth: makeDefinition(14),
     teeMissingSouth: makeDefinition(15),
-    cross: makeDefinition(16)
+    cross: makeDefinition(17)
   };
 })();
 
