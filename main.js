@@ -13491,6 +13491,43 @@ function applyRiverSubtileVariation(subTile, variation, subX, subY) {
   }
 }
 
+function applySurfaceNoiseVariation(subTile, noiseAt, baseKeys = {}) {
+  if (!subTile || typeof subTile.base !== 'string') {
+    if (subTile && Object.prototype.hasOwnProperty.call(subTile, 'surfaceVariation')) {
+      delete subTile.surfaceVariation;
+    }
+    return;
+  }
+
+  const { snowTileKey = null, sandTileKey = null, badlandsTileKey = null } = baseKeys;
+  const baseKey = subTile.base;
+  let channel = null;
+  let strength = 0;
+
+  if (snowTileKey && baseKey === snowTileKey) {
+    channel = 180;
+    strength = 0.75;
+  } else if (sandTileKey && baseKey === sandTileKey) {
+    channel = 182;
+    strength = 0.85;
+  } else if (badlandsTileKey && baseKey === badlandsTileKey) {
+    channel = 184;
+    strength = 0.8;
+  }
+
+  if (channel === null) {
+    if (Object.prototype.hasOwnProperty.call(subTile, 'surfaceVariation')) {
+      delete subTile.surfaceVariation;
+    }
+    return;
+  }
+
+  const baseNoise = noiseAt(channel) * 2 - 1;
+  const detailNoise = noiseAt(channel + 1) * 2 - 1;
+  const variation = clamp((baseNoise * 0.65 + detailNoise * 0.35) * strength, -1, 1);
+  subTile.surfaceVariation = variation;
+}
+
 function applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt) {
   if (!subTile || !baseTile) {
     return;
@@ -13924,6 +13961,11 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
   );
   const waterTileKey = world.waterTileKey || resolveTileName('WATER');
   const defaultLandKey = world.grassTileKey || resolveTileName('GRASS');
+  const snowTileKey = typeof world.snowTileKey === 'string' ? world.snowTileKey : null;
+  const sandTileKey = typeof world.sandTileKey === 'string' ? world.sandTileKey : null;
+  const badlandsTileKey =
+    typeof world.badlandsTileKey === 'string' ? world.badlandsTileKey : null;
+  const surfaceNoiseKeys = { snowTileKey, sandTileKey, badlandsTileKey };
 
   for (let coarseY = 0; coarseY < areaHeight; coarseY += 1) {
     const sourceRow = sourceTiles[startY + coarseY];
@@ -13982,6 +14024,7 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
           applyMountainVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
           applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey);
           applyRiverSubtileVariation(subTile, riverVariation, subX, subY);
+          applySurfaceNoiseVariation(subTile, noiseAt, surfaceNoiseKeys);
 
           targetRow[coarseX * subdivisions + subX] = subTile;
         }
@@ -14016,6 +14059,9 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
       seaLevel: world.seaLevel,
       waterTileKey: world.waterTileKey || resolveTileName('WATER'),
       grassTileKey: world.grassTileKey || resolveTileName('GRASS'),
+      snowTileKey: snowTileKey || null,
+      sandTileKey: sandTileKey || null,
+      badlandsTileKey: badlandsTileKey || null,
       factions: Array.isArray(world.factions) ? world.factions : [],
       seedString:
         (typeof world.seedString === 'string' && world.seedString) ||
@@ -14036,6 +14082,10 @@ function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
   const metadata = patch.metadata || {};
   const waterTileKey = metadata.waterTileKey || resolveTileName('WATER');
   const grassTileKey = metadata.grassTileKey || resolveTileName('GRASS');
+  const snowTileKey = metadata.snowTileKey || null;
+  const sandTileKey = metadata.sandTileKey || null;
+  const badlandsTileKey = metadata.badlandsTileKey || null;
+  const surfaceNoiseKeys = { snowTileKey, sandTileKey, badlandsTileKey };
   const patchWorld = {
     tiles,
     width,
@@ -14076,6 +14126,7 @@ function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
         }
       }
 
+      applySurfaceNoiseShading(ctx, cell, x, y, tileSize, surfaceNoiseKeys);
       applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize);
       applyVolcanoShading(ctx, cell, x, y, tileSize);
 
@@ -23927,6 +23978,9 @@ function createWorld(seedString) {
     tiles,
     grassTileKey,
     waterTileKey,
+    snowTileKey,
+    sandTileKey,
+    badlandsTileKey,
     width,
     height,
     seaLevel,
@@ -24281,6 +24335,79 @@ function getBiomeOverlayColor(type) {
   }
   const normalized = type.toLowerCase();
   return biomeOverlayColors[normalized] || null;
+}
+
+function applySurfaceNoiseShading(
+  ctx,
+  cell,
+  x,
+  y,
+  tileSize = drawSize,
+  baseKeys = {}
+) {
+  if (!ctx || !cell || typeof cell.base !== 'string') {
+    return;
+  }
+
+  const { snowTileKey = null, sandTileKey = null, badlandsTileKey = null } = baseKeys;
+  const baseKey = cell.base;
+  if (baseKey !== snowTileKey && baseKey !== sandTileKey && baseKey !== badlandsTileKey) {
+    return;
+  }
+
+  const variation = clamp(
+    Number.isFinite(cell.surfaceVariation) ? cell.surfaceVariation : 0,
+    -1,
+    1
+  );
+  if (Math.abs(variation) < 0.01) {
+    return;
+  }
+
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
+  const lighten = variation > 0;
+  const intensity = Math.min(1, Math.abs(variation));
+
+  let colorComponents = null;
+  let alpha = 0;
+
+  if (baseKey === snowTileKey) {
+    if (lighten) {
+      colorComponents = '255, 255, 255';
+      alpha = 0.1 + intensity * 0.28;
+    } else {
+      colorComponents = '120, 146, 182';
+      alpha = 0.08 + intensity * 0.26;
+    }
+  } else if (baseKey === sandTileKey) {
+    if (lighten) {
+      colorComponents = '255, 236, 192';
+      alpha = 0.08 + intensity * 0.24;
+    } else {
+      colorComponents = '184, 140, 78';
+      alpha = 0.08 + intensity * 0.22;
+    }
+  } else if (baseKey === badlandsTileKey) {
+    if (lighten) {
+      colorComponents = '235, 206, 168';
+      alpha = 0.08 + intensity * 0.22;
+    } else {
+      colorComponents = '143, 102, 66';
+      alpha = 0.08 + intensity * 0.24;
+    }
+  }
+
+  if (!colorComponents || alpha <= 0) {
+    return;
+  }
+
+  const clampedAlpha = clamp(alpha, 0, 0.55);
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = `rgba(${colorComponents}, ${clampedAlpha})`;
+  ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
+  ctx.restore();
 }
 
 function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize = drawSize) {
