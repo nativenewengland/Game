@@ -6575,6 +6575,8 @@ const dwarfPortraitConfig = {
   eyeSize: 2
 };
 
+const bodyPanelPortraitScaleMultiplier = 1.6;
+
 const dwarfPortraitState = {
   canvas: null,
   ctx: null
@@ -9000,8 +9002,20 @@ function renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption) {
   }
 }
 
-function renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
-  const { tileSize, scale, head, eyePositions, eyeSize } = dwarfPortraitConfig;
+function renderTilesheetPortrait(
+  ctx,
+  canvas,
+  dwarf,
+  skinOption,
+  hairOption,
+  eyeOption,
+  hairStyleOption,
+  headOption,
+  options = {}
+) {
+  const { tileSize, scale: baseScale, head, eyePositions, eyeSize } = dwarfPortraitConfig;
+  const scaleMultiplier = typeof options.scaleMultiplier === 'number' ? options.scaleMultiplier : 1;
+  const scale = typeof options.scale === 'number' ? options.scale : baseScale * scaleMultiplier;
   const destSize = tileSize * scale;
   const baseX = Math.floor((canvas.width - destSize) / 2);
   const baseY = Math.floor((canvas.height - destSize) / 2);
@@ -9075,7 +9089,17 @@ function renderBodyPanelPortrait(dwarf, skinOption, hairOption, eyeOption, hairS
     return;
   }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
+  renderTilesheetPortrait(
+    ctx,
+    canvas,
+    dwarf,
+    skinOption,
+    hairOption,
+    eyeOption,
+    hairStyleOption,
+    headOption,
+    { scaleMultiplier: bodyPanelPortraitScaleMultiplier }
+  );
 }
 
 function updateDwarfPortrait(dwarf) {
