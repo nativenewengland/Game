@@ -5111,6 +5111,7 @@ const ambientStructureOptionsByCulture = {
     'Wayside Shrine',
     'Market Cross',
     'Village Green',
+    'Homestead',
     'Riverside Ferry Landing',
     { label: 'Lumber Mill', requiresTreeNeighbor: true }
   ]),
