@@ -4892,6 +4892,10 @@ const defaultCultureColorByKey = {
   dragonborn: '#c16a6a',
   tieflings: '#b064b0',
   orcs: '#556b2f',
+  beastmen: '#8f6a3a',
+  ogres: '#b7745c',
+  trolls: '#5c8563',
+  harpies: '#b89cc6',
   satyrs: '#c18c5d',
   nymphs: '#9bd4a9',
   ents: '#8bbbcf',
@@ -5134,7 +5138,8 @@ function applyCulturalInfluence({
   tiles,
   settlements,
   factions,
-  isLandBaseTile
+  isLandBaseTile,
+  seedNumber
 }) {
   if (!Array.isArray(tiles) || tiles.length === 0) {
     return;
@@ -5182,6 +5187,55 @@ function applyCulturalInfluence({
 
   const raceMetadata = new Map();
   const culturalSources = [];
+  const isLandFn = typeof isLandBaseTile === 'function' ? isLandBaseTile : null;
+
+  const ensureRaceMetadata = (key, label, color) => {
+    if (!key) {
+      return;
+    }
+    if (!raceMetadata.has(key)) {
+      raceMetadata.set(key, { label, color });
+    }
+  };
+
+  const addCulturalSource = ({ x, y, radius, entries, falloff }) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return;
+    }
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return;
+    }
+    const normalizedEntries = entries
+      .map((entry) => {
+        if (!entry || !entry.key) {
+          return null;
+        }
+        const share = clamp(Number(entry.share), 0, 1);
+        if (share <= 0) {
+          return null;
+        }
+        const label = typeof entry.label === 'string' && entry.label.trim() ? entry.label.trim() : formatCultureLabel(entry.key);
+        const color = resolveCultureColor(entry.color, entry.key);
+        ensureRaceMetadata(entry.key, label, color);
+        return { key: entry.key, share, label, color };
+      })
+      .filter(Boolean);
+
+    if (normalizedEntries.length === 0) {
+      return;
+    }
+
+    const effectiveFalloff = falloff > 0 ? falloff : 1.35;
+    const effectiveRadius = Number.isFinite(radius) ? Math.max(6, radius) : 8;
+
+    culturalSources.push({
+      x,
+      y,
+      radius: effectiveRadius,
+      entries: normalizedEntries,
+      falloff: effectiveFalloff
+    });
+  };
 
   if (Array.isArray(settlements)) {
     settlements.forEach((settlement) => {
@@ -5221,12 +5275,6 @@ function applyCulturalInfluence({
         return;
       }
 
-      entries.forEach((entry) => {
-        if (!raceMetadata.has(entry.key)) {
-          raceMetadata.set(entry.key, { label: entry.label, color: entry.color });
-        }
-      });
-
       const type = typeof settlement?.type === 'string' ? settlement.type : null;
       const locationKey = `${rawX},${rawY}`;
       const baseClaimRadius = radiusByLocation.get(locationKey) || resolveFallbackClaimRadius(type);
@@ -5234,21 +5282,132 @@ function applyCulturalInfluence({
       const radius = Math.max(8, baseClaimRadius * multiplier);
       const falloff = resolveCulturalFalloffPower(type);
 
-      culturalSources.push({
+      addCulturalSource({
         x: rawX,
         y: rawY,
         radius,
         entries,
-        falloff: falloff > 0 ? falloff : 1.35
+        falloff
       });
     });
+  }
+
+  const ambientSeedBase = Number.isFinite(seedNumber) ? seedNumber >>> 0 : 0;
+  const forestAmbientSeed = (ambientSeedBase + 0x6d2b79f5) >>> 0;
+  const forestRadiusSeed = (ambientSeedBase + 0x1b873593) >>> 0;
+  const mountainAmbientSeed = (ambientSeedBase + 0x85ebca6b) >>> 0;
+  const mountainRadiusSeed = (ambientSeedBase + 0xc2b2ae35) >>> 0;
+  const mountainCultureSeed = (ambientSeedBase + 0x27d4eb2f) >>> 0;
+  const marshAmbientSeed = (ambientSeedBase + 0x4cf5ad43) >>> 0;
+  const marshRadiusSeed = (ambientSeedBase + 0x94d049bb) >>> 0;
+
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!row) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile) {
+        continue;
+      }
+      if (isLandFn && !isLandFn(tile.base)) {
+        continue;
+      }
+      const biomeType = tile.biomeType;
+      if (!biomeType) {
+        continue;
+      }
+
+      if (biomeType === 'forest') {
+        const canopy = clamp(Number(tile.forestCanopyDensity) || 0, 0, 1);
+        const threshold = 0.0015 + canopy * 0.0035;
+        const roll = hashCoords(x, y, forestAmbientSeed);
+        if (roll < threshold) {
+          const radiusRoll = hashCoords(x, y, forestRadiusSeed);
+          const radius = lerp(12, 24, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.34,
+            entries: [
+              {
+                key: 'beastmen',
+                share: 1,
+                label: 'Beastmen'
+              }
+            ]
+          });
+        }
+        continue;
+      }
+
+      if (biomeType === 'mountain') {
+        const roll = hashCoords(x, y, mountainAmbientSeed);
+        if (roll < 0.0035) {
+          const radiusRoll = hashCoords(x, y, mountainRadiusSeed);
+          const radius = lerp(10, 20, radiusRoll);
+          const cultureRoll = hashCoords(x, y, mountainCultureSeed);
+          let key = 'gnomes';
+          let label = 'Gnomes';
+          if (cultureRoll < 0.25) {
+            key = 'gnomes';
+            label = 'Gnomes';
+          } else if (cultureRoll < 0.55) {
+            key = 'ogres';
+            label = 'Ogres';
+          } else if (cultureRoll < 0.8) {
+            key = 'trolls';
+            label = 'Trolls';
+          } else {
+            key = 'harpies';
+            label = 'Harpies';
+          }
+
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.36,
+            entries: [
+              {
+                key,
+                share: 1,
+                label
+              }
+            ]
+          });
+        }
+        continue;
+      }
+
+      if (biomeType === 'marsh') {
+        const roll = hashCoords(x, y, marshAmbientSeed);
+        if (roll < 0.0038) {
+          const radiusRoll = hashCoords(x, y, marshRadiusSeed);
+          const radius = lerp(12, 22, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.33,
+            entries: [
+              {
+                key: 'ogres',
+                share: 1,
+                label: 'Ogres'
+              }
+            ]
+          });
+        }
+      }
+    }
   }
 
   if (culturalSources.length === 0) {
     return;
   }
-
-  const isLandFn = typeof isLandBaseTile === 'function' ? isLandBaseTile : null;
 
   for (let i = 0; i < culturalSources.length; i += 1) {
     const { x, y, radius, entries, falloff } = culturalSources[i];
@@ -21447,7 +21606,8 @@ function createWorld(seedString) {
       ...saintShrines
     ],
     factions,
-    isLandBaseTile
+    isLandBaseTile,
+    seedNumber
   });
   return {
     tiles,
