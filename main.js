@@ -25070,30 +25070,11 @@ function applyMountainShading(ctx, cell, x, y, tileSize = drawSize) {
     return;
   }
 
-  const peakOverlay = typeof overlayKey === 'string' && overlayKey.includes('PEAK');
-  const volcanoOverlay = isVolcanoOverlayKey(overlayKey) || isVolcanoOverlayKey(hillOverlayKey);
-  const baseAlpha = volcanoOverlay ? 0.35 : peakOverlay ? 0.35 : 0.3;
-  const volcanoProximity = clamp(
-    Number.isFinite(cell.volcanoProximity) ? cell.volcanoProximity : 0,
-    0,
-    1
-  );
-  const volcanoAlphaBoost = volcanoProximity > 0 ? volcanoProximity * 0.35 : 0;
-  const ruggedness = clamp(
-    Number.isFinite(cell.mountainRuggedness) ? cell.mountainRuggedness : 0,
-    0,
-    1
-  );
-  const ruggednessBoost = (ruggedness - 0.45) * 0.22;
-  const shadingAlpha = clamp(baseAlpha + volcanoAlphaBoost + ruggednessBoost, 0.18, 0.85);
-  const shadeRed = Math.round(24 + ruggedness * 8);
-  const shadeGreen = Math.round(20 + ruggedness * 6);
-  const shadeBlue = Math.round(18 + ruggedness * 4);
-  ctx.save();
-  ctx.globalCompositeOperation = 'source-atop';
-  ctx.fillStyle = `rgba(${shadeRed}, ${shadeGreen}, ${shadeBlue}, ${shadingAlpha})`;
-  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-  ctx.restore();
+  // Previously mountain tiles were darkened to create a shaded effect. This made
+  // grass bases appear unintentionally darker wherever a mountain overlay was
+  // present. By returning early, we avoid applying any additional shading while
+  // keeping the function signature intact for future adjustments.
+  return;
 }
 
 function applyDesertMountainTint(ctx, cell, x, y, tileSize = drawSize) {
