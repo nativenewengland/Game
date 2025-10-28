@@ -956,9 +956,7 @@ const dwarfholdOccupationRaces = [
 const dwarfholdNearbyTownRadius = 12;
 
 const evilWizardTowerBasePopulationOptions = [
-  { key: 'wizards', label: 'Wizards', color: '#9c5cff' },
-  { key: 'apprentices', label: 'Apprentices', color: '#b389ff' },
-  { key: 'attendants', label: 'Attendants', color: '#9e9e9e' }
+  { key: 'wizards', label: 'Wizards', color: '#9c5cff' }
 ];
 
 const evilWizardArchetypes = [
@@ -966,40 +964,38 @@ const evilWizardArchetypes = [
     key: 'necromancer',
     label: 'Necromancer',
     populationOptions: [
-      { key: 'undead', label: 'Undead Legions', color: '#b1b1b1' },
-      { key: 'graveAcolytes', label: 'Grave Acolytes', color: '#6f7a6b' }
+      { key: 'undead', label: 'Undead', color: '#b1b1b1' }
     ]
   },
   {
     key: 'warlock',
     label: 'Warlock',
     populationOptions: [
-      { key: 'demons', label: 'Infernal Servitors', color: '#ff6b6b' },
-      { key: 'cultists', label: 'Fanatical Cultists', color: '#f4a259' }
+      { key: 'undead', label: 'Undead', color: '#b1b1b1' },
+      { key: 'humans', label: 'Humans', color: '#9bb6d8' }
     ]
   },
   {
     key: 'artificer',
     label: 'Artificer',
     populationOptions: [
-      { key: 'constructs', label: 'Arcane Constructs', color: '#6ca0dc' },
-      { key: 'boundSpirits', label: 'Bound Spirits', color: '#9b5de5' }
+      { key: 'elementals', label: 'Elementals', color: '#48cae4' }
     ]
   },
   {
     key: 'elementalist',
     label: 'Elementalist',
     populationOptions: [
-      { key: 'elementals', label: 'Elemental Servitors', color: '#48cae4' },
-      { key: 'planarAllies', label: 'Planar Allies', color: '#ffb347' }
+      { key: 'elementals', label: 'Elementals', color: '#48cae4' },
+      { key: 'mindflayers', label: 'Mindflayers', color: '#845ec2' }
     ]
   },
   {
     key: 'voidcaller',
     label: 'Voidcaller',
     populationOptions: [
-      { key: 'eldritchHorrors', label: 'Eldritch Horrors', color: '#845ec2' },
-      { key: 'shadowbound', label: 'Shadowbound Shades', color: '#3f3d56' }
+      { key: 'mindflayers', label: 'Mindflayers', color: '#845ec2' },
+      { key: 'undead', label: 'Undead', color: '#b1b1b1' }
     ]
   }
 ];
@@ -4904,18 +4900,9 @@ const defaultCultureColorByKey = {
   priests: '#8cd1c6',
   beastmasters: '#b0f0d0',
   wizards: '#9c5cff',
-  apprentices: '#b389ff',
-  attendants: '#9e9e9e',
   undead: '#b1b1b1',
-  graveAcolytes: '#6f7a6b',
-  demons: '#ff6b6b',
-  cultists: '#f4a259',
-  constructs: '#6ca0dc',
-  boundSpirits: '#9b5de5',
   elementals: '#48cae4',
-  planarAllies: '#ffb347',
-  eldritchHorrors: '#845ec2',
-  shadowbound: '#3f3d56',
+  mindflayers: '#845ec2',
   guards: '#f2cd5c',
   others: '#9e9e9e'
 };
