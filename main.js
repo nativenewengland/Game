@@ -5046,6 +5046,259 @@ const defaultCultureColorByKey = {
   others: '#9e9e9e'
 };
 
+function createAmbientStructureOptions(labels) {
+  if (!Array.isArray(labels)) {
+    return [];
+  }
+  return labels
+    .map((label) => {
+      const trimmed = typeof label === 'string' ? label.trim() : '';
+      if (!trimmed) {
+        return null;
+      }
+      const key = trimmed
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      if (!key) {
+        return null;
+      }
+      return { key, label: trimmed };
+    })
+    .filter(Boolean);
+}
+
+const ambientStructureOptionsByCulture = {
+  humans: createAmbientStructureOptions([
+    'Wayside Shrine',
+    'Market Cross',
+    'Village Green',
+    'Riverside Ferry Landing'
+  ]),
+  dwarves: createAmbientStructureOptions([
+    'Ancestral Cairn',
+    'Brewmaster Alcove',
+    'Runestone Marker',
+    'Tunnel Watch Post'
+  ]),
+  elves: createAmbientStructureOptions([
+    'Moonwell Glade',
+    'Leafweaver Pavilion',
+    'Starbloom Archway',
+    'Silversong Clearing'
+  ]),
+  halflings: createAmbientStructureOptions([
+    'Storyteller Hearth',
+    'Picnic Nook',
+    'Pipeweed Arbor',
+    'Cozy Lantern Row'
+  ]),
+  gnomes: createAmbientStructureOptions([
+    'Whirligig Garden',
+    "Tinkerer's Yard",
+    'Clockwork Gazebo',
+    'Hidden Workshop Hatch'
+  ]),
+  goblins: createAmbientStructureOptions([
+    'Drumfire Pit',
+    'Sneak Ambush Hollow',
+    'Totem Mound',
+    'Rattletrap Camp'
+  ]),
+  kobolds: createAmbientStructureOptions([
+    'Torch Warren Mouth',
+    'Snarewood Clearing',
+    'Sparkstone Cache',
+    'Trapline Posts'
+  ]),
+  dragonborn: createAmbientStructureOptions([
+    'Oathfire Dais',
+    'Bannered Parade Ground',
+    'Scaleguard Post',
+    'Dragonkin Muster Field'
+  ]),
+  tieflings: createAmbientStructureOptions([
+    'Emberglass Obelisk',
+    'Ashen Prayer Steps',
+    'Infernal Lantern Row',
+    'Shadowbound Court'
+  ]),
+  orcs: createAmbientStructureOptions([
+    'War Chant Ring',
+    'Bonefire Circle',
+    'Raiders Mustering Yard',
+    'Warg Howl Post'
+  ]),
+  beastmen: createAmbientStructureOptions([
+    'Horn Cairn',
+    'Hide-Rack Encampment',
+    'Totem Thicket',
+    'Stampede Clearing'
+  ]),
+  ogres: createAmbientStructureOptions([
+    'Boulder Toss Field',
+    'Feast Pit',
+    'Stonegrub Larder',
+    'Mossy Rest Stones'
+  ]),
+  trolls: createAmbientStructureOptions([
+    'Regeneration Pool',
+    'Moss-Lair Hollow',
+    'Stone Slumber Niche',
+    'Ice Pillar Den'
+  ]),
+  harpies: createAmbientStructureOptions([
+    'Wind-Shear Roost',
+    'Feathered Beacon',
+    'Shriekspire',
+    'Sky-Rake Perch'
+  ]),
+  satyrs: createAmbientStructureOptions([
+    'Revel Fire Ring',
+    'Wine-Cask Cache',
+    'Panflute Stage',
+    'Grove Dance Green'
+  ]),
+  nymphs: createAmbientStructureOptions([
+    'Moonlit Spring',
+    'Petal Drift Pool',
+    'Mistveil Hollow',
+    'Lilyglade Retreat'
+  ]),
+  ents: createAmbientStructureOptions([
+    'Root Sentinel Stand',
+    'Sapling Nursery',
+    'Barkwatch Clearing',
+    'Seedstone Grove'
+  ]),
+  beastmasters: createAmbientStructureOptions([
+    'Menagerie Pens',
+    'Falconry Spire',
+    'Tamed Behemoth Pen',
+    'Horncall Field'
+  ]),
+  wizards: createAmbientStructureOptions([
+    'Arcane Scrying Obelisk',
+    'Leyline Beacon',
+    'Spellscar Circle',
+    'Runic Observatory'
+  ]),
+  undead: createAmbientStructureOptions([
+    'Bone Cairn Field',
+    'Ghoul Rest Hollow',
+    'Withered Graveyard',
+    'Cryptlight Vigil'
+  ]),
+  elementals: createAmbientStructureOptions([
+    'Flame Vent',
+    'Storm Crystal Node',
+    'Whispering Whirlpool',
+    'Shifting Dust Vortex'
+  ]),
+  mindflayers: createAmbientStructureOptions([
+    'Psionic Monolith',
+    'Nautiloid Beacon',
+    'Brain Lichen Gallery',
+    'Thoughtspike Plaza'
+  ]),
+  merfolks: createAmbientStructureOptions([
+    'Coral Waymarker',
+    'Tidepool Choir',
+    'Shellstone Plaza',
+    'Pearl Lantern Shoal'
+  ]),
+  fae: createAmbientStructureOptions([
+    'Gossamer Pavilion',
+    'Starlit Lantern Tree',
+    'Glittering Mushroom Ring',
+    'Whimsy Knoll'
+  ]),
+  centaurs: createAmbientStructureOptions([
+    'Trackway Cairn',
+    'Archery Stakes',
+    'Waystone Camp',
+    'Galloping Moot'
+  ]),
+  giants: createAmbientStructureOptions([
+    'Thunderstone Seat',
+    'Boulder Game Court',
+    'Watchfire Cairn',
+    'Skystride Outlook'
+  ]),
+  fimir: createAmbientStructureOptions([
+    'Bog Idol',
+    'Mist Totem',
+    'Cyclopean Hut Circle',
+    'Fenwatch Stilt'
+  ]),
+  demons: createAmbientStructureOptions([
+    'Scorched Summoning Sigil',
+    'Obsidian Spike',
+    'Ashen Rift',
+    'Hellbrand Camp'
+  ]),
+  snakemen: createAmbientStructureOptions([
+    'Sunstone Terrace',
+    'Venom Grove',
+    'Cenote Shrine',
+    'Serpent Muster Court'
+  ]),
+  dragons: createAmbientStructureOptions([
+    'Molten Perch',
+    'Treasure Scatter',
+    'Windworn Ledge',
+    'Skycoil Outlook'
+  ]),
+  elwetritsch: createAmbientStructureOptions([
+    'Briar Nest',
+    'Feathered Folly',
+    'Copper Vine Coop',
+    'Thicket Playcourt'
+  ]),
+  karkinos: createAmbientStructureOptions([
+    'Shell Midden Barrow',
+    'Tide Harpoon Post',
+    'Brine Altar',
+    'Surfclaw Watch'
+  ]),
+  blemaayae: createAmbientStructureOptions([
+    'Dune Hive',
+    'Obsidian Watch Spire',
+    'Ridge Stone Tents',
+    'Sandglass Encampment'
+  ]),
+  pygmy: createAmbientStructureOptions([
+    'Stilted Palm Huts',
+    'Painted Drum Plaza',
+    'Leaf Hammock Camp',
+    'Storyfire Circle'
+  ]),
+  half_orc_half_elf: createAmbientStructureOptions([
+    'Frontier Trading Circle',
+    'Border Watchfire',
+    'River Bargaining Jetty',
+    'Moot of Accord'
+  ]),
+  dryad: createAmbientStructureOptions([
+    'Heart-Tree Grove',
+    'Blooming Shrine',
+    'Vined Stone Arch',
+    'Petalshade Nook'
+  ]),
+  leshy: createAmbientStructureOptions([
+    'Root Snare Clearing',
+    'Totem Thicket',
+    'Carved Bark Gate',
+    'Frostbough Hide'
+  ]),
+  others: createAmbientStructureOptions([
+    "Wanderer's Obelisk",
+    'Sky-Reader Cairn',
+    'Caravan Fire Ring',
+    'Lonely Waystone'
+  ])
+};
+
 function normaliseCultureKey(key, fallbackLabel) {
   if (typeof key === 'string' && key.trim()) {
     return key.trim().toLowerCase();
@@ -5376,6 +5629,7 @@ function applyCulturalInfluence({
         continue;
       }
       tile.culturalInfluence = null;
+      tile.ambientStructure = null;
       if (tile.culturalInfluenceScores) {
         delete tile.culturalInfluenceScores;
       }
@@ -5587,6 +5841,8 @@ function applyCulturalInfluence({
   const halflingHillRadiusSeed = (ambientSeedBase + 0xf5a5a6b9) >>> 0;
   const humanAmbientSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
   const humanRadiusSeed = (ambientSeedBase + 0x3ad29c47) >>> 0;
+  const ambientStructurePlacementSeedBase = (ambientSeedBase + 0x8155c0de) >>> 0;
+  const ambientStructureSelectionSeedBase = (ambientSeedBase + 0x51a26c1f) >>> 0;
 
   const humanInfluenceThresholdByBiome = {
     forest: 0.0011,
@@ -5755,6 +6011,19 @@ function applyCulturalInfluence({
       });
     }
     return beastmanSeedCache.get(type);
+  };
+  const ambientStructureSeedCache = new Map();
+  const getAmbientStructureSeedsForCulture = (cultureKey) => {
+    const key = typeof cultureKey === 'string' && cultureKey.trim() ? cultureKey.trim().toLowerCase() : 'others';
+    if (!ambientStructureSeedCache.has(key)) {
+      const placementHash = hashString32(key);
+      const selectionHash = hashString32(`${key}:selection`);
+      ambientStructureSeedCache.set(key, {
+        placement: ambientStructurePlacementSeedBase ^ placementHash,
+        selection: ambientStructureSelectionSeedBase ^ selectionHash
+      });
+    }
+    return ambientStructureSeedCache.get(key);
   };
   const waterAmbientSeed = (ambientSeedBase + 0x3c6ef35f) >>> 0;
   const waterRadiusSeed = (ambientSeedBase + 0xa54ff53a) >>> 0;
@@ -6274,6 +6543,60 @@ function applyCulturalInfluence({
       };
 
       delete tile.culturalInfluenceScores;
+    }
+  }
+
+  const fallbackAmbientOptions = ambientStructureOptionsByCulture.others || [];
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!row) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile || tile.ambientStructure || tile.structure || tile.river) {
+        continue;
+      }
+      if (!isTileLand(tile)) {
+        continue;
+      }
+      const influence = tile.culturalInfluence;
+      if (!influence) {
+        continue;
+      }
+      const cultureKey = typeof influence.key === 'string' ? influence.key : null;
+      const strength = clamp(Number(influence.strength) || 0, 0, 1);
+      if (strength < 0.08) {
+        continue;
+      }
+      const options =
+        ambientStructureOptionsByCulture[cultureKey] ||
+        ambientStructureOptionsByCulture[cultureKey && cultureKey.replace(/[^a-z0-9]+/g, '_')] ||
+        fallbackAmbientOptions;
+      if (!Array.isArray(options) || options.length === 0) {
+        continue;
+      }
+      const seeds = getAmbientStructureSeedsForCulture(cultureKey || 'others');
+      const placementRoll = hashCoords(x, y, seeds.placement);
+      const baseChance = 0.0015;
+      const chance = baseChance + strength * 0.0075;
+      if (placementRoll >= chance) {
+        continue;
+      }
+      const selectionRoll = hashCoords(x, y, seeds.selection);
+      const index = Math.floor(selectionRoll * options.length) % options.length;
+      const option = options[index] || options[0];
+      if (!option) {
+        continue;
+      }
+      tile.ambientStructure = {
+        key: option.key,
+        label: option.label,
+        culture: cultureKey || 'others',
+        cultureLabel:
+          (typeof influence.label === 'string' && influence.label.trim()) ||
+          formatCultureLabel(cultureKey || 'others')
+      };
     }
   }
 }
@@ -11102,8 +11425,64 @@ function buildStructureTooltipContent(tile) {
   }
 
   if (!tile.structureName) {
+    const ambientStructure = tile.ambientStructure;
     const biomeType = tile.biomeType;
     const areaName = tile.areaName;
+    if (ambientStructure && ambientStructure.label) {
+      const sections = [`<div class="tooltip-title">${escapeHtml(ambientStructure.label)}</div>`];
+      const entries = [];
+      const cultureLabel = ambientStructure.cultureLabel || tile.culturalInfluence?.label || null;
+      const influenceDescription = tile.culturalInfluence
+        ? describeInfluenceStrength(tile.culturalInfluence.strength)
+        : null;
+      if (cultureLabel) {
+        const value = influenceDescription ? `${cultureLabel} — ${influenceDescription}` : cultureLabel;
+        entries.push({ label: 'Cultural Tie', value });
+      }
+      if (areaName) {
+        entries.push({ label: 'Region', value: areaName });
+      }
+      if (biomeType) {
+        const definition = biomeTypeDefinitions[biomeType] || null;
+        let biomeLabel = definition && definition.label ? definition.label : null;
+        if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
+          biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
+        }
+        if (biomeLabel) {
+          entries.push({ label: 'Biome', value: biomeLabel });
+        }
+      }
+      const climateDescription = describeTileClimate(tile);
+      if (climateDescription) {
+        entries.push({ label: 'Climate', value: climateDescription });
+      }
+      const resourceSummary = summarizeTileResources(tile);
+      if (resourceSummary.length > 0) {
+        const formattedResources = formatListWithConjunction(resourceSummary);
+        if (formattedResources) {
+          entries.push({ label: 'Resources', value: formattedResources });
+        }
+      }
+      const populationGroups = derivePopulationGroupsFromCulture(tile);
+      if (populationGroups.major) {
+        entries.push({ label: 'Major Population Groups', value: populationGroups.major });
+      }
+      if (populationGroups.minor) {
+        entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
+      }
+      if (entries.length > 0) {
+        const listItems = entries
+          .map(
+            ({ label, value }) =>
+              `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+                value
+              )}</span></li>`
+          )
+          .join('');
+        sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+      }
+      return sections.join('');
+    }
     if (!biomeType && !areaName) {
       return null;
     }
@@ -12271,6 +12650,11 @@ function cloneTileForHighResolution(tile) {
   }
   if (tile.structureDetails && typeof tile.structureDetails === 'object') {
     clone.structureDetails = { ...tile.structureDetails };
+  }
+  if (tile.ambientStructure && typeof tile.ambientStructure === 'object') {
+    clone.ambientStructure = { ...tile.ambientStructure };
+  } else {
+    clone.ambientStructure = null;
   }
   if (Array.isArray(tile.features)) {
     clone.features = tile.features.slice();
@@ -15898,6 +16282,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.structure = null;
     tile.structureName = null;
     tile.structureDetails = null;
+    tile.ambientStructure = null;
     tile.river = null;
     tile.biomeType = null;
     tile.areaName = null;
@@ -16772,6 +17157,7 @@ function createWorld(seedString) {
         structure: null,
         structureName: null,
         structureDetails: null,
+        ambientStructure: null,
         river: null,
         biomeType: null,
         areaName: null,
@@ -16948,6 +17334,7 @@ function createWorld(seedString) {
       tile.structure = null;
       tile.structureName = null;
       tile.structureDetails = null;
+      tile.ambientStructure = null;
       tile.river = null;
       tile.biomeType = null;
       tile.areaName = null;
@@ -18946,6 +19333,7 @@ function createWorld(seedString) {
         tile.structure = null;
         tile.structureName = null;
         tile.structureDetails = null;
+        tile.ambientStructure = null;
         tile.river = null;
         tile.biomeType = null;
         tile.areaName = null;
@@ -19031,6 +19419,7 @@ function createWorld(seedString) {
         tile.structure = null;
         tile.structureName = null;
         tile.structureDetails = null;
+        tile.ambientStructure = null;
         tile.river = null;
         tile.biomeType = null;
         tile.areaName = null;
