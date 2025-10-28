@@ -892,6 +892,50 @@ const hillholdSentinelFocuses = [
   'patrolling ancient roads carved before the age of kings'
 ];
 
+const goblinCaveNamePrefixes = [
+  'Murkfang',
+  'Skullcleft',
+  'Rotlash',
+  'Gloomspine',
+  'Ashknuckle',
+  'Blightvein',
+  'Snarltooth',
+  'Festerwick'
+];
+
+const goblinCaveNameSuffixes = ['Warrens', 'Lair', 'Grotto', 'Den', 'Burrows', 'Hollow', 'Tunnels'];
+
+const goblinCaveHallmarks = [
+  'Smoke-stained vents belch the scent of tallow and fungus brew.',
+  'Caged cave wolves snarl from pits lining the main approach.',
+  'Raid trophies dangle from sinew cords woven between stalactites.',
+  'Alarm drums echo through the tunnels at the slightest intrusion.',
+  'Glowmoss lanterns trace the paths of nightly war parties.',
+  'Entrances are trapped with bone chimes and caltrop pits.',
+  'Goblin glyphs warn trespassers of feasting clans within.'
+];
+
+const goblinCaveActivities = [
+  'plotting raids on passing caravans',
+  'brewing acrid fungus ales',
+  'training warg packs for night assaults',
+  'hammering crude iron spikes into jagged armour',
+  'chanting to cavern spirits for luck in plunder',
+  'bartering stolen steel with hidden hobgoblin envoys',
+  'raising squirming litters of goblin young'
+];
+
+const goblinClanNames = [
+  'Spitebite Clan',
+  'Murkmaw Mob',
+  'Rotcap Ragers',
+  'Gloomlash Gang',
+  'Ashgullet Horde',
+  'Festerwick Rabble',
+  'Skulknock Tribe',
+  'Snarlfang Pack'
+];
+
 const dwarfholdPopulationRaceOptions = [
   { key: 'dwarves', label: 'Dwarves', color: '#f4c069' },
   { key: 'humans', label: 'Humans', color: '#9bb6d8' },
@@ -1188,7 +1232,8 @@ const settlementDetailTypes = new Set([
   'evilWizardTower',
   'tower',
   'woodElfGrove',
-  'lizardmenCity'
+  'lizardmenCity',
+  'cave'
 ]);
 
 function resolveTownRulerTitle(gender, randomFn) {
@@ -3413,6 +3458,61 @@ function generateHamletDetails(name, random, options = {}) {
   };
 }
 
+function generateGoblinCaveName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const prefix = pickRandomFrom(goblinCaveNamePrefixes, randomFn) || 'Murkfang';
+  const suffix = pickRandomFrom(goblinCaveNameSuffixes, randomFn) || 'Warrens';
+  const styleRoll = randomFn();
+  if (styleRoll < 0.4) {
+    return `${prefix} ${suffix}`;
+  }
+  if (styleRoll < 0.75) {
+    return `${prefix}'s ${suffix}`;
+  }
+  return `${suffix} of ${prefix}`;
+}
+
+function generateCaveDetails(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const name = generateGoblinCaveName(randomFn);
+  const population = Math.max(28, Math.floor(40 + randomFn() * 180));
+  const hallmark = pickRandomFrom(goblinCaveHallmarks, randomFn) ||
+    'Warrens rattle with drums and warning chimes.';
+  const activity = pickRandomFrom(goblinCaveActivities, randomFn);
+  const clanName = pickRandomFrom(goblinClanNames, randomFn) || 'Murkmaw Mob';
+  const descriptionParts = [`${clanName} ${activity ? `are ${activity}` : 'scheme in the shadowed tunnels'}.`];
+  if (hallmark) {
+    descriptionParts.push(hallmark);
+  }
+  const description = descriptionParts.join(' ');
+  const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+  const populationBreakdown = [
+    {
+      key: 'goblins',
+      label: 'Goblins',
+      color: '#7f8c4d',
+      percentage: 100,
+      population: resolvedPopulation
+    }
+  ];
+
+  return {
+    type: 'cave',
+    classification: 'Goblin Warrens',
+    displayType: 'Goblin Warrens',
+    name,
+    population: resolvedPopulation,
+    populationLabel: 'Population',
+    populationDescriptor: 'goblins',
+    isSettlement: true,
+    prominentGroup: clanName,
+    prominentGroupLabel: 'Dominant Clan',
+    hallmark,
+    description,
+    populationBreakdown
+  };
+}
+
 function generateEvilWizardName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const givenName = pickRandomFrom(evilWizardGivenNames, randomFn) || 'Malachar';
@@ -4843,6 +4943,16 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
       }
     ];
   }
+  if (type === 'cave') {
+    return [
+      {
+        key: 'goblins',
+        label: 'Goblins',
+        percentage: 100,
+        color: defaultCultureColorByKey.goblins
+      }
+    ];
+  }
   return null;
 }
 
@@ -4869,6 +4979,8 @@ function resolveFallbackClaimRadius(type) {
       return 27;
     case 'roadsideTavern':
       return 18;
+    case 'cave':
+      return 20;
     default:
       return 24;
   }
@@ -4898,6 +5010,8 @@ function resolveCulturalRadiusMultiplier(type) {
       return 1.65;
     case 'roadsideTavern':
       return 1.25;
+    case 'cave':
+      return 1.45;
     default:
       return 1.6;
   }
@@ -4924,6 +5038,8 @@ function resolveCulturalFalloffPower(type) {
       return 1.34;
     case 'roadsideTavern':
       return 1.4;
+    case 'cave':
+      return 1.44;
     default:
       return 1.35;
   }
@@ -18422,11 +18538,16 @@ function createWorld(seedString) {
         if (!baseIsGrass && !baseIsSnow) {
           continue;
         }
+        const details = generateCaveDetails(rng);
         tile.structure = caveKey;
-        tile.structureName = 'Cave';
-        tile.structureDetails = { type: 'cave' };
+        tile.structureName = details?.name || 'Cave';
+        tile.structureDetails = details;
         placed.push(candidate);
-        caves.push({ x: candidate.x, y: candidate.y });
+        const caveRecord = { x: candidate.x, y: candidate.y };
+        if (details && typeof details === 'object') {
+          Object.assign(caveRecord, details);
+        }
+        caves.push(caveRecord);
       }
     }
   }
@@ -21196,6 +21317,7 @@ function createWorld(seedString) {
       ...mines,
       ...castles,
       ...orcCamps,
+      ...caves,
       ...roadsideTaverns,
       ...saintShrines
     ],
