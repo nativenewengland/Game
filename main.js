@@ -17256,6 +17256,7 @@ function createWorld(seedString) {
     };
   };
   const waterMask = new Uint8Array(width * height);
+  let riverMap = null;
   const hasMountainTile = tileLookup.has('MOUNTAIN');
   const mountainOverlayKey = hasMountainTile ? 'MOUNTAIN' : null;
   const mountainPeakKey = hasMountainTile && tileLookup.has('MOUNTAIN_PEAK') ? 'MOUNTAIN_PEAK' : null;
@@ -18777,6 +18778,22 @@ function createWorld(seedString) {
       }
     }
 
+    if (!riverMap) {
+      riverMap = buildRiverMap(
+        elevationField,
+        rainfallField,
+        drainageField,
+        width,
+        height,
+        seaLevel,
+        waterMask,
+        {
+          frequencyNormalized: riverFrequencyNormalized,
+          random: rng
+        }
+      );
+    }
+
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
@@ -18992,6 +19009,9 @@ function createWorld(seedString) {
         for (let i = 0; i < mineCandidates.length && placedMines.length < maxMines; i += 1) {
           const candidate = mineCandidates[i];
           const tile = tiles[candidate.y][candidate.x];
+          if (riverMap && riverMap[candidate.y * width + candidate.x] > 0) {
+            continue;
+          }
           if (!tile || tile.structure || tile.river) {
             continue;
           }
@@ -19043,6 +19063,9 @@ function createWorld(seedString) {
           for (let i = 0; i < mineCandidates.length; i += 1) {
             const candidate = mineCandidates[i];
             const tile = tiles[candidate.y][candidate.x];
+            if (riverMap && riverMap[candidate.y * width + candidate.x] > 0) {
+              continue;
+            }
             if (!tile || tile.structure || tile.river) {
               continue;
             }
@@ -19489,19 +19512,21 @@ function createWorld(seedString) {
     snowDistanceField = snowCount > 0 ? computeEuclideanDistanceField(snowMask, width, height) : null;
   }
 
-  const riverMap = buildRiverMap(
-    elevationField,
-    rainfallField,
-    drainageField,
-    width,
-    height,
-    seaLevel,
-    waterMask,
-    {
-      frequencyNormalized: riverFrequencyNormalized,
-      random: rng
-    }
-  );
+  if (!riverMap) {
+    riverMap = buildRiverMap(
+      elevationField,
+      rainfallField,
+      drainageField,
+      width,
+      height,
+      seaLevel,
+      waterMask,
+      {
+        frequencyNormalized: riverFrequencyNormalized,
+        random: rng
+      }
+    );
+  }
   ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height);
 
   const edgeConnectedOceanMask = computeEdgeConnectedWaterMask(
