@@ -49,6 +49,8 @@ export const elements = {
   elevationToggle: document.getElementById('toggle-elevation'),
   biomeToggle: document.getElementById('toggle-biomes'),
   temperatureToggle: document.getElementById('toggle-temperature'),
+  structureHighlightToggle: document.getElementById('toggle-structure-highlights'),
+  structureHighlightMenu: document.getElementById('structure-highlight-menu'),
   mapSizeSelect: document.getElementById('map-size'),
   worldGenerationTypeSelect: document.getElementById('world-generation-type'),
   seedInput: document.getElementById('world-seed'),

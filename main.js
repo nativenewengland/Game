@@ -6822,6 +6822,99 @@ function resolveTileName(baseKey) {
 
 const landMaskCache = new Map();
 
+function normalizeHighlightValue(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toUpperCase() : '';
+}
+
+function normalizeHighlightList(values = []) {
+  return values
+    .map((value) => normalizeHighlightValue(value))
+    .filter((value) => value.length > 0);
+}
+
+function collapseHighlightValue(value) {
+  return value.replace(/[^A-Z0-9]/g, '');
+}
+
+function createHighlightGroup({
+  label,
+  color,
+  strokeColor,
+  fillAlpha,
+  strokeAlpha,
+  keys = [],
+  types = [],
+  nameTokens = []
+}) {
+  const normalizedKeys = normalizeHighlightList(keys);
+  const normalizedKeyTokens = normalizedKeys.map((value) => collapseHighlightValue(value));
+  const normalizedTypes = normalizeHighlightList(types);
+  const normalizedTypeTokens = normalizedTypes.map((value) => collapseHighlightValue(value));
+  const normalizedNameTokens = normalizeHighlightList(nameTokens);
+  const collapsedNameTokens = normalizedNameTokens.map((value) => collapseHighlightValue(value));
+
+  return {
+    label,
+    color,
+    strokeColor,
+    fillAlpha,
+    strokeAlpha,
+    keys: new Set(normalizedKeys),
+    normalizedKeyTokens: new Set(normalizedKeyTokens),
+    types: new Set(normalizedTypes),
+    normalizedTypeTokens: new Set(normalizedTypeTokens),
+    nameTokens: normalizedNameTokens,
+    normalizedNameTokens: collapsedNameTokens
+  };
+}
+
+const structureHighlightGroups = {
+  mine: createHighlightGroup({
+    label: 'Mines',
+    color: '#f97316',
+    strokeColor: '#fb923c',
+    fillAlpha: 0.28,
+    strokeAlpha: 0.9,
+    keys: ['MINE'],
+    types: ['MINE'],
+    nameTokens: ['Mine', 'Delve', 'Excavation', 'Works']
+  }),
+  camp: createHighlightGroup({
+    label: 'Camps',
+    color: '#16a34a',
+    strokeColor: '#4ade80',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['ORC_CAMP', 'TRAVELERS_CAMP'],
+    types: ['orcCamp', 'travelerCamp'],
+    nameTokens: ['Camp', 'Encampment', 'Warcamp', 'Waystation']
+  }),
+  tower: createHighlightGroup({
+    label: 'Towers',
+    color: '#2563eb',
+    strokeColor: '#60a5fa',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['TOWER', 'EVIL_WIZARDS_TOWER'],
+    types: ['tower', 'evilWizardTower'],
+    nameTokens: ['Tower', 'Watchtower']
+  })
+};
+
+const structureHighlightTypeKeys = Object.keys(structureHighlightGroups);
+
+function createDefaultStructureHighlightState() {
+  const baseState = { menuOpen: false };
+  structureHighlightTypeKeys.forEach((key) => {
+    baseState[key] = false;
+  });
+  return baseState;
+}
+
 let loadingProgressValue = 0;
 let loadingProgressIntervalId = null;
 let hasManualLoadingProgress = false;
@@ -6856,7 +6949,8 @@ const state = {
     showPoliticalInfluence: false,
     showElevation: false,
     showBiomes: false,
-    showTemperature: false
+    showTemperature: false,
+    structureHighlights: createDefaultStructureHighlightState()
   },
   currentWorld: null,
   localView: {
@@ -6878,6 +6972,103 @@ const state = {
     structure: null
   }
 };
+
+function ensureStructureHighlightState() {
+  if (!state.ui.structureHighlights || typeof state.ui.structureHighlights !== 'object') {
+    state.ui.structureHighlights = createDefaultStructureHighlightState();
+    return state.ui.structureHighlights;
+  }
+
+  const highlightState = state.ui.structureHighlights;
+  if (typeof highlightState.menuOpen !== 'boolean') {
+    highlightState.menuOpen = false;
+  }
+  structureHighlightTypeKeys.forEach((key) => {
+    if (typeof highlightState[key] !== 'boolean') {
+      highlightState[key] = false;
+    }
+  });
+  return highlightState;
+}
+
+function matchesHighlightGroupValue(value, group) {
+  const normalized = normalizeHighlightValue(value);
+  if (!normalized || !group) {
+    return false;
+  }
+  const collapsed = collapseHighlightValue(normalized);
+  if ((group.keys && group.keys.has(normalized)) || (group.normalizedKeyTokens && group.normalizedKeyTokens.has(collapsed))) {
+    return true;
+  }
+  if ((group.types && group.types.has(normalized)) || (group.normalizedTypeTokens && group.normalizedTypeTokens.has(collapsed))) {
+    return true;
+  }
+  if (Array.isArray(group.nameTokens) && group.nameTokens.some((token) => normalized.includes(token))) {
+    return true;
+  }
+  if (
+    Array.isArray(group.normalizedNameTokens) &&
+    group.normalizedNameTokens.some((token) => collapsed.includes(token))
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function doesTileMatchHighlightGroup(tile, group) {
+  if (!tile || !group) {
+    return false;
+  }
+  const details = tile.structureDetails || {};
+  return (
+    matchesHighlightGroupValue(tile.structure, group) ||
+    matchesHighlightGroupValue(details.type, group) ||
+    matchesHighlightGroupValue(details.settlementKind, group) ||
+    matchesHighlightGroupValue(details.displayType, group) ||
+    matchesHighlightGroupValue(details.structureType, group) ||
+    matchesHighlightGroupValue(tile.structureName, group) ||
+    matchesHighlightGroupValue(details.structureName, group)
+  );
+}
+
+function getHighlightGroupForTile(tile, activeTypes) {
+  if (!tile || !Array.isArray(activeTypes) || activeTypes.length === 0) {
+    return null;
+  }
+  for (let i = 0; i < activeTypes.length; i += 1) {
+    const typeKey = activeTypes[i];
+    const group = structureHighlightGroups[typeKey];
+    if (group && doesTileMatchHighlightGroup(tile, group)) {
+      return typeKey;
+    }
+  }
+  return null;
+}
+
+function drawStructureHighlightOverlay(ctx, tileX, tileY, tileSize, group) {
+  if (!ctx || !group) {
+    return;
+  }
+  const pixelX = tileX * tileSize;
+  const pixelY = tileY * tileSize;
+  const fillAlpha = clamp(Number(group.fillAlpha) || 0.24, 0.05, 1);
+  const strokeAlpha = clamp(Number(group.strokeAlpha) || 0.85, 0.05, 1);
+  const strokeColor = typeof group.strokeColor === 'string' && group.strokeColor ? group.strokeColor : group.color;
+  ctx.save();
+  ctx.fillStyle = group.color;
+  ctx.globalAlpha = fillAlpha;
+  ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = strokeColor;
+  ctx.globalAlpha = strokeAlpha;
+  const lineWidth = Math.max(1, Math.round(tileSize / 6));
+  ctx.lineWidth = lineWidth;
+  const inset = lineWidth / 2;
+  ctx.strokeRect(pixelX + inset, pixelY + inset, tileSize - lineWidth, tileSize - lineWidth);
+  ctx.restore();
+}
 
 const defaultDwarfCount = 1;
 const defaultHairStyleValue = 'straight_shoulder';
@@ -24262,6 +24453,11 @@ function drawWorld(world, options = {}) {
   const hasBorderOverlay = showPoliticalBorders && factions.length > 0;
   const waterTileKey = world.waterTileKey || resolveTileName('WATER');
   const grassTileKey = world.grassTileKey || resolveTileName('GRASS');
+  const highlightState = ensureStructureHighlightState();
+  const activeStructureHighlightTypes = structureHighlightTypeKeys.filter(
+    (typeKey) => highlightState && Boolean(highlightState[typeKey])
+  );
+  const hasStructureHighlights = activeStructureHighlightTypes.length > 0;
   hideStructureDetails();
   hideMapTooltip();
   const height = tiles.length;
@@ -24499,6 +24695,16 @@ function drawWorld(world, options = {}) {
               );
             }
             ctx.restore();
+          }
+        }
+      }
+
+      if (hasStructureHighlights) {
+        const highlightGroupKey = getHighlightGroupForTile(cell, activeStructureHighlightTypes);
+        if (highlightGroupKey) {
+          const highlightGroup = structureHighlightGroups[highlightGroupKey];
+          if (highlightGroup) {
+            drawStructureHighlightOverlay(ctx, x, y, drawSize, highlightGroup);
           }
         }
       }
@@ -24741,6 +24947,41 @@ function updateOverlayToggleButton(button, isActive, labels) {
   }
 }
 
+function refreshStructureHighlightControls() {
+  const button = elements.structureHighlightToggle;
+  const menu = elements.structureHighlightMenu;
+  const highlightState = ensureStructureHighlightState();
+  const activeTypes = structureHighlightTypeKeys.filter((key) => Boolean(highlightState[key]));
+  const activeCount = activeTypes.length;
+  const isOpen = Boolean(highlightState.menuOpen);
+  const countLabel = activeCount > 0 ? ` (${activeCount})` : '';
+
+  if (button) {
+    const showLabel = `Show Highlights${countLabel}`;
+    const hideLabel = `Hide Highlights${countLabel}`;
+    button.textContent = isOpen ? hideLabel : showLabel;
+    button.classList.toggle('has-selection', activeCount > 0);
+    button.classList.toggle('is-open', isOpen);
+    button.classList.toggle('active', isOpen || activeCount > 0);
+    button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  if (menu) {
+    menu.classList.toggle('is-open', isOpen);
+    menu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    const inputs = menu.querySelectorAll("input[type='checkbox'][data-highlight-type]");
+    inputs.forEach((input) => {
+      const type = input.getAttribute('data-highlight-type');
+      if (!type) {
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(highlightState, type)) {
+        input.checked = Boolean(highlightState[type]);
+      }
+    });
+  }
+}
+
 function refreshOverlayToggleButtons() {
   const showBorders = Boolean(state.ui && state.ui.showPoliticalBorders);
   const showInfluence = Boolean(state.ui && state.ui.showPoliticalInfluence);
@@ -24767,6 +25008,7 @@ function refreshOverlayToggleButtons() {
     active: 'Hide Temperature',
     inactive: 'Show Temperature'
   });
+  refreshStructureHighlightControls();
 }
 
 function randomSeedString() {
@@ -25238,6 +25480,8 @@ attachEvents(elements, {
   closeDwarfholdInterior,
   state,
   refreshOverlayToggleButtons,
+  refreshStructureHighlightControls,
+  ensureStructureHighlightState,
   drawWorld,
   updateFrequencyDisplay,
   sanitizeFrequencyValue,

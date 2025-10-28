@@ -14,6 +14,8 @@ export function attachEvents(elements, deps) {
     closeDwarfholdInterior,
     state,
     refreshOverlayToggleButtons,
+    refreshStructureHighlightControls,
+    ensureStructureHighlightState,
     drawWorld,
     updateFrequencyDisplay,
     sanitizeFrequencyValue,
@@ -73,18 +75,61 @@ export function attachEvents(elements, deps) {
     }
   };
 
+  function closeStructureHighlightMenu({ returnFocus = false } = {}) {
+    const highlightState = ensureStructureHighlightState();
+    if (!highlightState.menuOpen) {
+      return;
+    }
+    highlightState.menuOpen = false;
+    refreshStructureHighlightControls();
+    if (returnFocus && elements.structureHighlightToggle) {
+      const toggle = elements.structureHighlightToggle;
+      if (typeof toggle.focus === 'function') {
+        toggle.focus();
+      }
+    }
+  }
+
   const dismissContextMenuOnScroll = () => {
     if (structureContextMenuState.visible) {
       hideStructureContextMenu();
     }
+    closeStructureHighlightMenu();
+  };
+
+  const handleStructureHighlightPointerDown = (event) => {
+    const highlightState = ensureStructureHighlightState();
+    if (!highlightState.menuOpen) {
+      return;
+    }
+    const toggle = elements.structureHighlightToggle;
+    const menu = elements.structureHighlightMenu;
+    if ((toggle && toggle.contains(event.target)) || (menu && menu.contains(event.target))) {
+      return;
+    }
+    closeStructureHighlightMenu();
+  };
+
+  const handleStructureHighlightKeyDown = (event) => {
+    if (event.key !== 'Escape' && event.key !== 'Esc') {
+      return;
+    }
+    const highlightState = ensureStructureHighlightState();
+    if (!highlightState.menuOpen) {
+      return;
+    }
+    closeStructureHighlightMenu({ returnFocus: true });
   };
 
   if (typeof document !== 'undefined') {
     document.addEventListener('pointerdown', dismissContextMenuOnPointerDown, true);
+    document.addEventListener('pointerdown', handleStructureHighlightPointerDown, true);
     document.addEventListener('keydown', dismissContextMenuOnKeyDown, true);
+    document.addEventListener('keydown', handleStructureHighlightKeyDown, true);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
         hideStructureContextMenu();
+        closeStructureHighlightMenu();
       }
     });
   }
@@ -123,6 +168,43 @@ export function attachEvents(elements, deps) {
   if (elements.structureDetailsClose) {
     elements.structureDetailsClose.addEventListener('click', () => {
       hideStructureDetails({ returnFocus: true });
+    });
+  }
+
+  if (elements.structureHighlightToggle) {
+    elements.structureHighlightToggle.addEventListener('click', () => {
+      const highlightState = ensureStructureHighlightState();
+      highlightState.menuOpen = !highlightState.menuOpen;
+      refreshStructureHighlightControls();
+      if (
+        highlightState.menuOpen &&
+        elements.structureHighlightMenu &&
+        typeof elements.structureHighlightMenu.focus === 'function'
+      ) {
+        elements.structureHighlightMenu.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  if (elements.structureHighlightMenu) {
+    elements.structureHighlightMenu.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!target || !target.matches("input[type='checkbox'][data-highlight-type]")) {
+        return;
+      }
+      const type = target.getAttribute('data-highlight-type');
+      if (!type) {
+        return;
+      }
+      const highlightState = ensureStructureHighlightState();
+      if (!Object.prototype.hasOwnProperty.call(highlightState, type)) {
+        return;
+      }
+      highlightState[type] = target.checked;
+      refreshStructureHighlightControls();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld, { preserveView: true });
+      }
     });
   }
 
