@@ -10,6 +10,9 @@
   --button-border: rgba(255, 255, 255, 0.18);
   --cursor-wand-default: url("tilesheet/cursor1.png") 0 0, auto;
   --cursor-wand-pointer: url("tilesheet/altcursor1.png") 0 0, url("tilesheet/cursor1.png") 0 0, pointer;
+  --highlight-mine: #f97316;
+  --highlight-camp: #16a34a;
+  --highlight-tower: #2563eb;
 }
 
 * {
@@ -2700,6 +2703,79 @@ button:hover:not(:disabled) {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.structure-highlight-control {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.structure-highlight-toggle {
+  white-space: nowrap;
+}
+
+.structure-highlight-toggle.has-selection {
+  background: rgba(240, 198, 116, 0.18);
+  border-color: rgba(240, 198, 116, 0.38);
+  color: #fdf4db;
+  box-shadow: 0 0.5rem 1.4rem rgba(240, 198, 116, 0.18);
+}
+
+.structure-highlight-toggle.is-open {
+  box-shadow: 0 0.65rem 1.8rem rgba(240, 198, 116, 0.24);
+}
+
+.structure-highlight-menu {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  display: none;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 220px;
+  padding: 0.85rem 1rem;
+  background: rgba(12, 16, 26, 0.95);
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  box-shadow: 0 1.25rem 2.75rem rgba(8, 12, 24, 0.6);
+  z-index: 30;
+}
+
+.structure-highlight-menu.is-open {
+  display: flex;
+}
+
+.structure-highlight-menu__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.75);
+}
+
+.structure-highlight-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.95rem;
+  color: rgba(248, 250, 252, 0.9);
+}
+
+.structure-highlight-option input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--highlight-color, var(--accent));
+}
+
+.structure-highlight-option__swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: var(--highlight-color, var(--accent));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0.25rem 0.55rem rgba(15, 23, 42, 0.6);
+}
+
+.structure-highlight-option__label {
+  line-height: 1.2;
 }
 
 .audio-controls {
