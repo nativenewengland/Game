@@ -5291,6 +5291,52 @@ function applyCulturalInfluence({
   const badlandsRadiusSeed = (ambientSeedBase + 0x68b57a19) >>> 0;
   const halflingHillAmbientSeed = (ambientSeedBase + 0x1cf11a13) >>> 0;
   const halflingHillRadiusSeed = (ambientSeedBase + 0xf5a5a6b9) >>> 0;
+  const humanAmbientSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
+  const humanRadiusSeed = (ambientSeedBase + 0x3ad29c47) >>> 0;
+
+  const humanInfluenceThresholdByBiome = {
+    forest: 0.0011,
+    jungle: 0.0013,
+    grassland: 0.0014,
+    desert: 0.00075,
+    badlands: 0.0009,
+    marsh: 0.001,
+    lake: 0,
+    ocean: 0
+  };
+
+  const tryAddAmbientHumanInfluence = (x, y, biomeType, tile) => {
+    if (!biomeType || biomeType === 'mountain' || biomeType === 'tundra') {
+      return;
+    }
+    let threshold = humanInfluenceThresholdByBiome[biomeType];
+    if (!Number.isFinite(threshold) || threshold <= 0) {
+      threshold = 0.0012;
+    }
+    const coastalBonus = clamp(Number(tile?.coastProximity) || 0, 0, 1);
+    if (coastalBonus > 0) {
+      threshold += coastalBonus * 0.0006;
+    }
+    const roll = hashCoords(x, y, humanAmbientSeed);
+    if (roll >= threshold) {
+      return;
+    }
+    const radiusRoll = hashCoords(x, y, humanRadiusSeed);
+    const radius = lerp(10, 22, radiusRoll);
+    addCulturalSource({
+      x,
+      y,
+      radius,
+      falloff: 1.32,
+      entries: [
+        {
+          key: 'humans',
+          share: 1,
+          label: 'Humans'
+        }
+      ]
+    });
+  };
 
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
@@ -5309,6 +5355,8 @@ function applyCulturalInfluence({
       if (!biomeType) {
         continue;
       }
+
+      tryAddAmbientHumanInfluence(x, y, biomeType, tile);
 
       if (biomeType === 'forest') {
         const canopy = clamp(Number(tile.forestCanopyDensity) || 0, 0, 1);
