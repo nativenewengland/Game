@@ -6873,6 +6873,51 @@ function createHighlightGroup({
 }
 
 const structureHighlightGroups = {
+  dwarfhold: createHighlightGroup({
+    label: 'Dwarven Holds',
+    color: '#f59e0b',
+    strokeColor: '#fbbf24',
+    fillAlpha: 0.28,
+    strokeAlpha: 0.92,
+    keys: ['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD'],
+    types: ['dwarfhold', 'greatDwarfhold', 'abandonedDwarfhold', 'ruinedDwarfhold', 'occupiedDwarfhold']
+  }),
+  hillhold: createHighlightGroup({
+    label: 'Hillholds',
+    color: '#fb7185',
+    strokeColor: '#f9a8d4',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['HILLHOLD'],
+    types: ['hillhold']
+  }),
+  humanSettlement: createHighlightGroup({
+    label: 'Human Settlements',
+    color: '#ef4444',
+    strokeColor: '#f87171',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['TOWN', 'PORT_TOWN', 'HAMLET', 'HAMLET_SNOW'],
+    types: ['city', 'town', 'village']
+  }),
+  woodElfGrove: createHighlightGroup({
+    label: 'Wood Elf Groves',
+    color: '#22c55e',
+    strokeColor: '#4ade80',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['WOOD_ELF_GROVES'],
+    types: ['woodElfGrove']
+  }),
+  lizardmenCity: createHighlightGroup({
+    label: 'Lizardmen Cities',
+    color: '#06b6d4',
+    strokeColor: '#22d3ee',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['LIZARDMEN_CITY'],
+    types: ['lizardmenCity']
+  }),
   mine: createHighlightGroup({
     label: 'Mines',
     color: '#f97316',
@@ -6880,18 +6925,16 @@ const structureHighlightGroups = {
     fillAlpha: 0.28,
     strokeAlpha: 0.9,
     keys: ['MINE'],
-    types: ['MINE'],
-    nameTokens: ['Mine', 'Delve', 'Excavation', 'Works']
+    types: ['mine']
   }),
-  camp: createHighlightGroup({
-    label: 'Camps',
-    color: '#16a34a',
-    strokeColor: '#4ade80',
+  dam: createHighlightGroup({
+    label: 'Dams',
+    color: '#38bdf8',
+    strokeColor: '#7dd3fc',
     fillAlpha: 0.24,
     strokeAlpha: 0.85,
-    keys: ['ORC_CAMP', 'TRAVELERS_CAMP'],
-    types: ['orcCamp', 'travelerCamp'],
-    nameTokens: ['Camp', 'Encampment', 'Warcamp', 'Waystation']
+    keys: ['DAM'],
+    types: ['dam']
   }),
   tower: createHighlightGroup({
     label: 'Towers',
@@ -6900,12 +6943,148 @@ const structureHighlightGroups = {
     fillAlpha: 0.26,
     strokeAlpha: 0.88,
     keys: ['TOWER', 'EVIL_WIZARDS_TOWER'],
-    types: ['tower', 'evilWizardTower'],
-    nameTokens: ['Tower', 'Watchtower']
+    types: ['tower', 'evilWizardTower']
+  }),
+  camp: createHighlightGroup({
+    label: 'Camps & Encampments',
+    color: '#16a34a',
+    strokeColor: '#4ade80',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['ORC_CAMP', 'TRAVELERS_CAMP', 'CENTAUR_ENCAMPMENT'],
+    types: ['orcCamp', 'travelerCamp', 'centaurEncampment']
+  }),
+  dungeon: createHighlightGroup({
+    label: 'Dungeons',
+    color: '#6366f1',
+    strokeColor: '#818cf8',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.9,
+    keys: ['DUNGEON'],
+    types: ['dungeon']
+  }),
+  cave: createHighlightGroup({
+    label: 'Caves',
+    color: '#a855f7',
+    strokeColor: '#c084fc',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['CAVE'],
+    types: ['cave']
+  }),
+  castle: createHighlightGroup({
+    label: 'Castles',
+    color: '#f97316',
+    strokeColor: '#fdba74',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['CASTLE'],
+    types: ['castle']
+  }),
+  monastery: createHighlightGroup({
+    label: 'Monasteries',
+    color: '#eab308',
+    strokeColor: '#fde047',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['MONASTERY'],
+    types: ['monastery']
+  }),
+  saintShrine: createHighlightGroup({
+    label: 'Saint Shrines',
+    color: '#d946ef',
+    strokeColor: '#f0abfc',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['SAINT_SHRINE'],
+    types: ['saintShrine']
+  }),
+  tavern: createHighlightGroup({
+    label: 'Roadside Taverns',
+    color: '#f472b6',
+    strokeColor: '#f9a8d4',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['ROADSIDE_TAVERN'],
+    types: ['roadsideTavern']
+  }),
+  homestead: createHighlightGroup({
+    label: 'Homesteads',
+    color: '#84cc16',
+    strokeColor: '#bef264',
+    fillAlpha: 0.2,
+    strokeAlpha: 0.75,
+    keys: ['AMBIENT_FARM', 'AMBIENT_HUNTING_LODGE'],
+    types: ['farm', 'huntingLodge']
   })
 };
 
 const structureHighlightTypeKeys = Object.keys(structureHighlightGroups);
+
+let lastStructureHighlightMenuSignature = null;
+
+function syncStructureHighlightMenuOptions(menu) {
+  if (!menu || typeof document === 'undefined') {
+    return;
+  }
+  const signature = structureHighlightTypeKeys
+    .map((key) => {
+      const group = structureHighlightGroups[key];
+      const label = group && typeof group.label === 'string' ? group.label : '';
+      const color = group && typeof group.color === 'string' ? group.color : '';
+      return `${key}:${label}:${color}`;
+    })
+    .join('|');
+  if (signature === lastStructureHighlightMenuSignature) {
+    return;
+  }
+  lastStructureHighlightMenuSignature = signature;
+
+  const existingOptions = menu.querySelectorAll('.structure-highlight-option');
+  existingOptions.forEach((option) => option.remove());
+
+  const fragment = document.createDocumentFragment();
+  structureHighlightTypeKeys.forEach((typeKey) => {
+    const group = structureHighlightGroups[typeKey];
+    if (!group) {
+      return;
+    }
+    const optionId = `highlight-structure-${typeKey}`;
+    const label = document.createElement('label');
+    label.className = 'structure-highlight-option';
+    label.setAttribute('for', optionId);
+    label.setAttribute('data-highlight-option', typeKey);
+    if (group.color) {
+      label.style.setProperty('--highlight-color', group.color);
+    }
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = optionId;
+    input.name = optionId;
+    input.setAttribute('data-highlight-type', typeKey);
+
+    const swatch = document.createElement('span');
+    swatch.className = 'structure-highlight-option__swatch';
+    swatch.setAttribute('aria-hidden', 'true');
+
+    const text = document.createElement('span');
+    text.className = 'structure-highlight-option__label';
+    text.textContent = group.label || typeKey;
+
+    label.appendChild(input);
+    label.appendChild(swatch);
+    label.appendChild(text);
+    fragment.appendChild(label);
+  });
+
+  const hint = menu.querySelector('.structure-highlight-menu__hint');
+  if (hint && hint.parentNode === menu) {
+    menu.insertBefore(fragment, hint.nextSibling);
+  } else {
+    menu.appendChild(fragment);
+  }
+}
 
 function createDefaultStructureHighlightState() {
   const baseState = { menuOpen: false };
@@ -25157,6 +25336,7 @@ function refreshStructureHighlightControls() {
   }
 
   if (menu) {
+    syncStructureHighlightMenuOptions(menu);
     menu.classList.toggle('is-open', isOpen);
     menu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
     const inputs = menu.querySelectorAll("input[type='checkbox'][data-highlight-type]");
