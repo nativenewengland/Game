@@ -1656,7 +1656,11 @@ button:hover:not(:disabled) {
 }
 
 .customizer-sidebar__name .dwarf-nav-button--prev {
-  margin-left: clamp(-1.35rem, -3.2vw, -0.85rem);
+  margin-left: clamp(-2.75rem, -5.5vw, -1.85rem);
+}
+
+.customizer-sidebar__name .dwarf-nav-button--prev .dwarf-nav-icon {
+  transform: translateX(-35%);
 }
 
 .customizer-sidebar__name .dwarf-name-field {
