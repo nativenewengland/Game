@@ -148,12 +148,112 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawAmbientFarmStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const fieldWidth = size * 0.74;
+  const fieldHeight = size * 0.42;
+  const fieldX = (size - fieldWidth) / 2;
+  const fieldY = size * 0.42;
+
+  ctx.fillStyle = '#cfa96b';
+  ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
+
+  ctx.strokeStyle = '#9b6e39';
+  ctx.lineWidth = Math.max(1, size * 0.035);
+  const furrowCount = 4;
+  for (let i = 1; i <= furrowCount; i += 1) {
+    const x = fieldX + (fieldWidth * i) / (furrowCount + 1);
+    ctx.beginPath();
+    ctx.moveTo(x, fieldY + fieldHeight * 0.08);
+    ctx.lineTo(x - size * 0.06, fieldY + fieldHeight * 0.92);
+    ctx.stroke();
+  }
+
+  const barnWidth = size * 0.26;
+  const barnHeight = size * 0.24;
+  const barnX = size * 0.16;
+  const barnY = size * 0.26;
+
+  ctx.fillStyle = '#b53a30';
+  ctx.fillRect(barnX, barnY, barnWidth, barnHeight);
+
+  ctx.fillStyle = '#7d221b';
+  ctx.beginPath();
+  ctx.moveTo(barnX, barnY);
+  ctx.lineTo(barnX + barnWidth / 2, barnY - size * 0.14);
+  ctx.lineTo(barnX + barnWidth, barnY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#f4e3b3';
+  ctx.fillRect(barnX + barnWidth * 0.64, barnY + barnHeight * 0.34, barnWidth * 0.24, barnHeight * 0.38);
+  ctx.fillRect(barnX + barnWidth * 0.26, barnY + barnHeight * 0.48, barnWidth * 0.18, barnHeight * 0.38);
+
+  ctx.restore();
+}
+
+function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const cabinWidth = size * 0.6;
+  const cabinHeight = size * 0.32;
+  const cabinX = (size - cabinWidth) / 2;
+  const cabinY = size * 0.42;
+
+  ctx.fillStyle = '#7b4f2b';
+  ctx.fillRect(cabinX, cabinY, cabinWidth, cabinHeight);
+
+  ctx.fillStyle = '#4a2f18';
+  ctx.fillRect(cabinX + cabinWidth * 0.38, cabinY + cabinHeight * 0.28, cabinWidth * 0.18, cabinHeight * 0.72);
+
+  ctx.fillStyle = '#9c6c3c';
+  ctx.beginPath();
+  ctx.moveTo(cabinX - size * 0.04, cabinY);
+  ctx.lineTo(cabinX + cabinWidth / 2, cabinY - size * 0.2);
+  ctx.lineTo(cabinX + cabinWidth + size * 0.04, cabinY);
+  ctx.closePath();
+  ctx.fill();
+
+  const smokeBaseX = cabinX + cabinWidth * 0.68;
+  const smokeBaseY = cabinY - size * 0.08;
+  ctx.fillStyle = '#c8c8c8';
+  ctx.globalAlpha = 0.65;
+  ctx.beginPath();
+  ctx.ellipse(smokeBaseX, smokeBaseY, size * 0.08, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.ellipse(smokeBaseX - size * 0.06, smokeBaseY - size * 0.12, size * 0.06, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.ellipse(smokeBaseX - size * 0.12, smokeBaseY - size * 0.22, size * 0.05, size * 0.08, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  const treeBaseY = size * 0.38;
+  const treeBaseX = cabinX - size * 0.1;
+  const treeWidth = size * 0.16;
+  const treeHeight = size * 0.32;
+  ctx.fillStyle = '#3f6b2b';
+  ctx.beginPath();
+  ctx.moveTo(treeBaseX + treeWidth / 2, treeBaseY - treeHeight);
+  ctx.lineTo(treeBaseX, treeBaseY);
+  ctx.lineTo(treeBaseX + treeWidth, treeBaseY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(treeBaseX + treeWidth * 0.44, treeBaseY, treeWidth * 0.12, size * 0.14);
+
+  ctx.restore();
+}
+
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
 
 registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
 registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTavernStructure(ctx, drawOptions));
+registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
+registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
+  drawAmbientHuntingLodgeStructure(ctx, drawOptions)
+);
 
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   const fallbackTower = tileLookup.get('TOWER');
@@ -5155,6 +5255,94 @@ function resolveCulturalFalloffPower(type) {
     default:
       return 1.35;
   }
+}
+
+function resolveHumanPresenceIntensity(tile) {
+  if (!tile || !tile.culturalInfluence) {
+    return 0;
+  }
+  const { key, strength, breakdown } = tile.culturalInfluence;
+  let best = 0;
+  if (key === 'humans') {
+    const dominantStrength = Number(strength);
+    if (Number.isFinite(dominantStrength)) {
+      best = Math.max(best, clamp(dominantStrength, 0, 1));
+    }
+  }
+  if (Array.isArray(breakdown)) {
+    for (let i = 0; i < breakdown.length; i += 1) {
+      const entry = breakdown[i];
+      if (!entry || entry.key !== 'humans') {
+        continue;
+      }
+      const share = Number(entry.share);
+      if (Number.isFinite(share)) {
+        best = Math.max(best, clamp(share, 0, 1));
+      }
+      const entryStrength = Number(entry.strength);
+      if (Number.isFinite(entryStrength)) {
+        best = Math.max(best, clamp(entryStrength, 0, 1));
+      }
+    }
+  }
+  return clamp(best, 0, 1);
+}
+
+function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber }) {
+  const placements = [];
+  if (!Array.isArray(tiles) || tiles.length === 0) {
+    return placements;
+  }
+
+  const mapHeight = Number.isFinite(height) ? Math.max(0, Math.floor(height)) : tiles.length;
+  const mapWidth = Number.isFinite(width) ? Math.max(0, Math.floor(width)) : tiles[0]?.length || 0;
+  if (mapWidth <= 0 || mapHeight <= 0) {
+    return placements;
+  }
+
+  const farmSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x51d7348f) >>> 0;
+  const huntingSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x41c6ce57) >>> 0;
+
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile || tile.structure || tile.river) {
+        continue;
+      }
+      const humanIntensity = resolveHumanPresenceIntensity(tile);
+      if (humanIntensity <= 0.05) {
+        continue;
+      }
+
+      const intensityFactor = Math.pow(humanIntensity, 1.35);
+      if (tile.base === grassTileKey && !tile.overlay && !tile.hillOverlay) {
+        const farmChance = intensityFactor * 0.012;
+        if (farmChance > 0 && hashCoords(x, y, farmSeed) < farmChance) {
+          tile.structure = 'AMBIENT_FARM';
+          tile.structureName = 'Farm';
+          tile.structureDetails = null;
+          placements.push({ x, y, type: 'farm' });
+          continue;
+        }
+      }
+
+      if (!tile.structure && tileHasTreeOverlay(tile)) {
+        const huntingChance = intensityFactor * 0.0075;
+        if (huntingChance > 0 && hashCoords(x, y, huntingSeed) < huntingChance) {
+          tile.structure = 'AMBIENT_HUNTING_LODGE';
+          tile.structureName = 'Hunting Lodge';
+          tile.structureDetails = null;
+          placements.push({ x, y, type: 'huntingLodge' });
+        }
+      }
+    }
+  }
+
+  return placements;
 }
 
 function applyCulturalInfluence({
@@ -22439,6 +22627,13 @@ function createWorld(seedString) {
     isLandBaseTile,
     seedNumber
   });
+  const ambientStructures = spawnAmbientStructures({
+    tiles,
+    width,
+    height,
+    grassTileKey,
+    seedNumber
+  });
   return {
     tiles,
     grassTileKey,
@@ -22467,6 +22662,7 @@ function createWorld(seedString) {
     castles,
     saintShrines,
     roadsideTaverns,
+    ambientStructures,
     factions
   };
 }
