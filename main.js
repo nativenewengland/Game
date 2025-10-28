@@ -5379,6 +5379,8 @@ function applyCulturalInfluence({
   const marshAmbientSeed = (ambientSeedBase + 0x4cf5ad43) >>> 0;
   const marshRadiusSeed = (ambientSeedBase + 0x94d049bb) >>> 0;
   const marshCultureSeed = (ambientSeedBase + 0xcbf29ce4) >>> 0;
+  const grasslandAmbientSeed = (ambientSeedBase + 0x243f6a88) >>> 0;
+  const grasslandRadiusSeed = (ambientSeedBase + 0x13198a2e) >>> 0;
   const badlandsAmbientSeed = (ambientSeedBase + 0xd56f0b27) >>> 0;
   const badlandsRadiusSeed = (ambientSeedBase + 0x68b57a19) >>> 0;
   const jungleAmbientSeed = (ambientSeedBase + 0x9e3779b9) >>> 0;
@@ -5676,6 +5678,27 @@ function applyCulturalInfluence({
           });
         }
         continue;
+      }
+
+      if (biomeType === 'grassland') {
+        const roll = hashCoords(x, y, grasslandAmbientSeed);
+        if (roll < 0.0028) {
+          const radiusRoll = hashCoords(x, y, grasslandRadiusSeed);
+          const radius = lerp(11, 23, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.31,
+            entries: [
+              {
+                key: 'centaurs',
+                share: 1,
+                label: 'Centaurs'
+              }
+            ]
+          });
+        }
       }
 
       if (biomeType === 'desert') {
