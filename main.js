@@ -8075,8 +8075,12 @@ const assetPromises = Promise.all([
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
 
-elements.startButton.disabled = true;
-elements.startButton.textContent = 'Loading tiles…';
+let startRequestedBeforeReady = false;
+
+if (elements.startButton) {
+  elements.startButton.disabled = true;
+  elements.startButton.textContent = 'Loading tiles…';
+}
 
 assetPromises
   .catch((error) => {
@@ -8084,8 +8088,14 @@ assetPromises
   })
   .finally(() => {
     state.ready = true;
-    elements.startButton.disabled = false;
-    elements.startButton.textContent = 'Start Game';
+    if (elements.startButton) {
+      elements.startButton.disabled = false;
+      elements.startButton.textContent = 'Start Game';
+    }
+    if (startRequestedBeforeReady) {
+      startRequestedBeforeReady = false;
+      handleStartButtonRequest();
+    }
   });
 
 let optionsVisible = false;
@@ -8094,11 +8104,12 @@ let optionsContext = {
   returnFocus: null
 };
 
-
-
-
-
-
+function handleStartButtonRequest() {
+  if (optionsVisible) {
+    closeOptionsScreen({ restoreScreen: false, returnFocus: false });
+  }
+  openWorldInfoModal();
+}
 
 function updateOptionsBackButtonLabel() {
   if (!elements.closeOptions) {
@@ -25158,26 +25169,30 @@ function syncInputsWithSettings() {
     });
   }
 
-  elements.optionsForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    applyFormSettings();
-    const previousSource = closeOptionsScreen();
-    if (previousSource === 'game' && elements.gameContainer) {
-      runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
-        console.error('Failed to apply new world settings.', error);
-      });
-    }
-  });
+  if (elements.optionsForm) {
+    elements.optionsForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      applyFormSettings();
+      const previousSource = closeOptionsScreen();
+      if (previousSource === 'game' && elements.gameContainer) {
+        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
+          console.error('Failed to apply new world settings.', error);
+        });
+      }
+    });
+  }
 
-  elements.startButton.addEventListener('click', () => {
-    if (!state.ready) {
-      return;
-    }
-    if (optionsVisible) {
-      closeOptionsScreen({ restoreScreen: false, returnFocus: false });
-    }
-    openWorldInfoModal();
-  });
+  if (elements.startButton) {
+    elements.startButton.addEventListener('click', () => {
+      if (!state.ready) {
+        startRequestedBeforeReady = true;
+        elements.startButton.disabled = true;
+        elements.startButton.textContent = 'Finishing loading…';
+        return;
+      }
+      handleStartButtonRequest();
+    });
+  }
 
   if (elements.worldInfoForm) {
     elements.worldInfoForm.addEventListener('submit', (event) => {
