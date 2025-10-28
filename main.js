@@ -3465,6 +3465,34 @@ function generateTownDetails(name, random, options = {}) {
   const majorExportCount = clamp(Math.floor(1 + randomFn() * 3), 1, townExportOptions.length);
   const majorExports = pickUniqueFrom(townExportOptions, majorExportCount, randomFn);
   const populationBreakdown = generateTownPopulationBreakdown(population, randomFn);
+
+  if (classification === 'Village' && Array.isArray(populationBreakdown) && populationBreakdown.length > 0) {
+    const gnomeIndex = populationBreakdown.findIndex((entry) => entry && entry.key === 'gnomes');
+    const majorityEntry = populationBreakdown[0];
+    if (gnomeIndex >= 0 && gnomeIndex !== 0 && majorityEntry) {
+      const gnomeEntry = populationBreakdown[gnomeIndex];
+      const villageGnomeCap = 6;
+      const adjustedGnomeShare = Math.max(
+        0,
+        Math.min(villageGnomeCap, Number.isFinite(gnomeEntry.percentage) ? gnomeEntry.percentage : 0)
+      );
+      const resolvedPopulation = Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+      if (adjustedGnomeShare < (Number.isFinite(gnomeEntry.percentage) ? gnomeEntry.percentage : 0)) {
+        const shareDelta = (gnomeEntry.percentage || 0) - adjustedGnomeShare;
+        gnomeEntry.percentage = adjustedGnomeShare;
+        if (resolvedPopulation !== null) {
+          gnomeEntry.population = Math.max(0, Math.round((resolvedPopulation * adjustedGnomeShare) / 100));
+        }
+
+        const majorityShare = Number.isFinite(majorityEntry.percentage) ? majorityEntry.percentage : 0;
+        const adjustedMajorityShare = clamp(majorityShare + shareDelta, 0, 100);
+        majorityEntry.percentage = adjustedMajorityShare;
+        if (resolvedPopulation !== null) {
+          majorityEntry.population = Math.max(0, Math.round((resolvedPopulation * adjustedMajorityShare) / 100));
+        }
+      }
+    }
+  }
   let populationDescriptor = 'residents';
   if (classification === 'City') {
     populationDescriptor = 'citizens';
