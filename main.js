@@ -5130,7 +5130,8 @@ const ambientStructureOptionsByCulture = {
     'Storyteller Hearth',
     'Picnic Nook',
     'Pipeweed Arbor',
-    'Cozy Lantern Row'
+    'Cozy Lantern Row',
+    'Hobbit Holds'
   ]),
   gnomes: createAmbientStructureOptions([
     'Whirligig Garden',
