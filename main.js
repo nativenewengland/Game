@@ -4935,6 +4935,13 @@ const defaultCultureColorByKey = {
   demons: '#b14646',
   snakemen: '#7b8f6d',
   dragons: '#d97706',
+  elwetritsch: '#d9b26f',
+  karkinos: '#4a6f8c',
+  blemaayae: '#a35fa9',
+  pygmy: '#c28b5b',
+  half_orc_half_elf: '#708f76',
+  dryad: '#58b072',
+  leshy: '#3f7a4d',
   others: '#9e9e9e'
 };
 
@@ -5401,6 +5408,94 @@ function applyCulturalInfluence({
     ocean: 0
   };
 
+  const minorFolkCatalog = [
+    { key: 'elwetritsch', label: 'Elwetritsch', biomes: ['forest', 'grassland', 'mountain'] },
+    { key: 'karkinos', label: 'Karkinos', biomes: ['ocean', 'lake', 'marsh'] },
+    { key: 'blemaayae', label: 'Blemaayae', biomes: ['desert', 'badlands', 'jungle', 'mountain'] },
+    { key: 'pygmy', label: 'Pygmy', biomes: ['jungle', 'grassland', 'forest'] },
+    { key: 'half_orc_half_elf', label: 'Half-Orc Half-Elf', biomes: ['grassland', 'forest', 'badlands', 'desert'] },
+    { key: 'dryad', label: 'Dryad', biomes: ['forest', 'marsh', 'lake'] },
+    { key: 'leshy', label: 'Leshy', biomes: ['forest', 'tundra', 'marsh'] }
+  ];
+
+  const defaultMinorFolkThreshold = 0.0011;
+  const minorFolkThresholdByBiome = {
+    forest: 0.0015,
+    jungle: 0.0014,
+    mountain: 0.0012,
+    desert: 0.001,
+    badlands: 0.0011,
+    tundra: 0.0009,
+    grassland: 0.0013,
+    marsh: 0.0012,
+    ocean: 0.00085,
+    lake: 0.00095
+  };
+
+  const minorFolkAmbientSeed = (ambientSeedBase + 0x42f6a2d1) >>> 0;
+  const minorFolkRadiusSeed = (ambientSeedBase + 0x27d4eb2f) >>> 0;
+  const minorFolkSelectionSeed = (ambientSeedBase + 0x9932e1b5) >>> 0;
+
+  const getMinorFolkOptionsForBiome = (biomeType) => {
+    if (typeof biomeType !== 'string') {
+      return minorFolkCatalog;
+    }
+    const trimmed = biomeType.trim();
+    if (!trimmed) {
+      return minorFolkCatalog;
+    }
+    const matches = minorFolkCatalog.filter((entry) => {
+      if (!Array.isArray(entry.biomes) || entry.biomes.length === 0) {
+        return true;
+      }
+      return entry.biomes.includes(trimmed);
+    });
+    return matches.length > 0 ? matches : minorFolkCatalog;
+  };
+
+  const tryAddMinorFolkInfluence = (x, y, biomeType) => {
+    if (typeof biomeType !== 'string') {
+      return;
+    }
+    const trimmed = biomeType.trim();
+    if (!trimmed) {
+      return;
+    }
+    const options = getMinorFolkOptionsForBiome(trimmed);
+    if (!options || options.length === 0) {
+      return;
+    }
+    const thresholdValue = minorFolkThresholdByBiome[trimmed];
+    const threshold =
+      typeof thresholdValue === 'number' && thresholdValue > 0 ? thresholdValue : defaultMinorFolkThreshold;
+    const biomeHash = hashString32(trimmed);
+    const roll = hashCoords(x, y, minorFolkAmbientSeed ^ biomeHash);
+    if (roll >= threshold) {
+      return;
+    }
+    const radiusRoll = hashCoords(x, y, minorFolkRadiusSeed ^ biomeHash);
+    const radius = lerp(8, 18, radiusRoll);
+    const selectionRoll = hashCoords(x, y, minorFolkSelectionSeed ^ biomeHash);
+    const index = Math.floor(selectionRoll * options.length) % options.length;
+    const selected = options[index] || options[0];
+    if (!selected) {
+      return;
+    }
+    addCulturalSource({
+      x,
+      y,
+      radius,
+      falloff: 1.31,
+      entries: [
+        {
+          key: selected.key,
+          share: 1,
+          label: selected.label
+        }
+      ]
+    });
+  };
+
   const tryAddAmbientHumanInfluence = (x, y, biomeType, tile) => {
     if (!biomeType || biomeType === 'mountain' || biomeType === 'tundra') {
       return;
@@ -5530,6 +5625,11 @@ function applyCulturalInfluence({
         }
       }
 
+      const biomeType = tile.biomeType;
+      if (biomeType) {
+        tryAddMinorFolkInfluence(x, y, biomeType);
+      }
+
       const landTile = isTileLand(tile);
       if (!landTile) {
         const waterRoll = hashCoords(x, y, waterAmbientSeed);
@@ -5563,7 +5663,6 @@ function applyCulturalInfluence({
         continue;
       }
 
-      const biomeType = tile.biomeType;
       if (!biomeType) {
         continue;
       }
