@@ -6744,6 +6744,7 @@ function spawnAmbientStructures({
   const farmRelocationSeed = (numericSeed + 0x6c8e9cf5) >>> 0;
   const farmRelocationTargetSeed = (numericSeed + 0x0b6d0f1d) >>> 0;
   const farmRelocationAltSeed = (numericSeed + 0x8f2a5c4b) >>> 0;
+  const farmCropSwapSeed = (numericSeed + 0x2bd7a4dd) >>> 0;
   const huntingSeed = (numericSeed + 0x41c6ce57) >>> 0;
 
   const farmStructureKeys = [];
@@ -6760,6 +6761,149 @@ function spawnAmbientStructures({
   const tavernKey = tileLookup.has('ROADSIDE_TAVERN') ? 'ROADSIDE_TAVERN' : null;
   const monasteryStructureKey = tileLookup.has('MONASTERY') ? 'MONASTERY' : null;
   const saintShrineStructureKey = tileLookup.has('SAINT_SHRINE') ? 'SAINT_SHRINE' : null;
+
+  const makeCoordKey = (x, y) => `${x},${y}`;
+  const cropTilesPlacedByGenerator = new Set();
+
+  const isTileEligibleForCropSwapDestination = (tile) =>
+    Boolean(tile) && isTileEligibleForFarmBase(tile, { allowMissingGrassKey: !grassTileKey }) && !tile.overlay;
+
+  const registerCropPlacement = (x, y) => {
+    if (!farmCropOverlayKey) {
+      return;
+    }
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      return;
+    }
+    const tile = row[x];
+    if (!tile || tile.overlay !== farmCropOverlayKey) {
+      return;
+    }
+    cropTilesPlacedByGenerator.add(makeCoordKey(x, y));
+  };
+
+  const pickCropSwapDestination = (sourceX, sourceY, offsetSeed = 0) => {
+    if (!farmCropOverlayKey) {
+      return null;
+    }
+    const totalTiles = mapWidth * mapHeight;
+    if (totalTiles <= 1) {
+      return null;
+    }
+    const maxAttempts = Math.min(totalTiles, 600);
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const seed =
+        (farmCropSwapSeed +
+          Math.imul(sourceX + offsetSeed + attempt, 0x27d4eb2d) +
+          Math.imul(sourceY + offsetSeed + attempt, 0x165667b1)) >>>
+        0;
+      const xRoll = hashCoords(sourceX, attempt + offsetSeed, seed);
+      const yRoll = hashCoords(attempt + offsetSeed, sourceY, seed ^ 0x9e3779b9);
+      const nx = Math.max(0, Math.min(mapWidth - 1, Math.floor(xRoll * mapWidth)));
+      const ny = Math.max(0, Math.min(mapHeight - 1, Math.floor(yRoll * mapHeight)));
+      if (nx === sourceX && ny === sourceY) {
+        continue;
+      }
+      const candidateTile = tiles[ny]?.[nx];
+      if (!isTileEligibleForCropSwapDestination(candidateTile)) {
+        continue;
+      }
+      return { x: nx, y: ny };
+    }
+    for (let yy = 0; yy < mapHeight; yy += 1) {
+      const row = tiles[yy];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let xx = 0; xx < mapWidth; xx += 1) {
+        if (xx === sourceX && yy === sourceY) {
+          continue;
+        }
+        if (isTileEligibleForCropSwapDestination(row[xx])) {
+          return { x: xx, y: yy };
+        }
+      }
+    }
+    return null;
+  };
+
+  const relocateCropOverlayFromTile = (sourceX, sourceY, offsetSeed = 0) => {
+    if (!farmCropOverlayKey) {
+      return;
+    }
+    const row = tiles[sourceY];
+    if (!Array.isArray(row)) {
+      cropTilesPlacedByGenerator.delete(makeCoordKey(sourceX, sourceY));
+      return;
+    }
+    const tile = row[sourceX];
+    if (!tile || tile.overlay !== farmCropOverlayKey) {
+      cropTilesPlacedByGenerator.delete(makeCoordKey(sourceX, sourceY));
+      return;
+    }
+    tile.overlay = null;
+    cropTilesPlacedByGenerator.delete(makeCoordKey(sourceX, sourceY));
+    const destination = pickCropSwapDestination(sourceX, sourceY, offsetSeed);
+    if (!destination) {
+      tile.overlay = farmCropOverlayKey;
+      registerCropPlacement(sourceX, sourceY);
+      return;
+    }
+    const destRow = tiles[destination.y];
+    if (!Array.isArray(destRow)) {
+      return;
+    }
+    const destTile = destRow[destination.x];
+    if (!destTile || destTile.overlay || destTile.structure || destTile.river) {
+      tile.overlay = farmCropOverlayKey;
+      registerCropPlacement(sourceX, sourceY);
+      return;
+    }
+    if (!isTileEligibleForCropSwapDestination(destTile)) {
+      tile.overlay = farmCropOverlayKey;
+      registerCropPlacement(sourceX, sourceY);
+      return;
+    }
+    destTile.overlay = farmCropOverlayKey;
+    registerCropPlacement(destination.x, destination.y);
+  };
+
+  let cropRelocationCounter = 0;
+  const relocateCropsNear = (centerX, centerY) => {
+    if (!farmCropOverlayKey || cropTilesPlacedByGenerator.size === 0) {
+      return;
+    }
+    const radius = 3;
+    let movedHere = 0;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      const row = tiles[ny];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const tile = row[nx];
+        if (!tile || tile.overlay !== farmCropOverlayKey) {
+          continue;
+        }
+        const key = makeCoordKey(nx, ny);
+        if (!cropTilesPlacedByGenerator.has(key)) {
+          continue;
+        }
+        relocateCropOverlayFromTile(nx, ny, cropRelocationCounter + movedHere);
+        movedHere += 1;
+      }
+    }
+    cropRelocationCounter += movedHere;
+  };
 
   const createRelocationRng = (x, y, seed) => {
     const hashedSeed = (seed + Math.imul(x + 0x9e3779b9, 0x27d4eb2d) + Math.imul(y + 0x85ebca6b, 0x165667b1)) >>> 0;
@@ -6848,6 +6992,7 @@ function spawnAmbientStructures({
         const roll = hashCoords(nx, ny, centerSeed);
         if (roll < chance) {
           neighborTile.overlay = farmCropOverlayKey;
+          registerCropPlacement(nx, ny);
         }
       }
     }
@@ -7030,6 +7175,8 @@ function spawnAmbientStructures({
           farmTile.structure = null;
           farmTile.structureName = null;
           farmTile.structureDetails = null;
+
+          relocateCropsNear(farmCoord.x, farmCoord.y);
 
           const placementIndex = placements.findIndex(
             (entry) => entry && entry.type === 'farm' && entry.x === farmCoord.x && entry.y === farmCoord.y
