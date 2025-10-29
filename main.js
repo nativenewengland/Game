@@ -6782,6 +6782,29 @@ function spawnAmbientStructures({
     return bestIndex;
   };
 
+  const isTileEligibleForFarmBase = (tile, { allowMissingGrassKey = false } = {}) => {
+    if (!tile || tile.structure || tile.river) {
+      return false;
+    }
+    if (tile.hillOverlay) {
+      return false;
+    }
+    if (grassTileKey) {
+      return tile.base === grassTileKey;
+    }
+    return allowMissingGrassKey;
+  };
+
+  const isTileEligibleForFarmStructure = (tile) =>
+    isTileEligibleForFarmBase(tile, { allowMissingGrassKey: false }) && !tile.overlay;
+
+  const isTileEligibleForFarmRelocation = (tile) =>
+    isTileEligibleForFarmBase(tile, { allowMissingGrassKey: !grassTileKey }) && !tile.overlay;
+
+  const isTileEligibleForFarmCrops = (tile) =>
+    isTileEligibleForFarmBase(tile, { allowMissingGrassKey: false }) &&
+    (!tile.overlay || tile.overlay === farmCropOverlayKey);
+
   const generateCropsNearFarm = (centerX, centerY) => {
     if (!farmCropOverlayKey) {
       return;
@@ -6800,16 +6823,7 @@ function spawnAmbientStructures({
           continue;
         }
         const neighborTile = tiles[ny][nx];
-        if (!neighborTile || neighborTile.structure || neighborTile.river) {
-          continue;
-        }
-        if (neighborTile.overlay && neighborTile.overlay !== farmCropOverlayKey) {
-          continue;
-        }
-        if (neighborTile.hillOverlay) {
-          continue;
-        }
-        if (grassTileKey && neighborTile.base !== grassTileKey) {
+        if (!isTileEligibleForFarmCrops(neighborTile)) {
           continue;
         }
 
@@ -6855,7 +6869,7 @@ function spawnAmbientStructures({
       }
 
       const intensityFactor = Math.pow(humanIntensity, 1.35);
-      if (tile.base === grassTileKey && !tile.overlay && !tile.hillOverlay) {
+      if (isTileEligibleForFarmStructure(tile)) {
         const farmChance = intensityFactor * 0.012;
         if (farmChance > 0 && hashCoords(x, y, farmSeed) < farmChance) {
           let farmStructureKey = 'AMBIENT_FARM';
@@ -6897,13 +6911,7 @@ function spawnAmbientStructures({
     }
     for (let x = 0; x < mapWidth; x += 1) {
       const tile = row[x];
-      if (!tile || tile.structure || tile.river) {
-        continue;
-      }
-      if (tile.overlay || tile.hillOverlay) {
-        continue;
-      }
-      if (grassTileKey && tile.base !== grassTileKey) {
+      if (!isTileEligibleForFarmRelocation(tile)) {
         continue;
       }
       relocationCandidates.push({ x, y });
