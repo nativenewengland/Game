@@ -17944,6 +17944,15 @@ function createWorld(seedString) {
   if (hasStoneTile) {
     landBaseKeys.add(stoneTileKey);
   }
+
+  const maybeConvertBaseToStoneNearVolcano = (tile) => {
+    if (!tile || !stoneTileKey) {
+      return;
+    }
+    if (tile.base === grassTileKey || tile.base === snowTileKey) {
+      tile.base = stoneTileKey;
+    }
+  };
   if (hasMarshTile) {
     landBaseKeys.add(marshTileKey);
   }
@@ -24287,6 +24296,7 @@ function createWorld(seedString) {
         (key) => typeof key === 'string'
       )
     );
+    const volcanoStoneConversionThreshold = 0.45;
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -24299,6 +24309,7 @@ function createWorld(seedString) {
           volcanoMask[idx] = 1;
           hasVolcanoTile = true;
           tile.volcanoProximity = 1;
+          maybeConvertBaseToStoneNearVolcano(tile);
         } else if (!volcanoEligibleBases.has(tile.base) || waterMask[idx]) {
           tile.volcanoProximity = 0;
         }
@@ -24324,6 +24335,9 @@ function createWorld(seedString) {
           const distanceToVolcano = Math.sqrt(volcanoDistanceField[idx]);
           const proximity = clamp(1 - distanceToVolcano / volcanoFalloff, 0, 1);
           tile.volcanoProximity = proximity;
+          if (proximity >= volcanoStoneConversionThreshold) {
+            maybeConvertBaseToStoneNearVolcano(tile);
+          }
         }
       }
     } else {
