@@ -8834,6 +8834,7 @@ const dwarfGuildOptions = [
   { value: 'millers-guild', label: 'Millers Guild' },
   { value: 'cobblers-guild', label: 'Cobblers Guild' },
   { value: 'cartographers-guild', label: 'Cartographers Guild' },
+  { value: 'explorers-guild', label: 'Explorers Guild' },
   { value: 'lorekeepers-guild', label: 'Lorekeepers Guild' },
   { value: 'tunnel-wardens-guild', label: 'Tunnel Wardens Guild' },
   { value: 'smelters-guild', label: 'Smelters Guild' }
