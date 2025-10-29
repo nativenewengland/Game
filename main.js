@@ -518,87 +518,6 @@ function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientSleepingDragonStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundRadiusX = size * 0.42;
-  const groundRadiusY = size * 0.22;
-  const groundCenterX = size * 0.5;
-  const groundCenterY = size * 0.72;
-  ctx.fillStyle = '#5f6c7a';
-  ctx.beginPath();
-  ctx.ellipse(groundCenterX, groundCenterY, groundRadiusX, groundRadiusY, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#4b5563';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.2, groundCenterY);
-  ctx.lineTo(size * 0.38, size * 0.28);
-  ctx.lineTo(size * 0.5, size * 0.18);
-  ctx.lineTo(size * 0.62, size * 0.34);
-  ctx.lineTo(size * 0.78, groundCenterY);
-  ctx.closePath();
-  ctx.fill();
-
-  const bodyCenterX = size * 0.52;
-  const bodyCenterY = size * 0.56;
-  const bodyRadiusX = size * 0.24;
-  const bodyRadiusY = size * 0.18;
-  ctx.fillStyle = '#b45309';
-  ctx.beginPath();
-  ctx.ellipse(bodyCenterX, bodyCenterY, bodyRadiusX, bodyRadiusY, Math.PI / 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#fbbf24';
-  ctx.beginPath();
-  ctx.ellipse(bodyCenterX + size * 0.02, bodyCenterY + size * 0.02, bodyRadiusX * 0.45, bodyRadiusY * 0.5, Math.PI / 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  const headX = size * 0.32;
-  const headY = size * 0.46;
-  const headRadius = size * 0.1;
-  ctx.fillStyle = '#b45309';
-  ctx.beginPath();
-  ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#fde68a';
-  ctx.beginPath();
-  ctx.arc(headX + size * 0.03, headY, headRadius * 0.55, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#000000';
-  ctx.beginPath();
-  ctx.arc(headX + size * 0.05, headY - size * 0.015, headRadius * 0.15, 0, Math.PI * 2);
-  ctx.arc(headX + size * 0.04, headY + size * 0.02, headRadius * 0.12, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = '#92400e';
-  ctx.lineWidth = Math.max(1, size * 0.025);
-  ctx.beginPath();
-  ctx.moveTo(bodyCenterX + bodyRadiusX * 0.6, bodyCenterY + bodyRadiusY * 0.3);
-  ctx.quadraticCurveTo(size * 0.76, bodyCenterY + size * 0.12, size * 0.74, bodyCenterY - size * 0.02);
-  ctx.stroke();
-
-  ctx.fillStyle = '#f97316';
-  ctx.beginPath();
-  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.8);
-  ctx.lineTo(headX - size * 0.06, headY - headRadius * 1.3);
-  ctx.lineTo(headX + size * 0.01, headY - headRadius);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#facc15';
-  ctx.beginPath();
-  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.4);
-  ctx.quadraticCurveTo(headX - size * 0.16, headY - headRadius * 0.24, headX - size * 0.08, headY + size * 0.04);
-  ctx.quadraticCurveTo(headX - size * 0.02, headY - headRadius * 0.05, headX + size * 0.02, headY - headRadius * 0.2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
@@ -621,10 +540,6 @@ registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
   drawAmbientMoonwellStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_SLEEPING_DRAGON', (ctx, drawOptions) =>
-  drawAmbientSleepingDragonStructure(ctx, drawOptions)
-);
-
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   const fallbackTower = tileLookup.get('TOWER');
   if (fallbackTower) {

@@ -575,6 +575,7 @@ export const baseTileCoords = {
   LAVA: { row: 2, col: 14 },
   OASIS: { row: 0, col: 12 },
   HAMLET_SNOW: { row: 0, col: 13 },
+  AMBIENT_SLEEPING_DRAGON: { row: 0, col: 14 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
