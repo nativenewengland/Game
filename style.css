@@ -1888,7 +1888,7 @@ button:hover:not(:disabled) {
 
 .customizer-sidebar__name.pixel-bar {
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: clamp(0.35rem, 1vw, 0.6rem);
   width: 100%;
   max-width: 100%;
@@ -1913,9 +1913,9 @@ button:hover:not(:disabled) {
 }
 
 .customizer-sidebar__name .dwarf-slot-info {
-  align-items: center;
+  align-items: flex-start;
   margin-top: 0;
-  text-align: center;
+  text-align: left;
 }
 
 .customizer-sidebar__name .slot-label {
@@ -3066,7 +3066,7 @@ button:hover:not(:disabled) {
   .customizer-sidebar__name.pixel-bar {
     width: 100%;
     max-width: 22rem;
-    align-self: center;
+    align-self: flex-start;
   }
 
   .customizer-main {
@@ -3102,15 +3102,16 @@ button:hover:not(:disabled) {
     width: 100%;
     max-width: 18.5rem;
     padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.75rem, 4vw, 1rem);
+    align-items: flex-start;
   }
 
   .customizer-sidebar__name .dwarf-slot-info {
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
   }
 
   .customizer-sidebar__name .dwarf-name-nav {
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
   }
 
@@ -3119,8 +3120,8 @@ button:hover:not(:disabled) {
   }
 
   .customizer-sidebar__name .dwarf-name-field {
-    margin: 0 auto;
-    justify-self: center;
+    margin: 0;
+    justify-self: flex-start;
     width: min(100%, 35rem);
   }
 
