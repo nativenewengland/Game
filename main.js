@@ -18065,6 +18065,121 @@ function createArchipelagoMask() {
   });
 }
 
+function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
+  const total = width * height;
+  const heights = new Float32Array(total);
+  const tectonics = new Float32Array(total);
+  const minIslands = 20;
+  const maxIslands = 100;
+  const islandCount = Math.max(
+    minIslands,
+    Math.floor(rng() * (maxIslands - minIslands + 1)) + minIslands
+  );
+  const minDimension = Math.min(width, height);
+  const minRadius = Math.max(3, Math.floor(minDimension * 0.03));
+  const maxRadius = Math.max(minRadius + 2, Math.floor(minDimension * 0.12));
+  const baseSeed = (seedNumber + 0x243f6a88) >>> 0;
+
+  for (let i = 0; i < islandCount; i += 1) {
+    const islandSeed = (baseSeed + i * 0x9e3779b9) >>> 0;
+    const centerX = rng() * width;
+    const centerY = rng() * height;
+    const radius = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
+    const aspect = 0.6 + rng() * 0.9;
+    const majorRadius = Math.max(radius, 3);
+    const minorRadius = Math.max(majorRadius * aspect, 3);
+    const rotation = rng() * Math.PI * 2;
+    const cosRotation = Math.cos(rotation);
+    const sinRotation = Math.sin(rotation);
+    const falloffPower = 1.15 + rng() * 1.6;
+    const shelfStrength = 0.18 + rng() * 0.24;
+    const peakHeight = 0.55 + rng() * 0.4;
+    const coastlineRoughness = 0.12 + rng() * 0.16;
+    const turbulenceStrength = 0.18 + rng() * 0.26;
+    const noiseScale = 3.2 + rng() * 4.8;
+    const tectonicStrength = 0.3 + rng() * 0.5;
+
+    const influenceRadiusX = majorRadius * 1.7;
+    const influenceRadiusY = minorRadius * 1.7;
+
+    const minX = Math.max(0, Math.floor(centerX - influenceRadiusX));
+    const maxX = Math.min(width - 1, Math.ceil(centerX + influenceRadiusX));
+    const minY = Math.max(0, Math.floor(centerY - influenceRadiusY));
+    const maxY = Math.min(height - 1, Math.ceil(centerY + influenceRadiusY));
+
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let x = minX; x <= maxX; x += 1) {
+        const offsetX = (x + 0.5 - centerX) / majorRadius;
+        const offsetY = (y + 0.5 - centerY) / minorRadius;
+        const rotatedX = offsetX * cosRotation - offsetY * sinRotation;
+        const rotatedY = offsetX * sinRotation + offsetY * cosRotation;
+        const distance = Math.sqrt(rotatedX * rotatedX + rotatedY * rotatedY);
+        if (distance > 1.6) {
+          continue;
+        }
+
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const coastlineNoise =
+          valueNoise(
+            (normalizedX + islandSeed * 0.0000153) * noiseScale,
+            (normalizedY + islandSeed * 0.0000271) * noiseScale,
+            islandSeed
+          ) - 0.5;
+        const coastalWarp = coastlineNoise * coastlineRoughness;
+        const adjustedDistance = distance - coastalWarp;
+        if (adjustedDistance > 1.2) {
+          continue;
+        }
+
+        const influence = clamp(1 - adjustedDistance, 0, 1);
+        if (influence <= 0) {
+          continue;
+        }
+
+        const shaped = Math.pow(influence, falloffPower);
+        const beach = clamp((influence - 0.35) / 0.65, 0, 1) * shelfStrength;
+        const turbulence =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.000042) * (noiseScale * 0.7),
+            (normalizedY + islandSeed * 0.000058) * (noiseScale * 0.7),
+            islandSeed ^ 0x85ebca6b
+          ) -
+            0.5) *
+          turbulenceStrength;
+        const heightContribution = shaped * peakHeight + beach + turbulence;
+        const idx = y * width + x;
+
+        if (heightContribution > heights[idx]) {
+          heights[idx] = heightContribution;
+        }
+
+        const tectonicContribution = shaped * tectonicStrength;
+        if (tectonicContribution > tectonics[idx]) {
+          tectonics[idx] = tectonicContribution;
+        }
+      }
+    }
+  }
+
+  const margin = Math.max(4, Math.floor(Math.min(width, height) * 0.05));
+  if (margin > 0) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const edgeDistance = Math.min(x, y, width - 1 - x, height - 1 - y);
+        if (edgeDistance < margin) {
+          const t = clamp(edgeDistance / margin, 0, 1);
+          heights[idx] *= t * t;
+          tectonics[idx] *= t * 0.85;
+        }
+      }
+    }
+  }
+
+  return { heights, tectonics };
+}
+
 const continentalPlateConfigs = {
   archipelago: {
     majorTargetRange: [1, 2],
@@ -19401,6 +19516,11 @@ function createWorld(seedString) {
   const mountainScarcity = 1 - mountainFrequencyNormalized;
   const mountainGrowthFactor = 0.42 + mountainFrequencyNormalized * 0.7;
 
+  const useArchipelagoIslandPlacement = profile.key === 'archipelago';
+  const archipelagoFields = useArchipelagoIslandPlacement
+    ? generateArchipelagoIslandFields(width, height, rng, seedNumber)
+    : null;
+
   const continentalPlates = generateContinentalPlates(rng, {
     profileKey: profile.key,
     landMask: state.landMask
@@ -19431,10 +19551,18 @@ function createWorld(seedString) {
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+
+      if (useArchipelagoIslandPlacement && archipelagoFields) {
+        const heightValue = clamp(archipelagoFields.heights[idx], -1, 1);
+        const tectonicValue = clamp(archipelagoFields.tectonics[idx], 0, 1);
+        elevationField[idx] = heightValue;
+        tectonicActivityField[idx] = tectonicValue;
+        continue;
+      }
+
       const normalizedX = (x + 0.5) / width;
       const normalizedY = (y + 0.5) / height;
-
-      const idx = y * width + x;
       const plateSample = sampleContinentalPlates(normalizedX, normalizedY, continentalPlates);
       tectonicActivityField[idx] = plateSample.tectonic;
 
