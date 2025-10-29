@@ -2698,7 +2698,7 @@ button:hover:not(:disabled) {
 }
 
 #dwarf-customizer .dwarf-portrait {
-  width: min(calc(424px * var(--customizer-scale)), 100%);
+  width: min(calc(424px * 0.85 * var(--customizer-scale)), 100%);
   margin-top: clamp(
     calc(-0.7rem * var(--customizer-scale)),
     calc(-2vw * var(--customizer-scale)),
