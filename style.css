@@ -1890,13 +1890,14 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: clamp(0.35rem, 1vw, 0.6rem);
-  width: 100%;
-  max-width: 100%;
+  width: min(100%, 21rem);
+  max-width: 21rem;
   border-radius: 18px;
   background: rgba(24, 18, 32, 0.55);
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18),
     0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
-  align-self: stretch;
+  align-self: flex-end;
+  padding: clamp(0.45rem, 1vw, 0.7rem) clamp(0.7rem, 1.8vw, 1rem);
 }
 
 #dwarf-customizer .customizer-sidebar__name.pixel-bar {
@@ -1905,11 +1906,24 @@ button:hover:not(:disabled) {
     calc(1vw * var(--customizer-scale)),
     calc(0.6rem * var(--customizer-scale))
   );
+  width: min(100%, calc(21rem * var(--customizer-scale)));
+  max-width: calc(21rem * var(--customizer-scale));
   border-radius: calc(18px * var(--customizer-scale));
   box-shadow: inset 0 0 0 calc(1px * var(--customizer-scale))
       rgba(240, 198, 116, 0.18),
     0 calc(0.55rem * var(--customizer-scale))
       calc(1.1rem * var(--customizer-scale)) rgba(0, 0, 0, 0.35);
+  align-self: flex-end;
+  padding: clamp(
+      calc(0.45rem * var(--customizer-scale)),
+      calc(1vw * var(--customizer-scale)),
+      calc(0.7rem * var(--customizer-scale))
+    )
+    clamp(
+      calc(0.7rem * var(--customizer-scale)),
+      calc(1.8vw * var(--customizer-scale)),
+      calc(1rem * var(--customizer-scale))
+    );
 }
 
 .customizer-sidebar__name .dwarf-slot-info {
@@ -2999,8 +3013,8 @@ button:hover:not(:disabled) {
   }
 
   .customizer-sidebar__name.pixel-bar {
-    width: 100%;
-    max-width: 22rem;
+    width: min(100%, 20rem);
+    max-width: 20rem;
     align-self: center;
   }
 
@@ -3035,8 +3049,8 @@ button:hover:not(:disabled) {
 @media (max-width: 720px) {
   .customizer-sidebar__name.pixel-bar {
     width: 100%;
-    max-width: 18.5rem;
-    padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.75rem, 4vw, 1rem);
+    max-width: 18rem;
+    padding: clamp(0.45rem, 1.4vw, 0.7rem) clamp(0.65rem, 3.5vw, 0.95rem);
   }
 
   .customizer-sidebar__name .dwarf-slot-info {
