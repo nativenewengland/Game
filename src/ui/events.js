@@ -514,6 +514,16 @@ export function attachEvents(elements, deps) {
     });
   }
 
+  if (elements.locationLabelToggle) {
+    elements.locationLabelToggle.addEventListener('click', () => {
+      state.ui.showLocationLabels = !state.ui.showLocationLabels;
+      refreshOverlayToggleButtons();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld);
+      }
+    });
+  }
+
   if (elements.mapSizeSelect) {
     elements.mapSizeSelect.addEventListener('change', (event) => {
       const preset = getMapSizePreset(event.target.value);
