@@ -17993,15 +17993,41 @@ function createInlandSeaMask() {
 function createArchipelagoMask() {
   const size = 512;
   return createProceduralMask(size, size, (nx, ny) => {
-    const islands = [
-      { x: 0.28, y: 0.32, radiusX: 0.22, radiusY: 0.18, height: 1.05, power: 1.35 },
-      { x: 0.52, y: 0.28, radiusX: 0.18, radiusY: 0.16, height: 0.92, power: 1.4 },
-      { x: 0.68, y: 0.38, radiusX: 0.16, radiusY: 0.2, height: 0.88, power: 1.45 },
-      { x: 0.36, y: 0.62, radiusX: 0.2, radiusY: 0.18, height: 0.94, power: 1.3 },
-      { x: 0.54, y: 0.58, radiusX: 0.22, radiusY: 0.2, height: 1.02, power: 1.32 },
-      { x: 0.73, y: 0.57, radiusX: 0.15, radiusY: 0.17, height: 0.86, power: 1.48 },
-      { x: 0.46, y: 0.44, radiusX: 0.24, radiusY: 0.22, height: 1.08, power: 1.28 }
-    ];
+    const gridSize = 6;
+    const spacing = 1 / gridSize;
+    const islands = [];
+
+    for (let gx = 0; gx < gridSize; gx += 1) {
+      for (let gy = 0; gy < gridSize; gy += 1) {
+        const sampleX = (gx + 0.37) * 2.17;
+        const sampleY = (gy + 0.63) * 2.03;
+        const activation = valueNoise(sampleX, sampleY, 0x9e3779b9);
+        if (activation <= 0.42) {
+          continue;
+        }
+
+        const offsetSeedX = valueNoise(sampleX + 4.91, sampleY - 6.44, 0xc2b2ae35) - 0.5;
+        const offsetSeedY = valueNoise(sampleX - 7.73, sampleY + 3.57, 0x165667b1) - 0.5;
+        const centerX = clamp(
+          (gx + 0.5) * spacing + offsetSeedX * spacing * 0.45,
+          0.04,
+          0.96
+        );
+        const centerY = clamp(
+          (gy + 0.5) * spacing + offsetSeedY * spacing * 0.45,
+          0.04,
+          0.96
+        );
+
+        const radiusSeed = valueNoise(sampleX + 3.11, sampleY + 5.81, 0x27d4eb2f);
+        const radiusX = spacing * (0.26 + activation * 0.3 + radiusSeed * 0.1);
+        const radiusY = spacing * (0.24 + activation * 0.28 + (1 - radiusSeed) * 0.12);
+        const height = 0.6 + activation * 0.65;
+        const power = 1.25 + valueNoise(sampleX - 2.48, sampleY + 8.92, 0x85ebca77) * 0.55;
+
+        islands.push({ x: centerX, y: centerY, radiusX, radiusY, height, power });
+      }
+    }
 
     let sum = 0;
     for (let i = 0; i < islands.length; i += 1) {
@@ -18017,17 +18043,19 @@ function createArchipelagoMask() {
       sum += influence;
     }
 
-    const jagged = (valueNoise(nx * 18.3 + 4.7, ny * 18.3 + 9.1, 0x3c6ef372) - 0.5) * 0.32;
-    const detail = (valueNoise(nx * 42.7 + 12.5, ny * 42.7 + 3.8, 0xa54ff53a) - 0.5) * 0.18;
-    const micro = (valueNoise(nx * 82.1 + 6.2, ny * 82.1 + 14.4, 0x510e527f) - 0.5) * 0.08;
+    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.34;
+    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.2;
+    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.1;
+    const scatter = Math.max(
+      0,
+      valueNoise(nx * 11.7 + 1.6, ny * 11.7 + 7.4, 0x51eb851f) - 0.63
+    ) * 0.32;
 
-    let value = sum * 0.7 + jagged + detail + micro;
-    const clusterBias = 1 - Math.hypot(nx - 0.52, ny - 0.49) * 1.1;
-    value += clusterBias * 0.08;
+    let value = sum * 0.58 + jagged + detail + micro + scatter;
 
     const edge = Math.min(nx, 1 - nx, ny, 1 - ny);
-    value -= clamp(0.2 - edge, 0, 0.2) * 3.2;
-    value -= 0.46;
+    value -= clamp(0.22 - edge, 0, 0.22) * 3.6;
+    value -= 0.52;
     return value;
   });
 }
