@@ -114,6 +114,60 @@ function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawDarkDwarfholdStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const baseWidth = size * 0.72;
+  const baseHeight = size * 0.38;
+  const baseX = (size - baseWidth) / 2;
+  const baseY = size * 0.44;
+
+  ctx.fillStyle = '#241b2b';
+  ctx.fillRect(baseX, baseY, baseWidth, baseHeight);
+
+  const towerWidth = size * 0.18;
+  const towerHeight = size * 0.46;
+  const towerY = size * 0.18;
+  ctx.fillStyle = '#35263d';
+  ctx.fillRect(baseX - size * 0.04, towerY, towerWidth, towerHeight);
+  ctx.fillRect(baseX + baseWidth - towerWidth + size * 0.04, towerY, towerWidth, towerHeight);
+
+  ctx.fillStyle = '#4a2e3a';
+  ctx.fillRect(size * 0.44, size * 0.34, size * 0.12, size * 0.48);
+
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(baseX + baseWidth * 0.22, baseY + baseHeight * 0.1, baseWidth * 0.18, baseHeight * 0.26);
+  ctx.fillRect(baseX + baseWidth * 0.6, baseY + baseHeight * 0.08, baseWidth * 0.18, baseHeight * 0.28);
+
+  ctx.fillStyle = '#1f2937';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.18, towerY);
+  ctx.lineTo(size * 0.32, towerY - size * 0.12);
+  ctx.lineTo(size * 0.46, towerY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(size * 0.54, towerY);
+  ctx.lineTo(size * 0.68, towerY - size * 0.12);
+  ctx.lineTo(size * 0.82, towerY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(size * 0.46, size * 0.62, size * 0.08, size * 0.2);
+
+  ctx.strokeStyle = 'rgba(249, 115, 22, 0.65)';
+  ctx.lineWidth = Math.max(1, size * 0.06);
+  ctx.beginPath();
+  ctx.moveTo(baseX + baseWidth * 0.1, baseY + baseHeight * 0.9);
+  ctx.lineTo(baseX + baseWidth * 0.9, baseY + baseHeight * 0.9);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -551,6 +605,9 @@ registerTiles('base', icebergTileCoords);
 
 registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
 registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTavernStructure(ctx, drawOptions));
+registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
+  drawDarkDwarfholdStructure(ctx, drawOptions)
+);
 registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
 registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
   drawAmbientHomesteadStructure(ctx, drawOptions)
@@ -594,6 +651,7 @@ const tileHasTreeOverlay = (tile) =>
 const isJungleOverlayKey = (key) => typeof key === 'string' && key === jungleOverlayKey;
 const tileHasJungleOverlay = (tile) =>
   Boolean(tile) && (isJungleOverlayKey(tile.overlay) || isJungleOverlayKey(tile.hillOverlay));
+const darkDwarfholdVolcanoRadius = 4;
 const townSettlementTypes = new Set(['town', 'city', 'village']);
 const isTownSettlementDetails = (details) =>
   Boolean(details) &&
@@ -3573,6 +3631,7 @@ function generateDwarfholdName(random) {
 function generateDwarfholdDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const isAbandoned = Boolean(options && options.isAbandoned);
+  const isDarkHold = Boolean(options && options.isDarkHold);
 
   if (isAbandoned) {
     const variantRoll = randomFn();
@@ -3729,7 +3788,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
   const classification = population >= 4000 ? 'greatDwarfhold' : 'dwarfhold';
   const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
 
-  return {
+  const baseDetails = {
     type: classification,
     classification: classificationLabel,
     name,
@@ -3755,6 +3814,50 @@ function generateDwarfholdDetails(name, random, options = {}) {
     guildBreakdown,
     description
   };
+
+  if (isDarkHold) {
+    const moltenExports = Array.isArray(baseDetails.majorExports)
+      ? baseDetails.majorExports.slice()
+      : [];
+    moltenExports.push('Obsidian Ingots');
+    moltenExports.push('Sulfur-Glass Relics');
+    const uniqueExports = Array.from(new Set(moltenExports));
+
+    const augmentedGuilds = Array.isArray(baseDetails.majorGuilds)
+      ? Array.from(new Set([...baseDetails.majorGuilds, 'Ashforged Covenant']))
+      : ['Ashforged Covenant'];
+
+    const darkPopulationBreakdown = Array.isArray(baseDetails.populationBreakdown)
+      ? baseDetails.populationBreakdown.map((entry) =>
+          entry && entry.key === 'dwarves'
+            ? {
+                ...entry,
+                label: 'Dark Dwarves',
+                color: '#3b2a3d'
+              }
+            : entry
+        )
+      : [];
+
+    const darkHallmark = `${baseDetails.hallmark} Magma channels drawn from nearby volcanoes keep their forges blazing.`;
+    const darkDescription = baseDetails.description
+      ? `${baseDetails.description} Ash-stained banners and magma sluices define every hall.`
+      : 'Ash-stained banners and magma sluices define every hall.';
+
+    return {
+      ...baseDetails,
+      type: 'darkDwarfhold',
+      classification: 'Dark Dwarfhold',
+      populationDescriptor: 'dark dwarves',
+      majorExports: uniqueExports,
+      majorGuilds: augmentedGuilds,
+      populationBreakdown: darkPopulationBreakdown,
+      hallmark: darkHallmark,
+      description: darkDescription
+    };
+  }
+
+  return baseDetails;
 }
 
 function generateMineName(random) {
@@ -7917,8 +8020,15 @@ const structureHighlightGroups = {
     strokeColor: '#fbbf24',
     fillAlpha: 0.28,
     strokeAlpha: 0.92,
-    keys: ['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD'],
-    types: ['dwarfhold', 'greatDwarfhold', 'abandonedDwarfhold', 'ruinedDwarfhold', 'occupiedDwarfhold']
+    keys: ['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD', 'DARK_DWARFHOLD'],
+    types: [
+      'dwarfhold',
+      'greatDwarfhold',
+      'abandonedDwarfhold',
+      'ruinedDwarfhold',
+      'occupiedDwarfhold',
+      'darkDwarfhold'
+    ]
   }),
   hillhold: createHighlightGroup({
     label: 'Hillholds',
@@ -10225,6 +10335,64 @@ function computeDwarfholdDistributionAdjustment(x, y, height, seed) {
   return centerLift + southernBoost - northernPenalty + jitter;
 }
 
+function isCandidateNearVolcano(candidate, options) {
+  if (!candidate || !options || !options.tiles) {
+    return false;
+  }
+
+  const radius = Math.max(
+    0,
+    Math.floor(
+      Number.isFinite(options.darkDwarfholdVolcanoRadius)
+        ? options.darkDwarfholdVolcanoRadius
+        : darkDwarfholdVolcanoRadius
+    )
+  );
+
+  if (radius <= 0) {
+    return false;
+  }
+
+  const { width, height, tiles } = options;
+  const { x, y } = candidate;
+
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return false;
+  }
+
+  for (let dy = -radius; dy <= radius; dy += 1) {
+    const ny = y + dy;
+    if (ny < 0 || ny >= height) {
+      continue;
+    }
+    const row = tiles[ny];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      const nx = x + dx;
+      if (nx < 0 || nx >= width) {
+        continue;
+      }
+      if (dx === 0 && dy === 0) {
+        continue;
+      }
+      if (dx * dx + dy * dy > radius * radius) {
+        continue;
+      }
+      const neighbor = row[nx];
+      if (!neighbor) {
+        continue;
+      }
+      if (isVolcanoOverlayKey(neighbor.overlay) || isVolcanoOverlayKey(neighbor.hillOverlay)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function tryPlaceDwarfhold(candidate, options) {
   if (!candidate || !options) {
     return false;
@@ -10239,6 +10407,7 @@ function tryPlaceDwarfhold(candidate, options) {
     fallbackMountainScoreThreshold,
     mountainOverlayKey,
     dwarfholdKey,
+    darkDwarfholdKey,
     greatDwarfholdKey,
     abandonedDwarfholdKey,
     abandonedDwarfholdChance,
@@ -10246,7 +10415,8 @@ function tryPlaceDwarfhold(candidate, options) {
     mountainRuggednessSeed,
     dwarfholds,
     towns,
-    nearbyTownDistanceSq
+    nearbyTownDistanceSq,
+    darkDwarfholdVolcanoRadius: customDarkVolcanoRadius
   } = options;
 
   if (!tiles || !Array.isArray(tiles[candidate.y])) {
@@ -10286,6 +10456,13 @@ function tryPlaceDwarfhold(candidate, options) {
   if (!qualifiesForPlacement) {
     return false;
   }
+
+  const nearVolcano = isCandidateNearVolcano(candidate, {
+    tiles,
+    width,
+    height,
+    darkDwarfholdVolcanoRadius: customDarkVolcanoRadius
+  });
 
   if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
     tile.overlay = mountainOverlayKey;
@@ -10332,11 +10509,12 @@ function tryPlaceDwarfhold(candidate, options) {
     0,
     1
   );
-  const isAbandoned = resolvedAbandonedChance > 0 && randomFn() < resolvedAbandonedChance;
+  const isAbandoned = !nearVolcano && resolvedAbandonedChance > 0 && randomFn() < resolvedAbandonedChance;
   const name = generateDwarfholdName(randomFn);
   const details = generateDwarfholdDetails(name, randomFn, {
     hasNearbyHumanSettlement,
-    isAbandoned
+    isAbandoned,
+    isDarkHold: nearVolcano
   });
   let structureKey = dwarfholdKey;
   if (
@@ -10345,6 +10523,8 @@ function tryPlaceDwarfhold(candidate, options) {
     details.type === 'occupiedDwarfhold'
   ) {
     structureKey = abandonedDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
+  } else if (details.type === 'darkDwarfhold') {
+    structureKey = darkDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
   } else if (details.type === 'greatDwarfhold') {
     structureKey = greatDwarfholdKey || dwarfholdKey || null;
   }
@@ -20873,6 +21053,7 @@ function createWorld(seedString) {
     }
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
+    const darkDwarfholdKey = tileLookup.has('DARK_DWARFHOLD') ? 'DARK_DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
     const mineKey = tileLookup.has('MINE') ? 'MINE' : null;
@@ -20974,6 +21155,7 @@ function createWorld(seedString) {
           fallbackMountainScoreThreshold,
           mountainOverlayKey,
           dwarfholdKey,
+          darkDwarfholdKey,
           greatDwarfholdKey,
           abandonedDwarfholdKey,
           abandonedDwarfholdChance,
@@ -20981,7 +21163,8 @@ function createWorld(seedString) {
           mountainRuggednessSeed,
           dwarfholds,
           towns,
-          nearbyTownDistanceSq: dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius
+          nearbyTownDistanceSq: dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius,
+          darkDwarfholdVolcanoRadius
         };
 
         for (let i = 0; i < dwarfholdCandidates.length && placed.length < maxDwarfholds; i += 1) {
