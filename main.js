@@ -5400,7 +5400,8 @@ const defaultCultureColorByKey = {
   karkinos: '#4a6f8c',
   blemaayae: '#a35fa9',
   pygmy: '#c28b5b',
-  half_orc_half_elf: '#708f76',
+  half_orcs: '#647a57',
+  half_elves: '#7ba696',
   dryad: '#58b072',
   leshy: '#3f7a4d',
   tuskar: '#7e91a8',
@@ -5676,11 +5677,17 @@ const ambientStructureOptionsByCulture = {
     'Leaf Hammock Camp',
     'Storyfire Circle'
   ]),
-  half_orc_half_elf: createAmbientStructureOptions([
+  half_orcs: createAmbientStructureOptions([
     'Frontier Trading Circle',
     'Border Watchfire',
-    'River Bargaining Jetty',
-    'Moot of Accord'
+    'Ironbond War Lodge',
+    'River Bargaining Jetty'
+  ]),
+  half_elves: createAmbientStructureOptions([
+    'Moonlit Moot Ring',
+    'Forest Accord Glade',
+    'Woven-Lantern Pier',
+    'River Bargaining Jetty'
   ]),
   dryad: createAmbientStructureOptions([
     'Heart-Tree Grove',
@@ -6308,7 +6315,8 @@ function applyCulturalInfluence({
     { key: 'karkinos', label: 'Karkinos', biomes: ['ocean', 'lake', 'marsh'] },
     { key: 'blemaayae', label: 'Blemaayae', biomes: ['desert', 'badlands', 'jungle', 'mountain'] },
     { key: 'pygmy', label: 'Pygmy', biomes: ['jungle', 'grassland', 'forest'] },
-    { key: 'half_orc_half_elf', label: 'Half-Orc Half-Elf', biomes: ['grassland', 'forest', 'badlands', 'desert'] },
+    { key: 'half_orcs', label: 'Half-Orcs', biomes: ['grassland', 'badlands', 'desert'] },
+    { key: 'half_elves', label: 'Half-Elves', biomes: ['forest', 'grassland'] },
     { key: 'dryad', label: 'Dryad', biomes: ['forest', 'marsh', 'lake'] },
     { key: 'leshy', label: 'Leshy', biomes: ['forest', 'tundra', 'marsh'] }
   ];
