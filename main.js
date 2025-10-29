@@ -1,6 +1,7 @@
 import {
   tileSheets,
   dwarfSpriteSheets,
+  orcSpriteSheets,
   characterCreatorPortraitAssets,
   characterCreatorBeardAssetMap,
   characterCreatorHairAssetMap,
@@ -203,135 +204,6 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientFarmStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const fieldWidth = size * 0.74;
-  const fieldHeight = size * 0.42;
-  const fieldX = (size - fieldWidth) / 2;
-  const fieldY = size * 0.42;
-
-  ctx.fillStyle = '#cfa96b';
-  ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
-
-  ctx.strokeStyle = '#9b6e39';
-  ctx.lineWidth = Math.max(1, size * 0.035);
-  const furrowCount = 4;
-  for (let i = 1; i <= furrowCount; i += 1) {
-    const x = fieldX + (fieldWidth * i) / (furrowCount + 1);
-    ctx.beginPath();
-    ctx.moveTo(x, fieldY + fieldHeight * 0.08);
-    ctx.lineTo(x - size * 0.06, fieldY + fieldHeight * 0.92);
-    ctx.stroke();
-  }
-
-  const barnWidth = size * 0.26;
-  const barnHeight = size * 0.24;
-  const barnX = size * 0.16;
-  const barnY = size * 0.26;
-
-  ctx.fillStyle = '#b53a30';
-  ctx.fillRect(barnX, barnY, barnWidth, barnHeight);
-
-  ctx.fillStyle = '#7d221b';
-  ctx.beginPath();
-  ctx.moveTo(barnX, barnY);
-  ctx.lineTo(barnX + barnWidth / 2, barnY - size * 0.14);
-  ctx.lineTo(barnX + barnWidth, barnY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#f4e3b3';
-  ctx.fillRect(barnX + barnWidth * 0.64, barnY + barnHeight * 0.34, barnWidth * 0.24, barnHeight * 0.38);
-  ctx.fillRect(barnX + barnWidth * 0.26, barnY + barnHeight * 0.48, barnWidth * 0.18, barnHeight * 0.38);
-
-  ctx.restore();
-}
-
-function drawAmbientHomesteadStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const yardWidth = size * 0.82;
-  const yardHeight = size * 0.38;
-  const yardX = (size - yardWidth) / 2;
-  const yardY = size * 0.54;
-
-  ctx.fillStyle = '#7f9c4a';
-  ctx.beginPath();
-  ctx.ellipse(size * 0.5, yardY + yardHeight * 0.5, yardWidth * 0.5, yardHeight * 0.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#b38c61';
-  const pathWidth = size * 0.18;
-  ctx.beginPath();
-  ctx.moveTo(size * 0.5 - pathWidth / 2, yardY + yardHeight * 0.2);
-  ctx.lineTo(size * 0.5 + pathWidth / 2, yardY + yardHeight * 0.2);
-  ctx.lineTo(size * 0.5 + pathWidth * 0.6, yardY + yardHeight);
-  ctx.lineTo(size * 0.5 - pathWidth * 0.6, yardY + yardHeight);
-  ctx.closePath();
-  ctx.fill();
-
-  const houseWidth = size * 0.5;
-  const houseHeight = size * 0.3;
-  const houseX = (size - houseWidth) / 2;
-  const houseY = size * 0.3;
-
-  ctx.fillStyle = '#d5b38a';
-  ctx.fillRect(houseX, houseY, houseWidth, houseHeight);
-
-  ctx.fillStyle = '#8b5a2b';
-  ctx.beginPath();
-  ctx.moveTo(houseX - size * 0.05, houseY);
-  ctx.lineTo(size * 0.5, houseY - size * 0.2);
-  ctx.lineTo(houseX + houseWidth + size * 0.05, houseY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#63351d';
-  const doorWidth = houseWidth * 0.22;
-  const doorHeight = houseHeight * 0.65;
-  ctx.fillRect(size * 0.5 - doorWidth / 2, houseY + houseHeight - doorHeight, doorWidth, doorHeight);
-
-  ctx.fillStyle = '#f8f0d2';
-  const windowSize = houseWidth * 0.18;
-  ctx.fillRect(houseX + houseWidth * 0.18 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
-  ctx.fillRect(houseX + houseWidth * 0.82 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
-
-  ctx.fillStyle = '#4f3420';
-  ctx.fillRect(houseX + houseWidth * 0.72, houseY - size * 0.06, size * 0.06, size * 0.18);
-
-  ctx.globalAlpha = 0.6;
-  ctx.fillStyle = '#d8d8d8';
-  ctx.beginPath();
-  ctx.ellipse(houseX + houseWidth * 0.74, houseY - size * 0.12, size * 0.09, size * 0.12, 0, 0, Math.PI * 2);
-  ctx.ellipse(houseX + houseWidth * 0.66, houseY - size * 0.22, size * 0.07, size * 0.1, 0, 0, Math.PI * 2);
-  ctx.ellipse(houseX + houseWidth * 0.6, houseY - size * 0.3, size * 0.06, size * 0.09, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  const fenceY = yardY + yardHeight * 0.55;
-  const fenceWidth = size * 0.74;
-  const fenceX = (size - fenceWidth) / 2;
-  const postCount = 5;
-  ctx.strokeStyle = '#8d653a';
-  ctx.lineWidth = Math.max(1, size * 0.025);
-  ctx.beginPath();
-  ctx.moveTo(fenceX, fenceY);
-  ctx.lineTo(fenceX + fenceWidth, fenceY);
-  ctx.stroke();
-  for (let i = 0; i <= postCount; i += 1) {
-    const px = fenceX + (fenceWidth * i) / postCount;
-    ctx.beginPath();
-    ctx.moveTo(px, fenceY - size * 0.08);
-    ctx.lineTo(px, fenceY + size * 0.08);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
 function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -378,68 +250,6 @@ function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.closePath();
   ctx.fill();
   ctx.fillRect(treeBaseX + treeWidth * 0.44, treeBaseY, treeWidth * 0.12, size * 0.14);
-
-  ctx.restore();
-}
-
-function drawAmbientLumberMillStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundWidth = size * 0.8;
-  const groundHeight = size * 0.36;
-  const groundX = (size - groundWidth) / 2;
-  const groundY = size * 0.54;
-
-  ctx.fillStyle = '#8c6d45';
-  ctx.fillRect(groundX, groundY, groundWidth, groundHeight);
-
-  const millWidth = size * 0.42;
-  const millHeight = size * 0.32;
-  const millX = size * 0.18;
-  const millY = size * 0.32;
-
-  ctx.fillStyle = '#a47546';
-  ctx.fillRect(millX, millY, millWidth, millHeight);
-
-  ctx.fillStyle = '#6b4a2a';
-  ctx.beginPath();
-  ctx.moveTo(millX - size * 0.04, millY);
-  ctx.lineTo(millX + millWidth / 2, millY - size * 0.18);
-  ctx.lineTo(millX + millWidth + size * 0.04, millY);
-  ctx.closePath();
-  ctx.fill();
-
-  const doorWidth = millWidth * 0.22;
-  const doorHeight = millHeight * 0.48;
-  ctx.fillStyle = '#3f2b19';
-  ctx.fillRect(millX + millWidth * 0.38, millY + millHeight - doorHeight, doorWidth, doorHeight);
-
-  const wheelRadius = size * 0.18;
-  const wheelCenterX = size * 0.68;
-  const wheelCenterY = size * 0.6;
-  ctx.strokeStyle = '#4b3826';
-  ctx.lineWidth = Math.max(1, size * 0.04);
-  ctx.beginPath();
-  ctx.arc(wheelCenterX, wheelCenterY, wheelRadius, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.lineWidth = Math.max(1, size * 0.03);
-  for (let i = 0; i < 4; i += 1) {
-    const angle = (Math.PI / 2) * i;
-    ctx.beginPath();
-    ctx.moveTo(wheelCenterX, wheelCenterY);
-    ctx.lineTo(
-      wheelCenterX + Math.cos(angle) * wheelRadius,
-      wheelCenterY + Math.sin(angle) * wheelRadius
-    );
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = '#6aa6d1';
-  ctx.beginPath();
-  ctx.ellipse(wheelCenterX + wheelRadius * 0.35, groundY + groundHeight * 0.5, size * 0.16, size * 0.12, 0, 0, Math.PI * 2);
-  ctx.fill();
 
   ctx.restore();
 }
@@ -518,87 +328,6 @@ function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientSleepingDragonStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundRadiusX = size * 0.42;
-  const groundRadiusY = size * 0.22;
-  const groundCenterX = size * 0.5;
-  const groundCenterY = size * 0.72;
-  ctx.fillStyle = '#5f6c7a';
-  ctx.beginPath();
-  ctx.ellipse(groundCenterX, groundCenterY, groundRadiusX, groundRadiusY, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#4b5563';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.2, groundCenterY);
-  ctx.lineTo(size * 0.38, size * 0.28);
-  ctx.lineTo(size * 0.5, size * 0.18);
-  ctx.lineTo(size * 0.62, size * 0.34);
-  ctx.lineTo(size * 0.78, groundCenterY);
-  ctx.closePath();
-  ctx.fill();
-
-  const bodyCenterX = size * 0.52;
-  const bodyCenterY = size * 0.56;
-  const bodyRadiusX = size * 0.24;
-  const bodyRadiusY = size * 0.18;
-  ctx.fillStyle = '#b45309';
-  ctx.beginPath();
-  ctx.ellipse(bodyCenterX, bodyCenterY, bodyRadiusX, bodyRadiusY, Math.PI / 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#fbbf24';
-  ctx.beginPath();
-  ctx.ellipse(bodyCenterX + size * 0.02, bodyCenterY + size * 0.02, bodyRadiusX * 0.45, bodyRadiusY * 0.5, Math.PI / 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  const headX = size * 0.32;
-  const headY = size * 0.46;
-  const headRadius = size * 0.1;
-  ctx.fillStyle = '#b45309';
-  ctx.beginPath();
-  ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#fde68a';
-  ctx.beginPath();
-  ctx.arc(headX + size * 0.03, headY, headRadius * 0.55, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#000000';
-  ctx.beginPath();
-  ctx.arc(headX + size * 0.05, headY - size * 0.015, headRadius * 0.15, 0, Math.PI * 2);
-  ctx.arc(headX + size * 0.04, headY + size * 0.02, headRadius * 0.12, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = '#92400e';
-  ctx.lineWidth = Math.max(1, size * 0.025);
-  ctx.beginPath();
-  ctx.moveTo(bodyCenterX + bodyRadiusX * 0.6, bodyCenterY + bodyRadiusY * 0.3);
-  ctx.quadraticCurveTo(size * 0.76, bodyCenterY + size * 0.12, size * 0.74, bodyCenterY - size * 0.02);
-  ctx.stroke();
-
-  ctx.fillStyle = '#f97316';
-  ctx.beginPath();
-  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.8);
-  ctx.lineTo(headX - size * 0.06, headY - headRadius * 1.3);
-  ctx.lineTo(headX + size * 0.01, headY - headRadius);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#facc15';
-  ctx.beginPath();
-  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.4);
-  ctx.quadraticCurveTo(headX - size * 0.16, headY - headRadius * 0.24, headX - size * 0.08, headY + size * 0.04);
-  ctx.quadraticCurveTo(headX - size * 0.02, headY - headRadius * 0.05, headX + size * 0.02, headY - headRadius * 0.2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
@@ -608,23 +337,13 @@ registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTav
 registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
   drawDarkDwarfholdStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
-registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
-  drawAmbientHomesteadStructure(ctx, drawOptions)
-);
+// AMBIENT_HOMESTEAD draws directly from the base sprite sheet via baseTileCoords.
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
   drawAmbientHuntingLodgeStructure(ctx, drawOptions)
-);
-registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
-  drawAmbientLumberMillStructure(ctx, drawOptions)
 );
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
   drawAmbientMoonwellStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_SLEEPING_DRAGON', (ctx, drawOptions) =>
-  drawAmbientSleepingDragonStructure(ctx, drawOptions)
-);
-
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   const fallbackTower = tileLookup.get('TOWER');
   if (fallbackTower) {
@@ -632,13 +351,23 @@ if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   }
 }
 
-
-
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
-const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW']);
+const hillOverlayKeySet = new Set([
+  'HILLS',
+  'HILLS_VARIANT_A',
+  'HILLS_VARIANT_B',
+  'HILLS_SNOW',
+  'HILLS_BADLANDS'
+]);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
+const cutTreeOverlayKey = tileLookup.has('CUT_TREES') ? 'CUT_TREES' : null;
+const farmCropOverlayKey = tileLookup.has('FARM_CROPS') ? 'FARM_CROPS' : null;
 const jungleOverlayKey = 'JUNGLE_TREE';
+const woodElfGroveStructureKeys = ['WOOD_ELF_GROVES', 'WOOD_ELF_GROVES_LARGE', 'WOOD_ELF_GROVES_GRAND'];
+const woodElfGroveStructureKeySet = new Set(woodElfGroveStructureKeys);
+const isWoodElfGroveStructureKey = (key) =>
+  typeof key === 'string' && woodElfGroveStructureKeySet.has(key);
 
 const volcanoOverlayKeySet = new Set(['VOLCANO', 'ACTIVE_VOLCANO']);
 const isVolcanoOverlayKey = (key) => typeof key === 'string' && volcanoOverlayKeySet.has(key);
@@ -688,7 +417,7 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
       return 0;
     }
     case 'woodElfGrove': {
-      if (tile.structure === 'WOOD_ELF_GROVES') {
+      if (isWoodElfGroveStructureKey(tile.structure)) {
         return 1;
       }
       if (tileHasTreeOverlay(tile)) {
@@ -1024,6 +753,102 @@ function pickFactionColor(index) {
   const normalized = ((Math.floor(index) % size) + size) % size;
   return factionColorPalette[normalized];
 }
+
+const dwarfholdCuratedNames = [
+  'Khazadûn Kharn',
+  'Dhurnomli Bûr',
+  'Zarak-az-Garaz',
+  'Barûn-karag',
+  'Gundûm Garmak',
+  'Azar-khazad',
+  'Thûrdrim Duraz',
+  'Kazad-grimil',
+  'Bêrdûm Barak',
+  'Zirak-khazad',
+  'Uzbad-az-Narg',
+  'Karag Gor',
+  'Dûmthûr Mîn',
+  'Gûndâl Grum',
+  'Thrâng-khazad',
+  'Khirûn-karag',
+  'Gazad-az-Bôr',
+  'Dûrgrim Dûm',
+  'Bazâr-durin',
+  'Kharak-khazad',
+  'Thûrdûn Thrum',
+  'Gazûl-dûm',
+  'Gor Dûrgheled',
+  'Khûrmak Dûm',
+  'Barak-dûrûn',
+  'Gadrin-karag',
+  'Mornûl Khazad',
+  'Tharûm Barûn',
+  'Dûr-az-Gor',
+  'Kûzad Thrang',
+  'Grumkhaz Dûm',
+  'Narûm-barak',
+  'Khûldar Narg',
+  'Azûl-az-Khazad',
+  'Dûmthrûn Garaz',
+  'Grom-dûrin',
+  'Khazdûl Garm',
+  'Burin-dûm',
+  'Zarak-nâl',
+  'Thuldûn Karag',
+  'Durgrûn Khazad',
+  'Garak-dûm',
+  'Tharn-az-Dûr',
+  'Kharûm Grimdûm',
+  'Balzûr Karûn',
+  'Mûrkhaz Barak',
+  'Thrûm-az-Garaz',
+  'Gundûl-dûm',
+  'Bârgrin Khazad',
+  'Dûmbar Thûr',
+  'Nûrgrim Karag',
+  'Thûlûm Dûrûn',
+  'Kharn-dûm-nâl',
+  'Throgar-Mâl',
+  'Krundûn Barak',
+  'Dûrkhal Varrum',
+  'Ghazdûr Grimbar',
+  'Kuldûn-Dûr',
+  'Brakûl Thrang',
+  'Zarnak-dûm',
+  'Throldar Kharn',
+  'Mûldûn Grakhaz',
+  'Durmûr Barûn',
+  'Merûn Barin',
+  'Dûldar Harnûm',
+  'Bronarûm',
+  'Kharalûn Dûr',
+  'Garûn-kaz',
+  'Thûrli Barûn',
+  'Balnar Dûm',
+  'Orûn Khazal',
+  'Dûmren Thûr',
+  'Beldûr Karûn',
+  'Uldûm Nargaz',
+  'Khardûl Barzûn',
+  'Thûrkûn-Môr',
+  'Zuldarûn',
+  'Dûrthang Kharûz',
+  'Brûm-dûl',
+  'Gûldûn Thazrak',
+  'Khazûr-Dumli',
+  'Thrûnûl Barûz',
+  'Mûrzan-Dûm',
+  'Grendûl Varrin',
+  'Kharnfell',
+  'Dûmholm',
+  'Barakdel',
+  'Thûrdûn Holdfast',
+  'Gromir Karûn',
+  'Kharûm Tor',
+  "Thulgar's Deep",
+  'Brumkeldûm',
+  'Dûrmar Hollow'
+];
 
 const dwarfholdNamePrefixes = [
   'Stone',
@@ -2439,6 +2264,14 @@ const woodElfGrovePopulationRoleOptions = [
   { key: 'ents', label: 'Ents', color: '#8bbbcf' }
 ];
 
+const woodElfGroveClassificationPopulationMax = {
+  'Forest Retreat': 180,
+  'Canopy Sanctuary': 240,
+  'Hidden Enclave': 360,
+  'Sacred Grove': 500,
+  'Ancient Grove': 560
+};
+
 const lizardmenCityPopulationRoleOptions = [
   { key: 'lizardmen', label: 'Lizardmen', color: '#3a9f68' }
 ];
@@ -3619,6 +3452,15 @@ function generateLizardmenCityPopulationBreakdown(population, random) {
 
 function generateDwarfholdName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
+  if (Array.isArray(dwarfholdCuratedNames) && dwarfholdCuratedNames.length > 0) {
+    const curatedRoll = randomFn();
+    if (curatedRoll < 0.8) {
+      const curatedName = pickRandomFrom(dwarfholdCuratedNames, randomFn);
+      if (typeof curatedName === 'string' && curatedName.length > 0) {
+        return curatedName;
+      }
+    }
+  }
   const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
   const suffix = pickRandomFrom(dwarfholdNameSuffixes, randomFn) || 'hold';
   const baseName = `${prefix}${suffix}`;
@@ -3651,7 +3493,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
         name,
         population: 0,
         populationLabel: 'Population',
-        populationDescriptor: 'dwarves',
+        populationDescriptor: 'residents',
         isSettlement: true,
         ruler: null,
         foundedYearsAgo: null,
@@ -3686,7 +3528,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
         name,
         population: ruinedPopulation,
         populationLabel: 'Population',
-        populationDescriptor: hasSurvivors ? 'dwarven survivors' : 'dwarves',
+        populationDescriptor: 'residents',
         isSettlement: true,
         ruler: null,
         foundedYearsAgo: null,
@@ -3724,7 +3566,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
       name,
       population: occupiedPopulation,
       populationLabel: 'Population',
-      populationDescriptor: occupationDescriptor,
+      populationDescriptor: 'residents',
       isSettlement: true,
       ruler: null,
       foundedYearsAgo: null,
@@ -3808,7 +3650,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'dwarves',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: rulerTitle,
@@ -3862,7 +3704,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
       ...baseDetails,
       type: 'darkDwarfhold',
       classification: 'Dark Dwarfhold',
-      populationDescriptor: 'dark dwarves',
+      populationDescriptor: 'residents',
       majorExports: uniqueExports,
       majorGuilds: augmentedGuilds,
       populationBreakdown: darkPopulationBreakdown,
@@ -3969,7 +3811,7 @@ function generateMineDetails(name, random, options = {}) {
     name,
     population: workforce,
     populationLabel: 'Workforce',
-    populationDescriptor: 'miners',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: 'Overseer',
@@ -4089,7 +3931,7 @@ function generateHillholdDetails(name, random, options = {}) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'dwarves',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: wardenTitle,
@@ -4149,7 +3991,7 @@ function generateEvilWizardTowerDetails(name, random) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'denizens',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: rulerTitle,
@@ -4285,14 +4127,7 @@ function generateTownDetails(name, random, options = {}) {
       }
     }
   }
-  let populationDescriptor = 'residents';
-  if (classification === 'City') {
-    populationDescriptor = 'citizens';
-  } else if (classification === 'Large Town') {
-    populationDescriptor = 'townsfolk';
-  } else if (classification === 'Village') {
-    populationDescriptor = 'villagers';
-  }
+  const populationDescriptor = 'residents';
 
   return {
     type,
@@ -4349,7 +4184,7 @@ function generateHamletDetails(name, random, options = {}) {
     type: 'village',
     classification: 'Village',
     population,
-    populationDescriptor: 'villagers',
+    populationDescriptor: 'residents',
     majorGuilds: [],
     majorExports,
     hallmark,
@@ -4402,7 +4237,7 @@ function generateCaveDetails(random) {
     name,
     population: resolvedPopulation,
     populationLabel: 'Population',
-    populationDescriptor: 'goblins',
+    populationDescriptor: 'residents',
     isSettlement: true,
     prominentGroup: clanName,
     prominentGroupLabel: 'Dominant Clan',
@@ -4483,7 +4318,7 @@ function generateTowerDetails(name, random) {
     name,
     population,
     populationLabel: 'Garrison Strength',
-    populationDescriptor: 'guards',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: commanderTitle,
@@ -4528,16 +4363,9 @@ function generateWoodElfGroveDetails(name, random) {
     classification = 'Canopy Sanctuary';
   }
 
-  let populationDescriptor = 'wardens';
-  if (classification === 'Ancient Grove') {
-    populationDescriptor = 'elders';
-  } else if (classification === 'Sacred Grove') {
-    populationDescriptor = 'keepers';
-  } else if (classification === 'Hidden Enclave') {
-    populationDescriptor = 'sentinels';
-  } else if (classification === 'Canopy Sanctuary') {
-    populationDescriptor = 'guardians';
-  }
+  const populationMax = woodElfGroveClassificationPopulationMax[classification] || 560;
+
+  const populationDescriptor = 'residents';
 
   const elderTitle = pickRandomFrom(woodElfGroveElderTitles, randomFn) || 'Grove Warden';
   const givenName = pickRandomFrom(woodElfGroveElderGivenNames, randomFn) || 'Aelar';
@@ -4557,6 +4385,7 @@ function generateWoodElfGroveDetails(name, random) {
     classification,
     name,
     population,
+    populationMax,
     populationLabel: 'Population',
     populationDescriptor,
     isSettlement: true,
@@ -4619,7 +4448,7 @@ function generateLizardmenCityDetails(name, random) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'scaled souls',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: rulerTitle,
@@ -6254,7 +6083,8 @@ const ambientStructureOptionsByCulture = {
     'Tunnel Watch Post'
   ]),
   elves: createAmbientStructureOptions([
-    { label: 'Moonwell Glade', requiresTreeNeighbor: true },
+    { label: 'Great Tree', requiresTreeOverlay: true },
+    { label: 'Moonwell', requiresTreeOverlay: true },
     'Leafweaver Pavilion',
     'Starbloom Archway',
     'Silversong Clearing'
@@ -6796,7 +6626,100 @@ function resolveHumanPresenceIntensity(tile) {
   return clamp(best, 0, 1);
 }
 
-function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber }) {
+const noopWoodElfTerritoryCheck = () => false;
+
+function createWoodElfTerritoryInfo({ tiles, width, height, factions, radius = 3 }) {
+  if (!Array.isArray(tiles) || tiles.length === 0) {
+    return { mask: null, isNear: noopWoodElfTerritoryCheck };
+  }
+
+  const mapHeight = Number.isFinite(height) ? Math.max(0, Math.floor(height)) : tiles.length;
+  const mapWidth = Number.isFinite(width) ? Math.max(0, Math.floor(width)) : tiles[0]?.length || 0;
+  if (mapWidth <= 0 || mapHeight <= 0) {
+    return { mask: null, isNear: noopWoodElfTerritoryCheck };
+  }
+
+  const woodElfFactionIds = new Set();
+  if (Array.isArray(factions)) {
+    factions.forEach((faction) => {
+      if (!faction || faction.id === null || faction.id === undefined) {
+        return;
+      }
+      const capitalType =
+        typeof faction?.capital?.type === 'string' ? faction.capital.type.trim().toLowerCase() : '';
+      if (capitalType === 'woodelfgrove') {
+        woodElfFactionIds.add(faction.id);
+      }
+    });
+  }
+
+  if (woodElfFactionIds.size === 0) {
+    return { mask: null, isNear: noopWoodElfTerritoryCheck };
+  }
+
+  const resolvedRadius = Math.max(0, Math.floor(radius));
+  const radiusSq = resolvedRadius * resolvedRadius;
+  const mask = new Uint8Array(mapWidth * mapHeight);
+
+  const markVicinity = (centerX, centerY) => {
+    for (let dy = -resolvedRadius; dy <= resolvedRadius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -resolvedRadius; dx <= resolvedRadius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth) {
+          continue;
+        }
+        if (dx * dx + dy * dy > radiusSq) {
+          continue;
+        }
+        const idx = ny * mapWidth + nx;
+        mask[idx] = 1;
+      }
+    }
+  };
+
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile) {
+        continue;
+      }
+      const factionId = tile.factionId;
+      if (factionId === null || factionId === undefined) {
+        continue;
+      }
+      if (woodElfFactionIds.has(factionId)) {
+        markVicinity(x, y);
+      }
+    }
+  }
+
+  const isNear = (x, y) => {
+    if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
+      return false;
+    }
+    const idx = y * mapWidth + x;
+    return mask[idx] === 1;
+  };
+
+  return { mask, isNear };
+}
+
+function spawnAmbientStructures({
+  tiles,
+  width,
+  height,
+  grassTileKey,
+  seedNumber,
+  woodElfTerritoryInfo
+}) {
   const placements = [];
   if (!Array.isArray(tiles) || tiles.length === 0) {
     return placements;
@@ -6808,8 +6731,112 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
     return placements;
   }
 
-  const farmSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x51d7348f) >>> 0;
-  const huntingSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x41c6ce57) >>> 0;
+  const isNearWoodElfTerritory =
+    woodElfTerritoryInfo && typeof woodElfTerritoryInfo.isNear === 'function'
+      ? woodElfTerritoryInfo.isNear
+      : noopWoodElfTerritoryCheck;
+
+  const numericSeed = Number.isFinite(seedNumber) ? seedNumber >>> 0 : 0;
+  const farmSeed = (numericSeed + 0x51d7348f) >>> 0;
+  const farmVariantSeed = (numericSeed + 0x27d4eb2d) >>> 0;
+  const farmCropSeed = (numericSeed + 0x85ebca6b) >>> 0;
+  const farmRelocationSeed = (numericSeed + 0x6c8e9cf5) >>> 0;
+  const farmRelocationTargetSeed = (numericSeed + 0x0b6d0f1d) >>> 0;
+  const farmRelocationAltSeed = (numericSeed + 0x8f2a5c4b) >>> 0;
+  const huntingSeed = (numericSeed + 0x41c6ce57) >>> 0;
+
+  const farmStructureKeys = [];
+  if (tileLookup.has('AMBIENT_FARM')) {
+    farmStructureKeys.push('AMBIENT_FARM');
+  }
+  if (tileLookup.has('AMBIENT_FARM_VARIANT')) {
+    farmStructureKeys.push('AMBIENT_FARM_VARIANT');
+  }
+  const farmStructureKeySet = new Set(farmStructureKeys);
+  const farmStructureDefaultKey = tileLookup.has('AMBIENT_FARM') ? 'AMBIENT_FARM' : null;
+  const farmStructureVariantKey = tileLookup.has('AMBIENT_FARM_VARIANT') ? 'AMBIENT_FARM_VARIANT' : null;
+  const homesteadKey = tileLookup.has('AMBIENT_HOMESTEAD') ? 'AMBIENT_HOMESTEAD' : null;
+  const tavernKey = tileLookup.has('ROADSIDE_TAVERN') ? 'ROADSIDE_TAVERN' : null;
+  const monasteryStructureKey = tileLookup.has('MONASTERY') ? 'MONASTERY' : null;
+  const saintShrineStructureKey = tileLookup.has('SAINT_SHRINE') ? 'SAINT_SHRINE' : null;
+
+  const createRelocationRng = (x, y, seed) => {
+    const hashedSeed = (seed + Math.imul(x + 0x9e3779b9, 0x27d4eb2d) + Math.imul(y + 0x85ebca6b, 0x165667b1)) >>> 0;
+    return mulberry32(hashedSeed || 1);
+  };
+
+  const pickByHash = (items, seed) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return -1;
+    }
+    let bestIndex = 0;
+    let bestScore = Infinity;
+    for (let i = 0; i < items.length; i += 1) {
+      const item = items[i];
+      const score = hashCoords(item.x, item.y, seed);
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = i;
+      }
+    }
+    return bestIndex;
+  };
+
+  const generateCropsNearFarm = (centerX, centerY) => {
+    if (!farmCropOverlayKey) {
+      return;
+    }
+    const radius = 3;
+    const centerSeed =
+      (farmCropSeed + Math.imul(centerX, 0x27d4eb2d) + Math.imul(centerY, 0x9e3779b9)) >>> 0;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (!neighborTile || neighborTile.structure || neighborTile.river) {
+          continue;
+        }
+        if (neighborTile.overlay && neighborTile.overlay !== farmCropOverlayKey) {
+          continue;
+        }
+        if (neighborTile.hillOverlay) {
+          continue;
+        }
+        if (grassTileKey && neighborTile.base !== grassTileKey) {
+          continue;
+        }
+
+        const distance = Math.max(Math.abs(dx), Math.abs(dy));
+        if (distance > radius) {
+          continue;
+        }
+
+        let chance = 0;
+        if (distance <= 1) {
+          chance = 0.65;
+        } else if (distance === 2) {
+          chance = 0.4;
+        } else if (distance === 3) {
+          chance = 0.22;
+        }
+        if (chance <= 0) {
+          continue;
+        }
+
+        const roll = hashCoords(nx, ny, centerSeed);
+        if (roll < chance) {
+          neighborTile.overlay = farmCropOverlayKey;
+        }
+      }
+    }
+  };
 
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
@@ -6831,21 +6858,272 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
       if (tile.base === grassTileKey && !tile.overlay && !tile.hillOverlay) {
         const farmChance = intensityFactor * 0.012;
         if (farmChance > 0 && hashCoords(x, y, farmSeed) < farmChance) {
-          tile.structure = 'AMBIENT_FARM';
+          let farmStructureKey = 'AMBIENT_FARM';
+          if (tileLookup.has('AMBIENT_FARM_VARIANT')) {
+            const variantRoll = hashCoords(x, y, farmVariantSeed);
+            if (variantRoll >= 0.5) {
+              farmStructureKey = 'AMBIENT_FARM_VARIANT';
+            }
+          }
+          tile.structure = farmStructureKey;
           tile.structureName = 'Farm';
           tile.structureDetails = null;
           placements.push({ x, y, type: 'farm' });
+          generateCropsNearFarm(x, y);
           continue;
         }
       }
 
       if (!tile.structure && tileHasTreeOverlay(tile)) {
+        if (isNearWoodElfTerritory(x, y)) {
+          continue;
+        }
         const huntingChance = intensityFactor * 0.0075;
         if (huntingChance > 0 && hashCoords(x, y, huntingSeed) < huntingChance) {
           tile.structure = 'AMBIENT_HUNTING_LODGE';
           tile.structureName = 'Hunting Lodge';
           tile.structureDetails = null;
           placements.push({ x, y, type: 'huntingLodge' });
+        }
+      }
+    }
+  }
+
+  const relocationCandidates = [];
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile || tile.structure || tile.river) {
+        continue;
+      }
+      if (tile.overlay || tile.hillOverlay) {
+        continue;
+      }
+      if (grassTileKey && tile.base !== grassTileKey) {
+        continue;
+      }
+      relocationCandidates.push({ x, y });
+    }
+  }
+
+  if (farmStructureKeys.length > 0 && relocationCandidates.length > 0) {
+    const visited = new Array(mapWidth * mapHeight).fill(false);
+    const neighborOffsets = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ];
+    let relocationCounter = 0;
+    let outOfRelocationSpots = false;
+
+    for (let y = 0; y < mapHeight; y += 1) {
+      if (outOfRelocationSpots) {
+        break;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        const idx = y * mapWidth + x;
+        if (visited[idx]) {
+          continue;
+        }
+        const tile = tiles[y]?.[x];
+        if (!tile || !farmStructureKeySet.has(tile.structure)) {
+          continue;
+        }
+
+        const cluster = [];
+        const queue = [[x, y]];
+        while (queue.length > 0) {
+          const [cx, cy] = queue.pop();
+          if (cx < 0 || cy < 0 || cx >= mapWidth || cy >= mapHeight) {
+            continue;
+          }
+          const cIdx = cy * mapWidth + cx;
+          if (visited[cIdx]) {
+            continue;
+          }
+          const currentTile = tiles[cy]?.[cx];
+          if (!currentTile || !farmStructureKeySet.has(currentTile.structure)) {
+            continue;
+          }
+          visited[cIdx] = true;
+          cluster.push({ x: cx, y: cy });
+          for (let i = 0; i < neighborOffsets.length; i += 1) {
+            const nx = cx + neighborOffsets[i][0];
+            const ny = cy + neighborOffsets[i][1];
+            if (nx < 0 || ny < 0 || nx >= mapWidth || ny >= mapHeight) {
+              continue;
+            }
+            const nIdx = ny * mapWidth + nx;
+            if (visited[nIdx]) {
+              continue;
+            }
+            queue.push([nx, ny]);
+          }
+        }
+
+        if (cluster.length <= 1) {
+          continue;
+        }
+        const majorityCount = Math.floor(cluster.length / 2) + 1;
+        const relocationsPlanned = Math.min(majorityCount, relocationCandidates.length);
+        if (relocationsPlanned === 0) {
+          outOfRelocationSpots = true;
+          break;
+        }
+
+        const availableFarms = cluster.slice();
+        let relocatedCount = 0;
+
+        while (relocatedCount < relocationsPlanned && availableFarms.length > 0) {
+          if (relocationCandidates.length === 0) {
+            outOfRelocationSpots = true;
+            break;
+          }
+
+          const relocationSeedOffset = (farmRelocationSeed + Math.imul(relocationCounter, 0x9e3779b9)) >>> 0;
+          const farmIndex = pickByHash(availableFarms, relocationSeedOffset);
+          if (farmIndex < 0 || farmIndex >= availableFarms.length) {
+            relocationCounter += 1;
+            continue;
+          }
+
+          const farmCoord = availableFarms[farmIndex];
+          const farmTile = tiles[farmCoord.y]?.[farmCoord.x];
+          if (!farmTile) {
+            availableFarms.splice(farmIndex, 1);
+            relocationCounter += 1;
+            continue;
+          }
+
+          const targetSeedOffset = (farmRelocationTargetSeed + Math.imul(relocationCounter, 0x27d4eb2d)) >>> 0;
+          const candidateIndex = pickByHash(relocationCandidates, targetSeedOffset);
+          if (candidateIndex < 0 || candidateIndex >= relocationCandidates.length) {
+            relocationCounter += 1;
+            continue;
+          }
+
+          const destination = relocationCandidates.splice(candidateIndex, 1)[0];
+          if (!destination) {
+            relocationCounter += 1;
+            continue;
+          }
+          const destinationTile = tiles[destination.y]?.[destination.x];
+          if (!destinationTile || destinationTile.structure || destinationTile.river) {
+            relocationCounter += 1;
+            continue;
+          }
+
+          farmTile.structure = null;
+          farmTile.structureName = null;
+          farmTile.structureDetails = null;
+
+          const placementIndex = placements.findIndex(
+            (entry) => entry && entry.type === 'farm' && entry.x === farmCoord.x && entry.y === farmCoord.y
+          );
+          if (placementIndex !== -1) {
+            placements.splice(placementIndex, 1);
+          }
+
+          const altSeedOffset = (farmRelocationAltSeed + Math.imul(relocationCounter, 0x85ebca6b)) >>> 0;
+          const convertRoll = hashCoords(destination.x, destination.y, altSeedOffset);
+          const altStructures = [];
+          if (homesteadKey) {
+            altStructures.push({ key: homesteadKey, type: 'homestead' });
+          }
+          if (saintShrineStructureKey) {
+            altStructures.push({ key: saintShrineStructureKey, type: 'saintShrine' });
+          }
+          if (monasteryStructureKey) {
+            altStructures.push({ key: monasteryStructureKey, type: 'monastery' });
+          }
+          if (tavernKey) {
+            altStructures.push({ key: tavernKey, type: 'roadsideTavern' });
+          }
+
+          const assignFarmStructure = () => {
+            if (!farmStructureDefaultKey && !farmStructureVariantKey) {
+              return false;
+            }
+            let structureKey = farmStructureDefaultKey || farmStructureVariantKey;
+            if (farmStructureDefaultKey && farmStructureVariantKey) {
+              const variantRoll = hashCoords(destination.x, destination.y, farmVariantSeed);
+              if (variantRoll >= 0.5) {
+                structureKey = farmStructureVariantKey;
+              }
+            }
+            destinationTile.structure = structureKey;
+            destinationTile.structureName = 'Farm';
+            destinationTile.structureDetails = null;
+            placements.push({ x: destination.x, y: destination.y, type: 'farm' });
+            generateCropsNearFarm(destination.x, destination.y);
+            return true;
+          };
+
+          const assignAlternativeStructure = () => {
+            if (altStructures.length === 0 || convertRoll >= 0.55) {
+              return false;
+            }
+            const selectionSeed = (altSeedOffset + 0x27d4eb2d) >>> 0;
+            const selectionRoll = hashCoords(destination.x, destination.y, selectionSeed);
+            const optionIndex = Math.max(
+              0,
+              Math.min(altStructures.length - 1, Math.floor(selectionRoll * altStructures.length))
+            );
+            const option = altStructures[optionIndex] || altStructures[0];
+            if (!option) {
+              return false;
+            }
+            const rng = createRelocationRng(destination.x, destination.y, altSeedOffset);
+            if (option.type === 'homestead') {
+              destinationTile.structure = option.key;
+              destinationTile.structureName = 'Homestead';
+              destinationTile.structureDetails = {
+                type: 'homestead',
+                displayType: 'Homestead',
+                description: 'A modest rural homestead tended by local farmers.'
+              };
+            } else if (option.type === 'saintShrine') {
+              const name = generateSaintShrineName(rng);
+              const details = generateSaintShrineDetails(name, rng);
+              destinationTile.structure = option.key;
+              destinationTile.structureName = name;
+              destinationTile.structureDetails = details;
+            } else if (option.type === 'monastery') {
+              const name = generateMonasteryName(rng);
+              const details = generateMonasteryDetails(name, rng);
+              destinationTile.structure = option.key;
+              destinationTile.structureName = name;
+              destinationTile.structureDetails = details;
+            } else if (option.type === 'roadsideTavern') {
+              const name = generateRoadsideTavernName(rng);
+              const details = generateRoadsideTavernDetails(name, rng);
+              destinationTile.structure = option.key;
+              destinationTile.structureName = name;
+              destinationTile.structureDetails = details;
+            } else {
+              return false;
+            }
+            placements.push({ x: destination.x, y: destination.y, type: option.type });
+            return true;
+          };
+
+          if (!assignAlternativeStructure()) {
+            assignFarmStructure();
+          }
+
+          availableFarms.splice(farmIndex, 1);
+          relocatedCount += 1;
+          relocationCounter += 1;
+        }
+
+        if (relocatedCount < relocationsPlanned && relocationCandidates.length === 0) {
+          outOfRelocationSpots = true;
+          break;
         }
       }
     }
@@ -6861,7 +7139,8 @@ function applyCulturalInfluence({
   settlements,
   factions,
   isLandBaseTile,
-  seedNumber
+  seedNumber,
+  woodElfTerritoryInfo
 }) {
   if (!Array.isArray(tiles) || tiles.length === 0) {
     return;
@@ -6872,6 +7151,11 @@ function applyCulturalInfluence({
   if (mapWidth <= 0 || mapHeight <= 0) {
     return;
   }
+
+  const isNearWoodElfTerritory =
+    woodElfTerritoryInfo && typeof woodElfTerritoryInfo.isNear === 'function'
+      ? woodElfTerritoryInfo.isNear
+      : noopWoodElfTerritoryCheck;
 
   const isTileAdjacentToTree = (x, y) => {
     for (let dy = -1; dy <= 1; dy += 1) {
@@ -6891,6 +7175,38 @@ function applyCulturalInfluence({
       }
     }
     return false;
+  };
+
+  const replaceTreesNearLumberMill = (centerX, centerY) => {
+    if (!cutTreeOverlayKey) {
+      return;
+    }
+    const radius = 1;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (!neighborTile || neighborTile.structure || neighborTile.river) {
+          continue;
+        }
+        if (!tileHasTreeOverlay(neighborTile)) {
+          continue;
+        }
+        if (isTreeOverlayKey(neighborTile.hillOverlay)) {
+          neighborTile.hillOverlay = null;
+        }
+        if (neighborTile.overlay !== cutTreeOverlayKey) {
+          neighborTile.overlay = cutTreeOverlayKey;
+        }
+      }
+    }
   };
 
   for (let y = 0; y < mapHeight; y += 1) {
@@ -7138,7 +7454,7 @@ function applyCulturalInfluence({
     { key: 'elwetritsch', label: 'Elwetritsch', biomes: ['forest', 'grassland', 'mountain'] },
     { key: 'karkinos', label: 'Karkinos', biomes: ['ocean', 'lake', 'marsh'] },
     { key: 'blemaayae', label: 'Blemaayae', biomes: ['desert', 'badlands', 'jungle', 'mountain'] },
-    { key: 'pygmy', label: 'Pygmy', biomes: ['jungle', 'grassland', 'forest'] },
+    { key: 'pygmy', label: 'Pygmy', biomes: ['jungle'] },
     { key: 'half_orcs', label: 'Half-Orcs', biomes: ['grassland', 'badlands', 'desert'] },
     { key: 'half_elves', label: 'Half-Elves', biomes: ['forest', 'grassland'] },
     { key: 'dryad', label: 'Dryad', biomes: ['forest', 'marsh', 'lake'] },
@@ -7904,12 +8220,20 @@ function applyCulturalInfluence({
       let adjacentToTreeCache = null;
       let isMountainTileCache = null;
       let hasForestOverlayCache = null;
+      let hasTreeOverlayCache = null;
+      const avoidWoodElfVicinity = isNearWoodElfTerritory(x, y);
       const eligibleOptions = options.filter((option) => {
         if (option.requiresTreeNeighbor) {
           if (adjacentToTreeCache === null) {
             adjacentToTreeCache = isTileAdjacentToTree(x, y);
           }
           return adjacentToTreeCache;
+        }
+        if (option.requiresTreeOverlay) {
+          if (hasTreeOverlayCache === null) {
+            hasTreeOverlayCache = tileHasTreeOverlay(tile);
+          }
+          return hasTreeOverlayCache;
         }
         if (option.requiresMountainOverlay) {
           if (isMountainTileCache === null) {
@@ -7924,6 +8248,9 @@ function applyCulturalInfluence({
               isTreeOverlayKey(tile.overlay) || isTreeOverlayKey(tile.hillOverlay);
           }
           return !hasForestOverlayCache;
+        }
+        if (avoidWoodElfVicinity && option.key === 'lumber_mill') {
+          return false;
         }
         return true;
       });
@@ -7958,10 +8285,18 @@ function applyCulturalInfluence({
 
       if (option.key === 'lumber_mill') {
         assignAmbientStructureToTile('AMBIENT_LUMBER_MILL');
+        replaceTreesNearLumberMill(x, y);
       } else if (option.key === 'homestead') {
         assignAmbientStructureToTile('AMBIENT_HOMESTEAD');
       } else if (option.key === 'sleeping_dragon') {
         assignAmbientStructureToTile('AMBIENT_SLEEPING_DRAGON');
+      } else if (option.key === 'great_tree') {
+        const variantSeed = (seeds.selection + 0x9e3779b9) >>> 0;
+        const variantRoll = hashCoords(x, y, variantSeed);
+        const hasAltGreatTree = tileLookup.has('AMBIENT_GREAT_TREE_ALT');
+        const structureKey =
+          hasAltGreatTree && variantRoll >= 0.5 ? 'AMBIENT_GREAT_TREE_ALT' : 'AMBIENT_GREAT_TREE';
+        assignAmbientStructureToTile(structureKey);
       } else if (option.key === 'moonwell_glade' || option.key === 'moonwell') {
         assignAmbientStructureToTile('AMBIENT_MOONWELL');
       }
@@ -8068,7 +8403,7 @@ const structureHighlightGroups = {
     strokeColor: '#4ade80',
     fillAlpha: 0.26,
     strokeAlpha: 0.88,
-    keys: ['WOOD_ELF_GROVES'],
+    keys: woodElfGroveStructureKeys.filter((key) => tileLookup.has(key)),
     types: ['woodElfGrove']
   }),
   lizardmenCity: createHighlightGroup({
@@ -8184,7 +8519,7 @@ const structureHighlightGroups = {
     strokeColor: '#bef264',
     fillAlpha: 0.2,
     strokeAlpha: 0.75,
-    keys: ['AMBIENT_FARM', 'AMBIENT_HUNTING_LODGE', 'AMBIENT_HOMESTEAD'],
+    keys: ['AMBIENT_FARM', 'AMBIENT_FARM_VARIANT', 'AMBIENT_HUNTING_LODGE', 'AMBIENT_HOMESTEAD'],
     types: ['farm', 'huntingLodge', 'homestead']
   })
 };
@@ -8743,7 +9078,7 @@ const dwarfTraitAttributeDefinitions = [
     label: 'Banker',
     description:
       'Among men you would be in a respected profession, among dwarves its the opposite, expect your increased income to be met with glaring judgments and distain from your peers who think your very livilooh to be undwarvsmen like.',
-    icon: 'tilesheet/dice1.png',
+    icon: 'tilesheet/banker.png',
     isActive: (dwarf) => dwarf?.profession === 'banker'
   },
   {
@@ -8902,29 +9237,26 @@ const dwarfTestState = {
   tileSize: 16,
   tileScale: 2,
   camera: { x: 0, y: 0 },
-  animationTime: 0
+  animationTime: 0,
+  world: null,
+  focusReturnElement: null,
+  player: null,
+  enemies: []
 };
+const dwarfTestDefaultWorldKey = 'overworld';
+const dwarfTestOverworldTileSheetKey = 'dwarfTest';
+const dwarfTestDungeonFloorSheetKey = 'dwarfTestDungeonFloor';
+const dwarfTestDungeonWaterSheetKey = 'dwarfTestDungeonWater';
 
-const dwarfTestTileSheetKey = 'dwarfTest';
-const dwarfTestTileSize = 16;
-const dwarfTestTileScale = 2;
-const dwarfTestMapDimensions = { columns: 42, rows: 24 };
-const dwarfTestScaleConfig = {
-  min: 2,
-  max: 4,
-  targetVisibleColumns: 18,
-  targetVisibleRows: 12
-};
-
-const dwarfTestTilePalette = {
-  grass: { sheet: dwarfTestTileSheetKey, col: 0, row: 2 },
-  grassAlt: { sheet: dwarfTestTileSheetKey, col: 3, row: 2 },
-  savanna: { sheet: dwarfTestTileSheetKey, col: 6, row: 2 },
-  swamp: { sheet: dwarfTestTileSheetKey, col: 4, row: 3 },
-  hills: { sheet: dwarfTestTileSheetKey, col: 2, row: 2 },
-  beach: { sheet: dwarfTestTileSheetKey, col: 12, row: 0 },
+const dwarfTestOverworldTilePalette = {
+  grass: { sheet: dwarfTestOverworldTileSheetKey, col: 0, row: 2 },
+  grassAlt: { sheet: dwarfTestOverworldTileSheetKey, col: 3, row: 2 },
+  savanna: { sheet: dwarfTestOverworldTileSheetKey, col: 6, row: 2 },
+  swamp: { sheet: dwarfTestOverworldTileSheetKey, col: 4, row: 3 },
+  hills: { sheet: dwarfTestOverworldTileSheetKey, col: 2, row: 2 },
+  beach: { sheet: dwarfTestOverworldTileSheetKey, col: 12, row: 0 },
   shore: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 12, row: 1 },
       { col: 12, row: 2 },
@@ -8932,11 +9264,11 @@ const dwarfTestTilePalette = {
     ],
     animationSpeed: 1.2
   },
-  tundra: { sheet: dwarfTestTileSheetKey, col: 13, row: 3 },
-  glacier: { sheet: dwarfTestTileSheetKey, col: 14, row: 2 },
-  desert: { sheet: dwarfTestTileSheetKey, col: 19, row: 2 },
+  tundra: { sheet: dwarfTestOverworldTileSheetKey, col: 13, row: 3 },
+  glacier: { sheet: dwarfTestOverworldTileSheetKey, col: 14, row: 2 },
+  desert: { sheet: dwarfTestOverworldTileSheetKey, col: 19, row: 2 },
   lake: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 16, row: 1 },
       { col: 16, row: 2 },
@@ -8945,7 +9277,7 @@ const dwarfTestTilePalette = {
     animationSpeed: 1.4
   },
   ocean: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 17, row: 1 },
       { col: 17, row: 2 },
@@ -8954,7 +9286,7 @@ const dwarfTestTilePalette = {
     animationSpeed: 1.6
   },
   deepOcean: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 18, row: 1 },
       { col: 18, row: 2 },
@@ -8963,7 +9295,7 @@ const dwarfTestTilePalette = {
     animationSpeed: 1.7
   },
   frozenOcean: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 15, row: 0 },
       { col: 15, row: 1 },
@@ -8973,13 +9305,447 @@ const dwarfTestTilePalette = {
   }
 };
 
+const dwarfTestDungeonTilePalette = {
+  void: null,
+  floor: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 8 },
+  floorAlt: { sheet: dwarfTestDungeonFloorSheetKey, col: 3, row: 8 },
+  floorCracked: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 9 },
+  wall: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 2 },
+  wallTop: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 5 },
+  wallCorner: { sheet: dwarfTestDungeonFloorSheetKey, col: 1, row: 2 },
+  pillar: { sheet: dwarfTestDungeonFloorSheetKey, col: 4, row: 1 },
+  pool: {
+    sheet: dwarfTestDungeonWaterSheetKey,
+    frames: [
+      { col: 0, row: 0 },
+      { col: 1, row: 0 },
+      { col: 2, row: 0 }
+    ],
+    animationSpeed: 1.35
+  },
+  poolEdge: {
+    sheet: dwarfTestDungeonWaterSheetKey,
+    frames: [
+      { col: 3, row: 0 },
+      { col: 4, row: 0 },
+      { col: 5, row: 0 }
+    ],
+    animationSpeed: 1.35
+  }
+};
+
+const orcAnimationTemplates = {
+  orc1: {
+    idle: { sheet: 'orc1_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
+    walk: { sheet: 'orc1_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
+    attack: {
+      sheet: 'orc1_attack',
+      row: 0,
+      frameCount: 12,
+      speed: 11,
+      loop: false,
+      impactFrame: 6,
+      columns: 32,
+      rows: 16
+    },
+    hurt: { sheet: 'orc1_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
+    death: { sheet: 'orc1_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
+  },
+  orc2: {
+    idle: { sheet: 'orc2_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
+    walk: { sheet: 'orc2_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
+    attack: {
+      sheet: 'orc2_attack',
+      row: 0,
+      frameCount: 12,
+      speed: 11,
+      loop: false,
+      impactFrame: 6,
+      columns: 32,
+      rows: 16
+    },
+    hurt: { sheet: 'orc2_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
+    death: { sheet: 'orc2_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
+  },
+  orc3: {
+    idle: { sheet: 'orc3_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
+    walk: { sheet: 'orc3_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
+    attack: {
+      sheet: 'orc3_attack',
+      row: 0,
+      frameCount: 12,
+      speed: 11,
+      loop: false,
+      impactFrame: 6,
+      columns: 32,
+      rows: 16
+    },
+    hurt: { sheet: 'orc3_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
+    death: { sheet: 'orc3_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
+  }
+};
+
+const orcAnimationCache = new Map();
+let dwarfTestEnemyIdCounter = 0;
+
+function getOrcAnimationDefinition(type, key) {
+  if (!type || !key) {
+    return null;
+  }
+  const cacheKey = `${type}:${key}`;
+  if (orcAnimationCache.has(cacheKey)) {
+    return orcAnimationCache.get(cacheKey);
+  }
+  const template = orcAnimationTemplates[type]?.[key];
+  if (!template) {
+    return null;
+  }
+  const columns = Math.max(1, template.columns || orcSpriteSheets[template.sheet]?.columns || 1);
+  const rows = Math.max(1, template.rows || orcSpriteSheets[template.sheet]?.rows || 1);
+  const rowIndex = clamp(template.row ?? 0, 0, rows - 1);
+  const frameTotal = Math.max(1, Math.min(template.frameCount || columns, columns));
+  const frames = [];
+  for (let i = 0; i < frameTotal; i += 1) {
+    frames.push({ sheet: template.sheet, col: i, row: rowIndex });
+  }
+  const definition = {
+    type,
+    key,
+    frames,
+    speed: Math.max(1, template.speed || 8),
+    loop: template.loop !== false,
+    impactFrame: Number.isFinite(template.impactFrame) ? clamp(template.impactFrame, 0, frameTotal - 1) : null
+  };
+  orcAnimationCache.set(cacheKey, definition);
+  return definition;
+}
+
+function createOrcEnemyAnimationState(key) {
+  return {
+    key,
+    frameIndex: 0,
+    elapsed: 0,
+    completed: false,
+    hitApplied: false
+  };
+}
+
+function setOrcEnemyAnimation(enemy, key, { reset = false } = {}) {
+  if (!enemy) {
+    return;
+  }
+  const currentKey = enemy.animation?.key;
+  if (!reset && currentKey === key) {
+    return;
+  }
+  enemy.animation = createOrcEnemyAnimationState(key);
+}
+
+function advanceOrcEnemyAnimation(enemy, delta) {
+  if (!enemy?.animation) {
+    return;
+  }
+  const definition = getOrcAnimationDefinition(enemy.type, enemy.animation.key);
+  if (!definition || !definition.frames || definition.frames.length === 0) {
+    return;
+  }
+  const frameDuration = 1 / definition.speed;
+  enemy.animation.elapsed += delta;
+  while (enemy.animation.elapsed >= frameDuration) {
+    enemy.animation.elapsed -= frameDuration;
+    enemy.animation.frameIndex += 1;
+    if (enemy.animation.frameIndex >= definition.frames.length) {
+      if (definition.loop) {
+        enemy.animation.frameIndex = 0;
+        enemy.animation.completed = false;
+      } else {
+        enemy.animation.frameIndex = definition.frames.length - 1;
+        enemy.animation.completed = true;
+        break;
+      }
+    }
+  }
+}
+
+function isDwarfTestPositionWalkable(x, y, destTileSize, map) {
+  if (!map || !Array.isArray(map.tiles) || !Number.isFinite(destTileSize) || destTileSize <= 0) {
+    return true;
+  }
+  const col = clamp(Math.floor(x / destTileSize), 0, map.columns - 1);
+  const row = clamp(Math.floor((y - destTileSize * 0.25) / destTileSize), 0, map.rows - 1);
+  const tileKey = map.tiles[row]?.[col];
+  if (!tileKey) {
+    return false;
+  }
+  return !isDwarfTestWaterTileKey(tileKey);
+}
+
+function createOrcEnemy(type, spawnTile, destTileSize) {
+  dwarfTestEnemyIdCounter += 1;
+  const baseX = (spawnTile.col + 0.5) * destTileSize;
+  const baseY = (spawnTile.row + 1) * destTileSize - destTileSize * 0.12;
+  return {
+    id: `orc-${dwarfTestEnemyIdCounter}`,
+    type,
+    position: { x: baseX, y: baseY },
+    facing: 1,
+    animation: createOrcEnemyAnimationState('idle'),
+    tileSpeed: 0.9,
+    attackRangeTiles: 0.7,
+    attackCooldown: Math.random() * 0.6,
+    attackCooldownDuration: 1.2,
+    damage: 8
+  };
+}
+
+function getDefaultOrcSpawnTiles(map, referenceTile) {
+  if (!map) {
+    return [];
+  }
+  const { col: refCol = Math.floor(map.columns / 2), row: refRow = Math.floor(map.rows / 2) } = referenceTile || {};
+  const spawnOffsets = [
+    { type: 'orc1', col: refCol + 5, row: refRow - 1 },
+    { type: 'orc2', col: refCol - 6, row: refRow - 2 },
+    { type: 'orc3', col: refCol + 2, row: refRow + 4 }
+  ];
+  const results = [];
+  for (const entry of spawnOffsets) {
+    const targetCol = clamp(entry.col, 0, map.columns - 1);
+    const targetRow = clamp(entry.row, 0, map.rows - 1);
+    const walkable = findNearestDwarfTestWalkableTile(map, targetCol, targetRow);
+    results.push({ type: entry.type, col: walkable.col, row: walkable.row });
+  }
+  return results;
+}
+
+function spawnDwarfTestEnemies(map, destTileSize, referenceTile) {
+  if (!map || !Number.isFinite(destTileSize) || destTileSize <= 0) {
+    dwarfTestState.enemies = [];
+    return;
+  }
+  dwarfTestEnemyIdCounter = 0;
+  const spawnTiles = getDefaultOrcSpawnTiles(map, referenceTile);
+  dwarfTestState.enemies = spawnTiles.map((entry) => createOrcEnemy(entry.type, entry, destTileSize));
+}
+
+function applyDamageToDwarfTestPlayer(amount) {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return;
+  }
+  const player = dwarfTestState.player;
+  if (!player || player.damageCooldown > 0 || player.dead) {
+    return;
+  }
+  player.health = clamp(player.health - amount, 0, player.maxHealth);
+  player.damageCooldown = 0.6;
+  player.hurtFlash = 0.35;
+  if (player.health <= 0) {
+    player.dead = true;
+  }
+}
+
+function updateOrcEnemies(delta, spriteDimensions, bounds) {
+  const enemies = dwarfTestState.enemies;
+  if (!Array.isArray(enemies) || enemies.length === 0) {
+    return;
+  }
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
+  const playerPosition = dwarfTestState.position;
+  const map = dwarfTestState.map;
+  for (const enemy of enemies) {
+    if (!enemy || !enemy.position) {
+      continue;
+    }
+    enemy.attackCooldown = Math.max(0, (enemy.attackCooldown || 0) - delta);
+    const dx = playerPosition.x - enemy.position.x;
+    const dy = playerPosition.y - enemy.position.y;
+    const distance = Math.hypot(dx, dy);
+    const directionX = distance > 0 ? dx / distance : 0;
+    const directionY = distance > 0 ? dy / distance : 0;
+    const attackRange = enemy.attackRangeTiles * destTileSize;
+    const moveSpeed = enemy.tileSpeed * destTileSize;
+    const isAttacking = enemy.animation?.key === 'attack' && !enemy.animation.completed;
+
+    if (!isAttacking) {
+      if (distance > attackRange * 0.85) {
+        const moveDistance = Math.min(distance, moveSpeed * delta);
+        if (moveDistance > 0.01) {
+          const nextX = enemy.position.x + directionX * moveDistance;
+          const nextY = enemy.position.y + directionY * moveDistance;
+          if (isDwarfTestPositionWalkable(nextX, nextY, destTileSize, map)) {
+            enemy.position.x = nextX;
+            enemy.position.y = nextY;
+          }
+          enemy.facing = directionX < 0 ? -1 : 1;
+          setOrcEnemyAnimation(enemy, 'walk');
+        } else {
+          setOrcEnemyAnimation(enemy, 'idle');
+        }
+      } else if (enemy.attackCooldown <= 0) {
+        setOrcEnemyAnimation(enemy, 'attack', { reset: true });
+      } else {
+        setOrcEnemyAnimation(enemy, 'idle');
+      }
+    }
+
+    if (distance > 0.1 && Math.abs(directionX) > 0.05) {
+      enemy.facing = directionX < 0 ? -1 : 1;
+    }
+
+    advanceOrcEnemyAnimation(enemy, delta);
+
+    const animation = enemy.animation;
+    const definition = animation ? getOrcAnimationDefinition(enemy.type, animation.key) : null;
+    if (animation && definition && animation.key === 'attack') {
+      if (!animation.hitApplied && definition.impactFrame !== null && animation.frameIndex >= definition.impactFrame) {
+        applyDamageToDwarfTestPlayer(enemy.damage);
+        animation.hitApplied = true;
+      }
+      if (animation.completed) {
+        enemy.attackCooldown = enemy.attackCooldownDuration;
+        setOrcEnemyAnimation(enemy, 'idle', { reset: true });
+      }
+    }
+
+    enemy.position.x = clamp(enemy.position.x, bounds.minX, bounds.maxX);
+    enemy.position.y = clamp(enemy.position.y, bounds.minY, bounds.maxY);
+  }
+}
+
+function drawOrcEnemy(ctx, enemy, camera, destTileSize) {
+  const { width, height } = ctx.canvas;
+  const baseX = enemy.position.x - camera.x;
+  const baseY = enemy.position.y - camera.y;
+  const margin = destTileSize * 2;
+  if (baseX < -margin || baseX > width + margin || baseY < -margin || baseY > height + margin) {
+    return;
+  }
+  const shadowWidth = destTileSize * 0.75;
+  const shadowHeight = Math.max(4, destTileSize * 0.24);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(baseX, baseY - destTileSize * 0.08, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const animation = enemy.animation;
+  const definition = animation ? getOrcAnimationDefinition(enemy.type, animation.key) : null;
+  const frame = definition?.frames?.[Math.min(animation?.frameIndex || 0, (definition?.frames?.length || 1) - 1)];
+  if (!frame) {
+    ctx.fillStyle = '#374151';
+    ctx.beginPath();
+    ctx.arc(baseX, baseY - destTileSize * 0.6, destTileSize * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  const sheet = orcSpriteSheets[frame.sheet];
+  if (!sheet?.image) {
+    return;
+  }
+  const tileSize = sheet.tileSize || 16;
+  const sx = frame.col * tileSize;
+  const sy = frame.row * tileSize;
+  const sw = tileSize;
+  const sh = tileSize;
+  const destWidth = destTileSize;
+  const destHeight = destTileSize;
+
+  ctx.save();
+  ctx.translate(baseX, baseY - destHeight);
+  if (enemy.facing === -1) {
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(sheet.image, sx, sy, sw, sh, -destWidth / 2, 0, destWidth, destHeight);
+  ctx.restore();
+}
+
+function drawDwarfTestEnemies(ctx) {
+  const enemies = dwarfTestState.enemies;
+  if (!Array.isArray(enemies) || enemies.length === 0) {
+    return;
+  }
+  const camera = dwarfTestState.camera || { x: 0, y: 0 };
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
+  const sorted = [...enemies];
+  sorted.sort((a, b) => (a?.position?.y || 0) - (b?.position?.y || 0));
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  for (const enemy of sorted) {
+    if (!enemy?.position) {
+      continue;
+    }
+    drawOrcEnemy(ctx, enemy, camera, destTileSize);
+  }
+  ctx.restore();
+}
+
+function drawDwarfTestHud(ctx) {
+  const player = dwarfTestState.player;
+  if (!player) {
+    return;
+  }
+  const { width } = ctx.canvas;
+  const barWidth = Math.min(width * 0.32, 200);
+  const barHeight = 12;
+  const x = 18;
+  const y = 18;
+  ctx.save();
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+  ctx.fillRect(x - 6, y - 6, barWidth + 12, barHeight + 12);
+  ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+  ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
+  const ratio = clamp(player.health / player.maxHealth, 0, 1);
+  const gradient = ctx.createLinearGradient(x, y, x + barWidth, y);
+  gradient.addColorStop(0, '#fca5a5');
+  gradient.addColorStop(0.5, '#ef4444');
+  gradient.addColorStop(1, '#b91c1c');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x, y, Math.max(0, barWidth * ratio), barHeight);
+  ctx.strokeStyle = 'rgba(248, 250, 252, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, barWidth, barHeight);
+  ctx.fillStyle = '#f9fafb';
+  ctx.font = 'bold 12px "Cormorant Garamond", serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`Health ${Math.round(player.health)}/${player.maxHealth}`, x + 4, y + barHeight / 2);
+  if (player.dead) {
+    ctx.font = 'bold 18px "Cormorant Garamond", serif';
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+    ctx.fillText('You have fallen!', x, y + barHeight + 24);
+  }
+  ctx.restore();
+}
+
+function drawDwarfTestScene(ctx, spriteDimensions) {
+  drawDwarfTestBackground(ctx);
+  drawDwarfTestEnemies(ctx);
+  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestHud(ctx);
+}
+
+function getDwarfTestWorldConfig(worldKey) {
+  return dwarfTestWorlds[worldKey] || dwarfTestWorlds[dwarfTestDefaultWorldKey];
+}
+
+function getActiveDwarfTestWorld() {
+  return dwarfTestState.world || dwarfTestWorlds[dwarfTestDefaultWorldKey];
+}
+
 function isDwarfTestWaterTileKey(tileKey) {
-  return tileKey === 'lake' || tileKey === 'ocean' || tileKey === 'deepOcean' || tileKey === 'frozenOcean';
+  const world = getActiveDwarfTestWorld();
+  return world.waterTileKeys?.has(tileKey) || false;
 }
 
 function resolveDwarfTestTileFrame(tileKey) {
-  const entry = dwarfTestTilePalette[tileKey];
+  if (!tileKey) {
+    return null;
+  }
+  const world = getActiveDwarfTestWorld();
+  const palette = world.tilePalette || {};
+  const entry = palette[tileKey];
   if (!entry) {
+    return null;
+  }
+  if (entry === null) {
     return null;
   }
   if (entry.frames && entry.frames.length > 0) {
@@ -8991,8 +9757,8 @@ function resolveDwarfTestTileFrame(tileKey) {
   return entry;
 }
 
-function generateDwarfTestMap() {
-  const { columns, rows } = dwarfTestMapDimensions;
+function generateDwarfTestOverworldMap(world) {
+  const { columns, rows } = world.mapDimensions;
   const tiles = Array.from({ length: rows }, () => new Array(columns));
 
   for (let row = 0; row < rows; row += 1) {
@@ -9122,33 +9888,201 @@ function generateDwarfTestMap() {
   return { columns, rows, tiles };
 }
 
+function generateDwarfTestDungeonMap(world) {
+  const { columns, rows } = world.mapDimensions;
+  const tiles = Array.from({ length: rows }, () => new Array(columns).fill('void'));
+
+  const chamber = {
+    startCol: 2,
+    endCol: columns - 3,
+    startRow: 2,
+    endRow: rows - 3
+  };
+
+  for (let row = chamber.startRow; row <= chamber.endRow; row += 1) {
+    for (let col = chamber.startCol; col <= chamber.endCol; col += 1) {
+      const noise = (row + col) % 6;
+      if (row <= chamber.startRow + 1 || row >= chamber.endRow - 1 || col <= chamber.startCol + 1 || col >= chamber.endCol - 1) {
+        tiles[row][col] = noise % 2 === 0 ? 'floorCracked' : 'floorAlt';
+      } else {
+        tiles[row][col] = noise % 3 === 0 ? 'floorAlt' : 'floor';
+      }
+    }
+  }
+
+  const pool = {
+    startCol: Math.floor(columns / 2) - 3,
+    endCol: Math.floor(columns / 2) + 3,
+    startRow: Math.floor(rows / 2) - 2,
+    endRow: Math.floor(rows / 2) + 2
+  };
+
+  for (let row = pool.startRow; row <= pool.endRow; row += 1) {
+    for (let col = pool.startCol; col <= pool.endCol; col += 1) {
+      const isEdge = row === pool.startRow || row === pool.endRow || col === pool.startCol || col === pool.endCol;
+      tiles[row][col] = isEdge ? 'poolEdge' : 'pool';
+    }
+  }
+
+  for (let col = chamber.startCol; col <= chamber.endCol; col += 1) {
+    tiles[chamber.startRow][col] = col % 4 === 0 ? 'wallTop' : 'wall';
+    tiles[chamber.endRow][col] = col % 4 === 0 ? 'wallTop' : 'wall';
+  }
+
+  for (let row = chamber.startRow; row <= chamber.endRow; row += 1) {
+    tiles[row][chamber.startCol] = row % 3 === 0 ? 'wallCorner' : 'wall';
+    tiles[row][chamber.endCol] = row % 3 === 0 ? 'wallCorner' : 'wall';
+  }
+
+  tiles[chamber.startRow][chamber.startCol] = 'pillar';
+  tiles[chamber.startRow][chamber.endCol] = 'pillar';
+  tiles[chamber.endRow][chamber.startCol] = 'pillar';
+  tiles[chamber.endRow][chamber.endCol] = 'pillar';
+
+  const spawn = {
+    col: Math.floor(columns / 2),
+    row: chamber.endRow - 2
+  };
+
+  return { columns, rows, tiles, spawn };
+}
+
+const dwarfTestWorlds = {
+  overworld: {
+    key: 'overworld',
+    buttonId: 'dwarf-test',
+    buttonLabel: 'Test',
+    buttonActiveLabel: 'Close Test',
+    tileSheetKey: dwarfTestOverworldTileSheetKey,
+    tilePalette: dwarfTestOverworldTilePalette,
+    tileSize: 16,
+    baseTileScale: 2,
+    scaleConfig: {
+      min: 2,
+      max: 4,
+      targetVisibleColumns: 18,
+      targetVisibleRows: 12
+    },
+    mapDimensions: { columns: 42, rows: 24 },
+    waterTileKeys: new Set(['lake', 'ocean', 'deepOcean', 'frozenOcean']),
+    fallbackTileKey: 'grass',
+    backgroundColor: '#070c14',
+    skyGradientStops: [
+      { offset: 0, color: 'rgba(12, 19, 30, 0.9)' },
+      { offset: 1, color: 'rgba(12, 19, 30, 0)' }
+    ],
+    groundGradientStops: [
+      { offset: 0, color: 'rgba(11, 18, 27, 0)' },
+      { offset: 1, color: 'rgba(7, 12, 20, 0.55)' }
+    ],
+    generateMap: generateDwarfTestOverworldMap,
+    defaultSpawn: null
+  },
+  dungeon: {
+    key: 'dungeon',
+    buttonId: 'dwarf-test-dungeon',
+    buttonLabel: 'Dungeon Test',
+    buttonActiveLabel: 'Close Dungeon Test',
+    tileSheetKey: dwarfTestDungeonFloorSheetKey,
+    tilePalette: dwarfTestDungeonTilePalette,
+    tileSize: 16,
+    baseTileScale: 2,
+    scaleConfig: {
+      min: 2,
+      max: 4,
+      targetVisibleColumns: 14,
+      targetVisibleRows: 10
+    },
+    mapDimensions: { columns: 32, rows: 24 },
+    waterTileKeys: new Set(['pool']),
+    fallbackTileKey: 'floor',
+    backgroundColor: '#040506',
+    skyGradientStops: [
+      { offset: 0, color: 'rgba(10, 14, 20, 0.75)' },
+      { offset: 1, color: 'rgba(10, 14, 20, 0)' }
+    ],
+    groundGradientStops: [
+      { offset: 0, color: 'rgba(8, 10, 14, 0)' },
+      { offset: 1, color: 'rgba(12, 16, 18, 0.6)' }
+    ],
+    generateMap: generateDwarfTestDungeonMap,
+    defaultSpawn: { col: 16, row: 18 }
+  }
+};
+
+function getActiveDwarfTestTileSize() {
+  const world = getActiveDwarfTestWorld();
+  const size = world.tileSize;
+  return Number.isFinite(size) && size > 0 ? size : 16;
+}
+
+function getActiveDwarfTestBaseScale() {
+  const world = getActiveDwarfTestWorld();
+  const scale = world.baseTileScale;
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
+
+function getActiveDwarfTestScaleConfig() {
+  const world = getActiveDwarfTestWorld();
+  return world.scaleConfig || { min: 1, max: 4, targetVisibleColumns: 16, targetVisibleRows: 10 };
+}
+
+function getDwarfTestFallbackTileKey() {
+  const world = getActiveDwarfTestWorld();
+  return world.fallbackTileKey || null;
+}
+
+function getDwarfTestBackgroundColor() {
+  const world = getActiveDwarfTestWorld();
+  return world.backgroundColor || '#070c14';
+}
+
+function getDwarfTestGradientStops(type) {
+  const world = getActiveDwarfTestWorld();
+  if (type === 'sky') {
+    return world.skyGradientStops || [
+      { offset: 0, color: 'rgba(12, 19, 30, 0.9)' },
+      { offset: 1, color: 'rgba(12, 19, 30, 0)' }
+    ];
+  }
+  if (type === 'ground') {
+    return world.groundGradientStops || [
+      { offset: 0, color: 'rgba(11, 18, 27, 0)' },
+      { offset: 1, color: 'rgba(7, 12, 20, 0.55)' }
+    ];
+  }
+  return [];
+}
+
 function calculateDwarfTestTileScale(canvas) {
-  const { min, max, targetVisibleColumns, targetVisibleRows } = dwarfTestScaleConfig;
+  const { min, max, targetVisibleColumns, targetVisibleRows } = getActiveDwarfTestScaleConfig();
+  const fallbackScale = getActiveDwarfTestBaseScale();
+  const tileSize = getActiveDwarfTestTileSize();
   if (!canvas) {
-    return clamp(dwarfTestTileScale, min, max);
+    return clamp(fallbackScale, min, max);
   }
   const width = Math.max(canvas.width || 0, canvas.clientWidth || 0);
   const height = Math.max(canvas.height || 0, canvas.clientHeight || 0);
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return clamp(dwarfTestTileScale, min, max);
+    return clamp(fallbackScale, min, max);
   }
   const safeColumns = Math.max(1, targetVisibleColumns);
   const safeRows = Math.max(1, targetVisibleRows);
-  const columnScale = width / (dwarfTestTileSize * safeColumns);
-  const rowScale = height / (dwarfTestTileSize * safeRows);
+  const columnScale = width / (tileSize * safeColumns);
+  const rowScale = height / (tileSize * safeRows);
   const rawScale = Math.min(columnScale, rowScale);
   const roundedScale = Math.round(rawScale);
-  const baseScale = Number.isFinite(roundedScale) && roundedScale > 0 ? roundedScale : dwarfTestTileScale;
+  const baseScale = Number.isFinite(roundedScale) && roundedScale > 0 ? roundedScale : fallbackScale;
   return clamp(baseScale, min, max);
 }
 
 function applyDwarfTestScaleChange(newScale) {
-  const previousScale = dwarfTestState.tileScale || dwarfTestTileScale;
+  const previousScale = dwarfTestState.tileScale || getActiveDwarfTestBaseScale();
   if (!Number.isFinite(newScale) || newScale <= 0 || newScale === previousScale) {
     return false;
   }
 
-  const baseTileSize = dwarfTestState.tileSize || dwarfTestTileSize;
+  const baseTileSize = dwarfTestState.tileSize || getActiveDwarfTestTileSize();
   const previousDestTileSize = baseTileSize * previousScale;
   const nextDestTileSize = baseTileSize * newScale;
 
@@ -9173,6 +10107,20 @@ function applyDwarfTestScaleChange(newScale) {
 
     if (Number.isFinite(dwarfTestState.backgroundOffset)) {
       dwarfTestState.backgroundOffset *= nextDestTileSize / previousDestTileSize;
+    }
+    const scaleFactor = nextDestTileSize / previousDestTileSize;
+    if (Array.isArray(dwarfTestState.enemies) && Number.isFinite(scaleFactor)) {
+      for (const enemy of dwarfTestState.enemies) {
+        if (!enemy?.position) {
+          continue;
+        }
+        if (Number.isFinite(enemy.position.x)) {
+          enemy.position.x *= scaleFactor;
+        }
+        if (Number.isFinite(enemy.position.y)) {
+          enemy.position.y *= scaleFactor;
+        }
+      }
     }
   }
 
@@ -9214,7 +10162,7 @@ function updateDwarfTestCamera(ctx, spriteDimensions, options = {}) {
     return dwarfTestState.camera;
   }
 
-  const tileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const tileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   const worldWidth = map.columns * tileSize;
   const worldHeight = map.rows * tileSize;
   const viewWidth = ctx.canvas.width;
@@ -9438,6 +10386,22 @@ const dwarfSpriteSheetPromises = Object.values(dwarfSpriteSheets).map((sheet) =>
     })
 );
 
+const orcSpriteSheetPromises = Object.values(orcSpriteSheets).map((sheet) =>
+  loadImage(sheet.path)
+    .then((img) => {
+      sheet.image = img;
+      const columns = Math.max(1, Math.floor(img.width / (sheet.tileSize || 1)));
+      const rows = Math.max(1, Math.floor(img.height / (sheet.tileSize || 1)));
+      sheet.columns = columns;
+      sheet.rows = rows;
+      return img;
+    })
+    .catch((error) => {
+      console.error(`Failed to load orc sprite sheet at ${sheet.path}`, error);
+      throw error;
+    })
+);
+
 const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitAssets).map((asset) =>
   loadImage(asset.path)
     .then((img) => {
@@ -9454,6 +10418,7 @@ const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitA
 const assetPromises = Promise.all([
   ...tileSheetPromises,
   ...dwarfSpriteSheetPromises,
+  ...orcSpriteSheetPromises,
   ...characterCreatorPortraitPromises,
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
@@ -10357,13 +11322,9 @@ function computeDwarfholdDistributionAdjustment(x, y, height, seed) {
     return 0;
   }
 
-  const normalizedLatitude = clamp(y / (height - 1), 0, 1);
-  const centerLift = Math.max(0, 0.5 - Math.abs(normalizedLatitude - 0.5)) * 0.12;
-  const southernBoost = Math.max(0, normalizedLatitude - 0.45) * 0.08;
-  const northernPenalty = Math.max(0, 0.38 - normalizedLatitude) * 0.12;
   const jitter = (hashCoords(x, y, seed >>> 0) - 0.5) * 0.06;
 
-  return centerLift + southernBoost - northernPenalty + jitter;
+  return jitter;
 }
 
 function isCandidateNearVolcano(candidate, options) {
@@ -10800,29 +11761,33 @@ function handleDwarfTestResize() {
     dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
   }
   updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
-  drawDwarfTestBackground(ctx);
-  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestScene(ctx, spriteDimensions);
 }
 
 function updateDwarfTestButtonState() {
-  const button = elements.dwarfTestButton;
-  if (!button) {
-    return;
-  }
-  if (dwarfTestState.active) {
-    button.textContent = 'Close Test';
-    button.setAttribute('aria-pressed', 'true');
-    button.classList.add('active');
-  } else {
-    button.textContent = 'Test';
-    button.setAttribute('aria-pressed', 'false');
-    button.classList.remove('active');
+  const activeKey = dwarfTestState.active && dwarfTestState.world ? dwarfTestState.world.key : null;
+  const buttonEntries = [
+    { element: elements.dwarfTestButton, worldKey: 'overworld' },
+    { element: elements.dwarfTestDungeonButton, worldKey: 'dungeon' }
+  ];
+
+  for (const entry of buttonEntries) {
+    if (!entry.element) {
+      continue;
+    }
+    const worldConfig = getDwarfTestWorldConfig(entry.worldKey);
+    const isActive = dwarfTestState.active && activeKey === entry.worldKey;
+    const defaultLabel = worldConfig.buttonLabel || entry.element.textContent || '';
+    const activeLabel = worldConfig.buttonActiveLabel || defaultLabel;
+    entry.element.textContent = isActive ? activeLabel : defaultLabel;
+    entry.element.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    entry.element.classList.toggle('active', isActive);
   }
 }
 
 function getDwarfTestSpriteDimensions(ctx) {
   const source = elements.dwarfBodyPortraitCanvas;
-  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   const height = Math.max(1, destTileSize);
 
   if (!source || source.width === 0 || source.height === 0) {
@@ -10844,7 +11809,7 @@ function getDwarfTestSpriteDimensions(ctx) {
 
 function getDwarfTestBounds(ctx, spriteDimensions) {
   const map = dwarfTestState.map;
-  const tileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const tileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   if (!map) {
     const { canvas } = ctx;
     const paddingX = Math.max(16, canvas.width * 0.06);
@@ -10920,14 +11885,15 @@ function drawDwarfTestFallbackBackground(ctx) {
 }
 
 function drawDwarfTestBackground(ctx) {
-  const baseSheet = state.tileSheets[dwarfTestTileSheetKey];
+  const world = getActiveDwarfTestWorld();
+  const palette = world.tilePalette || {};
   const map = dwarfTestState.map;
-  if (!baseSheet?.image || !map || !Array.isArray(map.tiles)) {
+  if (!map || !Array.isArray(map.tiles)) {
     drawDwarfTestFallbackBackground(ctx);
     return;
   }
 
-  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   const { columns, rows, tiles } = map;
   const camera = dwarfTestState.camera || { x: 0, y: 0 };
   const { width, height } = ctx.canvas;
@@ -10936,7 +11902,7 @@ function drawDwarfTestBackground(ctx) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#070c14';
+  ctx.fillStyle = getDwarfTestBackgroundColor();
   ctx.fillRect(0, 0, width, height);
 
   const startCol = Math.max(0, Math.floor(camera.x / destTileSize));
@@ -10952,32 +11918,56 @@ function drawDwarfTestBackground(ctx) {
     for (let col = 0; col < visibleCols; col += 1) {
       const mapCol = startCol + col;
       const tileKey = tiles[mapRow][mapCol];
-      const frame = resolveDwarfTestTileFrame(tileKey) || resolveDwarfTestTileFrame('grass');
-      const sheetKey = frame?.sheet || dwarfTestTileSheetKey;
-      const sheet = state.tileSheets[sheetKey] || baseSheet;
+      let frame = resolveDwarfTestTileFrame(tileKey);
+      const hasExplicitNull = Object.prototype.hasOwnProperty.call(palette, tileKey) && palette[tileKey] === null;
+      if (!frame && !hasExplicitNull) {
+        const fallbackKey = getDwarfTestFallbackTileKey();
+        if (fallbackKey && fallbackKey !== tileKey) {
+          frame = resolveDwarfTestTileFrame(fallbackKey);
+        }
+      }
+      const sheetKey = frame?.sheet || world.tileSheetKey;
+      const sheet = sheetKey ? state.tileSheets[sheetKey] : null;
       if (!frame || !sheet?.image) {
         continue;
       }
-      const sx = frame.col * sheet.tileSize;
-      const sy = frame.row * sheet.tileSize;
+      const tileSize = sheet.tileSize || getActiveDwarfTestTileSize();
+      const sx = frame.col * tileSize;
+      const sy = frame.row * tileSize;
       const destX = Math.round(col * destTileSize - offsetX);
-      ctx.drawImage(sheet.image, sx, sy, sheet.tileSize, sheet.tileSize, destX, destY, destTileSize, destTileSize);
+      ctx.drawImage(sheet.image, sx, sy, tileSize, tileSize, destX, destY, destTileSize, destTileSize);
     }
   }
 
   ctx.restore();
 
   const skyGradient = ctx.createLinearGradient(0, 0, 0, Math.max(1, height * 0.45));
-  skyGradient.addColorStop(0, 'rgba(12, 19, 30, 0.9)');
-  skyGradient.addColorStop(1, 'rgba(12, 19, 30, 0)');
-  ctx.fillStyle = skyGradient;
-  ctx.fillRect(0, 0, width, height);
+  const skyStops = getDwarfTestGradientStops('sky');
+  if (Array.isArray(skyStops) && skyStops.length > 0) {
+    for (const stop of skyStops) {
+      if (!stop || !Number.isFinite(stop.offset) || typeof stop.color !== 'string') {
+        continue;
+      }
+      const clampedOffset = clamp(stop.offset, 0, 1);
+      skyGradient.addColorStop(clampedOffset, stop.color);
+    }
+    ctx.fillStyle = skyGradient;
+    ctx.fillRect(0, 0, width, height);
+  }
 
-  const groundGlow = ctx.createLinearGradient(0, height * 0.6, 0, height);
-  groundGlow.addColorStop(0, 'rgba(11, 18, 27, 0)');
-  groundGlow.addColorStop(1, 'rgba(7, 12, 20, 0.55)');
-  ctx.fillStyle = groundGlow;
-  ctx.fillRect(0, 0, width, height);
+  const groundGradient = ctx.createLinearGradient(0, height * 0.6, 0, height);
+  const groundStops = getDwarfTestGradientStops('ground');
+  if (Array.isArray(groundStops) && groundStops.length > 0) {
+    for (const stop of groundStops) {
+      if (!stop || !Number.isFinite(stop.offset) || typeof stop.color !== 'string') {
+        continue;
+      }
+      const clampedOffset = clamp(stop.offset, 0, 1);
+      groundGradient.addColorStop(clampedOffset, stop.color);
+    }
+    ctx.fillStyle = groundGradient;
+    ctx.fillRect(0, 0, width, height);
+  }
 }
 
 function drawDwarfTestCharacter(ctx, spriteDimensions) {
@@ -11004,6 +11994,7 @@ function drawDwarfTestCharacter(ctx, spriteDimensions) {
   ctx.fill();
 
   const source = elements.dwarfBodyPortraitCanvas;
+  let drewPortrait = false;
   if (source && source.width > 0 && source.height > 0) {
     ctx.save();
     ctx.imageSmoothingEnabled = true;
@@ -11015,20 +12006,48 @@ function drawDwarfTestCharacter(ctx, spriteDimensions) {
       spriteDimensions.height
     );
     ctx.restore();
-    return;
+    drewPortrait = true;
   }
 
-  ctx.fillStyle = '#d0b89a';
-  ctx.beginPath();
-  ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#5b473c';
-  ctx.fillRect(
-    baseX - spriteDimensions.width / 4,
-    baseY - spriteDimensions.height + spriteDimensions.height * 0.2,
-    spriteDimensions.width / 2,
-    spriteDimensions.height * 0.6
-  );
+  if (!drewPortrait) {
+    ctx.fillStyle = '#d0b89a';
+    ctx.beginPath();
+    ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5b473c';
+    ctx.fillRect(
+      baseX - spriteDimensions.width / 4,
+      baseY - spriteDimensions.height + spriteDimensions.height * 0.2,
+      spriteDimensions.width / 2,
+      spriteDimensions.height * 0.6
+    );
+  }
+
+  const player = dwarfTestState.player;
+  if (player?.hurtFlash > 0) {
+    const intensity = clamp(player.hurtFlash / 0.35, 0, 1);
+    ctx.fillStyle = `rgba(239, 68, 68, ${0.4 * intensity})`;
+    ctx.beginPath();
+    ctx.ellipse(
+      baseX,
+      baseY - spriteDimensions.height * 0.6,
+      spriteDimensions.width * 0.35,
+      spriteDimensions.height * 0.45,
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+  if (player?.dead) {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
+    ctx.fillRect(
+      baseX - spriteDimensions.width / 2,
+      baseY - spriteDimensions.height,
+      spriteDimensions.width,
+      spriteDimensions.height
+    );
+  }
 }
 
 function getDwarfTestDirectionVector() {
@@ -11071,8 +12090,13 @@ function updateDwarfTestFrame(timestamp) {
   dwarfTestState.lastFrameTime = timestamp;
   dwarfTestState.animationTime += delta;
 
+  if (dwarfTestState.player) {
+    dwarfTestState.player.damageCooldown = Math.max(0, (dwarfTestState.player.damageCooldown || 0) - delta);
+    dwarfTestState.player.hurtFlash = Math.max(0, (dwarfTestState.player.hurtFlash || 0) - delta);
+  }
+
   const direction = getDwarfTestDirectionVector();
-  const moveSpeed = 160;
+  const moveSpeed = dwarfTestState.player?.dead ? 0 : 160;
   const distance = moveSpeed * delta;
   if (direction.dx !== 0 || direction.dy !== 0) {
     dwarfTestState.position.x += direction.dx * distance;
@@ -11087,9 +12111,9 @@ function updateDwarfTestFrame(timestamp) {
   dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
   dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
 
+  updateOrcEnemies(delta, spriteDimensions, bounds);
   updateDwarfTestCamera(ctx, spriteDimensions);
-  drawDwarfTestBackground(ctx);
-  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestScene(ctx, spriteDimensions);
 
   dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
 }
@@ -11154,16 +12178,25 @@ function resetDwarfTestState() {
   if (!ctx) {
     return;
   }
-  dwarfTestState.tileSize = dwarfTestTileSize;
+  const world = getActiveDwarfTestWorld();
+  dwarfTestState.tileSize = getActiveDwarfTestTileSize();
   const resolvedScale = calculateDwarfTestTileScale(ctx.canvas);
   dwarfTestState.tileScale = resolvedScale;
-  dwarfTestState.map = generateDwarfTestMap();
+  const mapGenerator = world.generateMap;
+  dwarfTestState.map = typeof mapGenerator === 'function' ? mapGenerator(world) : null;
   dwarfTestState.animationTime = 0;
   const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
-  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
-  const defaultCol = Math.floor(dwarfTestMapDimensions.columns * 0.35);
-  const defaultRow = Math.max(0, dwarfTestMapDimensions.rows - 4);
-  const walkable = findNearestDwarfTestWalkableTile(dwarfTestState.map, defaultCol, defaultRow);
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
+  const mapDimensions = world.mapDimensions || { columns: 0, rows: 0 };
+  const defaultSpawn = dwarfTestState.map?.spawn || world.defaultSpawn || {
+    col: Math.floor((mapDimensions.columns || 1) * 0.35),
+    row: Math.max(0, (mapDimensions.rows || 1) - 4)
+  };
+  const walkable = findNearestDwarfTestWalkableTile(
+    dwarfTestState.map,
+    defaultSpawn.col ?? 0,
+    defaultSpawn.row ?? 0
+  );
   const spawnX = (walkable.col + 0.5) * destTileSize;
   const spawnY = (walkable.row + 1) * destTileSize - destTileSize * 0.12;
   const bounds = getDwarfTestBounds(ctx, spriteDimensions);
@@ -11172,12 +12205,19 @@ function resetDwarfTestState() {
   dwarfTestState.backgroundOffset = 0;
   dwarfTestState.lastFrameTime = null;
   dwarfTestState.pressed.clear();
+  dwarfTestState.player = {
+    health: 100,
+    maxHealth: 100,
+    damageCooldown: 0,
+    hurtFlash: 0,
+    dead: false
+  };
+  spawnDwarfTestEnemies(dwarfTestState.map, destTileSize, walkable);
   updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
-  drawDwarfTestBackground(ctx);
-  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestScene(ctx, spriteDimensions);
 }
 
-function openDwarfTest() {
+function openDwarfTest(worldKey = dwarfTestDefaultWorldKey, options = {}) {
   const area = elements.dwarfTestArea;
   if (!area) {
     return;
@@ -11185,6 +12225,9 @@ function openDwarfTest() {
   if (dwarfTestState.active) {
     return;
   }
+  const world = getDwarfTestWorldConfig(worldKey);
+  dwarfTestState.world = world;
+  dwarfTestState.focusReturnElement = options.trigger || null;
   area.classList.remove('hidden');
   area.classList.add('fullscreen');
   area.setAttribute('aria-hidden', 'false');
@@ -11212,11 +12255,14 @@ function openDwarfTest() {
 }
 
 function closeDwarfTest(options = {}) {
-  const { returnFocus = false } = options;
+  const { returnFocus = false, focusTarget = null } = options;
+  const fallbackButton = elements.dwarfTestButton || null;
   if (!dwarfTestState.active) {
     updateDwarfTestButtonState();
-    if (returnFocus && elements.dwarfTestButton) {
-      elements.dwarfTestButton.focus();
+    const focusElement = focusTarget || dwarfTestState.focusReturnElement || fallbackButton;
+    dwarfTestState.focusReturnElement = null;
+    if (returnFocus && focusElement && typeof focusElement.focus === 'function') {
+      focusElement.focus();
     }
     return;
   }
@@ -11230,23 +12276,32 @@ function closeDwarfTest(options = {}) {
   window.removeEventListener('keyup', handleDwarfTestKeyUp);
   dwarfTestState.lastFrameTime = null;
   dwarfTestState.animationTime = 0;
+  dwarfTestState.enemies = [];
+  dwarfTestState.player = null;
+  dwarfTestEnemyIdCounter = 0;
   if (elements.dwarfTestArea) {
     elements.dwarfTestArea.classList.add('hidden');
     elements.dwarfTestArea.classList.remove('fullscreen');
     elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
   }
   updateDwarfTestButtonState();
-  if (returnFocus && elements.dwarfTestButton) {
-    elements.dwarfTestButton.focus();
+  const focusElement = focusTarget || dwarfTestState.focusReturnElement || fallbackButton;
+  dwarfTestState.focusReturnElement = null;
+  if (returnFocus && focusElement && typeof focusElement.focus === 'function') {
+    focusElement.focus();
   }
 }
 
-function toggleDwarfTest() {
+function toggleDwarfTest(worldKey = dwarfTestDefaultWorldKey, options = {}) {
+  const targetWorld = getDwarfTestWorldConfig(worldKey);
+  if (dwarfTestState.active && dwarfTestState.world?.key === targetWorld.key) {
+    closeDwarfTest({ returnFocus: true, focusTarget: options.trigger || dwarfTestState.focusReturnElement });
+    return;
+  }
   if (dwarfTestState.active) {
     closeDwarfTest();
-  } else {
-    openDwarfTest();
   }
+  openDwarfTest(targetWorld.key, options);
 }
 
 function isDwarfTestActive() {
@@ -17115,6 +18170,30 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     {
       file: 'Dwarf-Fortress_2.webp',
       alt: 'Illustration of a dwarven stronghold'
+    },
+    {
+      file: 'Dwarf-Fortress_grass_1.webp',
+      alt: 'Illustration of a dwarven hold nestled in grassy hills'
+    },
+    {
+      file: 'Dwarf_Fortress_3.webp',
+      alt: 'Illustration of a sprawling dwarven fortress'
+    },
+    {
+      file: 'dwarf_fortress_4.webp',
+      alt: 'Illustration of a fortified dwarven city'
+    },
+    {
+      file: 'Dark-Tower_1.webp',
+      alt: 'Illustration of a looming dark tower settlement'
+    },
+    {
+      file: 'Hill-Hold_1.webp',
+      alt: 'Illustration of a dwarven hill hold'
+    },
+    {
+      file: 'ruined_dwarfhold_1.webp',
+      alt: 'Illustration of a ruined dwarven hold'
     }
   ];
   const settlementArtSeedParts = [
@@ -17895,36 +18974,7 @@ function lerp(a, b, t) {
 }
 
 function sampleLandMask(normalizedX, normalizedY) {
-  const landMask = state.landMask;
-  if (!landMask) {
-    return null;
-  }
-
-  const clampedX = clamp(normalizedX, 0, 1);
-  const clampedY = clamp(normalizedY, 0, 1);
-  const scaledX = clampedX * (landMask.width - 1);
-  const scaledY = clampedY * (landMask.height - 1);
-
-  const x0 = Math.floor(scaledX);
-  const y0 = Math.floor(scaledY);
-  const x1 = Math.min(x0 + 1, landMask.width - 1);
-  const y1 = Math.min(y0 + 1, landMask.height - 1);
-  const tx = scaledX - x0;
-  const ty = scaledY - y0;
-
-  const idx00 = y0 * landMask.width + x0;
-  const idx10 = y0 * landMask.width + x1;
-  const idx01 = y1 * landMask.width + x0;
-  const idx11 = y1 * landMask.width + x1;
-
-  const v00 = landMask.data[idx00];
-  const v10 = landMask.data[idx10];
-  const v01 = landMask.data[idx01];
-  const v11 = landMask.data[idx11];
-
-  const top = lerp(v00, v10, tx);
-  const bottom = lerp(v01, v11, tx);
-  return lerp(top, bottom, ty);
+  return sampleMaskValue(state.landMask, normalizedX, normalizedY);
 }
 
 function valueNoise(x, y, seed) {
@@ -17956,6 +19006,40 @@ function createProceduralMask(width, height, sampler) {
     }
   }
   return { width, height, data };
+}
+
+function sampleMaskValue(mask, normalizedX, normalizedY) {
+  if (
+    !mask ||
+    !mask.data ||
+    !Number.isFinite(mask.width) ||
+    !Number.isFinite(mask.height) ||
+    mask.width <= 1 ||
+    mask.height <= 1
+  ) {
+    return null;
+  }
+
+  const clampedX = clamp(normalizedX, 0, 1);
+  const clampedY = clamp(normalizedY, 0, 1);
+  const scaledX = clampedX * (mask.width - 1);
+  const scaledY = clampedY * (mask.height - 1);
+
+  const x0 = Math.floor(scaledX);
+  const y0 = Math.floor(scaledY);
+  const x1 = Math.min(x0 + 1, mask.width - 1);
+  const y1 = Math.min(y0 + 1, mask.height - 1);
+  const tx = scaledX - x0;
+  const ty = scaledY - y0;
+
+  const idx00 = y0 * mask.width + x0;
+  const idx10 = y0 * mask.width + x1;
+  const idx01 = y1 * mask.width + x0;
+  const idx11 = y1 * mask.width + x1;
+
+  const top = lerp(mask.data[idx00], mask.data[idx10], tx);
+  const bottom = lerp(mask.data[idx01], mask.data[idx11], tx);
+  return lerp(top, bottom, ty);
 }
 
 function createTwinContinentsMask() {
@@ -18024,8 +19108,52 @@ function createArchipelagoMask() {
         const radiusY = spacing * (0.24 + activation * 0.28 + (1 - radiusSeed) * 0.12);
         const height = 0.6 + activation * 0.65;
         const power = 1.25 + valueNoise(sampleX - 2.48, sampleY + 8.92, 0x85ebca77) * 0.55;
+        const lobeCount =
+          2 + Math.floor(valueNoise(sampleX - 9.17, sampleY + 2.41, 0x94d049bb) * 6.6);
+        const lobeStrength =
+          0.11 + valueNoise(sampleX + 5.19, sampleY + 1.77, 0x748f82ee) * 0.32;
+        const lobePhase =
+          valueNoise(sampleX - 2.63, sampleY + 4.82, 0x510e527f) * Math.PI * 2;
+        const subLobeCount =
+          lobeCount * 2 +
+          Math.floor(valueNoise(sampleX + 8.41, sampleY - 3.76, 0xbf58476d) * 4.6);
+        const subLobeStrength =
+          0.045 + valueNoise(sampleX - 1.28, sampleY + 9.11, 0x3bd39e10) * 0.13;
+        const subLobePhase =
+          valueNoise(sampleX + 6.73, sampleY + 2.19, 0x2545f491) * Math.PI * 2;
+        const ridgeStrength =
+          0.035 + valueNoise(sampleX * 1.9 + 3.13, sampleY * 1.9 - 4.77, 0x13198a2e) * 0.18;
+        const ridgePhase =
+          valueNoise(sampleX * 2.4 - 5.61, sampleY * 2.4 + 8.37, 0x243f6a88) * Math.PI * 2;
+        const ridgeSeed =
+          Math.floor(valueNoise(sampleX * 3.7 + 1.91, sampleY * 3.7 - 7.42, 0x9e3779b9) * 0xffffffff) >>> 0;
+        const fractureStrength =
+          0.03 + valueNoise(sampleX * 1.7 - 4.22, sampleY * 1.7 + 5.94, 0xbb67ae85) * 0.12;
+        const fracturePhase =
+          valueNoise(sampleX * 2.1 + 7.38, sampleY * 2.1 - 6.57, 0x6c44198c) * Math.PI * 2;
+        const fractureSeed =
+          Math.floor(valueNoise(sampleX * 4.2 - 2.63, sampleY * 4.2 + 3.41, 0x3243f6a9) * 0xffffffff) >>> 0;
 
-        islands.push({ x: centerX, y: centerY, radiusX, radiusY, height, power });
+        islands.push({
+          x: centerX,
+          y: centerY,
+          radiusX,
+          radiusY,
+          height,
+          power,
+          lobeCount,
+          lobeStrength,
+          lobePhase,
+          subLobeCount,
+          subLobeStrength,
+          subLobePhase,
+          ridgeStrength,
+          ridgePhase,
+          ridgeSeed,
+          fractureStrength,
+          fracturePhase,
+          fractureSeed
+        });
       }
     }
 
@@ -18034,18 +19162,46 @@ function createArchipelagoMask() {
       const island = islands[i];
       const dx = nx - island.x;
       const dy = ny - island.y;
-      const distance = Math.sqrt(
+      const baseDistance = Math.sqrt(
         (dx * dx) / (island.radiusX * island.radiusX) +
           (dy * dy) / (island.radiusY * island.radiusY)
       );
+      const angle = Math.atan2(dy, dx);
+      const edgeBlend = clamp(1 - Math.min(baseDistance, 1.6) * 0.55, 0, 1);
+      const lobeWarp =
+        Math.sin(angle * island.lobeCount + island.lobePhase) * island.lobeStrength * edgeBlend;
+      const subLobeWarp =
+        Math.sin(angle * island.subLobeCount + island.subLobePhase) *
+        island.subLobeStrength *
+        edgeBlend;
+      const ridgeNoise =
+        (valueNoise(
+          Math.cos(angle + island.ridgePhase) * 3.3 + baseDistance * 1.4,
+          Math.sin(angle + island.ridgePhase) * 3.3 + baseDistance * 1.4,
+          island.ridgeSeed
+        ) -
+          0.5) *
+        island.ridgeStrength *
+        edgeBlend;
+      const fractureNoise =
+        (valueNoise(
+          Math.cos(angle * 0.6 + island.fracturePhase) * 4.6 + baseDistance * 2.1,
+          Math.sin(angle * 0.6 + island.fracturePhase) * 4.6 + baseDistance * 2.1,
+          island.fractureSeed
+        ) -
+          0.5) *
+        island.fractureStrength *
+        edgeBlend;
+      const warpedDistance = baseDistance - lobeWarp - subLobeWarp - ridgeNoise - fractureNoise;
+      const distance = warpedDistance < 0 ? 0 : warpedDistance;
       let influence = clamp(1 - distance, 0, 1);
       influence = Math.pow(influence, island.power) * island.height;
       sum += influence;
     }
 
-    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.34;
-    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.2;
-    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.1;
+    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.38;
+    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.24;
+    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.12;
     const scatter = Math.max(
       0,
       valueNoise(nx * 11.7 + 1.6, ny * 11.7 + 7.4, 0x51eb851f) - 0.63
@@ -18060,45 +19216,212 @@ function createArchipelagoMask() {
   });
 }
 
+function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
+  const total = width * height;
+  const heights = new Float32Array(total);
+  const tectonics = new Float32Array(total);
+  const minIslands = 20;
+  const maxIslands = 100;
+  const islandCount = Math.max(
+    minIslands,
+    Math.floor(rng() * (maxIslands - minIslands + 1)) + minIslands
+  );
+  const minDimension = Math.min(width, height);
+  const minRadius = Math.max(3, Math.floor(minDimension * 0.03));
+  const maxRadius = Math.max(minRadius + 2, Math.floor(minDimension * 0.12));
+  const baseSeed = (seedNumber + 0x243f6a88) >>> 0;
+
+  for (let i = 0; i < islandCount; i += 1) {
+    const islandSeed = (baseSeed + i * 0x9e3779b9) >>> 0;
+    const centerX = rng() * width;
+    const centerY = rng() * height;
+    const radius = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
+    const aspect = 0.45 + rng() * 1.35;
+    let majorRadius = Math.max(radius, 3);
+    let minorRadius = Math.max(majorRadius * aspect, 3);
+    if (rng() < 0.5) {
+      const swap = majorRadius;
+      majorRadius = minorRadius;
+      minorRadius = swap;
+    }
+    const rotation = rng() * Math.PI * 2;
+    const cosRotation = Math.cos(rotation);
+    const sinRotation = Math.sin(rotation);
+    const falloffPower = 1.1 + rng() * 1.7;
+    const shelfStrength = 0.22 + rng() * 0.34;
+    const peakHeight = 0.55 + rng() * 0.45;
+    const coastlineRoughness = 0.22 + rng() * 0.28;
+    const turbulenceStrength = 0.26 + rng() * 0.36;
+    const noiseScale = 3.4 + rng() * 6.2;
+    const tectonicStrength = 0.3 + rng() * 0.5;
+    const lobeCount = 2 + Math.floor(rng() * 7);
+    const lobePhase = rng() * Math.PI * 2;
+    const lobeStrength = 0.12 + rng() * 0.26;
+    const rippleCount = lobeCount * 2 + Math.floor(rng() * 5);
+    const ripplePhase = rng() * Math.PI * 2;
+    const rippleStrength = 0.045 + rng() * 0.11;
+    const ridgeStrength = 0.03 + rng() * 0.11;
+    const ridgePhase = rng() * Math.PI * 2;
+    const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
+    const fractureStrength = 0.035 + rng() * 0.13;
+    const fracturePhase = rng() * Math.PI * 2;
+    const fractureSeed = (islandSeed ^ 0xbb67ae85) >>> 0;
+
+    const influenceRadiusX = majorRadius * 1.7;
+    const influenceRadiusY = minorRadius * 1.7;
+
+    const minX = Math.max(0, Math.floor(centerX - influenceRadiusX));
+    const maxX = Math.min(width - 1, Math.ceil(centerX + influenceRadiusX));
+    const minY = Math.max(0, Math.floor(centerY - influenceRadiusY));
+    const maxY = Math.min(height - 1, Math.ceil(centerY + influenceRadiusY));
+
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let x = minX; x <= maxX; x += 1) {
+        const offsetX = (x + 0.5 - centerX) / majorRadius;
+        const offsetY = (y + 0.5 - centerY) / minorRadius;
+        const rotatedX = offsetX * cosRotation - offsetY * sinRotation;
+        const rotatedY = offsetX * sinRotation + offsetY * cosRotation;
+        const distance = Math.sqrt(rotatedX * rotatedX + rotatedY * rotatedY);
+        if (distance > 1.9) {
+          continue;
+        }
+
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const angle = Math.atan2(rotatedY, rotatedX);
+        const edgeBlend = clamp(1 - Math.min(distance, 1.6) * 0.65, 0, 1);
+        const angularWarp =
+          (Math.sin(angle * lobeCount + lobePhase) * lobeStrength +
+            Math.sin(angle * rippleCount + ripplePhase) * rippleStrength) *
+          edgeBlend;
+        const ridgeNoise =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.00013) * 9.1 + Math.cos(angle + ridgePhase) * 3.1,
+            (normalizedY + islandSeed * 0.00013) * 9.1 + Math.sin(angle + ridgePhase) * 3.1,
+            ridgeSeed
+          ) -
+            0.5) *
+          ridgeStrength *
+          edgeBlend;
+        const fractureNoise =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.000091) * 13.2 +
+              Math.cos(angle * 0.65 + fracturePhase) * 4.5,
+            (normalizedY + islandSeed * 0.000091) * 13.2 +
+              Math.sin(angle * 0.65 + fracturePhase) * 4.5,
+            fractureSeed
+          ) -
+            0.5) *
+          fractureStrength *
+          edgeBlend;
+        const warpedDistance = distance - angularWarp - ridgeNoise - fractureNoise;
+        if (warpedDistance > 1.6) {
+          continue;
+        }
+
+        const coastlineNoise =
+          valueNoise(
+            (normalizedX + islandSeed * 0.0000153) * noiseScale,
+            (normalizedY + islandSeed * 0.0000271) * noiseScale,
+            islandSeed
+          ) - 0.5;
+        const coastalWarp = coastlineNoise * coastlineRoughness;
+        const adjustedDistance = warpedDistance - coastalWarp;
+        if (adjustedDistance > 1.2) {
+          continue;
+        }
+
+        const influence = clamp(1 - adjustedDistance, 0, 1);
+        if (influence <= 0) {
+          continue;
+        }
+
+        const shaped = Math.pow(influence, falloffPower);
+        const beach = clamp((influence - 0.35) / 0.65, 0, 1) * shelfStrength;
+        const turbulence =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.000042) * (noiseScale * 0.7),
+            (normalizedY + islandSeed * 0.000058) * (noiseScale * 0.7),
+            islandSeed ^ 0x85ebca6b
+          ) -
+            0.5) *
+          turbulenceStrength;
+        const heightContribution = shaped * peakHeight + beach + turbulence;
+        const idx = y * width + x;
+
+        if (heightContribution > heights[idx]) {
+          heights[idx] = heightContribution;
+        }
+
+        const tectonicContribution = shaped * tectonicStrength;
+        if (tectonicContribution > tectonics[idx]) {
+          tectonics[idx] = tectonicContribution;
+        }
+      }
+    }
+  }
+
+  const margin = Math.max(4, Math.floor(Math.min(width, height) * 0.05));
+  if (margin > 0) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const edgeDistance = Math.min(x, y, width - 1 - x, height - 1 - y);
+        if (edgeDistance < margin) {
+          const t = clamp(edgeDistance / margin, 0, 1);
+          heights[idx] *= t * t;
+          tectonics[idx] *= t * 0.85;
+        }
+      }
+    }
+  }
+
+  return { heights, tectonics };
+}
+
 const continentalPlateConfigs = {
   archipelago: {
     majorTargetRange: [1, 2],
     fragmentTargetRange: [9, 13],
+    useMaskPlacement: true,
+    maskLandThreshold: 0.52,
+    maskOceanThreshold: 0.28,
+    maskSearchRadius: 0.12,
     minDistance: 0.1,
     fragmentDistance: 0.06,
     majorRadiusRange: [0.12, 0.2],
     fragmentRadiusRange: [0.05, 0.11],
-    majorRadiusXMultiplierRange: [0.7, 1.6],
-    majorRadiusYMultiplierRange: [0.65, 1.5],
-    fragmentRadiusXMultiplierRange: [0.65, 1.45],
-    fragmentRadiusYMultiplierRange: [0.6, 1.35],
+    majorRadiusXMultiplierRange: [0.55, 2.2],
+    majorRadiusYMultiplierRange: [0.5, 2.05],
+    fragmentRadiusXMultiplierRange: [0.5, 1.9],
+    fragmentRadiusYMultiplierRange: [0.45, 1.75],
     majorOceanChance: 0.6,
     fragmentOceanChance: 0.45,
     majorLandStrengthRange: [0.45, 0.85],
     fragmentLandStrengthRange: [0.4, 0.75],
     majorOceanStrengthRange: [0.45, 0.7],
     fragmentOceanStrengthRange: [0.35, 0.6],
-    majorFalloffRange: [1.4, 2.4],
-    fragmentFalloffRange: [1.3, 2.2],
+    majorFalloffRange: [1.25, 2.7],
+    fragmentFalloffRange: [1.2, 2.4],
     majorSharpnessRange: [1.2, 2],
     fragmentSharpnessRange: [1.15, 2.05],
-    majorJaggednessRange: [0.7, 1.4],
-    fragmentJaggednessRange: [0.9, 1.8],
-    majorTurbulenceRange: [0.55, 0.95],
-    fragmentTurbulenceRange: [0.6, 1],
-    majorNoiseScaleRange: [3.5, 7.5],
-    fragmentNoiseScaleRange: [6.5, 12],
+    majorJaggednessRange: [1.45, 3.2],
+    fragmentJaggednessRange: [1.6, 3.5],
+    majorTurbulenceRange: [0.85, 1.4],
+    fragmentTurbulenceRange: [0.95, 1.55],
+    majorNoiseScaleRange: [5.2, 10.5],
+    fragmentNoiseScaleRange: [8.5, 16.8],
     majorMinEdge: 0.04,
     fragmentMinEdge: 0.015,
     fallbackPlate: {
       radiusX: 0.18,
-      radiusY: 0.14,
-      falloff: 1.8,
+      radiusY: 0.13,
+      falloff: 1.65,
       sharpness: 1.6,
       strength: 0.6,
-      jaggedness: 0.9,
-      turbulence: 0.7,
-      noiseScale: 6
+      jaggedness: 1.45,
+      turbulence: 0.95,
+      noiseScale: 7.8
     }
   }
 };
@@ -18189,6 +19512,44 @@ function generateContinentalPlates(rng, options = {}) {
     profileKey && Object.prototype.hasOwnProperty.call(continentalPlateConfigs, profileKey)
       ? continentalPlateConfigs[profileKey]
       : null;
+
+  const mask = options && options.landMask && options.landMask.data ? options.landMask : null;
+  const maskPlacementEnabled = Boolean(config && config.useMaskPlacement && mask);
+  const maskLandThreshold =
+    config && Number.isFinite(config.maskLandThreshold) ? config.maskLandThreshold : 0.5;
+  const maskOceanThreshold =
+    config && Number.isFinite(config.maskOceanThreshold) ? config.maskOceanThreshold : 0.35;
+  const maskSearchRadius =
+    config && Number.isFinite(config.maskSearchRadius) ? config.maskSearchRadius : 0.1;
+  const maskStepSize = maskPlacementEnabled ? Math.max(maskSearchRadius, 0.02) : 0;
+
+  const findMaskPlacement = maskPlacementEnabled
+    ? (baseX, baseY, preferHigh) => {
+        let bestX = clamp(baseX, 0.03, 0.97);
+        let bestY = clamp(baseY, 0.03, 0.97);
+        let bestSample = sampleMaskValue(mask, bestX, bestY);
+        const attempts = 6;
+        for (let i = 0; i < attempts; i += 1) {
+          const angle = rng() * Math.PI * 2;
+          const distance = (0.3 + rng() * 0.7) * maskStepSize;
+          if (distance <= 0) {
+            continue;
+          }
+          const testX = clamp(baseX + Math.cos(angle) * distance, 0.03, 0.97);
+          const testY = clamp(baseY + Math.sin(angle) * distance, 0.03, 0.97);
+          const sample = sampleMaskValue(mask, testX, testY);
+          if (sample === null) {
+            continue;
+          }
+          if (bestSample === null || (preferHigh ? sample > bestSample : sample < bestSample)) {
+            bestSample = sample;
+            bestX = testX;
+            bestY = testY;
+          }
+        }
+        return { x: bestX, y: bestY, sample: bestSample };
+      }
+    : null;
 
   const sampleRangeValue = (range, defaultMin, defaultMax) => {
     let min = defaultMin;
@@ -18309,6 +19670,24 @@ function generateContinentalPlates(rng, options = {}) {
       noiseOffsetX: rng() * 256,
       noiseOffsetY: rng() * 256
     };
+
+    if (maskPlacementEnabled && findMaskPlacement) {
+      const placement = findMaskPlacement(candidate.x, candidate.y, !isOcean);
+      const maskSample = placement ? placement.sample : null;
+
+      if (!isOcean) {
+        if (maskSample === null || maskSample < maskLandThreshold) {
+          continue;
+        }
+      } else if (maskSample !== null && maskSample > maskOceanThreshold) {
+        continue;
+      }
+
+      if (placement) {
+        candidate.x = placement.x;
+        candidate.y = placement.y;
+      }
+    }
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
     const minEdge = isFragment
@@ -19295,6 +20674,7 @@ function createWorld(seedString) {
     50
   );
   const profile = getWorldGenerationProfile(state.settings.worldGenerationType);
+  ensureLandMaskForProfile(profile.key);
   const maskInfluence = clamp(
     typeof profile.maskInfluence === 'number' ? profile.maskInfluence : 0.5,
     0,
@@ -19335,7 +20715,15 @@ function createWorld(seedString) {
   const mountainScarcity = 1 - mountainFrequencyNormalized;
   const mountainGrowthFactor = 0.42 + mountainFrequencyNormalized * 0.7;
 
-  const continentalPlates = generateContinentalPlates(rng, { profileKey: profile.key });
+  const useArchipelagoIslandPlacement = profile.key === 'archipelago';
+  const archipelagoFields = useArchipelagoIslandPlacement
+    ? generateArchipelagoIslandFields(width, height, rng, seedNumber)
+    : null;
+
+  const continentalPlates = generateContinentalPlates(rng, {
+    profileKey: profile.key,
+    landMask: state.landMask
+  });
   const elevationField = new Float32Array(width * height);
   const tectonicActivityField = new Float32Array(width * height);
 
@@ -19362,10 +20750,18 @@ function createWorld(seedString) {
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+
+      if (useArchipelagoIslandPlacement && archipelagoFields) {
+        const heightValue = clamp(archipelagoFields.heights[idx], -1, 1);
+        const tectonicValue = clamp(archipelagoFields.tectonics[idx], 0, 1);
+        elevationField[idx] = heightValue;
+        tectonicActivityField[idx] = tectonicValue;
+        continue;
+      }
+
       const normalizedX = (x + 0.5) / width;
       const normalizedY = (y + 0.5) / height;
-
-      const idx = y * width + x;
       const plateSample = sampleContinentalPlates(normalizedX, normalizedY, continentalPlates);
       tectonicActivityField[idx] = plateSample.tectonic;
 
@@ -23160,7 +24556,14 @@ function createWorld(seedString) {
   );
   const primaryHillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : baseHillOverlayOptions[0] || null;
   const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : primaryHillOverlayKey;
-  const hillOverlayPresenceKeys = [...baseHillOverlayOptions, snowHillOverlayKey].filter(Boolean);
+  const badlandsHillOverlayKey = tileLookup.has('HILLS_BADLANDS')
+    ? 'HILLS_BADLANDS'
+    : primaryHillOverlayKey;
+  const hillOverlayPresenceKeys = [
+    ...baseHillOverlayOptions,
+    snowHillOverlayKey,
+    badlandsHillOverlayKey
+  ].filter(Boolean);
   const hillOverlayPresenceKeySet = new Set(hillOverlayPresenceKeys);
   const hillOverlayKeys = Array.from(hillOverlayPresenceKeySet);
   const hillVariantSelectionSeed = (seedNumber + 0x3ab41d7f) >>> 0;
@@ -23179,15 +24582,39 @@ function createWorld(seedString) {
     return baseHillOverlayOptions[index];
   };
   const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayPresenceKeySet.has(overlayKey);
+  const normalizeHillOverlayKey = (tile, key) => {
+    if (!tile || !key || !hillOverlayPresenceKeySet.has(key)) {
+      return null;
+    }
+    if (
+      badlandsHillOverlayKey &&
+      hasBadlandsTile &&
+      tile.base === badlandsTileKey &&
+      key !== badlandsHillOverlayKey
+    ) {
+      return badlandsHillOverlayKey;
+    }
+    if (
+      snowHillOverlayKey &&
+      tile.base === snowTileKey &&
+      key !== snowHillOverlayKey &&
+      key !== badlandsHillOverlayKey
+    ) {
+      return snowHillOverlayKey;
+    }
+    return key;
+  };
   const getHillOverlayKeyForTile = (tile) => {
     if (!tile) {
       return null;
     }
-    if (tile.hillOverlay && isHillOverlay(tile.hillOverlay)) {
-      return tile.hillOverlay;
+    const hillOverlayKey = normalizeHillOverlayKey(tile, tile.hillOverlay);
+    if (hillOverlayKey) {
+      return hillOverlayKey;
     }
-    if (tile.overlay && isHillOverlay(tile.overlay)) {
-      return tile.overlay;
+    const overlayKey = normalizeHillOverlayKey(tile, tile.overlay);
+    if (overlayKey) {
+      return overlayKey;
     }
     return null;
   };
@@ -23223,7 +24650,8 @@ function createWorld(seedString) {
           }
           const baseIsGrass = tile.base === grassTileKey;
           const baseIsSnow = tile.base === snowTileKey;
-          if (!baseIsGrass && !baseIsSnow) {
+          const baseIsBadlands = hasBadlandsTile && tile.base === badlandsTileKey;
+          if (!baseIsGrass && !baseIsSnow && !baseIsBadlands) {
             continue;
           }
           const heightValue = elevationField[idx];
@@ -23276,7 +24704,11 @@ function createWorld(seedString) {
             noiseValue * 0.12;
           const threshold = 0.5 - mountainBonus * 0.18;
           if (compositeScore > threshold) {
-            const overlayKey = baseIsSnow ? snowHillOverlayKey : selectBaseHillOverlayKey(x, y);
+            const overlayKey = baseIsSnow
+              ? snowHillOverlayKey
+              : baseIsBadlands
+              ? badlandsHillOverlayKey
+              : selectBaseHillOverlayKey(x, y);
             if (overlayKey) {
               tile.hillOverlay = overlayKey;
             }
@@ -23825,8 +25257,10 @@ function createWorld(seedString) {
       }
     }
 
-    const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
-    if (woodElfGroveKey) {
+  const woodElfGroveBaseKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
+  const woodElfGroveLargeKey = tileLookup.has('WOOD_ELF_GROVES_LARGE') ? 'WOOD_ELF_GROVES_LARGE' : null;
+  const woodElfGroveGrandKey = tileLookup.has('WOOD_ELF_GROVES_GRAND') ? 'WOOD_ELF_GROVES_GRAND' : null;
+  if (woodElfGroveBaseKey) {
       const getOceanMask = (() => {
         let computed = false;
         return () => {
@@ -23986,7 +25420,19 @@ function createWorld(seedString) {
           }
           const name = generateWoodElfGroveName(rng);
           const details = generateWoodElfGroveDetails(name, rng);
-          tile.structure = woodElfGroveKey;
+          let structureKey = woodElfGroveBaseKey;
+          const populationMax = Number.isFinite(details?.populationMax) ? details.populationMax : null;
+          const populationValue = Number.isFinite(details?.population) ? details.population : null;
+          if (populationMax && populationMax > 0 && populationValue != null) {
+            const populationRatio = populationValue / populationMax;
+            if (woodElfGroveGrandKey && populationRatio >= 0.9) {
+              structureKey = woodElfGroveGrandKey;
+            } else if (woodElfGroveLargeKey && populationRatio >= 0.8) {
+              structureKey = woodElfGroveLargeKey;
+            }
+          }
+
+          tile.structure = structureKey;
           tile.structureName = details.name || name;
           tile.structureDetails = details;
           placed.push(candidate);
@@ -24336,7 +25782,9 @@ function createWorld(seedString) {
     ...evilWizardTowers
   ];
   const hillOverlayKeysForStructures = new Set(
-    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW'].filter((key) => tileLookup.has(key))
+    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW', 'HILLS_BADLANDS'].filter((key) =>
+      tileLookup.has(key)
+    )
   );
   const isHillOverlayForStructures = (overlayKey) =>
     overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
@@ -26355,6 +27803,14 @@ function createWorld(seedString) {
   });
   const factions = politicalData.factions || [];
 
+  const woodElfTerritoryInfo = createWoodElfTerritoryInfo({
+    tiles,
+    width,
+    height,
+    factions,
+    radius: 3
+  });
+
   if (saintShrines.length > 0 && factions.length > 0) {
     const factionById = new Map(factions.map((faction) => [faction.id, faction]));
     const saintShrineAttachmentTypes = new Set(['village', 'town', 'city']);
@@ -26471,14 +27927,16 @@ function createWorld(seedString) {
     ],
     factions,
     isLandBaseTile,
-    seedNumber
+    seedNumber,
+    woodElfTerritoryInfo
   });
   const ambientStructures = spawnAmbientStructures({
     tiles,
     width,
     height,
     grassTileKey,
-    seedNumber
+    seedNumber,
+    woodElfTerritoryInfo
   });
   return {
     tiles,

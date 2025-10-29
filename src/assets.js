@@ -24,6 +24,18 @@ export const tileSheets = {
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_tiles.png',
     tileSize: 16,
     image: null
+  },
+  dwarfTestDungeonFloor: {
+    key: 'dwarfTestDungeonFloor',
+    path: 'tilesheet/Tiled_files/walls_floor.png',
+    tileSize: 16,
+    image: null
+  },
+  dwarfTestDungeonWater: {
+    key: 'dwarfTestDungeonWater',
+    path: 'tilesheet/Tiled_files/Water_coasts_animation.png',
+    tileSize: 16,
+    image: null
   }
 };
 
@@ -50,6 +62,99 @@ export const dwarfSpriteSheets = {
     key: 'hairCurly',
     path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_hair_curly.png',
     tileSize: 32,
+    image: null
+  }
+};
+
+export const orcSpriteSheets = {
+  orc1_idle: {
+    key: 'orc1_idle',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_idle_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_walk: {
+    key: 'orc1_walk',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_walk_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_attack: {
+    key: 'orc1_attack',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_attack_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_hurt: {
+    key: 'orc1_hurt',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_hurt_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_death: {
+    key: 'orc1_death',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_death_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_idle: {
+    key: 'orc2_idle',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_idle_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_walk: {
+    key: 'orc2_walk',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_walk_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_attack: {
+    key: 'orc2_attack',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_attack_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_hurt: {
+    key: 'orc2_hurt',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_hurt_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_death: {
+    key: 'orc2_death',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_death_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_idle: {
+    key: 'orc3_idle',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_idle_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_walk: {
+    key: 'orc3_walk',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_walk_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_attack: {
+    key: 'orc3_attack',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_attack_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_hurt: {
+    key: 'orc3_hurt',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_hurt_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_death: {
+    key: 'orc3_death',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_death_without_shadow.png',
+    tileSize: 16,
     image: null
   }
 };
@@ -544,6 +649,8 @@ export const baseTileCoords = {
   TREE_LONE: { row: 5, col: 6 },
   TREE_SNOW: { row: 1, col: 1 },
   JUNGLE_TREE: { row: 3, col: 0 },
+  CUT_TREES: { row: 6, col: 1 },
+  AMBIENT_LUMBER_MILL: { row: 6, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
   MOUNTAIN_TOP_A: { row: 0, col: 4 },
@@ -556,12 +663,16 @@ export const baseTileCoords = {
   DWARFHOLD: { row: 2, col: 9 },
   ABANDONED_DWARFHOLD: { row: 2, col: 8 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
+  DARK_DWARFHOLD: { row: 0, col: 17 },
   HILLHOLD: { row: 2, col: 10 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
+  WOOD_ELF_GROVES_LARGE: { row: 2, col: 5 },
+  WOOD_ELF_GROVES_GRAND: { row: 2, col: 6 },
   HILLS: { row: 3, col: 1 },
+  HILLS_BADLANDS: { row: 4, col: 1 },
   HILLS_VARIANT_A: { row: 4, col: 4 },
   HILLS_VARIANT_B: { row: 5, col: 2 },
   HILLS_SNOW: { row: 3, col: 2 },
@@ -569,21 +680,30 @@ export const baseTileCoords = {
   PORT_TOWN: { row: 4, col: 5 },
   CASTLE: { row: 4, col: 6 },
   ROADSIDE_TAVERN: { row: 1, col: 12 },
-  HAMLET: { row: 1, col: 13 },
+  HAMLET: { row: 1, col: 16 },
   ACTIVE_VOLCANO: { row: 2, col: 12 },
   VOLCANO: { row: 2, col: 13 },
   LAVA: { row: 2, col: 14 },
   OASIS: { row: 0, col: 12 },
   HAMLET_SNOW: { row: 0, col: 13 },
+  AMBIENT_SLEEPING_DRAGON: { row: 0, col: 14 },
+  AMBIENT_HUNTING_LODGE: { row: 0, col: 16 },
+  AMBIENT_HOMESTEAD: { row: 1, col: 13 },
+  AMBIENT_MOONWELL: { row: 6, col: 2 },
+  AMBIENT_FARM: { row: 1, col: 15 },
+  FARM_CROPS: { row: 0, col: 15 },
+  AMBIENT_FARM_VARIANT: { row: 0, col: 15 },
+  AMBIENT_GREAT_TREE: { row: 1, col: 14 },
+  AMBIENT_GREAT_TREE_ALT: { row: 2, col: 14 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
-  ORC_CAMP: { row: 6, col: 0 },
-  GNOLL_CAMP: { row: 6, col: 0 },
-  TROLL_CAMP: { row: 6, col: 0 },
-  OGRE_CAMP: { row: 6, col: 0 },
-  BANDIT_CAMP: { row: 6, col: 0 },
-  TRAVELERS_CAMP: { row: 6, col: 0 },
+  ORC_CAMP: { row: 1, col: 16 },
+  GNOLL_CAMP: { row: 5, col: 1 },
+  TROLL_CAMP: { row: 5, col: 1 },
+  OGRE_CAMP: { row: 5, col: 1 },
+  BANDIT_CAMP: { row: 5, col: 1 },
+  TRAVELERS_CAMP: { row: 5, col: 1 },
   DUNGEON: { row: 2, col: 7 },
   CENTAUR_ENCAMPMENT: { row: 2, col: 10 }
 };

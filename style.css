@@ -1924,7 +1924,7 @@ button:hover:not(:disabled) {
 
 .customizer-sidebar__name .dwarf-name-nav {
   justify-content: flex-start;
-  gap: clamp(0.5rem, 1.4vw, 0.85rem);
+  gap: clamp(0.15rem, 0.6vw, 0.4rem);
   width: 100%;
   position: relative;
 }
@@ -1948,7 +1948,7 @@ button:hover:not(:disabled) {
 .customizer-sidebar__name .dwarf-name-field {
   width: 100%;
   margin: 0;
-  margin-left: clamp(0.45rem, 1.5vw, 0.9rem);
+  margin-left: 0;
   margin-right: clamp(0.45rem, 1.5vw, 0.9rem);
 }
 
@@ -2333,11 +2333,11 @@ button:hover:not(:disabled) {
   content: "";
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 0;
   width: 100%;
   height: calc(70px * var(--nameplate-scale));
-  transform: translate(-50%, -50%);
-  transform-origin: center;
+  transform: translateY(-50%);
+  transform-origin: left center;
   background-image: url('tilesheet/nametype.png');
   background-repeat: no-repeat;
   background-position: center;
