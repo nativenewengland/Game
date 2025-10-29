@@ -10402,6 +10402,7 @@ function tryPlaceDwarfhold(candidate, options) {
     minDistanceSq,
     tiles,
     width,
+    height,
     waterMask,
     mountainScores,
     fallbackMountainScoreThreshold,
@@ -21150,6 +21151,7 @@ function createWorld(seedString) {
         const basePlacementContext = {
           tiles,
           width,
+          height,
           waterMask,
           mountainScores,
           fallbackMountainScoreThreshold,
