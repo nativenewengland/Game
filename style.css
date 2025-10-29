@@ -1947,7 +1947,7 @@ button:hover:not(:disabled) {
 
 .body-panel-frame {
   position: relative;
-  width: min(100%, 355px);
+  width: min(85%, 301.75px);
 }
 
 .body-panel-image {
