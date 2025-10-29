@@ -106,7 +106,7 @@ select,
 }
 
 #world-info {
-  --embark-scale: 0.75;
+  --embark-scale: 0.68;
 }
 
 #world-info .embark-panel {
@@ -311,6 +311,10 @@ select,
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: url('titlescreen/Titlescreen image.png') center/cover no-repeat;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1rem 2.5rem rgba(0, 0, 0, 0.45);
+}
+
+#world-info .embark-hero {
+  min-height: calc(220px * var(--embark-scale));
 }
 
 .embark-hero-overlay {
