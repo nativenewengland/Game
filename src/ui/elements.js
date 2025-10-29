@@ -123,6 +123,7 @@ export const elements = {
   dwarfTestArea: document.getElementById('dwarf-test-area'),
   dwarfTestCanvas: document.getElementById('dwarf-test-canvas'),
   dwarfTestButton: document.getElementById('dwarf-test'),
+  dwarfTestDungeonButton: document.getElementById('dwarf-test-dungeon'),
   dwarfTraitSummary: document.getElementById('dwarf-trait-summary'),
   dwarfTraitAttributes: document.getElementById('dwarf-trait-attributes')
 };
