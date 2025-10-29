@@ -45,6 +45,7 @@ export function attachEvents(elements, deps) {
     isDwarfTestActive,
     closeDwarfTest,
     structureDetailsState,
+    setActiveStructureDetailsTab,
     isOptionsVisible,
     updateWorldInfoSeedDisplay,
     updateWorldInfoSizeDisplay,
@@ -168,6 +169,20 @@ export function attachEvents(elements, deps) {
   if (elements.structureDetailsClose) {
     elements.structureDetailsClose.addEventListener('click', () => {
       hideStructureDetails({ returnFocus: true });
+    });
+  }
+
+  if (Array.isArray(elements.structureDetailsTabs) && elements.structureDetailsTabs.length > 0) {
+    elements.structureDetailsTabs.forEach((tab) => {
+      if (!tab) {
+        return;
+      }
+      tab.addEventListener('click', () => {
+        if (!structureDetailsState.visible) {
+          return;
+        }
+        setActiveStructureDetailsTab(tab.getAttribute('data-tab-id'));
+      });
     });
   }
 

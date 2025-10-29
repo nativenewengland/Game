@@ -875,11 +875,21 @@
           <button
             type="button"
             class="structure-details-tab is-active"
+            data-tab-id="history"
+            aria-controls="structure-details-content"
             aria-current="page"
           >
             History
           </button>
-          <button type="button" class="structure-details-tab">Statistics</button>
+          <button
+            type="button"
+            class="structure-details-tab"
+            data-tab-id="statistics"
+            aria-controls="structure-details-content"
+            aria-current="false"
+          >
+            Statistics
+          </button>
         </nav>
         <div class="modal-header">
           <div class="structure-details-titles">
