@@ -15893,10 +15893,8 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
     const shuffleSeed = (localSeedNumber + 0x5ad1f32b) >>> 0;
     const rng = mulberry32(shuffleSeed || 1);
     const variantSeed = (localSeedNumber + 0x3d0e12f7) >>> 0;
-    const icebergChance = 1 / 55;
 
-    const candidates = [];
-    let inheritedIcebergCount = 0;
+    const icebergParentTiles = new Map();
 
     for (let y = 0; y < patchHeight; y += 1) {
       const row = patchTiles[y];
@@ -15908,25 +15906,43 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
         if (!cell || cell.base !== waterTileKey) {
           continue;
         }
-        const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
-        const hasIceberg = overlayKey && icebergOverlayKeySet.has(overlayKey);
-        const blocked = overlayKey && !hasIceberg;
-        if (hasIceberg) {
-          inheritedIcebergCount += 1;
-          cell.overlay = null;
-        }
-        if (blocked || cell.structure || cell.river) {
-          continue;
-        }
 
         const parentTileX = Math.floor(x / subdivisions);
         const parentTileY = Math.floor(y / subdivisions);
+        const parentKey = `${parentTileX},${parentTileY}`;
+        let parentEntry = icebergParentTiles.get(parentKey);
+
+        const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+        const hasIceberg = overlayKey && icebergOverlayKeySet.has(overlayKey);
+        const blocked = overlayKey && !hasIceberg;
+
+        if (hasIceberg) {
+          if (!parentEntry) {
+            parentEntry = {
+              candidates: [],
+              originalOverlayKeys: new Set(),
+              originalOverlays: []
+            };
+            icebergParentTiles.set(parentKey, parentEntry);
+          }
+          if (overlayKey && !parentEntry.originalOverlayKeys.has(overlayKey)) {
+            parentEntry.originalOverlayKeys.add(overlayKey);
+            parentEntry.originalOverlays.push(overlayKey);
+          }
+          cell.overlay = null;
+        }
+
+        parentEntry = icebergParentTiles.get(parentKey);
+        if (!parentEntry || blocked || cell.structure || cell.river) {
+          continue;
+        }
+
         const subX = x - parentTileX * subdivisions;
         const subY = y - parentTileY * subdivisions;
         const globalSubX = (startX + parentTileX) * subdivisions + subX;
         const globalSubY = (startY + parentTileY) * subdivisions + subY;
 
-        candidates.push({
+        parentEntry.candidates.push({
           x,
           y,
           globalSubX,
@@ -15935,42 +15951,22 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
       }
     }
 
-    if (candidates.length > 0) {
-      for (let i = candidates.length - 1; i > 0; i -= 1) {
+    icebergParentTiles.forEach((entry) => {
+      if (!entry || entry.originalOverlays.length === 0 || entry.candidates.length === 0) {
+        return;
+      }
+
+      const shuffledCandidates = entry.candidates.slice();
+      for (let i = shuffledCandidates.length - 1; i > 0; i -= 1) {
         const j = Math.floor(rng() * (i + 1));
-        const temp = candidates[i];
-        candidates[i] = candidates[j];
-        candidates[j] = temp;
+        const temp = shuffledCandidates[i];
+        shuffledCandidates[i] = shuffledCandidates[j];
+        shuffledCandidates[j] = temp;
       }
 
-      let placementTarget = 0;
-      const used = new Array(candidates.length).fill(false);
-      const placements = [];
-
-      for (let i = 0; i < candidates.length; i += 1) {
-        const roll = rng();
-        if (roll < icebergChance) {
-          placements.push(i);
-          used[i] = true;
-        }
-      }
-
-      const baselineTarget = Math.round(candidates.length * icebergChance);
-      placementTarget = Math.min(
-        candidates.length,
-        Math.max(inheritedIcebergCount, baselineTarget)
-      );
-
-      for (let i = 0; i < candidates.length && placements.length < placementTarget; i += 1) {
-        if (used[i]) {
-          continue;
-        }
-        placements.push(i);
-        used[i] = true;
-      }
-
-      for (let p = 0; p < placements.length; p += 1) {
-        const candidate = candidates[placements[p]];
+      const placements = Math.min(entry.originalOverlays.length, shuffledCandidates.length);
+      for (let i = 0; i < placements; i += 1) {
+        const candidate = shuffledCandidates[i];
         if (!candidate) {
           continue;
         }
@@ -15979,13 +15975,16 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
           icebergOverlayKeys.length - 1,
           Math.floor(variantNoise * icebergOverlayKeys.length)
         );
-        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        let overlayKey = entry.originalOverlays[i] || null;
+        if (!overlayKey) {
+          overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        }
         const cell = patchTiles[candidate.y][candidate.x];
         if (cell) {
-          cell.overlay = overlayKey;
+          cell.overlay = overlayKey || icebergOverlayKeys[Math.max(0, variantIndex)];
         }
       }
-    }
+    });
   }
 
   const centerX = clamp(
