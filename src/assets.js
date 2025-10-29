@@ -585,6 +585,7 @@ export const baseTileCoords = {
   AMBIENT_HOMESTEAD: { row: 1, col: 13 },
   AMBIENT_MOONWELL: { row: 6, col: 2 },
   AMBIENT_FARM: { row: 1, col: 15 },
+  FARM_CROPS: { row: 0, col: 15 },
   AMBIENT_FARM_VARIANT: { row: 0, col: 15 },
   AMBIENT_GREAT_TREE: { row: 1, col: 14 },
   AMBIENT_GREAT_TREE_ALT: { row: 2, col: 14 },
