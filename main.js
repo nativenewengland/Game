@@ -203,89 +203,6 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientHomesteadStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const yardWidth = size * 0.82;
-  const yardHeight = size * 0.38;
-  const yardX = (size - yardWidth) / 2;
-  const yardY = size * 0.54;
-
-  ctx.fillStyle = '#7f9c4a';
-  ctx.beginPath();
-  ctx.ellipse(size * 0.5, yardY + yardHeight * 0.5, yardWidth * 0.5, yardHeight * 0.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#b38c61';
-  const pathWidth = size * 0.18;
-  ctx.beginPath();
-  ctx.moveTo(size * 0.5 - pathWidth / 2, yardY + yardHeight * 0.2);
-  ctx.lineTo(size * 0.5 + pathWidth / 2, yardY + yardHeight * 0.2);
-  ctx.lineTo(size * 0.5 + pathWidth * 0.6, yardY + yardHeight);
-  ctx.lineTo(size * 0.5 - pathWidth * 0.6, yardY + yardHeight);
-  ctx.closePath();
-  ctx.fill();
-
-  const houseWidth = size * 0.5;
-  const houseHeight = size * 0.3;
-  const houseX = (size - houseWidth) / 2;
-  const houseY = size * 0.3;
-
-  ctx.fillStyle = '#d5b38a';
-  ctx.fillRect(houseX, houseY, houseWidth, houseHeight);
-
-  ctx.fillStyle = '#8b5a2b';
-  ctx.beginPath();
-  ctx.moveTo(houseX - size * 0.05, houseY);
-  ctx.lineTo(size * 0.5, houseY - size * 0.2);
-  ctx.lineTo(houseX + houseWidth + size * 0.05, houseY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#63351d';
-  const doorWidth = houseWidth * 0.22;
-  const doorHeight = houseHeight * 0.65;
-  ctx.fillRect(size * 0.5 - doorWidth / 2, houseY + houseHeight - doorHeight, doorWidth, doorHeight);
-
-  ctx.fillStyle = '#f8f0d2';
-  const windowSize = houseWidth * 0.18;
-  ctx.fillRect(houseX + houseWidth * 0.18 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
-  ctx.fillRect(houseX + houseWidth * 0.82 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
-
-  ctx.fillStyle = '#4f3420';
-  ctx.fillRect(houseX + houseWidth * 0.72, houseY - size * 0.06, size * 0.06, size * 0.18);
-
-  ctx.globalAlpha = 0.6;
-  ctx.fillStyle = '#d8d8d8';
-  ctx.beginPath();
-  ctx.ellipse(houseX + houseWidth * 0.74, houseY - size * 0.12, size * 0.09, size * 0.12, 0, 0, Math.PI * 2);
-  ctx.ellipse(houseX + houseWidth * 0.66, houseY - size * 0.22, size * 0.07, size * 0.1, 0, 0, Math.PI * 2);
-  ctx.ellipse(houseX + houseWidth * 0.6, houseY - size * 0.3, size * 0.06, size * 0.09, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  const fenceY = yardY + yardHeight * 0.55;
-  const fenceWidth = size * 0.74;
-  const fenceX = (size - fenceWidth) / 2;
-  const postCount = 5;
-  ctx.strokeStyle = '#8d653a';
-  ctx.lineWidth = Math.max(1, size * 0.025);
-  ctx.beginPath();
-  ctx.moveTo(fenceX, fenceY);
-  ctx.lineTo(fenceX + fenceWidth, fenceY);
-  ctx.stroke();
-  for (let i = 0; i <= postCount; i += 1) {
-    const px = fenceX + (fenceWidth * i) / postCount;
-    ctx.beginPath();
-    ctx.moveTo(px, fenceY - size * 0.08);
-    ctx.lineTo(px, fenceY + size * 0.08);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
 function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -419,10 +336,7 @@ registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTav
 registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
   drawDarkDwarfholdStructure(ctx, drawOptions)
 );
-// AMBIENT_FARM draws from the sprite sheet via baseTileCoords.
-registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
-  drawAmbientHomesteadStructure(ctx, drawOptions)
-);
+// AMBIENT_HOMESTEAD draws directly from the base sprite sheet via baseTileCoords.
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
   drawAmbientHuntingLodgeStructure(ctx, drawOptions)
 );
