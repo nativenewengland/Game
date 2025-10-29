@@ -1937,7 +1937,7 @@ button:hover:not(:disabled) {
 }
 
 .customizer-sidebar__name .dwarf-name-field {
-  width: min(100%, clamp(34rem, 56vw, 48rem));
+  width: min(100%, calc(495px * var(--nameplate-scale, 1)));
   margin: 0;
   margin-left: clamp(0.45rem, 1.5vw, 0.9rem);
 }
@@ -2282,34 +2282,33 @@ button:hover:not(:disabled) {
 
 .dwarf-name-field {
   position: relative;
-  width: min(100%, clamp(40rem, 90vw, 60rem));
+  --nameplate-scale: 1;
+  width: min(100%, calc(495px * var(--nameplate-scale)));
+  height: calc(70px * var(--nameplate-scale));
   margin: clamp(-0.75rem, -1vh, -0.35rem) 0 0;
-  aspect-ratio: 618 / 89;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  padding-inline: clamp(0.85rem, 2vw, 1.35rem);
+  padding-inline: clamp(
+    calc(0.85rem * var(--nameplate-scale)),
+    calc(2vw * var(--nameplate-scale)),
+    calc(1.35rem * var(--nameplate-scale))
+  );
   justify-self: flex-start;
 }
 
 #dwarf-customizer .dwarf-name-field {
-  width: min(
-    100%,
-    clamp(
-      calc(40rem * var(--customizer-scale)),
-      90vw,
-      calc(60rem * var(--customizer-scale))
-    )
-  );
+  --nameplate-scale: var(--customizer-scale);
+  width: min(100%, calc(495px * var(--nameplate-scale)));
   margin-top: clamp(
     calc(-0.75rem * var(--customizer-scale)),
     calc(-1vh * var(--customizer-scale)),
     calc(-0.35rem * var(--customizer-scale))
   );
   padding-inline: clamp(
-    calc(0.85rem * var(--customizer-scale)),
-    calc(2vw * var(--customizer-scale)),
-    calc(1.35rem * var(--customizer-scale))
+    calc(0.85rem * var(--nameplate-scale)),
+    calc(2vw * var(--nameplate-scale)),
+    calc(1.35rem * var(--nameplate-scale))
   );
 }
 
@@ -2318,14 +2317,14 @@ button:hover:not(:disabled) {
   position: absolute;
   top: 50%;
   right: 0;
-  width: 160%;
-  height: 160%;
+  width: calc(495px * var(--nameplate-scale));
+  height: calc(70px * var(--nameplate-scale));
   transform: translateY(-50%);
   transform-origin: center right;
   background-image: url('tilesheet/nametype.png');
   background-repeat: no-repeat;
   background-position: right center;
-  background-size: 100% 100%;
+  background-size: contain;
   image-rendering: pixelated;
   pointer-events: none;
   z-index: 0;
@@ -2333,7 +2332,7 @@ button:hover:not(:disabled) {
 
 @media (min-width: 1025px) {
   .customizer-sidebar__name .dwarf-name-field::before {
-    width: 176%;
+    width: calc(495px * var(--nameplate-scale));
   }
 }
 
