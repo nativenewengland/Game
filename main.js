@@ -19965,12 +19965,94 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
   const maxRadius = Math.max(minRadius + 2, Math.floor(minDimension * 0.12));
   const baseSeed = (seedNumber + 0x243f6a88) >>> 0;
 
+  const mask = createArchipelagoMask();
+  const sampleMask = mask
+    ? (nx, ny) => {
+        const sample = sampleMaskValue(mask, nx, ny);
+        return sample === null ? 0 : sample;
+      }
+    : () => 0;
+
+  const clusterCandidates = [];
+  if (mask) {
+    const clusterGrid = 28;
+    const epsilonX = 1 / (mask.width * 1.5);
+    const epsilonY = 1 / (mask.height * 1.5);
+    for (let gx = 0; gx < clusterGrid; gx += 1) {
+      for (let gy = 0; gy < clusterGrid; gy += 1) {
+        const nx = (gx + 0.5) / clusterGrid;
+        const ny = (gy + 0.5) / clusterGrid;
+        const intensity = sampleMask(nx, ny);
+        if (intensity <= 0.55) {
+          continue;
+        }
+        const gx1 = sampleMask(clamp(nx + epsilonX, 0, 1), ny);
+        const gx0 = sampleMask(clamp(nx - epsilonX, 0, 1), ny);
+        const gy1 = sampleMask(nx, clamp(ny + epsilonY, 0, 1));
+        const gy0 = sampleMask(nx, clamp(ny - epsilonY, 0, 1));
+        const gradX = gx1 - gx0;
+        const gradY = gy1 - gy0;
+        let orientation = 0;
+        const magnitude = Math.hypot(gradX, gradY);
+        if (magnitude < 1e-5) {
+          orientation = rng() * Math.PI * 2;
+        } else {
+          orientation = Math.atan2(gradY, gradX) + Math.PI * 0.5;
+        }
+        clusterCandidates.push({
+          x: nx,
+          y: ny,
+          intensity,
+          orientation
+        });
+      }
+    }
+  }
+
+  clusterCandidates.sort((a, b) => b.intensity - a.intensity);
+  const maxClusters = 72;
+  const clusters = clusterCandidates.slice(0, maxClusters);
+
+  const pickCluster = () => {
+    if (!clusters.length) {
+      return null;
+    }
+    const index = Math.floor(rng() * clusters.length);
+    return clusters[index];
+  };
+
   for (let i = 0; i < islandCount; i += 1) {
     const islandSeed = (baseSeed + i * 0x9e3779b9) >>> 0;
-    const centerX = rng() * width;
-    const centerY = rng() * height;
-    const radius = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
-    const aspect = 0.45 + rng() * 1.35;
+    const cluster = pickCluster();
+    let centerNormX = rng();
+    let centerNormY = rng();
+    let orientation = rng() * Math.PI * 2;
+    let clusterIntensity = 0.6;
+
+    if (cluster) {
+      const jitterAngle = rng() * Math.PI * 2;
+      const jitterDistance = (0.01 + (1 - cluster.intensity) * 0.05) * (0.7 + rng() * 0.6);
+      centerNormX = clamp(
+        cluster.x + Math.cos(jitterAngle) * jitterDistance,
+        0.04,
+        0.96
+      );
+      centerNormY = clamp(
+        cluster.y + Math.sin(jitterAngle) * jitterDistance,
+        0.04,
+        0.96
+      );
+      orientation = cluster.orientation + (rng() - 0.5) * 0.9;
+      clusterIntensity = cluster.intensity;
+    }
+
+    const centerX = centerNormX * width;
+    const centerY = centerNormY * height;
+    const maskSample = clamp(sampleMask(centerNormX, centerNormY), 0, 1);
+    const radiusBase = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
+    const sizeMultiplier = 0.7 + maskSample * 0.9;
+    const radius = Math.max(3, Math.floor(radiusBase * sizeMultiplier));
+    const aspect = 0.55 + rng() * 1.15;
     let majorRadius = Math.max(radius, 3);
     let minorRadius = Math.max(majorRadius * aspect, 3);
     if (rng() < 0.5) {
@@ -19978,26 +20060,26 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
       majorRadius = minorRadius;
       minorRadius = swap;
     }
-    const rotation = rng() * Math.PI * 2;
-    const cosRotation = Math.cos(rotation);
-    const sinRotation = Math.sin(rotation);
-    const falloffPower = 1.1 + rng() * 1.7;
-    const shelfStrength = 0.22 + rng() * 0.34;
-    const peakHeight = 0.55 + rng() * 0.45;
-    const coastlineRoughness = 0.22 + rng() * 0.28;
-    const turbulenceStrength = 0.26 + rng() * 0.36;
-    const noiseScale = 3.4 + rng() * 6.2;
-    const tectonicStrength = 0.3 + rng() * 0.5;
+
+    const cosRotation = Math.cos(orientation);
+    const sinRotation = Math.sin(orientation);
+    const falloffPower = 1.15 + rng() * 1.5 - clusterIntensity * 0.35;
+    const shelfStrength = 0.28 + rng() * 0.32 + maskSample * 0.25;
+    const peakHeight = 0.52 + rng() * 0.42 + maskSample * 0.35;
+    const coastlineRoughness = 0.24 + rng() * 0.26 + (1 - clusterIntensity) * 0.18;
+    const turbulenceStrength = 0.26 + rng() * 0.34 + maskSample * 0.2;
+    const noiseScale = 3.8 + rng() * 5.8;
+    const tectonicStrength = 0.32 + rng() * 0.42 + maskSample * 0.35;
     const lobeCount = 2 + Math.floor(rng() * 7);
     const lobePhase = rng() * Math.PI * 2;
-    const lobeStrength = 0.12 + rng() * 0.26;
+    const lobeStrength = 0.14 + rng() * 0.24 + (clusterIntensity - 0.6) * 0.2;
     const rippleCount = lobeCount * 2 + Math.floor(rng() * 5);
     const ripplePhase = rng() * Math.PI * 2;
-    const rippleStrength = 0.045 + rng() * 0.11;
-    const ridgeStrength = 0.03 + rng() * 0.11;
+    const rippleStrength = 0.05 + rng() * 0.1 + (1 - clusterIntensity) * 0.05;
+    const ridgeStrength = 0.035 + rng() * 0.1 + maskSample * 0.08;
     const ridgePhase = rng() * Math.PI * 2;
     const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
-    const fractureStrength = 0.035 + rng() * 0.13;
+    const fractureStrength = 0.04 + rng() * 0.12 + (1 - maskSample) * 0.06;
     const fracturePhase = rng() * Math.PI * 2;
     const fractureSeed = (islandSeed ^ 0xbb67ae85) >>> 0;
 
