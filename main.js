@@ -10210,13 +10210,9 @@ function computeDwarfholdDistributionAdjustment(x, y, height, seed) {
     return 0;
   }
 
-  const normalizedLatitude = clamp(y / (height - 1), 0, 1);
-  const centerLift = Math.max(0, 0.5 - Math.abs(normalizedLatitude - 0.5)) * 0.12;
-  const southernBoost = Math.max(0, normalizedLatitude - 0.45) * 0.08;
-  const northernPenalty = Math.max(0, 0.38 - normalizedLatitude) * 0.12;
   const jitter = (hashCoords(x, y, seed >>> 0) - 0.5) * 0.06;
 
-  return centerLift + southernBoost - northernPenalty + jitter;
+  return jitter;
 }
 
 function isCandidateNearVolcano(candidate, options) {
