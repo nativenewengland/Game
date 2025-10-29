@@ -8736,6 +8736,14 @@ const dwarfTraitAttributeDefinitions = [
       'Your soot colored skin indicates you to hail from the ash covered lands of Dun Mortis. You are known by your ivory skinned cousins as the Dark Dwarves, a race cast away from the light of the All-father into the refuge bin of Stonebeards furance. You are hated by your kin as an oathbreaker by virture of your birthright and if you attempt to enter into their holds will likely be killed on sight.',
     icon: 'tilesheet/darkdwarf.png',
     isActive: (dwarf) => dwarf?.skin === 'umber' || dwarf?.skin === 'coal'
+  },
+  {
+    key: 'grey-dwarf',
+    label: 'Grey Dwarf Heritage',
+    description:
+      'Your skin is the colour of ashes and your heart is that of steel. Known as a Dwügar you may not be as despised as the dark dwarves are yet the kinship you have with the rest of Dwarfdom is strained. Your ancestors were followers of the Lawgiver and Forgebearers of the Forgotten Era who preached a strain of total dwarven separatism and supremacy that led your people to form holds far away from your homeland. You may be welcomed into any dwarf hold but not well liked and the races you hunt as slaves will attack you on sight.',
+    monogram: 'GD',
+    isActive: (dwarf) => dwarf?.skin === 'ashen'
   }
 ];
 
@@ -11656,17 +11664,32 @@ function createTraitAttributeElement(attribute) {
   item.setAttribute('tabindex', '0');
   item.setAttribute('aria-label', attribute.label);
 
-  const icon = document.createElement('img');
-  icon.className = 'trait-attribute__icon';
-  icon.src = attribute.icon;
-  icon.alt = attribute.label;
-  icon.loading = 'lazy';
+  if (attribute.icon) {
+    const icon = document.createElement('img');
+    icon.className = 'trait-attribute__icon';
+    icon.src = attribute.icon;
+    icon.alt = attribute.label;
+    icon.loading = 'lazy';
+    item.appendChild(icon);
+  } else {
+    const monogram = document.createElement('span');
+    monogram.className = 'trait-attribute__icon trait-attribute__icon--monogram';
+    const fallback = attribute.monogram || attribute.label || '';
+    monogram.textContent = fallback
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((segment) => segment[0] || '')
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+    monogram.setAttribute('aria-hidden', 'true');
+    item.appendChild(monogram);
+  }
 
   const tooltip = document.createElement('span');
   tooltip.className = 'trait-attribute__tooltip';
   tooltip.textContent = attribute.description;
 
-  item.appendChild(icon);
   item.appendChild(tooltip);
 
   return item;

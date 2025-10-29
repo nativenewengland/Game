@@ -2810,6 +2810,28 @@ button:hover:not(:disabled) {
   pointer-events: none;
 }
 
+.trait-attribute__icon--monogram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: #f5f0e6;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 236, 179, 0.4);
+  background: radial-gradient(circle at 30% 30%, rgba(148, 163, 184, 0.85), rgba(51, 65, 85, 0.9));
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.45);
+  text-transform: uppercase;
+}
+
+#dwarf-customizer .trait-attribute__icon--monogram {
+  font-size: calc(1.1rem * var(--customizer-scale));
+  border-width: calc(1px * var(--customizer-scale));
+}
+
 .trait-attribute__tooltip {
   position: absolute;
   left: 50%;
