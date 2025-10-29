@@ -17895,36 +17895,7 @@ function lerp(a, b, t) {
 }
 
 function sampleLandMask(normalizedX, normalizedY) {
-  const landMask = state.landMask;
-  if (!landMask) {
-    return null;
-  }
-
-  const clampedX = clamp(normalizedX, 0, 1);
-  const clampedY = clamp(normalizedY, 0, 1);
-  const scaledX = clampedX * (landMask.width - 1);
-  const scaledY = clampedY * (landMask.height - 1);
-
-  const x0 = Math.floor(scaledX);
-  const y0 = Math.floor(scaledY);
-  const x1 = Math.min(x0 + 1, landMask.width - 1);
-  const y1 = Math.min(y0 + 1, landMask.height - 1);
-  const tx = scaledX - x0;
-  const ty = scaledY - y0;
-
-  const idx00 = y0 * landMask.width + x0;
-  const idx10 = y0 * landMask.width + x1;
-  const idx01 = y1 * landMask.width + x0;
-  const idx11 = y1 * landMask.width + x1;
-
-  const v00 = landMask.data[idx00];
-  const v10 = landMask.data[idx10];
-  const v01 = landMask.data[idx01];
-  const v11 = landMask.data[idx11];
-
-  const top = lerp(v00, v10, tx);
-  const bottom = lerp(v01, v11, tx);
-  return lerp(top, bottom, ty);
+  return sampleMaskValue(state.landMask, normalizedX, normalizedY);
 }
 
 function valueNoise(x, y, seed) {
@@ -17956,6 +17927,40 @@ function createProceduralMask(width, height, sampler) {
     }
   }
   return { width, height, data };
+}
+
+function sampleMaskValue(mask, normalizedX, normalizedY) {
+  if (
+    !mask ||
+    !mask.data ||
+    !Number.isFinite(mask.width) ||
+    !Number.isFinite(mask.height) ||
+    mask.width <= 1 ||
+    mask.height <= 1
+  ) {
+    return null;
+  }
+
+  const clampedX = clamp(normalizedX, 0, 1);
+  const clampedY = clamp(normalizedY, 0, 1);
+  const scaledX = clampedX * (mask.width - 1);
+  const scaledY = clampedY * (mask.height - 1);
+
+  const x0 = Math.floor(scaledX);
+  const y0 = Math.floor(scaledY);
+  const x1 = Math.min(x0 + 1, mask.width - 1);
+  const y1 = Math.min(y0 + 1, mask.height - 1);
+  const tx = scaledX - x0;
+  const ty = scaledY - y0;
+
+  const idx00 = y0 * mask.width + x0;
+  const idx10 = y0 * mask.width + x1;
+  const idx01 = y1 * mask.width + x0;
+  const idx11 = y1 * mask.width + x1;
+
+  const top = lerp(mask.data[idx00], mask.data[idx10], tx);
+  const bottom = lerp(mask.data[idx01], mask.data[idx11], tx);
+  return lerp(top, bottom, ty);
 }
 
 function createTwinContinentsMask() {
@@ -18060,10 +18065,129 @@ function createArchipelagoMask() {
   });
 }
 
+function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
+  const total = width * height;
+  const heights = new Float32Array(total);
+  const tectonics = new Float32Array(total);
+  const minIslands = 20;
+  const maxIslands = 100;
+  const islandCount = Math.max(
+    minIslands,
+    Math.floor(rng() * (maxIslands - minIslands + 1)) + minIslands
+  );
+  const minDimension = Math.min(width, height);
+  const minRadius = Math.max(3, Math.floor(minDimension * 0.03));
+  const maxRadius = Math.max(minRadius + 2, Math.floor(minDimension * 0.12));
+  const baseSeed = (seedNumber + 0x243f6a88) >>> 0;
+
+  for (let i = 0; i < islandCount; i += 1) {
+    const islandSeed = (baseSeed + i * 0x9e3779b9) >>> 0;
+    const centerX = rng() * width;
+    const centerY = rng() * height;
+    const radius = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
+    const aspect = 0.6 + rng() * 0.9;
+    const majorRadius = Math.max(radius, 3);
+    const minorRadius = Math.max(majorRadius * aspect, 3);
+    const rotation = rng() * Math.PI * 2;
+    const cosRotation = Math.cos(rotation);
+    const sinRotation = Math.sin(rotation);
+    const falloffPower = 1.15 + rng() * 1.6;
+    const shelfStrength = 0.18 + rng() * 0.24;
+    const peakHeight = 0.55 + rng() * 0.4;
+    const coastlineRoughness = 0.12 + rng() * 0.16;
+    const turbulenceStrength = 0.18 + rng() * 0.26;
+    const noiseScale = 3.2 + rng() * 4.8;
+    const tectonicStrength = 0.3 + rng() * 0.5;
+
+    const influenceRadiusX = majorRadius * 1.7;
+    const influenceRadiusY = minorRadius * 1.7;
+
+    const minX = Math.max(0, Math.floor(centerX - influenceRadiusX));
+    const maxX = Math.min(width - 1, Math.ceil(centerX + influenceRadiusX));
+    const minY = Math.max(0, Math.floor(centerY - influenceRadiusY));
+    const maxY = Math.min(height - 1, Math.ceil(centerY + influenceRadiusY));
+
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let x = minX; x <= maxX; x += 1) {
+        const offsetX = (x + 0.5 - centerX) / majorRadius;
+        const offsetY = (y + 0.5 - centerY) / minorRadius;
+        const rotatedX = offsetX * cosRotation - offsetY * sinRotation;
+        const rotatedY = offsetX * sinRotation + offsetY * cosRotation;
+        const distance = Math.sqrt(rotatedX * rotatedX + rotatedY * rotatedY);
+        if (distance > 1.6) {
+          continue;
+        }
+
+        const normalizedX = (x + 0.5) / width;
+        const normalizedY = (y + 0.5) / height;
+        const coastlineNoise =
+          valueNoise(
+            (normalizedX + islandSeed * 0.0000153) * noiseScale,
+            (normalizedY + islandSeed * 0.0000271) * noiseScale,
+            islandSeed
+          ) - 0.5;
+        const coastalWarp = coastlineNoise * coastlineRoughness;
+        const adjustedDistance = distance - coastalWarp;
+        if (adjustedDistance > 1.2) {
+          continue;
+        }
+
+        const influence = clamp(1 - adjustedDistance, 0, 1);
+        if (influence <= 0) {
+          continue;
+        }
+
+        const shaped = Math.pow(influence, falloffPower);
+        const beach = clamp((influence - 0.35) / 0.65, 0, 1) * shelfStrength;
+        const turbulence =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.000042) * (noiseScale * 0.7),
+            (normalizedY + islandSeed * 0.000058) * (noiseScale * 0.7),
+            islandSeed ^ 0x85ebca6b
+          ) -
+            0.5) *
+          turbulenceStrength;
+        const heightContribution = shaped * peakHeight + beach + turbulence;
+        const idx = y * width + x;
+
+        if (heightContribution > heights[idx]) {
+          heights[idx] = heightContribution;
+        }
+
+        const tectonicContribution = shaped * tectonicStrength;
+        if (tectonicContribution > tectonics[idx]) {
+          tectonics[idx] = tectonicContribution;
+        }
+      }
+    }
+  }
+
+  const margin = Math.max(4, Math.floor(Math.min(width, height) * 0.05));
+  if (margin > 0) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const idx = y * width + x;
+        const edgeDistance = Math.min(x, y, width - 1 - x, height - 1 - y);
+        if (edgeDistance < margin) {
+          const t = clamp(edgeDistance / margin, 0, 1);
+          heights[idx] *= t * t;
+          tectonics[idx] *= t * 0.85;
+        }
+      }
+    }
+  }
+
+  return { heights, tectonics };
+}
+
 const continentalPlateConfigs = {
   archipelago: {
     majorTargetRange: [1, 2],
     fragmentTargetRange: [9, 13],
+    useMaskPlacement: true,
+    maskLandThreshold: 0.52,
+    maskOceanThreshold: 0.28,
+    maskSearchRadius: 0.12,
     minDistance: 0.1,
     fragmentDistance: 0.06,
     majorRadiusRange: [0.12, 0.2],
@@ -18190,6 +18314,44 @@ function generateContinentalPlates(rng, options = {}) {
       ? continentalPlateConfigs[profileKey]
       : null;
 
+  const mask = options && options.landMask && options.landMask.data ? options.landMask : null;
+  const maskPlacementEnabled = Boolean(config && config.useMaskPlacement && mask);
+  const maskLandThreshold =
+    config && Number.isFinite(config.maskLandThreshold) ? config.maskLandThreshold : 0.5;
+  const maskOceanThreshold =
+    config && Number.isFinite(config.maskOceanThreshold) ? config.maskOceanThreshold : 0.35;
+  const maskSearchRadius =
+    config && Number.isFinite(config.maskSearchRadius) ? config.maskSearchRadius : 0.1;
+  const maskStepSize = maskPlacementEnabled ? Math.max(maskSearchRadius, 0.02) : 0;
+
+  const findMaskPlacement = maskPlacementEnabled
+    ? (baseX, baseY, preferHigh) => {
+        let bestX = clamp(baseX, 0.03, 0.97);
+        let bestY = clamp(baseY, 0.03, 0.97);
+        let bestSample = sampleMaskValue(mask, bestX, bestY);
+        const attempts = 6;
+        for (let i = 0; i < attempts; i += 1) {
+          const angle = rng() * Math.PI * 2;
+          const distance = (0.3 + rng() * 0.7) * maskStepSize;
+          if (distance <= 0) {
+            continue;
+          }
+          const testX = clamp(baseX + Math.cos(angle) * distance, 0.03, 0.97);
+          const testY = clamp(baseY + Math.sin(angle) * distance, 0.03, 0.97);
+          const sample = sampleMaskValue(mask, testX, testY);
+          if (sample === null) {
+            continue;
+          }
+          if (bestSample === null || (preferHigh ? sample > bestSample : sample < bestSample)) {
+            bestSample = sample;
+            bestX = testX;
+            bestY = testY;
+          }
+        }
+        return { x: bestX, y: bestY, sample: bestSample };
+      }
+    : null;
+
   const sampleRangeValue = (range, defaultMin, defaultMax) => {
     let min = defaultMin;
     let max = defaultMax;
@@ -18309,6 +18471,24 @@ function generateContinentalPlates(rng, options = {}) {
       noiseOffsetX: rng() * 256,
       noiseOffsetY: rng() * 256
     };
+
+    if (maskPlacementEnabled && findMaskPlacement) {
+      const placement = findMaskPlacement(candidate.x, candidate.y, !isOcean);
+      const maskSample = placement ? placement.sample : null;
+
+      if (!isOcean) {
+        if (maskSample === null || maskSample < maskLandThreshold) {
+          continue;
+        }
+      } else if (maskSample !== null && maskSample > maskOceanThreshold) {
+        continue;
+      }
+
+      if (placement) {
+        candidate.x = placement.x;
+        candidate.y = placement.y;
+      }
+    }
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
     const minEdge = isFragment
@@ -19295,6 +19475,7 @@ function createWorld(seedString) {
     50
   );
   const profile = getWorldGenerationProfile(state.settings.worldGenerationType);
+  ensureLandMaskForProfile(profile.key);
   const maskInfluence = clamp(
     typeof profile.maskInfluence === 'number' ? profile.maskInfluence : 0.5,
     0,
@@ -19335,7 +19516,15 @@ function createWorld(seedString) {
   const mountainScarcity = 1 - mountainFrequencyNormalized;
   const mountainGrowthFactor = 0.42 + mountainFrequencyNormalized * 0.7;
 
-  const continentalPlates = generateContinentalPlates(rng, { profileKey: profile.key });
+  const useArchipelagoIslandPlacement = profile.key === 'archipelago';
+  const archipelagoFields = useArchipelagoIslandPlacement
+    ? generateArchipelagoIslandFields(width, height, rng, seedNumber)
+    : null;
+
+  const continentalPlates = generateContinentalPlates(rng, {
+    profileKey: profile.key,
+    landMask: state.landMask
+  });
   const elevationField = new Float32Array(width * height);
   const tectonicActivityField = new Float32Array(width * height);
 
@@ -19362,10 +19551,18 @@ function createWorld(seedString) {
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+
+      if (useArchipelagoIslandPlacement && archipelagoFields) {
+        const heightValue = clamp(archipelagoFields.heights[idx], -1, 1);
+        const tectonicValue = clamp(archipelagoFields.tectonics[idx], 0, 1);
+        elevationField[idx] = heightValue;
+        tectonicActivityField[idx] = tectonicValue;
+        continue;
+      }
+
       const normalizedX = (x + 0.5) / width;
       const normalizedY = (y + 0.5) / height;
-
-      const idx = y * width + x;
       const plateSample = sampleContinentalPlates(normalizedX, normalizedY, continentalPlates);
       tectonicActivityField[idx] = plateSample.tectonic;
 
