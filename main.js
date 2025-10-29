@@ -1134,6 +1134,15 @@ const dwarfholdRulerTitles = {
   ]
 };
 
+const darkDwarfholdLeaderTitles = [
+  'Emperor',
+  'Sorcerer-Thane',
+  'Warlork High Lord',
+  'Sorcerer-Prophet',
+  'Lawgiver',
+  'Dark-Thane'
+];
+
 const dwarfholdHallmarks = [
   'Renowned for adamantine vaults that hum with runic wards.',
   'Brews ember-ale said to warm even a dragonborn heart.',
@@ -3737,14 +3746,19 @@ function generateDwarfholdDetails(name, random, options = {}) {
   const firstName = pickRandomFrom(namePool, randomFn) || 'Urist';
   const clanOption = pickRandomFrom(dwarfOptions.clan, randomFn) || dwarfOptions.clan?.[0];
   const clanName = clanOption?.label || 'Stonebeard';
-  const titlePool = dwarfholdRulerTitles[gender] || dwarfholdRulerTitles.male;
-  const titleFallback = 'Thane';
-  const thaneBiasRoll = randomFn();
-  const nonThaneTitles = titlePool.filter((title) => title !== 'Thane');
-  const rulerTitle =
-    thaneBiasRoll < 0.65 || nonThaneTitles.length === 0
-      ? 'Thane'
-      : pickRandomFrom(nonThaneTitles, randomFn) || titleFallback;
+  let rulerTitle;
+  if (isDarkHold) {
+    rulerTitle = pickRandomFrom(darkDwarfholdLeaderTitles, randomFn) || 'Sorcerer-Prophet';
+  } else {
+    const titlePool = dwarfholdRulerTitles[gender] || dwarfholdRulerTitles.male;
+    const titleFallback = 'Thane';
+    const thaneBiasRoll = randomFn();
+    const nonThaneTitles = titlePool.filter((title) => title !== 'Thane');
+    rulerTitle =
+      thaneBiasRoll < 0.65 || nonThaneTitles.length === 0
+        ? 'Thane'
+        : pickRandomFrom(nonThaneTitles, randomFn) || titleFallback;
+  }
   const hallmark = pickRandomFrom(dwarfholdHallmarks, randomFn) ||
     'Renowned for stout walls and heartier spirits.';
   const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
