@@ -551,7 +551,13 @@ if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
 
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
-const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW']);
+const hillOverlayKeySet = new Set([
+  'HILLS',
+  'HILLS_VARIANT_A',
+  'HILLS_VARIANT_B',
+  'HILLS_SNOW',
+  'HILLS_BADLANDS'
+]);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
 
@@ -23272,7 +23278,14 @@ function createWorld(seedString) {
   );
   const primaryHillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : baseHillOverlayOptions[0] || null;
   const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : primaryHillOverlayKey;
-  const hillOverlayPresenceKeys = [...baseHillOverlayOptions, snowHillOverlayKey].filter(Boolean);
+  const badlandsHillOverlayKey = tileLookup.has('HILLS_BADLANDS')
+    ? 'HILLS_BADLANDS'
+    : primaryHillOverlayKey;
+  const hillOverlayPresenceKeys = [
+    ...baseHillOverlayOptions,
+    snowHillOverlayKey,
+    badlandsHillOverlayKey
+  ].filter(Boolean);
   const hillOverlayPresenceKeySet = new Set(hillOverlayPresenceKeys);
   const hillOverlayKeys = Array.from(hillOverlayPresenceKeySet);
   const hillVariantSelectionSeed = (seedNumber + 0x3ab41d7f) >>> 0;
@@ -23291,15 +23304,39 @@ function createWorld(seedString) {
     return baseHillOverlayOptions[index];
   };
   const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayPresenceKeySet.has(overlayKey);
+  const normalizeHillOverlayKey = (tile, key) => {
+    if (!tile || !key || !hillOverlayPresenceKeySet.has(key)) {
+      return null;
+    }
+    if (
+      badlandsHillOverlayKey &&
+      hasBadlandsTile &&
+      tile.base === badlandsTileKey &&
+      key !== badlandsHillOverlayKey
+    ) {
+      return badlandsHillOverlayKey;
+    }
+    if (
+      snowHillOverlayKey &&
+      tile.base === snowTileKey &&
+      key !== snowHillOverlayKey &&
+      key !== badlandsHillOverlayKey
+    ) {
+      return snowHillOverlayKey;
+    }
+    return key;
+  };
   const getHillOverlayKeyForTile = (tile) => {
     if (!tile) {
       return null;
     }
-    if (tile.hillOverlay && isHillOverlay(tile.hillOverlay)) {
-      return tile.hillOverlay;
+    const hillOverlayKey = normalizeHillOverlayKey(tile, tile.hillOverlay);
+    if (hillOverlayKey) {
+      return hillOverlayKey;
     }
-    if (tile.overlay && isHillOverlay(tile.overlay)) {
-      return tile.overlay;
+    const overlayKey = normalizeHillOverlayKey(tile, tile.overlay);
+    if (overlayKey) {
+      return overlayKey;
     }
     return null;
   };
@@ -23335,7 +23372,8 @@ function createWorld(seedString) {
           }
           const baseIsGrass = tile.base === grassTileKey;
           const baseIsSnow = tile.base === snowTileKey;
-          if (!baseIsGrass && !baseIsSnow) {
+          const baseIsBadlands = hasBadlandsTile && tile.base === badlandsTileKey;
+          if (!baseIsGrass && !baseIsSnow && !baseIsBadlands) {
             continue;
           }
           const heightValue = elevationField[idx];
@@ -23388,7 +23426,11 @@ function createWorld(seedString) {
             noiseValue * 0.12;
           const threshold = 0.5 - mountainBonus * 0.18;
           if (compositeScore > threshold) {
-            const overlayKey = baseIsSnow ? snowHillOverlayKey : selectBaseHillOverlayKey(x, y);
+            const overlayKey = baseIsSnow
+              ? snowHillOverlayKey
+              : baseIsBadlands
+              ? badlandsHillOverlayKey
+              : selectBaseHillOverlayKey(x, y);
             if (overlayKey) {
               tile.hillOverlay = overlayKey;
             }
@@ -24448,7 +24490,9 @@ function createWorld(seedString) {
     ...evilWizardTowers
   ];
   const hillOverlayKeysForStructures = new Set(
-    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW'].filter((key) => tileLookup.has(key))
+    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW', 'HILLS_BADLANDS'].filter((key) =>
+      tileLookup.has(key)
+    )
   );
   const isHillOverlayForStructures = (overlayKey) =>
     overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
