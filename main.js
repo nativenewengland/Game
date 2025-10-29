@@ -6109,7 +6109,7 @@ const ambientStructureOptionsByCulture = {
   ]),
   elves: createAmbientStructureOptions([
     { label: 'Great Tree', requiresTreeOverlay: true },
-    { label: 'Moonwell Glade', requiresTreeNeighbor: true },
+    { label: 'Moonwell', requiresTreeOverlay: true },
     'Leafweaver Pavilion',
     'Starbloom Archway',
     'Silversong Clearing'
