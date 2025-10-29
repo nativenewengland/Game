@@ -208,7 +208,14 @@ export function attachEvents(elements, deps) {
     });
   }
 
-  const dwarfholdStructureKeys = new Set(['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD', 'HILLHOLD']);
+  const dwarfholdStructureKeys = new Set([
+    'DWARFHOLD',
+    'GREAT_DWARFHOLD',
+    'ABANDONED_DWARFHOLD',
+    'DARK_DWARFHOLD',
+    'DARKDWARFHOLD',
+    'HILLHOLD'
+  ]);
   const isDwarfholdStructureTile = (tile) => {
     if (!tile) {
       return false;
