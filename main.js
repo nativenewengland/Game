@@ -2,6 +2,7 @@ import {
   tileSheets,
   dwarfSpriteSheets,
   orcSpriteSheets,
+  dungeonPlayerSpriteSheets,
   characterCreatorPortraitAssets,
   characterCreatorBeardAssetMap,
   characterCreatorHairAssetMap,
@@ -6743,6 +6744,7 @@ function spawnAmbientStructures({
   const farmRelocationSeed = (numericSeed + 0x6c8e9cf5) >>> 0;
   const farmRelocationTargetSeed = (numericSeed + 0x0b6d0f1d) >>> 0;
   const farmRelocationAltSeed = (numericSeed + 0x8f2a5c4b) >>> 0;
+  const farmCropSwapSeed = (numericSeed + 0x2bd7a4dd) >>> 0;
   const huntingSeed = (numericSeed + 0x41c6ce57) >>> 0;
 
   const farmStructureKeys = [];
@@ -6759,6 +6761,149 @@ function spawnAmbientStructures({
   const tavernKey = tileLookup.has('ROADSIDE_TAVERN') ? 'ROADSIDE_TAVERN' : null;
   const monasteryStructureKey = tileLookup.has('MONASTERY') ? 'MONASTERY' : null;
   const saintShrineStructureKey = tileLookup.has('SAINT_SHRINE') ? 'SAINT_SHRINE' : null;
+
+  const makeCoordKey = (x, y) => `${x},${y}`;
+  const cropTilesPlacedByGenerator = new Set();
+
+  const isTileEligibleForCropSwapDestination = (tile) =>
+    Boolean(tile) && isTileEligibleForFarmBase(tile, { allowMissingGrassKey: !grassTileKey }) && !tile.overlay;
+
+  const registerCropPlacement = (x, y) => {
+    if (!farmCropOverlayKey) {
+      return;
+    }
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      return;
+    }
+    const tile = row[x];
+    if (!tile || tile.overlay !== farmCropOverlayKey) {
+      return;
+    }
+    cropTilesPlacedByGenerator.add(makeCoordKey(x, y));
+  };
+
+  const pickCropSwapDestination = (sourceX, sourceY, offsetSeed = 0) => {
+    if (!farmCropOverlayKey) {
+      return null;
+    }
+    const totalTiles = mapWidth * mapHeight;
+    if (totalTiles <= 1) {
+      return null;
+    }
+    const maxAttempts = Math.min(totalTiles, 600);
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const seed =
+        (farmCropSwapSeed +
+          Math.imul(sourceX + offsetSeed + attempt, 0x27d4eb2d) +
+          Math.imul(sourceY + offsetSeed + attempt, 0x165667b1)) >>>
+        0;
+      const xRoll = hashCoords(sourceX, attempt + offsetSeed, seed);
+      const yRoll = hashCoords(attempt + offsetSeed, sourceY, seed ^ 0x9e3779b9);
+      const nx = Math.max(0, Math.min(mapWidth - 1, Math.floor(xRoll * mapWidth)));
+      const ny = Math.max(0, Math.min(mapHeight - 1, Math.floor(yRoll * mapHeight)));
+      if (nx === sourceX && ny === sourceY) {
+        continue;
+      }
+      const candidateTile = tiles[ny]?.[nx];
+      if (!isTileEligibleForCropSwapDestination(candidateTile)) {
+        continue;
+      }
+      return { x: nx, y: ny };
+    }
+    for (let yy = 0; yy < mapHeight; yy += 1) {
+      const row = tiles[yy];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let xx = 0; xx < mapWidth; xx += 1) {
+        if (xx === sourceX && yy === sourceY) {
+          continue;
+        }
+        if (isTileEligibleForCropSwapDestination(row[xx])) {
+          return { x: xx, y: yy };
+        }
+      }
+    }
+    return null;
+  };
+
+  const relocateCropOverlayFromTile = (sourceX, sourceY, offsetSeed = 0) => {
+    if (!farmCropOverlayKey) {
+      return;
+    }
+    const row = tiles[sourceY];
+    if (!Array.isArray(row)) {
+      cropTilesPlacedByGenerator.delete(makeCoordKey(sourceX, sourceY));
+      return;
+    }
+    const tile = row[sourceX];
+    if (!tile || tile.overlay !== farmCropOverlayKey) {
+      cropTilesPlacedByGenerator.delete(makeCoordKey(sourceX, sourceY));
+      return;
+    }
+    tile.overlay = null;
+    cropTilesPlacedByGenerator.delete(makeCoordKey(sourceX, sourceY));
+    const destination = pickCropSwapDestination(sourceX, sourceY, offsetSeed);
+    if (!destination) {
+      tile.overlay = farmCropOverlayKey;
+      registerCropPlacement(sourceX, sourceY);
+      return;
+    }
+    const destRow = tiles[destination.y];
+    if (!Array.isArray(destRow)) {
+      return;
+    }
+    const destTile = destRow[destination.x];
+    if (!destTile || destTile.overlay || destTile.structure || destTile.river) {
+      tile.overlay = farmCropOverlayKey;
+      registerCropPlacement(sourceX, sourceY);
+      return;
+    }
+    if (!isTileEligibleForCropSwapDestination(destTile)) {
+      tile.overlay = farmCropOverlayKey;
+      registerCropPlacement(sourceX, sourceY);
+      return;
+    }
+    destTile.overlay = farmCropOverlayKey;
+    registerCropPlacement(destination.x, destination.y);
+  };
+
+  let cropRelocationCounter = 0;
+  const relocateCropsNear = (centerX, centerY) => {
+    if (!farmCropOverlayKey || cropTilesPlacedByGenerator.size === 0) {
+      return;
+    }
+    const radius = 3;
+    let movedHere = 0;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      const row = tiles[ny];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const tile = row[nx];
+        if (!tile || tile.overlay !== farmCropOverlayKey) {
+          continue;
+        }
+        const key = makeCoordKey(nx, ny);
+        if (!cropTilesPlacedByGenerator.has(key)) {
+          continue;
+        }
+        relocateCropOverlayFromTile(nx, ny, cropRelocationCounter + movedHere);
+        movedHere += 1;
+      }
+    }
+    cropRelocationCounter += movedHere;
+  };
 
   const createRelocationRng = (x, y, seed) => {
     const hashedSeed = (seed + Math.imul(x + 0x9e3779b9, 0x27d4eb2d) + Math.imul(y + 0x85ebca6b, 0x165667b1)) >>> 0;
@@ -6782,6 +6927,29 @@ function spawnAmbientStructures({
     return bestIndex;
   };
 
+  const isTileEligibleForFarmBase = (tile, { allowMissingGrassKey = false } = {}) => {
+    if (!tile || tile.structure || tile.river) {
+      return false;
+    }
+    if (tile.hillOverlay) {
+      return false;
+    }
+    if (grassTileKey) {
+      return tile.base === grassTileKey;
+    }
+    return allowMissingGrassKey;
+  };
+
+  const isTileEligibleForFarmStructure = (tile) =>
+    isTileEligibleForFarmBase(tile, { allowMissingGrassKey: false }) && !tile.overlay;
+
+  const isTileEligibleForFarmRelocation = (tile) =>
+    isTileEligibleForFarmBase(tile, { allowMissingGrassKey: !grassTileKey }) && !tile.overlay;
+
+  const isTileEligibleForFarmCrops = (tile) =>
+    isTileEligibleForFarmBase(tile, { allowMissingGrassKey: false }) &&
+    (!tile.overlay || tile.overlay === farmCropOverlayKey);
+
   const generateCropsNearFarm = (centerX, centerY) => {
     if (!farmCropOverlayKey) {
       return;
@@ -6800,16 +6968,7 @@ function spawnAmbientStructures({
           continue;
         }
         const neighborTile = tiles[ny][nx];
-        if (!neighborTile || neighborTile.structure || neighborTile.river) {
-          continue;
-        }
-        if (neighborTile.overlay && neighborTile.overlay !== farmCropOverlayKey) {
-          continue;
-        }
-        if (neighborTile.hillOverlay) {
-          continue;
-        }
-        if (grassTileKey && neighborTile.base !== grassTileKey) {
+        if (!isTileEligibleForFarmCrops(neighborTile)) {
           continue;
         }
 
@@ -6833,6 +6992,7 @@ function spawnAmbientStructures({
         const roll = hashCoords(nx, ny, centerSeed);
         if (roll < chance) {
           neighborTile.overlay = farmCropOverlayKey;
+          registerCropPlacement(nx, ny);
         }
       }
     }
@@ -6855,7 +7015,7 @@ function spawnAmbientStructures({
       }
 
       const intensityFactor = Math.pow(humanIntensity, 1.35);
-      if (tile.base === grassTileKey && !tile.overlay && !tile.hillOverlay) {
+      if (isTileEligibleForFarmStructure(tile)) {
         const farmChance = intensityFactor * 0.012;
         if (farmChance > 0 && hashCoords(x, y, farmSeed) < farmChance) {
           let farmStructureKey = 'AMBIENT_FARM';
@@ -6897,13 +7057,7 @@ function spawnAmbientStructures({
     }
     for (let x = 0; x < mapWidth; x += 1) {
       const tile = row[x];
-      if (!tile || tile.structure || tile.river) {
-        continue;
-      }
-      if (tile.overlay || tile.hillOverlay) {
-        continue;
-      }
-      if (grassTileKey && tile.base !== grassTileKey) {
+      if (!isTileEligibleForFarmRelocation(tile)) {
         continue;
       }
       relocationCandidates.push({ x, y });
@@ -7021,6 +7175,8 @@ function spawnAmbientStructures({
           farmTile.structure = null;
           farmTile.structureName = null;
           farmTile.structureDetails = null;
+
+          relocateCropsNear(farmCoord.x, farmCoord.y);
 
           const placementIndex = placements.findIndex(
             (entry) => entry && entry.type === 'farm' && entry.x === farmCoord.x && entry.y === farmCoord.y
@@ -8825,6 +8981,7 @@ const dwarfGuildOptions = [
   { value: 'millers-guild', label: 'Millers Guild' },
   { value: 'cobblers-guild', label: 'Cobblers Guild' },
   { value: 'cartographers-guild', label: 'Cartographers Guild' },
+  { value: 'explorers-guild', label: 'Explorers Guild' },
   { value: 'lorekeepers-guild', label: 'Lorekeepers Guild' },
   { value: 'tunnel-wardens-guild', label: 'Tunnel Wardens Guild' },
   { value: 'smelters-guild', label: 'Smelters Guild' }
@@ -9334,6 +9491,15 @@ const dwarfTestDungeonTilePalette = {
   }
 };
 
+const dungeonPlayerAnimationDefinitions = {
+  idle: { sheet: 'dungeonPlayerIdle', frameCount: 12, speed: 4 },
+  walk: { sheet: 'dungeonPlayerWalk', frameCount: 6, speed: 9 }
+};
+
+const dungeonPlayerSpriteConfig = {
+  heightTileMultiplier: 2.8
+};
+
 const orcAnimationTemplates = {
   orc1: {
     idle: { sheet: 'orc1_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
@@ -9387,6 +9553,39 @@ const orcAnimationTemplates = {
 
 const orcAnimationCache = new Map();
 let dwarfTestEnemyIdCounter = 0;
+
+function getDungeonPlayerSpriteFrame(player) {
+  if (!player) {
+    return null;
+  }
+  const animationKey = player.animationKey || 'idle';
+  const definition = dungeonPlayerAnimationDefinitions[animationKey] ||
+    dungeonPlayerAnimationDefinitions.idle;
+  if (!definition) {
+    return null;
+  }
+  const sheet = dungeonPlayerSpriteSheets[definition.sheet];
+  const image = sheet?.image;
+  if (!image) {
+    return null;
+  }
+  const frameWidth = sheet.frameWidth || sheet.tileSize || image.width || 1;
+  const frameHeight = sheet.frameHeight || sheet.tileSize || image.height || 1;
+  const columns = sheet.columns || Math.max(1, Math.floor(image.width / frameWidth));
+  const framesPerRow = Math.max(1, Math.min(definition.frameCount || columns, columns));
+  const speed = definition.speed || 1;
+  const elapsed = Math.max(0, player.animationElapsed || 0);
+  const frameIndex = Math.floor(elapsed * speed) % framesPerRow;
+  const sx = frameIndex * frameWidth;
+  const sy = 0;
+  return {
+    sheetKey: definition.sheet,
+    sx,
+    sy,
+    sw: frameWidth,
+    sh: frameHeight
+  };
+}
 
 function getOrcAnimationDefinition(type, key) {
   if (!type || !key) {
@@ -10402,6 +10601,22 @@ const orcSpriteSheetPromises = Object.values(orcSpriteSheets).map((sheet) =>
     })
 );
 
+const dungeonPlayerSpritePromises = Object.values(dungeonPlayerSpriteSheets).map((sheet) =>
+  loadImage(sheet.path)
+    .then((img) => {
+      sheet.image = img;
+      const frameWidth = sheet.frameWidth || sheet.tileSize || img.width || 1;
+      const frameHeight = sheet.frameHeight || sheet.tileSize || img.height || 1;
+      sheet.columns = Math.max(1, Math.floor(img.width / frameWidth));
+      sheet.rows = Math.max(1, Math.floor(img.height / frameHeight));
+      return img;
+    })
+    .catch((error) => {
+      console.error(`Failed to load dungeon player sprite sheet at ${sheet.path}`, error);
+      throw error;
+    })
+);
+
 const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitAssets).map((asset) =>
   loadImage(asset.path)
     .then((img) => {
@@ -10419,6 +10634,7 @@ const assetPromises = Promise.all([
   ...tileSheetPromises,
   ...dwarfSpriteSheetPromises,
   ...orcSpriteSheetPromises,
+  ...dungeonPlayerSpritePromises,
   ...characterCreatorPortraitPromises,
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
@@ -11786,24 +12002,43 @@ function updateDwarfTestButtonState() {
 }
 
 function getDwarfTestSpriteDimensions(ctx) {
-  const source = elements.dwarfBodyPortraitCanvas;
   const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  const height = Math.max(1, destTileSize);
+  const targetHeight = Math.max(
+    1,
+    destTileSize * (dungeonPlayerSpriteConfig.heightTileMultiplier || 2.8)
+  );
+  const baseAnimation = dungeonPlayerAnimationDefinitions.idle;
+  const baseSheet = baseAnimation ? dungeonPlayerSpriteSheets[baseAnimation.sheet] : null;
+  const baseImage = baseSheet?.image || null;
+  const frameWidth = baseSheet?.frameWidth || baseSheet?.tileSize || (baseImage?.width ?? 0);
+  const frameHeight = baseSheet?.frameHeight || baseSheet?.tileSize || (baseImage?.height ?? 0);
+
+  if (baseImage && frameWidth > 0 && frameHeight > 0) {
+    const scale = targetHeight / frameHeight;
+    return {
+      width: Math.max(1, frameWidth * scale),
+      height: Math.max(1, frameHeight * scale),
+      scale
+    };
+  }
+
+  const source = elements.dwarfBodyPortraitCanvas;
+  const fallbackHeight = Math.max(1, destTileSize);
 
   if (!source || source.width === 0 || source.height === 0) {
     return {
-      width: Math.max(1, height * 0.7),
-      height
+      width: Math.max(1, fallbackHeight * 0.7),
+      height: fallbackHeight
     };
   }
 
   const aspectRatio = source.width / source.height;
   const clampedAspectRatio = Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : 1;
-  const width = Math.max(1, height * clampedAspectRatio);
+  const width = Math.max(1, fallbackHeight * clampedAspectRatio);
 
   return {
     width,
-    height
+    height: fallbackHeight
   };
 }
 
@@ -11993,23 +12228,54 @@ function drawDwarfTestCharacter(ctx, spriteDimensions) {
   ctx.ellipse(baseX, baseY - 4, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  const source = elements.dwarfBodyPortraitCanvas;
-  let drewPortrait = false;
-  if (source && source.width > 0 && source.height > 0) {
-    ctx.save();
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(
-      source,
-      baseX - spriteDimensions.width / 2,
-      baseY - spriteDimensions.height,
-      spriteDimensions.width,
-      spriteDimensions.height
-    );
-    ctx.restore();
-    drewPortrait = true;
+  const player = dwarfTestState.player;
+  let drewCharacter = false;
+  const spriteFrame = getDungeonPlayerSpriteFrame(player);
+  if (spriteFrame) {
+    const sheet = dungeonPlayerSpriteSheets[spriteFrame.sheetKey];
+    const image = sheet?.image;
+    if (image) {
+      const frameHeight = spriteFrame.sh || sheet?.frameHeight || sheet?.tileSize || image.height || 1;
+      const scale = spriteDimensions?.scale ||
+        (frameHeight > 0 ? (spriteDimensions.height || frameHeight) / frameHeight : 1);
+      const destWidth = (spriteFrame.sw || sheet?.frameWidth || sheet?.tileSize || image.width) * scale;
+      const destHeight = frameHeight * scale;
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(
+        image,
+        spriteFrame.sx,
+        spriteFrame.sy,
+        spriteFrame.sw,
+        spriteFrame.sh,
+        baseX - destWidth / 2,
+        baseY - destHeight,
+        destWidth,
+        destHeight
+      );
+      ctx.restore();
+      drewCharacter = true;
+    }
   }
 
-  if (!drewPortrait) {
+  if (!drewCharacter) {
+    const source = elements.dwarfBodyPortraitCanvas;
+    if (source && source.width > 0 && source.height > 0) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(
+        source,
+        baseX - spriteDimensions.width / 2,
+        baseY - spriteDimensions.height,
+        spriteDimensions.width,
+        spriteDimensions.height
+      );
+      ctx.restore();
+      drewCharacter = true;
+    }
+  }
+
+  if (!drewCharacter) {
     ctx.fillStyle = '#d0b89a';
     ctx.beginPath();
     ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
@@ -12023,7 +12289,6 @@ function drawDwarfTestCharacter(ctx, spriteDimensions) {
     );
   }
 
-  const player = dwarfTestState.player;
   if (player?.hurtFlash > 0) {
     const intensity = clamp(player.hurtFlash / 0.35, 0, 1);
     ctx.fillStyle = `rgba(239, 68, 68, ${0.4 * intensity})`;
@@ -12104,6 +12369,19 @@ function updateDwarfTestFrame(timestamp) {
     dwarfTestState.backgroundOffset += direction.dx * distance * 0.6;
   } else {
     dwarfTestState.backgroundOffset *= 0.9;
+  }
+
+  const player = dwarfTestState.player;
+  if (player) {
+    const isMoving = direction.dx !== 0 || direction.dy !== 0;
+    const nextAnimation = player.dead ? 'idle' : isMoving ? 'walk' : 'idle';
+    if (player.animationKey !== nextAnimation) {
+      player.animationKey = nextAnimation;
+      player.animationElapsed = 0;
+    }
+    if (!player.dead) {
+      player.animationElapsed += delta;
+    }
   }
 
   const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
@@ -12210,7 +12488,9 @@ function resetDwarfTestState() {
     maxHealth: 100,
     damageCooldown: 0,
     hurtFlash: 0,
-    dead: false
+    dead: false,
+    animationKey: 'idle',
+    animationElapsed: 0
   };
   spawnDwarfTestEnemies(dwarfTestState.map, destTileSize, walkable);
   updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
@@ -13618,7 +13898,7 @@ const dwarfholdScreenConfig = {
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
 
-const structureDetailsTabIds = ['history', 'statistics'];
+const structureDetailsTabIds = ['history', 'main', 'features', 'economy'];
 
 const structureDetailsState = {
   visible: false,
@@ -13634,10 +13914,14 @@ function normalizeStructureDetailsTabId(tabId) {
   return structureDetailsTabIds.includes(normalized) ? normalized : structureDetailsTabIds[0];
 }
 
-function getStructureDetailsStatisticsPlaceholder() {
+function getStructureDetailsPlaceholder(message) {
+  const resolvedMessage =
+    typeof message === 'string' && message.trim().length > 0
+      ? message.trim()
+      : 'No additional records are available for this settlement yet.';
   return `
     <div class="structure-details-column structure-details-column--primary">
-      <p class="structure-details-empty structure-details-empty--standalone">No statistical records are available for this settlement yet.</p>
+      <p class="structure-details-empty structure-details-empty--standalone">${escapeHtml(resolvedMessage)}</p>
     </div>
   `;
 }
@@ -18305,8 +18589,14 @@ function showStructureDetails(tile, context = {}) {
   }
 
   structureDetailsState.tabContent = {
-    history: content.body,
-    statistics: getStructureDetailsStatisticsPlaceholder()
+    history: content.history || content.body,
+    main: content.main || content.body,
+    features:
+      content.features ||
+      getStructureDetailsPlaceholder('No notable features have been recorded for this settlement yet.'),
+    economy:
+      content.economy ||
+      getStructureDetailsPlaceholder('No economic records are available for this settlement yet.')
   };
 
   setActiveStructureDetailsTab('history', { force: true });

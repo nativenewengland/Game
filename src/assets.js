@@ -159,6 +159,23 @@ export const orcSpriteSheets = {
   }
 };
 
+export const dungeonPlayerSpriteSheets = {
+  idle: {
+    key: 'dungeonPlayerIdle',
+    path: 'tilesheet/Mobs/character sprite/PNG/Unarmed/Without_shadow/Unarmed_Idle_without_shadow.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    image: null
+  },
+  walk: {
+    key: 'dungeonPlayerWalk',
+    path: 'tilesheet/Mobs/character sprite/PNG/Unarmed/Without_shadow/Unarmed_Walk_without_shadow.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    image: null
+  }
+};
+
 export const characterCreatorPortraitAssets = {
   maleBody: {
     key: 'maleBody',
