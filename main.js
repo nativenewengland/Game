@@ -3387,7 +3387,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
         name,
         population: 0,
         populationLabel: 'Population',
-        populationDescriptor: 'dwarves',
+        populationDescriptor: 'residents',
         isSettlement: true,
         ruler: null,
         foundedYearsAgo: null,
@@ -3422,7 +3422,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
         name,
         population: ruinedPopulation,
         populationLabel: 'Population',
-        populationDescriptor: hasSurvivors ? 'dwarven survivors' : 'dwarves',
+        populationDescriptor: 'residents',
         isSettlement: true,
         ruler: null,
         foundedYearsAgo: null,
@@ -3460,7 +3460,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
       name,
       population: occupiedPopulation,
       populationLabel: 'Population',
-      populationDescriptor: occupationDescriptor,
+      populationDescriptor: 'residents',
       isSettlement: true,
       ruler: null,
       foundedYearsAgo: null,
@@ -3544,7 +3544,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'dwarves',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: rulerTitle,
@@ -3598,7 +3598,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
       ...baseDetails,
       type: 'darkDwarfhold',
       classification: 'Dark Dwarfhold',
-      populationDescriptor: 'dark dwarves',
+      populationDescriptor: 'residents',
       majorExports: uniqueExports,
       majorGuilds: augmentedGuilds,
       populationBreakdown: darkPopulationBreakdown,
@@ -3705,7 +3705,7 @@ function generateMineDetails(name, random, options = {}) {
     name,
     population: workforce,
     populationLabel: 'Workforce',
-    populationDescriptor: 'miners',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: 'Overseer',
@@ -3825,7 +3825,7 @@ function generateHillholdDetails(name, random, options = {}) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'dwarves',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: wardenTitle,
@@ -3885,7 +3885,7 @@ function generateEvilWizardTowerDetails(name, random) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'denizens',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: rulerTitle,
@@ -4021,14 +4021,7 @@ function generateTownDetails(name, random, options = {}) {
       }
     }
   }
-  let populationDescriptor = 'residents';
-  if (classification === 'City') {
-    populationDescriptor = 'citizens';
-  } else if (classification === 'Large Town') {
-    populationDescriptor = 'townsfolk';
-  } else if (classification === 'Village') {
-    populationDescriptor = 'villagers';
-  }
+  const populationDescriptor = 'residents';
 
   return {
     type,
@@ -4085,7 +4078,7 @@ function generateHamletDetails(name, random, options = {}) {
     type: 'village',
     classification: 'Village',
     population,
-    populationDescriptor: 'villagers',
+    populationDescriptor: 'residents',
     majorGuilds: [],
     majorExports,
     hallmark,
@@ -4138,7 +4131,7 @@ function generateCaveDetails(random) {
     name,
     population: resolvedPopulation,
     populationLabel: 'Population',
-    populationDescriptor: 'goblins',
+    populationDescriptor: 'residents',
     isSettlement: true,
     prominentGroup: clanName,
     prominentGroupLabel: 'Dominant Clan',
@@ -4219,7 +4212,7 @@ function generateTowerDetails(name, random) {
     name,
     population,
     populationLabel: 'Garrison Strength',
-    populationDescriptor: 'guards',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: commanderTitle,
@@ -4266,16 +4259,7 @@ function generateWoodElfGroveDetails(name, random) {
 
   const populationMax = woodElfGroveClassificationPopulationMax[classification] || 560;
 
-  let populationDescriptor = 'wardens';
-  if (classification === 'Ancient Grove') {
-    populationDescriptor = 'elders';
-  } else if (classification === 'Sacred Grove') {
-    populationDescriptor = 'keepers';
-  } else if (classification === 'Hidden Enclave') {
-    populationDescriptor = 'sentinels';
-  } else if (classification === 'Canopy Sanctuary') {
-    populationDescriptor = 'guardians';
-  }
+  const populationDescriptor = 'residents';
 
   const elderTitle = pickRandomFrom(woodElfGroveElderTitles, randomFn) || 'Grove Warden';
   const givenName = pickRandomFrom(woodElfGroveElderGivenNames, randomFn) || 'Aelar';
@@ -4358,7 +4342,7 @@ function generateLizardmenCityDetails(name, random) {
     name,
     population,
     populationLabel: 'Population',
-    populationDescriptor: 'scaled souls',
+    populationDescriptor: 'residents',
     isSettlement: true,
     ruler: {
       title: rulerTitle,
