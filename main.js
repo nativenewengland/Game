@@ -17895,36 +17895,7 @@ function lerp(a, b, t) {
 }
 
 function sampleLandMask(normalizedX, normalizedY) {
-  const landMask = state.landMask;
-  if (!landMask) {
-    return null;
-  }
-
-  const clampedX = clamp(normalizedX, 0, 1);
-  const clampedY = clamp(normalizedY, 0, 1);
-  const scaledX = clampedX * (landMask.width - 1);
-  const scaledY = clampedY * (landMask.height - 1);
-
-  const x0 = Math.floor(scaledX);
-  const y0 = Math.floor(scaledY);
-  const x1 = Math.min(x0 + 1, landMask.width - 1);
-  const y1 = Math.min(y0 + 1, landMask.height - 1);
-  const tx = scaledX - x0;
-  const ty = scaledY - y0;
-
-  const idx00 = y0 * landMask.width + x0;
-  const idx10 = y0 * landMask.width + x1;
-  const idx01 = y1 * landMask.width + x0;
-  const idx11 = y1 * landMask.width + x1;
-
-  const v00 = landMask.data[idx00];
-  const v10 = landMask.data[idx10];
-  const v01 = landMask.data[idx01];
-  const v11 = landMask.data[idx11];
-
-  const top = lerp(v00, v10, tx);
-  const bottom = lerp(v01, v11, tx);
-  return lerp(top, bottom, ty);
+  return sampleMaskValue(state.landMask, normalizedX, normalizedY);
 }
 
 function valueNoise(x, y, seed) {
@@ -17956,6 +17927,40 @@ function createProceduralMask(width, height, sampler) {
     }
   }
   return { width, height, data };
+}
+
+function sampleMaskValue(mask, normalizedX, normalizedY) {
+  if (
+    !mask ||
+    !mask.data ||
+    !Number.isFinite(mask.width) ||
+    !Number.isFinite(mask.height) ||
+    mask.width <= 1 ||
+    mask.height <= 1
+  ) {
+    return null;
+  }
+
+  const clampedX = clamp(normalizedX, 0, 1);
+  const clampedY = clamp(normalizedY, 0, 1);
+  const scaledX = clampedX * (mask.width - 1);
+  const scaledY = clampedY * (mask.height - 1);
+
+  const x0 = Math.floor(scaledX);
+  const y0 = Math.floor(scaledY);
+  const x1 = Math.min(x0 + 1, mask.width - 1);
+  const y1 = Math.min(y0 + 1, mask.height - 1);
+  const tx = scaledX - x0;
+  const ty = scaledY - y0;
+
+  const idx00 = y0 * mask.width + x0;
+  const idx10 = y0 * mask.width + x1;
+  const idx01 = y1 * mask.width + x0;
+  const idx11 = y1 * mask.width + x1;
+
+  const top = lerp(mask.data[idx00], mask.data[idx10], tx);
+  const bottom = lerp(mask.data[idx01], mask.data[idx11], tx);
+  return lerp(top, bottom, ty);
 }
 
 function createTwinContinentsMask() {
@@ -18064,6 +18069,10 @@ const continentalPlateConfigs = {
   archipelago: {
     majorTargetRange: [1, 2],
     fragmentTargetRange: [9, 13],
+    useMaskPlacement: true,
+    maskLandThreshold: 0.52,
+    maskOceanThreshold: 0.28,
+    maskSearchRadius: 0.12,
     minDistance: 0.1,
     fragmentDistance: 0.06,
     majorRadiusRange: [0.12, 0.2],
@@ -18190,6 +18199,44 @@ function generateContinentalPlates(rng, options = {}) {
       ? continentalPlateConfigs[profileKey]
       : null;
 
+  const mask = options && options.landMask && options.landMask.data ? options.landMask : null;
+  const maskPlacementEnabled = Boolean(config && config.useMaskPlacement && mask);
+  const maskLandThreshold =
+    config && Number.isFinite(config.maskLandThreshold) ? config.maskLandThreshold : 0.5;
+  const maskOceanThreshold =
+    config && Number.isFinite(config.maskOceanThreshold) ? config.maskOceanThreshold : 0.35;
+  const maskSearchRadius =
+    config && Number.isFinite(config.maskSearchRadius) ? config.maskSearchRadius : 0.1;
+  const maskStepSize = maskPlacementEnabled ? Math.max(maskSearchRadius, 0.02) : 0;
+
+  const findMaskPlacement = maskPlacementEnabled
+    ? (baseX, baseY, preferHigh) => {
+        let bestX = clamp(baseX, 0.03, 0.97);
+        let bestY = clamp(baseY, 0.03, 0.97);
+        let bestSample = sampleMaskValue(mask, bestX, bestY);
+        const attempts = 6;
+        for (let i = 0; i < attempts; i += 1) {
+          const angle = rng() * Math.PI * 2;
+          const distance = (0.3 + rng() * 0.7) * maskStepSize;
+          if (distance <= 0) {
+            continue;
+          }
+          const testX = clamp(baseX + Math.cos(angle) * distance, 0.03, 0.97);
+          const testY = clamp(baseY + Math.sin(angle) * distance, 0.03, 0.97);
+          const sample = sampleMaskValue(mask, testX, testY);
+          if (sample === null) {
+            continue;
+          }
+          if (bestSample === null || (preferHigh ? sample > bestSample : sample < bestSample)) {
+            bestSample = sample;
+            bestX = testX;
+            bestY = testY;
+          }
+        }
+        return { x: bestX, y: bestY, sample: bestSample };
+      }
+    : null;
+
   const sampleRangeValue = (range, defaultMin, defaultMax) => {
     let min = defaultMin;
     let max = defaultMax;
@@ -18309,6 +18356,24 @@ function generateContinentalPlates(rng, options = {}) {
       noiseOffsetX: rng() * 256,
       noiseOffsetY: rng() * 256
     };
+
+    if (maskPlacementEnabled && findMaskPlacement) {
+      const placement = findMaskPlacement(candidate.x, candidate.y, !isOcean);
+      const maskSample = placement ? placement.sample : null;
+
+      if (!isOcean) {
+        if (maskSample === null || maskSample < maskLandThreshold) {
+          continue;
+        }
+      } else if (maskSample !== null && maskSample > maskOceanThreshold) {
+        continue;
+      }
+
+      if (placement) {
+        candidate.x = placement.x;
+        candidate.y = placement.y;
+      }
+    }
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
     const minEdge = isFragment
@@ -19295,6 +19360,7 @@ function createWorld(seedString) {
     50
   );
   const profile = getWorldGenerationProfile(state.settings.worldGenerationType);
+  ensureLandMaskForProfile(profile.key);
   const maskInfluence = clamp(
     typeof profile.maskInfluence === 'number' ? profile.maskInfluence : 0.5,
     0,
@@ -19335,7 +19401,10 @@ function createWorld(seedString) {
   const mountainScarcity = 1 - mountainFrequencyNormalized;
   const mountainGrowthFactor = 0.42 + mountainFrequencyNormalized * 0.7;
 
-  const continentalPlates = generateContinentalPlates(rng, { profileKey: profile.key });
+  const continentalPlates = generateContinentalPlates(rng, {
+    profileKey: profile.key,
+    landMask: state.landMask
+  });
   const elevationField = new Float32Array(width * height);
   const tectonicActivityField = new Float32Array(width * height);
 
