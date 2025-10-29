@@ -562,6 +562,7 @@ export const baseTileCoords = {
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },
   WOOD_ELF_GROVES: { row: 2, col: 4 },
   HILLS: { row: 3, col: 1 },
+  HILLS_BADLANDS: { row: 4, col: 1 },
   HILLS_VARIANT_A: { row: 4, col: 4 },
   HILLS_VARIANT_B: { row: 5, col: 2 },
   HILLS_SNOW: { row: 3, col: 2 },
