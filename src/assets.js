@@ -580,6 +580,7 @@ export const baseTileCoords = {
   AMBIENT_SLEEPING_DRAGON: { row: 0, col: 14 },
   AMBIENT_MOONWELL: { row: 6, col: 2 },
   AMBIENT_GREAT_TREE: { row: 1, col: 14 },
+  AMBIENT_GREAT_TREE_ALT: { row: 2, col: 14 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },

@@ -7825,7 +7825,12 @@ function applyCulturalInfluence({
       } else if (option.key === 'sleeping_dragon') {
         assignAmbientStructureToTile('AMBIENT_SLEEPING_DRAGON');
       } else if (option.key === 'great_tree') {
-        assignAmbientStructureToTile('AMBIENT_GREAT_TREE');
+        const variantSeed = (seeds.selection + 0x9e3779b9) >>> 0;
+        const variantRoll = hashCoords(x, y, variantSeed);
+        const hasAltGreatTree = tileLookup.has('AMBIENT_GREAT_TREE_ALT');
+        const structureKey =
+          hasAltGreatTree && variantRoll >= 0.5 ? 'AMBIENT_GREAT_TREE_ALT' : 'AMBIENT_GREAT_TREE';
+        assignAmbientStructureToTile(structureKey);
       } else if (option.key === 'moonwell_glade' || option.key === 'moonwell') {
         assignAmbientStructureToTile('AMBIENT_MOONWELL');
       }
