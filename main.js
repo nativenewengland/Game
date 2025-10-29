@@ -390,6 +390,80 @@ function drawAmbientLumberMillStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const clearingRadiusX = size * 0.46;
+  const clearingRadiusY = size * 0.28;
+  const clearingCenterX = size * 0.5;
+  const clearingCenterY = size * 0.64;
+
+  ctx.fillStyle = '#355640';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, clearingRadiusX, clearingRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4e7256';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, clearingRadiusX * 0.84, clearingRadiusY * 0.82, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const poolRadiusX = clearingRadiusX * 0.62;
+  const poolRadiusY = clearingRadiusY * 0.68;
+  ctx.fillStyle = '#7cd6ff';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, poolRadiusX, poolRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#b6f4ff';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY - size * 0.04, poolRadiusX * 0.65, poolRadiusY * 0.62, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#d6f7ff';
+  ctx.lineWidth = Math.max(1.2, size * 0.025);
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, poolRadiusX, poolRadiusY, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const stoneCount = 6;
+  const ringRadius = poolRadiusX * 1.1;
+  ctx.fillStyle = '#d4d8f0';
+  for (let i = 0; i < stoneCount; i += 1) {
+    const angle = (Math.PI * 2 * i) / stoneCount;
+    const stoneX = clearingCenterX + Math.cos(angle) * ringRadius;
+    const stoneY = clearingCenterY + Math.sin(angle) * ringRadius * 0.8;
+    const stoneWidth = size * 0.12;
+    const stoneHeight = size * 0.18;
+    ctx.save();
+    ctx.translate(stoneX, stoneY);
+    ctx.rotate(Math.sin(angle) * 0.12);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, stoneWidth * 0.5, stoneHeight * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const lightCount = 4;
+  ctx.fillStyle = 'rgba(180, 246, 255, 0.85)';
+  for (let i = 0; i < lightCount; i += 1) {
+    const angle = (Math.PI * 2 * i) / lightCount + Math.PI / lightCount;
+    const lightX = clearingCenterX + Math.cos(angle) * poolRadiusX * 0.55;
+    const lightY = clearingCenterY + Math.sin(angle) * poolRadiusY * 0.5 - size * 0.1;
+    const lightRadius = size * 0.06;
+    const gradient = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, lightRadius);
+    gradient.addColorStop(0, 'rgba(210, 255, 255, 0.95)');
+    gradient.addColorStop(1, 'rgba(180, 246, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(lightX, lightY, lightRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
 function drawAmbientSleepingDragonStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -486,6 +560,9 @@ registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
 );
 registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
   drawAmbientLumberMillStructure(ctx, drawOptions)
+);
+registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
+  drawAmbientMoonwellStructure(ctx, drawOptions)
 );
 registerCustomStructure('AMBIENT_SLEEPING_DRAGON', (ctx, drawOptions) =>
   drawAmbientSleepingDragonStructure(ctx, drawOptions)
@@ -6060,7 +6137,7 @@ const ambientStructureOptionsByCulture = {
     'Tunnel Watch Post'
   ]),
   elves: createAmbientStructureOptions([
-    'Moonwell Glade',
+    { label: 'Moonwell Glade', requiresTreeNeighbor: true },
     'Leafweaver Pavilion',
     'Starbloom Archway',
     'Silversong Clearing'
@@ -7768,6 +7845,8 @@ function applyCulturalInfluence({
         assignAmbientStructureToTile('AMBIENT_HOMESTEAD');
       } else if (option.key === 'sleeping_dragon') {
         assignAmbientStructureToTile('AMBIENT_SLEEPING_DRAGON');
+      } else if (option.key === 'moonwell_glade' || option.key === 'moonwell') {
+        assignAmbientStructureToTile('AMBIENT_MOONWELL');
       }
 
       tile.ambientStructure = ambientStructureData;
