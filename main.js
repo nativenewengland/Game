@@ -19016,6 +19016,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.ambientStructure = null;
     tile.river = null;
     tile.biomeType = null;
+    tile.biomeClusterId = null;
     tile.areaName = null;
     tile.waterDepth = 0;
     tile.coastProximity = 0;
@@ -19952,6 +19953,7 @@ function createWorld(seedString) {
         ambientStructure: null,
         river: null,
         biomeType: null,
+        biomeClusterId: null,
         areaName: null,
         waterDepth: 0,
         coastProximity: 0,
@@ -20136,6 +20138,7 @@ function createWorld(seedString) {
       tile.ambientStructure = null;
       tile.river = null;
       tile.biomeType = null;
+      tile.biomeClusterId = null;
       tile.areaName = null;
       tile.waterDepth = 0;
       tile.coastProximity = 0;
@@ -21606,6 +21609,7 @@ function createWorld(seedString) {
                 neighborTile.ambientStructure = null;
                 neighborTile.river = null;
                 neighborTile.biomeType = null;
+                neighborTile.biomeClusterId = null;
                 neighborTile.areaName = null;
                 neighborTile.waterDepth = 0;
                 neighborTile.coastProximity = 0;
@@ -21687,12 +21691,20 @@ function createWorld(seedString) {
               )
             : score;
 
+          const biomeType = tile.biomeType || null;
+          const areaName = typeof tile.areaName === 'string' ? tile.areaName : null;
+          const biomeClusterId = Number.isFinite(tile.biomeClusterId)
+            ? tile.biomeClusterId
+            : null;
           mountainSettlementCandidates.push({
             x,
             y,
             score,
             isMountainTile,
-            dwarfholdPriority
+            dwarfholdPriority,
+            biomeType,
+            areaName,
+            biomeClusterId
           });
         }
       }
@@ -21774,6 +21786,110 @@ function createWorld(seedString) {
               break;
             }
           }
+        }
+
+        if (dwarfholdCandidates.length > 0) {
+          const getMountainAreaKey = (name, clusterId, x, y) => {
+            if (Number.isFinite(clusterId)) {
+              return `cluster:${clusterId}`;
+            }
+            if (typeof name === 'string') {
+              const trimmed = name.trim();
+              if (trimmed) {
+                return `name:${trimmed.toLowerCase()}`;
+              }
+            }
+            if (Number.isFinite(x) && Number.isFinite(y)) {
+              return `coord:${Math.round(x)}:${Math.round(y)}`;
+            }
+            return null;
+          };
+
+          const mountainAreasWithHolds = new Set();
+          if (Array.isArray(dwarfholds)) {
+            for (let i = 0; i < dwarfholds.length; i += 1) {
+              const hold = dwarfholds[i];
+              if (!hold || !Number.isFinite(hold.x) || !Number.isFinite(hold.y)) {
+                continue;
+              }
+              const row = tiles[hold.y];
+              if (!Array.isArray(row)) {
+                continue;
+              }
+              const holdTile = row[hold.x];
+              if (!holdTile || holdTile.biomeType !== 'mountain') {
+                continue;
+              }
+              const areaKey = getMountainAreaKey(
+                holdTile.areaName,
+                holdTile.biomeClusterId,
+                hold.x,
+                hold.y
+              );
+              if (areaKey) {
+                mountainAreasWithHolds.add(areaKey);
+              }
+            }
+          }
+
+          const missingAreaKeys = new Set();
+          for (let i = 0; i < dwarfholdCandidates.length; i += 1) {
+            const candidate = dwarfholdCandidates[i];
+            if (candidate.biomeType !== 'mountain') {
+              continue;
+            }
+            const areaKey = getMountainAreaKey(
+              candidate.areaName,
+              candidate.biomeClusterId,
+              candidate.x,
+              candidate.y
+            );
+            if (!areaKey || mountainAreasWithHolds.has(areaKey)) {
+              continue;
+            }
+            missingAreaKeys.add(areaKey);
+          }
+
+          const attemptFocusedPlacement = (respectDistance) => {
+            if (missingAreaKeys.size === 0) {
+              return;
+            }
+            const focusedMinDistanceSq =
+              respectDistance && Number.isFinite(minDistanceSq)
+                ? minDistanceSq
+                : null;
+            for (
+              let i = 0;
+              i < dwarfholdCandidates.length && missingAreaKeys.size > 0;
+              i += 1
+            ) {
+              const candidate = dwarfholdCandidates[i];
+              if (candidate.biomeType !== 'mountain') {
+                continue;
+              }
+              const areaKey = getMountainAreaKey(
+                candidate.areaName,
+                candidate.biomeClusterId,
+                candidate.x,
+                candidate.y
+              );
+              if (!areaKey || !missingAreaKeys.has(areaKey)) {
+                continue;
+              }
+              if (
+                tryPlaceDwarfhold(candidate, {
+                  ...basePlacementContext,
+                  placed,
+                  minDistanceSq: focusedMinDistanceSq
+                })
+              ) {
+                missingAreaKeys.delete(areaKey);
+              }
+            }
+          };
+
+          attemptFocusedPlacement(true);
+          attemptFocusedPlacement(false);
         }
 
         const southBoundary = Math.floor(height * 0.45);
@@ -22206,6 +22322,7 @@ function createWorld(seedString) {
         tile.ambientStructure = null;
         tile.river = null;
         tile.biomeType = null;
+        tile.biomeClusterId = null;
         tile.areaName = null;
       }
     }
@@ -22292,6 +22409,7 @@ function createWorld(seedString) {
         tile.ambientStructure = null;
         tile.river = null;
         tile.biomeType = null;
+        tile.biomeClusterId = null;
         tile.areaName = null;
         tile.waterDepth = 0;
         tile.coastProximity = 0;
@@ -25418,6 +25536,7 @@ function createWorld(seedString) {
       initialBiomeField[idx] = biomeType;
       if (tile) {
         tile.biomeType = null;
+        tile.biomeClusterId = null;
         tile.areaName = null;
       }
     }
@@ -25512,6 +25631,7 @@ function createWorld(seedString) {
         biomeVisited[idx] = 1;
         if (tile) {
           tile.biomeType = null;
+          tile.biomeClusterId = null;
           tile.areaName = null;
         }
         continue;
@@ -25792,6 +25912,7 @@ function createWorld(seedString) {
         oceanMask[clusterIdx] = 1;
       }
       clusterTile.biomeType = resolvedType;
+      clusterTile.biomeClusterId = i;
       clusterTile.areaName = resolvedName;
       if (hasBadlandsTile && resolvedType === 'badlands') {
         const isWaterTile =
