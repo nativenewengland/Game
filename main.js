@@ -15336,6 +15336,7 @@ function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
         }
       }
 
+      applyBadlandsHillTint(ctx, cell, x, y, tileSize);
       applyDesertMountainTint(ctx, cell, x, y, tileSize);
       applyMountainShading(ctx, cell, x, y, tileSize);
 
@@ -25839,6 +25840,37 @@ function applyMountainShading(ctx, cell, x, y, tileSize = drawSize) {
   return;
 }
 
+function applyBadlandsHillTint(ctx, cell, x, y, tileSize = drawSize) {
+  if (!ctx || !cell) {
+    return;
+  }
+
+  const baseKey = typeof cell.base === 'string' ? cell.base : null;
+  if (baseKey !== 'BADLANDS') {
+    return;
+  }
+
+  const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+  const hillOverlayKey = typeof cell.hillOverlay === 'string' ? cell.hillOverlay : null;
+  const hasHillOverlay =
+    (overlayKey && isHillOverlayKey(overlayKey)) || (hillOverlayKey && isHillOverlayKey(hillOverlayKey));
+
+  if (!hasHillOverlay) {
+    return;
+  }
+
+  const variationValue = Number(cell.surfaceVariation);
+  const variation = clamp(Number.isFinite(variationValue) ? Math.abs(variationValue) : 0, 0, 1);
+  const alpha = clamp(0.2 + variation * 0.22, 0.18, 0.42);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#b34723';
+  ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+  ctx.restore();
+}
+
 function applyDesertMountainTint(ctx, cell, x, y, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
@@ -25997,6 +26029,7 @@ function drawWorld(world, options = {}) {
         }
       }
 
+      applyBadlandsHillTint(ctx, cell, x, y);
       applyDesertMountainTint(ctx, cell, x, y);
       applyMountainShading(ctx, cell, x, y);
 
