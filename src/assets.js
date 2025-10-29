@@ -579,6 +579,10 @@ export const baseTileCoords = {
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
   ORC_CAMP: { row: 6, col: 0 },
+  GNOLL_CAMP: { row: 6, col: 0 },
+  TROLL_CAMP: { row: 6, col: 0 },
+  OGRE_CAMP: { row: 6, col: 0 },
+  BANDIT_CAMP: { row: 6, col: 0 },
   TRAVELERS_CAMP: { row: 6, col: 0 },
   DUNGEON: { row: 2, col: 7 },
   CENTAUR_ENCAMPMENT: { row: 2, col: 10 }
