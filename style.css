@@ -2179,6 +2179,11 @@ button:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18), 0 0.55rem 1.1rem rgba(0, 0, 0, 0.35);
 }
 
+#dwarf-customizer .dwarf-nav-button {
+  padding: 0.25rem;
+  border-radius: 14px;
+}
+
 .dwarf-nav-button--prev {
   margin-right: clamp(0.35rem, 1.25vw, 0.85rem);
 }
