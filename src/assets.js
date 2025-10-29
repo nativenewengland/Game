@@ -578,6 +578,7 @@ export const baseTileCoords = {
   OASIS: { row: 0, col: 12 },
   HAMLET_SNOW: { row: 0, col: 13 },
   AMBIENT_SLEEPING_DRAGON: { row: 0, col: 14 },
+  AMBIENT_MOONWELL: { row: 6, col: 2 },
   AMBIENT_GREAT_TREE: { row: 1, col: 14 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
