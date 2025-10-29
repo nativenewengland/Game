@@ -1926,20 +1926,30 @@ button:hover:not(:disabled) {
   justify-content: flex-start;
   gap: clamp(0.5rem, 1.4vw, 0.85rem);
   width: 100%;
+  position: relative;
 }
 
 .customizer-sidebar__name .dwarf-nav-button--prev {
-  margin-left: clamp(-5.75rem, -9vw, -3.5rem);
+  margin-left: clamp(-6.5rem, -10vw, -4rem);
 }
 
 .customizer-sidebar__name .dwarf-nav-button--prev .dwarf-nav-icon {
-  transform: translateX(-45%);
+  transform: translateX(-60%);
+}
+
+.customizer-sidebar__name .dwarf-nav-button--next {
+  margin-right: clamp(-6.5rem, -10vw, -4rem);
+}
+
+.customizer-sidebar__name .dwarf-nav-button--next .dwarf-nav-icon {
+  transform: translateX(60%) scaleX(-1);
 }
 
 .customizer-sidebar__name .dwarf-name-field {
   width: 100%;
   margin: 0;
   margin-left: clamp(0.45rem, 1.5vw, 0.9rem);
+  margin-right: clamp(0.45rem, 1.5vw, 0.9rem);
 }
 
 .customizer-sidebar__image {
