@@ -7316,7 +7316,7 @@ function applyCulturalInfluence({
     { key: 'elwetritsch', label: 'Elwetritsch', biomes: ['forest', 'grassland', 'mountain'] },
     { key: 'karkinos', label: 'Karkinos', biomes: ['ocean', 'lake', 'marsh'] },
     { key: 'blemaayae', label: 'Blemaayae', biomes: ['desert', 'badlands', 'jungle', 'mountain'] },
-    { key: 'pygmy', label: 'Pygmy', biomes: ['jungle', 'grassland', 'forest'] },
+    { key: 'pygmy', label: 'Pygmy', biomes: ['jungle'] },
     { key: 'half_orcs', label: 'Half-Orcs', biomes: ['grassland', 'badlands', 'desert'] },
     { key: 'half_elves', label: 'Half-Elves', biomes: ['forest', 'grassland'] },
     { key: 'dryad', label: 'Dryad', biomes: ['forest', 'marsh', 'lake'] },
