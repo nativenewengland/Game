@@ -6625,7 +6625,100 @@ function resolveHumanPresenceIntensity(tile) {
   return clamp(best, 0, 1);
 }
 
-function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber }) {
+const noopWoodElfTerritoryCheck = () => false;
+
+function createWoodElfTerritoryInfo({ tiles, width, height, factions, radius = 3 }) {
+  if (!Array.isArray(tiles) || tiles.length === 0) {
+    return { mask: null, isNear: noopWoodElfTerritoryCheck };
+  }
+
+  const mapHeight = Number.isFinite(height) ? Math.max(0, Math.floor(height)) : tiles.length;
+  const mapWidth = Number.isFinite(width) ? Math.max(0, Math.floor(width)) : tiles[0]?.length || 0;
+  if (mapWidth <= 0 || mapHeight <= 0) {
+    return { mask: null, isNear: noopWoodElfTerritoryCheck };
+  }
+
+  const woodElfFactionIds = new Set();
+  if (Array.isArray(factions)) {
+    factions.forEach((faction) => {
+      if (!faction || faction.id === null || faction.id === undefined) {
+        return;
+      }
+      const capitalType =
+        typeof faction?.capital?.type === 'string' ? faction.capital.type.trim().toLowerCase() : '';
+      if (capitalType === 'woodelfgrove') {
+        woodElfFactionIds.add(faction.id);
+      }
+    });
+  }
+
+  if (woodElfFactionIds.size === 0) {
+    return { mask: null, isNear: noopWoodElfTerritoryCheck };
+  }
+
+  const resolvedRadius = Math.max(0, Math.floor(radius));
+  const radiusSq = resolvedRadius * resolvedRadius;
+  const mask = new Uint8Array(mapWidth * mapHeight);
+
+  const markVicinity = (centerX, centerY) => {
+    for (let dy = -resolvedRadius; dy <= resolvedRadius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -resolvedRadius; dx <= resolvedRadius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth) {
+          continue;
+        }
+        if (dx * dx + dy * dy > radiusSq) {
+          continue;
+        }
+        const idx = ny * mapWidth + nx;
+        mask[idx] = 1;
+      }
+    }
+  };
+
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile) {
+        continue;
+      }
+      const factionId = tile.factionId;
+      if (factionId === null || factionId === undefined) {
+        continue;
+      }
+      if (woodElfFactionIds.has(factionId)) {
+        markVicinity(x, y);
+      }
+    }
+  }
+
+  const isNear = (x, y) => {
+    if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
+      return false;
+    }
+    const idx = y * mapWidth + x;
+    return mask[idx] === 1;
+  };
+
+  return { mask, isNear };
+}
+
+function spawnAmbientStructures({
+  tiles,
+  width,
+  height,
+  grassTileKey,
+  seedNumber,
+  woodElfTerritoryInfo
+}) {
   const placements = [];
   if (!Array.isArray(tiles) || tiles.length === 0) {
     return placements;
@@ -6636,6 +6729,11 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
   if (mapWidth <= 0 || mapHeight <= 0) {
     return placements;
   }
+
+  const isNearWoodElfTerritory =
+    woodElfTerritoryInfo && typeof woodElfTerritoryInfo.isNear === 'function'
+      ? woodElfTerritoryInfo.isNear
+      : noopWoodElfTerritoryCheck;
 
   const numericSeed = Number.isFinite(seedNumber) ? seedNumber >>> 0 : 0;
   const farmSeed = (numericSeed + 0x51d7348f) >>> 0;
@@ -6776,6 +6874,9 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
       }
 
       if (!tile.structure && tileHasTreeOverlay(tile)) {
+        if (isNearWoodElfTerritory(x, y)) {
+          continue;
+        }
         const huntingChance = intensityFactor * 0.0075;
         if (huntingChance > 0 && hashCoords(x, y, huntingSeed) < huntingChance) {
           tile.structure = 'AMBIENT_HUNTING_LODGE';
@@ -7037,7 +7138,8 @@ function applyCulturalInfluence({
   settlements,
   factions,
   isLandBaseTile,
-  seedNumber
+  seedNumber,
+  woodElfTerritoryInfo
 }) {
   if (!Array.isArray(tiles) || tiles.length === 0) {
     return;
@@ -7048,6 +7150,11 @@ function applyCulturalInfluence({
   if (mapWidth <= 0 || mapHeight <= 0) {
     return;
   }
+
+  const isNearWoodElfTerritory =
+    woodElfTerritoryInfo && typeof woodElfTerritoryInfo.isNear === 'function'
+      ? woodElfTerritoryInfo.isNear
+      : noopWoodElfTerritoryCheck;
 
   const isTileAdjacentToTree = (x, y) => {
     for (let dy = -1; dy <= 1; dy += 1) {
@@ -8113,6 +8220,7 @@ function applyCulturalInfluence({
       let isMountainTileCache = null;
       let hasForestOverlayCache = null;
       let hasTreeOverlayCache = null;
+      const avoidWoodElfVicinity = isNearWoodElfTerritory(x, y);
       const eligibleOptions = options.filter((option) => {
         if (option.requiresTreeNeighbor) {
           if (adjacentToTreeCache === null) {
@@ -8139,6 +8247,9 @@ function applyCulturalInfluence({
               isTreeOverlayKey(tile.overlay) || isTreeOverlayKey(tile.hillOverlay);
           }
           return !hasForestOverlayCache;
+        }
+        if (avoidWoodElfVicinity && option.key === 'lumber_mill') {
+          return false;
         }
         return true;
       });
@@ -27227,6 +27338,14 @@ function createWorld(seedString) {
   });
   const factions = politicalData.factions || [];
 
+  const woodElfTerritoryInfo = createWoodElfTerritoryInfo({
+    tiles,
+    width,
+    height,
+    factions,
+    radius: 3
+  });
+
   if (saintShrines.length > 0 && factions.length > 0) {
     const factionById = new Map(factions.map((faction) => [faction.id, faction]));
     const saintShrineAttachmentTypes = new Set(['village', 'town', 'city']);
@@ -27343,14 +27462,16 @@ function createWorld(seedString) {
     ],
     factions,
     isLandBaseTile,
-    seedNumber
+    seedNumber,
+    woodElfTerritoryInfo
   });
   const ambientStructures = spawnAmbientStructures({
     tiles,
     width,
     height,
     grassTileKey,
-    seedNumber
+    seedNumber,
+    woodElfTerritoryInfo
   });
   return {
     tiles,
