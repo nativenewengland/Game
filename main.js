@@ -26437,17 +26437,24 @@ function beginGame() {
     elements.titleScreen.classList.add('hidden');
   }
   if (elements.gameContainer) {
-    elements.gameContainer.classList.add('hidden');
+    elements.gameContainer.classList.remove('hidden');
+    elements.gameContainer.classList.add('game-container--loading');
+    elements.gameContainer.setAttribute('aria-busy', 'true');
   }
   elements.seedDisplay.textContent = '';
   runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
     .then(() => {
       if (elements.gameContainer) {
-        elements.gameContainer.classList.remove('hidden');
+        elements.gameContainer.classList.remove('game-container--loading');
+        elements.gameContainer.removeAttribute('aria-busy');
       }
     })
     .catch((error) => {
       console.error('Failed to generate world.', error);
+      if (elements.gameContainer) {
+        elements.gameContainer.classList.remove('game-container--loading');
+        elements.gameContainer.removeAttribute('aria-busy');
+      }
       if (elements.titleScreen) {
         elements.titleScreen.classList.remove('hidden');
       }
