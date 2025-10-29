@@ -6634,6 +6634,7 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
   }
 
   const farmSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x51d7348f) >>> 0;
+  const farmVariantSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x27d4eb2d) >>> 0;
   const huntingSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x41c6ce57) >>> 0;
 
   for (let y = 0; y < mapHeight; y += 1) {
@@ -6656,7 +6657,14 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
       if (tile.base === grassTileKey && !tile.overlay && !tile.hillOverlay) {
         const farmChance = intensityFactor * 0.012;
         if (farmChance > 0 && hashCoords(x, y, farmSeed) < farmChance) {
-          tile.structure = 'AMBIENT_FARM';
+          let farmStructureKey = 'AMBIENT_FARM';
+          if (tileLookup.has('AMBIENT_FARM_VARIANT')) {
+            const variantRoll = hashCoords(x, y, farmVariantSeed);
+            if (variantRoll >= 0.5) {
+              farmStructureKey = 'AMBIENT_FARM_VARIANT';
+            }
+          }
+          tile.structure = farmStructureKey;
           tile.structureName = 'Farm';
           tile.structureDetails = null;
           placements.push({ x, y, type: 'farm' });
@@ -8056,7 +8064,7 @@ const structureHighlightGroups = {
     strokeColor: '#bef264',
     fillAlpha: 0.2,
     strokeAlpha: 0.75,
-    keys: ['AMBIENT_FARM', 'AMBIENT_HUNTING_LODGE', 'AMBIENT_HOMESTEAD'],
+    keys: ['AMBIENT_FARM', 'AMBIENT_FARM_VARIANT', 'AMBIENT_HUNTING_LODGE', 'AMBIENT_HOMESTEAD'],
     types: ['farm', 'huntingLodge', 'homestead']
   })
 };
