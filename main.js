@@ -19642,18 +19642,10 @@ function createWorld(seedString) {
         1;
       threshold = clamp(threshold + thresholdNoise * marshThresholdStrength, 0.5, 0.7);
     }
-    const qualifiesByScore = suitability > threshold;
-    if (recordFields && marshSuitabilityField) {
-      marshSuitabilityField[idx] = suitability;
-    }
-    if (!qualifiesByScore) {
-      if (recordFields && marshMaskField) {
-        marshMaskField[idx] = 0;
-      }
-      return { score: suitability, threshold, qualifies: false };
-    }
     let touchesSurfaceWater = false;
-    for (let dy = -1; dy <= 1 && !touchesSurfaceWater; dy += 1) {
+    let nearSeaLevelNeighborCount = 0;
+    let lowerNeighborCount = 0;
+    for (let dy = -1; dy <= 1; dy += 1) {
       for (let dx = -1; dx <= 1; dx += 1) {
         if (dx === 0 && dy === 0) {
           continue;
@@ -19664,17 +19656,43 @@ function createWorld(seedString) {
           continue;
         }
         const nIdx = ny * width + nx;
-        if (elevationField[nIdx] <= seaLevel) {
+        const neighborElevation = elevationField[nIdx];
+        if (neighborElevation <= seaLevel) {
           touchesSurfaceWater = true;
-          break;
+        }
+        if (neighborElevation <= seaLevel + 0.02) {
+          nearSeaLevelNeighborCount += 1;
+        }
+        if (neighborElevation < heightValue) {
+          lowerNeighborCount += 1;
         }
       }
     }
-    if (!touchesSurfaceWater) {
+    const inlandMarshCandidate =
+      !touchesSurfaceWater &&
+      nearSeaLevelNeighborCount >= 4 &&
+      wetness > marshWetnessThreshold + 0.05 &&
+      drainageValue < 0.42 &&
+      lowlandFactor > 0.34 &&
+      lowerNeighborCount >= 2;
+    if (inlandMarshCandidate && !touchesSurfaceWater) {
+      threshold = clamp(threshold + 0.03, 0.5, 0.75);
+    }
+    const qualifiesByScore = suitability > threshold;
+    if (recordFields && marshSuitabilityField) {
+      marshSuitabilityField[idx] = suitability;
+    }
+    if (!touchesSurfaceWater && !inlandMarshCandidate) {
       if (recordFields && marshMaskField) {
         marshMaskField[idx] = 0;
       }
       return { score: -Infinity, threshold, qualifies: false };
+    }
+    if (!qualifiesByScore) {
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: suitability, threshold, qualifies: false };
     }
     if (recordFields && marshMaskField) {
       marshMaskField[idx] = 1;
