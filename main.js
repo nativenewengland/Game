@@ -6864,135 +6864,165 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
           }
         }
 
-        if (cluster.length <= 3) {
+        if (cluster.length <= 1) {
           continue;
         }
-        if (relocationCandidates.length === 0) {
+        const majorityCount = Math.floor(cluster.length / 2) + 1;
+        const relocationsPlanned = Math.min(majorityCount, relocationCandidates.length);
+        if (relocationsPlanned === 0) {
           outOfRelocationSpots = true;
           break;
         }
 
-        const relocationSeedOffset = (farmRelocationSeed + Math.imul(relocationCounter, 0x9e3779b9)) >>> 0;
-        const farmIndex = pickByHash(cluster, relocationSeedOffset);
-        if (farmIndex < 0 || farmIndex >= cluster.length) {
-          continue;
-        }
+        const availableFarms = cluster.slice();
+        let relocatedCount = 0;
 
-        const targetSeedOffset = (farmRelocationTargetSeed + Math.imul(relocationCounter, 0x27d4eb2d)) >>> 0;
-        const candidateIndex = pickByHash(relocationCandidates, targetSeedOffset);
-        if (candidateIndex < 0 || candidateIndex >= relocationCandidates.length) {
-          continue;
-        }
-
-        const farmCoord = cluster[farmIndex];
-        const farmTile = tiles[farmCoord.y]?.[farmCoord.x];
-        const destination = relocationCandidates.splice(candidateIndex, 1)[0];
-        if (!farmTile || !destination) {
-          relocationCounter += 1;
-          continue;
-        }
-        const destinationTile = tiles[destination.y]?.[destination.x];
-        if (!destinationTile || destinationTile.structure || destinationTile.river) {
-          relocationCounter += 1;
-          continue;
-        }
-
-        farmTile.structure = null;
-        farmTile.structureName = null;
-        farmTile.structureDetails = null;
-
-        const placementIndex = placements.findIndex(
-          (entry) => entry && entry.type === 'farm' && entry.x === farmCoord.x && entry.y === farmCoord.y
-        );
-        if (placementIndex !== -1) {
-          placements.splice(placementIndex, 1);
-        }
-
-        const altSeedOffset = (farmRelocationAltSeed + Math.imul(relocationCounter, 0x85ebca6b)) >>> 0;
-        const convertRoll = hashCoords(destination.x, destination.y, altSeedOffset);
-        const altStructures = [];
-        if (homesteadKey) {
-          altStructures.push({ key: homesteadKey, type: 'homestead' });
-        }
-        if (saintShrineStructureKey) {
-          altStructures.push({ key: saintShrineStructureKey, type: 'saintShrine' });
-        }
-        if (monasteryStructureKey) {
-          altStructures.push({ key: monasteryStructureKey, type: 'monastery' });
-        }
-        if (tavernKey) {
-          altStructures.push({ key: tavernKey, type: 'roadsideTavern' });
-        }
-
-        const assignFarmStructure = () => {
-          if (!farmStructureDefaultKey && !farmStructureVariantKey) {
-            return false;
+        while (relocatedCount < relocationsPlanned && availableFarms.length > 0) {
+          if (relocationCandidates.length === 0) {
+            outOfRelocationSpots = true;
+            break;
           }
-          let structureKey = farmStructureDefaultKey || farmStructureVariantKey;
-          if (farmStructureDefaultKey && farmStructureVariantKey) {
-            const variantRoll = hashCoords(destination.x, destination.y, farmVariantSeed);
-            if (variantRoll >= 0.5) {
-              structureKey = farmStructureVariantKey;
+
+          const relocationSeedOffset = (farmRelocationSeed + Math.imul(relocationCounter, 0x9e3779b9)) >>> 0;
+          const farmIndex = pickByHash(availableFarms, relocationSeedOffset);
+          if (farmIndex < 0 || farmIndex >= availableFarms.length) {
+            relocationCounter += 1;
+            continue;
+          }
+
+          const farmCoord = availableFarms[farmIndex];
+          const farmTile = tiles[farmCoord.y]?.[farmCoord.x];
+          if (!farmTile) {
+            availableFarms.splice(farmIndex, 1);
+            relocationCounter += 1;
+            continue;
+          }
+
+          const targetSeedOffset = (farmRelocationTargetSeed + Math.imul(relocationCounter, 0x27d4eb2d)) >>> 0;
+          const candidateIndex = pickByHash(relocationCandidates, targetSeedOffset);
+          if (candidateIndex < 0 || candidateIndex >= relocationCandidates.length) {
+            relocationCounter += 1;
+            continue;
+          }
+
+          const destination = relocationCandidates.splice(candidateIndex, 1)[0];
+          if (!destination) {
+            relocationCounter += 1;
+            continue;
+          }
+          const destinationTile = tiles[destination.y]?.[destination.x];
+          if (!destinationTile || destinationTile.structure || destinationTile.river) {
+            relocationCounter += 1;
+            continue;
+          }
+
+          farmTile.structure = null;
+          farmTile.structureName = null;
+          farmTile.structureDetails = null;
+
+          const placementIndex = placements.findIndex(
+            (entry) => entry && entry.type === 'farm' && entry.x === farmCoord.x && entry.y === farmCoord.y
+          );
+          if (placementIndex !== -1) {
+            placements.splice(placementIndex, 1);
+          }
+
+          const altSeedOffset = (farmRelocationAltSeed + Math.imul(relocationCounter, 0x85ebca6b)) >>> 0;
+          const convertRoll = hashCoords(destination.x, destination.y, altSeedOffset);
+          const altStructures = [];
+          if (homesteadKey) {
+            altStructures.push({ key: homesteadKey, type: 'homestead' });
+          }
+          if (saintShrineStructureKey) {
+            altStructures.push({ key: saintShrineStructureKey, type: 'saintShrine' });
+          }
+          if (monasteryStructureKey) {
+            altStructures.push({ key: monasteryStructureKey, type: 'monastery' });
+          }
+          if (tavernKey) {
+            altStructures.push({ key: tavernKey, type: 'roadsideTavern' });
+          }
+
+          const assignFarmStructure = () => {
+            if (!farmStructureDefaultKey && !farmStructureVariantKey) {
+              return false;
             }
-          }
-          destinationTile.structure = structureKey;
-          destinationTile.structureName = 'Farm';
-          destinationTile.structureDetails = null;
-          placements.push({ x: destination.x, y: destination.y, type: 'farm' });
-          generateCropsNearFarm(destination.x, destination.y);
-          return true;
-        };
+            let structureKey = farmStructureDefaultKey || farmStructureVariantKey;
+            if (farmStructureDefaultKey && farmStructureVariantKey) {
+              const variantRoll = hashCoords(destination.x, destination.y, farmVariantSeed);
+              if (variantRoll >= 0.5) {
+                structureKey = farmStructureVariantKey;
+              }
+            }
+            destinationTile.structure = structureKey;
+            destinationTile.structureName = 'Farm';
+            destinationTile.structureDetails = null;
+            placements.push({ x: destination.x, y: destination.y, type: 'farm' });
+            generateCropsNearFarm(destination.x, destination.y);
+            return true;
+          };
 
-        const assignAlternativeStructure = () => {
-          if (altStructures.length === 0 || convertRoll >= 0.55) {
-            return false;
-          }
-          const selectionSeed = (altSeedOffset + 0x27d4eb2d) >>> 0;
-          const selectionRoll = hashCoords(destination.x, destination.y, selectionSeed);
-          const optionIndex = Math.max(0, Math.min(altStructures.length - 1, Math.floor(selectionRoll * altStructures.length)));
-          const option = altStructures[optionIndex] || altStructures[0];
-          if (!option) {
-            return false;
-          }
-          const rng = createRelocationRng(destination.x, destination.y, altSeedOffset);
-          if (option.type === 'homestead') {
-            destinationTile.structure = option.key;
-            destinationTile.structureName = 'Homestead';
-            destinationTile.structureDetails = {
-              type: 'homestead',
-              displayType: 'Homestead',
-              description: 'A modest rural homestead tended by local farmers.'
-            };
-          } else if (option.type === 'saintShrine') {
-            const name = generateSaintShrineName(rng);
-            const details = generateSaintShrineDetails(name, rng);
-            destinationTile.structure = option.key;
-            destinationTile.structureName = name;
-            destinationTile.structureDetails = details;
-          } else if (option.type === 'monastery') {
-            const name = generateMonasteryName(rng);
-            const details = generateMonasteryDetails(name, rng);
-            destinationTile.structure = option.key;
-            destinationTile.structureName = name;
-            destinationTile.structureDetails = details;
-          } else if (option.type === 'roadsideTavern') {
-            const name = generateRoadsideTavernName(rng);
-            const details = generateRoadsideTavernDetails(name, rng);
-            destinationTile.structure = option.key;
-            destinationTile.structureName = name;
-            destinationTile.structureDetails = details;
-          } else {
-            return false;
-          }
-          placements.push({ x: destination.x, y: destination.y, type: option.type });
-          return true;
-        };
+          const assignAlternativeStructure = () => {
+            if (altStructures.length === 0 || convertRoll >= 0.55) {
+              return false;
+            }
+            const selectionSeed = (altSeedOffset + 0x27d4eb2d) >>> 0;
+            const selectionRoll = hashCoords(destination.x, destination.y, selectionSeed);
+            const optionIndex = Math.max(
+              0,
+              Math.min(altStructures.length - 1, Math.floor(selectionRoll * altStructures.length))
+            );
+            const option = altStructures[optionIndex] || altStructures[0];
+            if (!option) {
+              return false;
+            }
+            const rng = createRelocationRng(destination.x, destination.y, altSeedOffset);
+            if (option.type === 'homestead') {
+              destinationTile.structure = option.key;
+              destinationTile.structureName = 'Homestead';
+              destinationTile.structureDetails = {
+                type: 'homestead',
+                displayType: 'Homestead',
+                description: 'A modest rural homestead tended by local farmers.'
+              };
+            } else if (option.type === 'saintShrine') {
+              const name = generateSaintShrineName(rng);
+              const details = generateSaintShrineDetails(name, rng);
+              destinationTile.structure = option.key;
+              destinationTile.structureName = name;
+              destinationTile.structureDetails = details;
+            } else if (option.type === 'monastery') {
+              const name = generateMonasteryName(rng);
+              const details = generateMonasteryDetails(name, rng);
+              destinationTile.structure = option.key;
+              destinationTile.structureName = name;
+              destinationTile.structureDetails = details;
+            } else if (option.type === 'roadsideTavern') {
+              const name = generateRoadsideTavernName(rng);
+              const details = generateRoadsideTavernDetails(name, rng);
+              destinationTile.structure = option.key;
+              destinationTile.structureName = name;
+              destinationTile.structureDetails = details;
+            } else {
+              return false;
+            }
+            placements.push({ x: destination.x, y: destination.y, type: option.type });
+            return true;
+          };
 
-        if (!assignAlternativeStructure()) {
-          assignFarmStructure();
+          if (!assignAlternativeStructure()) {
+            assignFarmStructure();
+          }
+
+          availableFarms.splice(farmIndex, 1);
+          relocatedCount += 1;
+          relocationCounter += 1;
         }
 
-        relocationCounter += 1;
+        if (relocatedCount < relocationsPlanned && relocationCandidates.length === 0) {
+          outOfRelocationSpots = true;
+          break;
+        }
       }
     }
   }
