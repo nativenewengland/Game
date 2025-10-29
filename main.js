@@ -8745,6 +8745,12 @@ const dwarfTraitAttributeDefinitions = [
       'Among men you would be in a respected profession, among dwarves its the opposite, expect your increased income to be met with glaring judgments and distain from your peers who think your very livilooh to be undwarvsmen like.',
     icon: 'tilesheet/dice1.png',
     isActive: (dwarf) => dwarf?.profession === 'banker'
+    key: 'grey-dwarf',
+    label: 'Grey Dwarf Heritage',
+    description:
+      'Your skin is the colour of ashes and your heart is that of steel. Known as a Dwügar you may not be as despised as the dark dwarves are yet the kinship you have with the rest of Dwarfdom is strained. Your ancestors were followers of the Lawgiver and Forgebearers of the Forgotten Era who preached a strain of total dwarven separatism and supremacy that led your people to form holds far away from your homeland. You may be welcomed into any dwarf hold but not well liked and the races you hunt as slaves will attack you on sight.',
+    monogram: 'GD',
+    isActive: (dwarf) => dwarf?.skin === 'ashen'
   }
 ];
 
@@ -11665,17 +11671,32 @@ function createTraitAttributeElement(attribute) {
   item.setAttribute('tabindex', '0');
   item.setAttribute('aria-label', attribute.label);
 
-  const icon = document.createElement('img');
-  icon.className = 'trait-attribute__icon';
-  icon.src = attribute.icon;
-  icon.alt = attribute.label;
-  icon.loading = 'lazy';
+  if (attribute.icon) {
+    const icon = document.createElement('img');
+    icon.className = 'trait-attribute__icon';
+    icon.src = attribute.icon;
+    icon.alt = attribute.label;
+    icon.loading = 'lazy';
+    item.appendChild(icon);
+  } else {
+    const monogram = document.createElement('span');
+    monogram.className = 'trait-attribute__icon trait-attribute__icon--monogram';
+    const fallback = attribute.monogram || attribute.label || '';
+    monogram.textContent = fallback
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((segment) => segment[0] || '')
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+    monogram.setAttribute('aria-hidden', 'true');
+    item.appendChild(monogram);
+  }
 
   const tooltip = document.createElement('span');
   tooltip.className = 'trait-attribute__tooltip';
   tooltip.textContent = attribute.description;
 
-  item.appendChild(icon);
   item.appendChild(tooltip);
 
   return item;
