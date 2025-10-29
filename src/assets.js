@@ -24,6 +24,18 @@ export const tileSheets = {
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_tiles.png',
     tileSize: 16,
     image: null
+  },
+  dwarfTestDungeonFloor: {
+    key: 'dwarfTestDungeonFloor',
+    path: 'tilesheet/Tiled_files/walls_floor.png',
+    tileSize: 16,
+    image: null
+  },
+  dwarfTestDungeonWater: {
+    key: 'dwarfTestDungeonWater',
+    path: 'tilesheet/Tiled_files/Water_coasts_animation.png',
+    tileSize: 16,
+    image: null
   }
 };
 

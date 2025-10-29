@@ -8755,29 +8755,24 @@ const dwarfTestState = {
   tileSize: 16,
   tileScale: 2,
   camera: { x: 0, y: 0 },
-  animationTime: 0
+  animationTime: 0,
+  world: null,
+  focusReturnElement: null
 };
+const dwarfTestDefaultWorldKey = 'overworld';
+const dwarfTestOverworldTileSheetKey = 'dwarfTest';
+const dwarfTestDungeonFloorSheetKey = 'dwarfTestDungeonFloor';
+const dwarfTestDungeonWaterSheetKey = 'dwarfTestDungeonWater';
 
-const dwarfTestTileSheetKey = 'dwarfTest';
-const dwarfTestTileSize = 16;
-const dwarfTestTileScale = 2;
-const dwarfTestMapDimensions = { columns: 42, rows: 24 };
-const dwarfTestScaleConfig = {
-  min: 2,
-  max: 4,
-  targetVisibleColumns: 18,
-  targetVisibleRows: 12
-};
-
-const dwarfTestTilePalette = {
-  grass: { sheet: dwarfTestTileSheetKey, col: 0, row: 2 },
-  grassAlt: { sheet: dwarfTestTileSheetKey, col: 3, row: 2 },
-  savanna: { sheet: dwarfTestTileSheetKey, col: 6, row: 2 },
-  swamp: { sheet: dwarfTestTileSheetKey, col: 4, row: 3 },
-  hills: { sheet: dwarfTestTileSheetKey, col: 2, row: 2 },
-  beach: { sheet: dwarfTestTileSheetKey, col: 12, row: 0 },
+const dwarfTestOverworldTilePalette = {
+  grass: { sheet: dwarfTestOverworldTileSheetKey, col: 0, row: 2 },
+  grassAlt: { sheet: dwarfTestOverworldTileSheetKey, col: 3, row: 2 },
+  savanna: { sheet: dwarfTestOverworldTileSheetKey, col: 6, row: 2 },
+  swamp: { sheet: dwarfTestOverworldTileSheetKey, col: 4, row: 3 },
+  hills: { sheet: dwarfTestOverworldTileSheetKey, col: 2, row: 2 },
+  beach: { sheet: dwarfTestOverworldTileSheetKey, col: 12, row: 0 },
   shore: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 12, row: 1 },
       { col: 12, row: 2 },
@@ -8785,11 +8780,11 @@ const dwarfTestTilePalette = {
     ],
     animationSpeed: 1.2
   },
-  tundra: { sheet: dwarfTestTileSheetKey, col: 13, row: 3 },
-  glacier: { sheet: dwarfTestTileSheetKey, col: 14, row: 2 },
-  desert: { sheet: dwarfTestTileSheetKey, col: 19, row: 2 },
+  tundra: { sheet: dwarfTestOverworldTileSheetKey, col: 13, row: 3 },
+  glacier: { sheet: dwarfTestOverworldTileSheetKey, col: 14, row: 2 },
+  desert: { sheet: dwarfTestOverworldTileSheetKey, col: 19, row: 2 },
   lake: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 16, row: 1 },
       { col: 16, row: 2 },
@@ -8798,7 +8793,7 @@ const dwarfTestTilePalette = {
     animationSpeed: 1.4
   },
   ocean: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 17, row: 1 },
       { col: 17, row: 2 },
@@ -8807,7 +8802,7 @@ const dwarfTestTilePalette = {
     animationSpeed: 1.6
   },
   deepOcean: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 18, row: 1 },
       { col: 18, row: 2 },
@@ -8816,7 +8811,7 @@ const dwarfTestTilePalette = {
     animationSpeed: 1.7
   },
   frozenOcean: {
-    sheet: dwarfTestTileSheetKey,
+    sheet: dwarfTestOverworldTileSheetKey,
     frames: [
       { col: 15, row: 0 },
       { col: 15, row: 1 },
@@ -8826,13 +8821,59 @@ const dwarfTestTilePalette = {
   }
 };
 
+const dwarfTestDungeonTilePalette = {
+  void: null,
+  floor: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 8 },
+  floorAlt: { sheet: dwarfTestDungeonFloorSheetKey, col: 3, row: 8 },
+  floorCracked: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 9 },
+  wall: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 2 },
+  wallTop: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 5 },
+  wallCorner: { sheet: dwarfTestDungeonFloorSheetKey, col: 1, row: 2 },
+  pillar: { sheet: dwarfTestDungeonFloorSheetKey, col: 4, row: 1 },
+  pool: {
+    sheet: dwarfTestDungeonWaterSheetKey,
+    frames: [
+      { col: 0, row: 0 },
+      { col: 1, row: 0 },
+      { col: 2, row: 0 }
+    ],
+    animationSpeed: 1.35
+  },
+  poolEdge: {
+    sheet: dwarfTestDungeonWaterSheetKey,
+    frames: [
+      { col: 3, row: 0 },
+      { col: 4, row: 0 },
+      { col: 5, row: 0 }
+    ],
+    animationSpeed: 1.35
+  }
+};
+
+function getDwarfTestWorldConfig(worldKey) {
+  return dwarfTestWorlds[worldKey] || dwarfTestWorlds[dwarfTestDefaultWorldKey];
+}
+
+function getActiveDwarfTestWorld() {
+  return dwarfTestState.world || dwarfTestWorlds[dwarfTestDefaultWorldKey];
+}
+
 function isDwarfTestWaterTileKey(tileKey) {
-  return tileKey === 'lake' || tileKey === 'ocean' || tileKey === 'deepOcean' || tileKey === 'frozenOcean';
+  const world = getActiveDwarfTestWorld();
+  return world.waterTileKeys?.has(tileKey) || false;
 }
 
 function resolveDwarfTestTileFrame(tileKey) {
-  const entry = dwarfTestTilePalette[tileKey];
+  if (!tileKey) {
+    return null;
+  }
+  const world = getActiveDwarfTestWorld();
+  const palette = world.tilePalette || {};
+  const entry = palette[tileKey];
   if (!entry) {
+    return null;
+  }
+  if (entry === null) {
     return null;
   }
   if (entry.frames && entry.frames.length > 0) {
@@ -8844,8 +8885,8 @@ function resolveDwarfTestTileFrame(tileKey) {
   return entry;
 }
 
-function generateDwarfTestMap() {
-  const { columns, rows } = dwarfTestMapDimensions;
+function generateDwarfTestOverworldMap(world) {
+  const { columns, rows } = world.mapDimensions;
   const tiles = Array.from({ length: rows }, () => new Array(columns));
 
   for (let row = 0; row < rows; row += 1) {
@@ -8975,33 +9016,201 @@ function generateDwarfTestMap() {
   return { columns, rows, tiles };
 }
 
+function generateDwarfTestDungeonMap(world) {
+  const { columns, rows } = world.mapDimensions;
+  const tiles = Array.from({ length: rows }, () => new Array(columns).fill('void'));
+
+  const chamber = {
+    startCol: 2,
+    endCol: columns - 3,
+    startRow: 2,
+    endRow: rows - 3
+  };
+
+  for (let row = chamber.startRow; row <= chamber.endRow; row += 1) {
+    for (let col = chamber.startCol; col <= chamber.endCol; col += 1) {
+      const noise = (row + col) % 6;
+      if (row <= chamber.startRow + 1 || row >= chamber.endRow - 1 || col <= chamber.startCol + 1 || col >= chamber.endCol - 1) {
+        tiles[row][col] = noise % 2 === 0 ? 'floorCracked' : 'floorAlt';
+      } else {
+        tiles[row][col] = noise % 3 === 0 ? 'floorAlt' : 'floor';
+      }
+    }
+  }
+
+  const pool = {
+    startCol: Math.floor(columns / 2) - 3,
+    endCol: Math.floor(columns / 2) + 3,
+    startRow: Math.floor(rows / 2) - 2,
+    endRow: Math.floor(rows / 2) + 2
+  };
+
+  for (let row = pool.startRow; row <= pool.endRow; row += 1) {
+    for (let col = pool.startCol; col <= pool.endCol; col += 1) {
+      const isEdge = row === pool.startRow || row === pool.endRow || col === pool.startCol || col === pool.endCol;
+      tiles[row][col] = isEdge ? 'poolEdge' : 'pool';
+    }
+  }
+
+  for (let col = chamber.startCol; col <= chamber.endCol; col += 1) {
+    tiles[chamber.startRow][col] = col % 4 === 0 ? 'wallTop' : 'wall';
+    tiles[chamber.endRow][col] = col % 4 === 0 ? 'wallTop' : 'wall';
+  }
+
+  for (let row = chamber.startRow; row <= chamber.endRow; row += 1) {
+    tiles[row][chamber.startCol] = row % 3 === 0 ? 'wallCorner' : 'wall';
+    tiles[row][chamber.endCol] = row % 3 === 0 ? 'wallCorner' : 'wall';
+  }
+
+  tiles[chamber.startRow][chamber.startCol] = 'pillar';
+  tiles[chamber.startRow][chamber.endCol] = 'pillar';
+  tiles[chamber.endRow][chamber.startCol] = 'pillar';
+  tiles[chamber.endRow][chamber.endCol] = 'pillar';
+
+  const spawn = {
+    col: Math.floor(columns / 2),
+    row: chamber.endRow - 2
+  };
+
+  return { columns, rows, tiles, spawn };
+}
+
+const dwarfTestWorlds = {
+  overworld: {
+    key: 'overworld',
+    buttonId: 'dwarf-test',
+    buttonLabel: 'Test',
+    buttonActiveLabel: 'Close Test',
+    tileSheetKey: dwarfTestOverworldTileSheetKey,
+    tilePalette: dwarfTestOverworldTilePalette,
+    tileSize: 16,
+    baseTileScale: 2,
+    scaleConfig: {
+      min: 2,
+      max: 4,
+      targetVisibleColumns: 18,
+      targetVisibleRows: 12
+    },
+    mapDimensions: { columns: 42, rows: 24 },
+    waterTileKeys: new Set(['lake', 'ocean', 'deepOcean', 'frozenOcean']),
+    fallbackTileKey: 'grass',
+    backgroundColor: '#070c14',
+    skyGradientStops: [
+      { offset: 0, color: 'rgba(12, 19, 30, 0.9)' },
+      { offset: 1, color: 'rgba(12, 19, 30, 0)' }
+    ],
+    groundGradientStops: [
+      { offset: 0, color: 'rgba(11, 18, 27, 0)' },
+      { offset: 1, color: 'rgba(7, 12, 20, 0.55)' }
+    ],
+    generateMap: generateDwarfTestOverworldMap,
+    defaultSpawn: null
+  },
+  dungeon: {
+    key: 'dungeon',
+    buttonId: 'dwarf-test-dungeon',
+    buttonLabel: 'Dungeon Test',
+    buttonActiveLabel: 'Close Dungeon Test',
+    tileSheetKey: dwarfTestDungeonFloorSheetKey,
+    tilePalette: dwarfTestDungeonTilePalette,
+    tileSize: 16,
+    baseTileScale: 2,
+    scaleConfig: {
+      min: 2,
+      max: 4,
+      targetVisibleColumns: 14,
+      targetVisibleRows: 10
+    },
+    mapDimensions: { columns: 32, rows: 24 },
+    waterTileKeys: new Set(['pool']),
+    fallbackTileKey: 'floor',
+    backgroundColor: '#040506',
+    skyGradientStops: [
+      { offset: 0, color: 'rgba(10, 14, 20, 0.75)' },
+      { offset: 1, color: 'rgba(10, 14, 20, 0)' }
+    ],
+    groundGradientStops: [
+      { offset: 0, color: 'rgba(8, 10, 14, 0)' },
+      { offset: 1, color: 'rgba(12, 16, 18, 0.6)' }
+    ],
+    generateMap: generateDwarfTestDungeonMap,
+    defaultSpawn: { col: 16, row: 18 }
+  }
+};
+
+function getActiveDwarfTestTileSize() {
+  const world = getActiveDwarfTestWorld();
+  const size = world.tileSize;
+  return Number.isFinite(size) && size > 0 ? size : 16;
+}
+
+function getActiveDwarfTestBaseScale() {
+  const world = getActiveDwarfTestWorld();
+  const scale = world.baseTileScale;
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
+
+function getActiveDwarfTestScaleConfig() {
+  const world = getActiveDwarfTestWorld();
+  return world.scaleConfig || { min: 1, max: 4, targetVisibleColumns: 16, targetVisibleRows: 10 };
+}
+
+function getDwarfTestFallbackTileKey() {
+  const world = getActiveDwarfTestWorld();
+  return world.fallbackTileKey || null;
+}
+
+function getDwarfTestBackgroundColor() {
+  const world = getActiveDwarfTestWorld();
+  return world.backgroundColor || '#070c14';
+}
+
+function getDwarfTestGradientStops(type) {
+  const world = getActiveDwarfTestWorld();
+  if (type === 'sky') {
+    return world.skyGradientStops || [
+      { offset: 0, color: 'rgba(12, 19, 30, 0.9)' },
+      { offset: 1, color: 'rgba(12, 19, 30, 0)' }
+    ];
+  }
+  if (type === 'ground') {
+    return world.groundGradientStops || [
+      { offset: 0, color: 'rgba(11, 18, 27, 0)' },
+      { offset: 1, color: 'rgba(7, 12, 20, 0.55)' }
+    ];
+  }
+  return [];
+}
+
 function calculateDwarfTestTileScale(canvas) {
-  const { min, max, targetVisibleColumns, targetVisibleRows } = dwarfTestScaleConfig;
+  const { min, max, targetVisibleColumns, targetVisibleRows } = getActiveDwarfTestScaleConfig();
+  const fallbackScale = getActiveDwarfTestBaseScale();
+  const tileSize = getActiveDwarfTestTileSize();
   if (!canvas) {
-    return clamp(dwarfTestTileScale, min, max);
+    return clamp(fallbackScale, min, max);
   }
   const width = Math.max(canvas.width || 0, canvas.clientWidth || 0);
   const height = Math.max(canvas.height || 0, canvas.clientHeight || 0);
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return clamp(dwarfTestTileScale, min, max);
+    return clamp(fallbackScale, min, max);
   }
   const safeColumns = Math.max(1, targetVisibleColumns);
   const safeRows = Math.max(1, targetVisibleRows);
-  const columnScale = width / (dwarfTestTileSize * safeColumns);
-  const rowScale = height / (dwarfTestTileSize * safeRows);
+  const columnScale = width / (tileSize * safeColumns);
+  const rowScale = height / (tileSize * safeRows);
   const rawScale = Math.min(columnScale, rowScale);
   const roundedScale = Math.round(rawScale);
-  const baseScale = Number.isFinite(roundedScale) && roundedScale > 0 ? roundedScale : dwarfTestTileScale;
+  const baseScale = Number.isFinite(roundedScale) && roundedScale > 0 ? roundedScale : fallbackScale;
   return clamp(baseScale, min, max);
 }
 
 function applyDwarfTestScaleChange(newScale) {
-  const previousScale = dwarfTestState.tileScale || dwarfTestTileScale;
+  const previousScale = dwarfTestState.tileScale || getActiveDwarfTestBaseScale();
   if (!Number.isFinite(newScale) || newScale <= 0 || newScale === previousScale) {
     return false;
   }
 
-  const baseTileSize = dwarfTestState.tileSize || dwarfTestTileSize;
+  const baseTileSize = dwarfTestState.tileSize || getActiveDwarfTestTileSize();
   const previousDestTileSize = baseTileSize * previousScale;
   const nextDestTileSize = baseTileSize * newScale;
 
@@ -9067,7 +9276,7 @@ function updateDwarfTestCamera(ctx, spriteDimensions, options = {}) {
     return dwarfTestState.camera;
   }
 
-  const tileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const tileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   const worldWidth = map.columns * tileSize;
   const worldHeight = map.rows * tileSize;
   const viewWidth = ctx.canvas.width;
@@ -10654,24 +10863,29 @@ function handleDwarfTestResize() {
 }
 
 function updateDwarfTestButtonState() {
-  const button = elements.dwarfTestButton;
-  if (!button) {
-    return;
-  }
-  if (dwarfTestState.active) {
-    button.textContent = 'Close Test';
-    button.setAttribute('aria-pressed', 'true');
-    button.classList.add('active');
-  } else {
-    button.textContent = 'Test';
-    button.setAttribute('aria-pressed', 'false');
-    button.classList.remove('active');
+  const activeKey = dwarfTestState.active && dwarfTestState.world ? dwarfTestState.world.key : null;
+  const buttonEntries = [
+    { element: elements.dwarfTestButton, worldKey: 'overworld' },
+    { element: elements.dwarfTestDungeonButton, worldKey: 'dungeon' }
+  ];
+
+  for (const entry of buttonEntries) {
+    if (!entry.element) {
+      continue;
+    }
+    const worldConfig = getDwarfTestWorldConfig(entry.worldKey);
+    const isActive = dwarfTestState.active && activeKey === entry.worldKey;
+    const defaultLabel = worldConfig.buttonLabel || entry.element.textContent || '';
+    const activeLabel = worldConfig.buttonActiveLabel || defaultLabel;
+    entry.element.textContent = isActive ? activeLabel : defaultLabel;
+    entry.element.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    entry.element.classList.toggle('active', isActive);
   }
 }
 
 function getDwarfTestSpriteDimensions(ctx) {
   const source = elements.dwarfBodyPortraitCanvas;
-  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   const height = Math.max(1, destTileSize);
 
   if (!source || source.width === 0 || source.height === 0) {
@@ -10693,7 +10907,7 @@ function getDwarfTestSpriteDimensions(ctx) {
 
 function getDwarfTestBounds(ctx, spriteDimensions) {
   const map = dwarfTestState.map;
-  const tileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const tileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   if (!map) {
     const { canvas } = ctx;
     const paddingX = Math.max(16, canvas.width * 0.06);
@@ -10769,14 +10983,15 @@ function drawDwarfTestFallbackBackground(ctx) {
 }
 
 function drawDwarfTestBackground(ctx) {
-  const baseSheet = state.tileSheets[dwarfTestTileSheetKey];
+  const world = getActiveDwarfTestWorld();
+  const palette = world.tilePalette || {};
   const map = dwarfTestState.map;
-  if (!baseSheet?.image || !map || !Array.isArray(map.tiles)) {
+  if (!map || !Array.isArray(map.tiles)) {
     drawDwarfTestFallbackBackground(ctx);
     return;
   }
 
-  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
   const { columns, rows, tiles } = map;
   const camera = dwarfTestState.camera || { x: 0, y: 0 };
   const { width, height } = ctx.canvas;
@@ -10785,7 +11000,7 @@ function drawDwarfTestBackground(ctx) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#070c14';
+  ctx.fillStyle = getDwarfTestBackgroundColor();
   ctx.fillRect(0, 0, width, height);
 
   const startCol = Math.max(0, Math.floor(camera.x / destTileSize));
@@ -10801,32 +11016,56 @@ function drawDwarfTestBackground(ctx) {
     for (let col = 0; col < visibleCols; col += 1) {
       const mapCol = startCol + col;
       const tileKey = tiles[mapRow][mapCol];
-      const frame = resolveDwarfTestTileFrame(tileKey) || resolveDwarfTestTileFrame('grass');
-      const sheetKey = frame?.sheet || dwarfTestTileSheetKey;
-      const sheet = state.tileSheets[sheetKey] || baseSheet;
+      let frame = resolveDwarfTestTileFrame(tileKey);
+      const hasExplicitNull = Object.prototype.hasOwnProperty.call(palette, tileKey) && palette[tileKey] === null;
+      if (!frame && !hasExplicitNull) {
+        const fallbackKey = getDwarfTestFallbackTileKey();
+        if (fallbackKey && fallbackKey !== tileKey) {
+          frame = resolveDwarfTestTileFrame(fallbackKey);
+        }
+      }
+      const sheetKey = frame?.sheet || world.tileSheetKey;
+      const sheet = sheetKey ? state.tileSheets[sheetKey] : null;
       if (!frame || !sheet?.image) {
         continue;
       }
-      const sx = frame.col * sheet.tileSize;
-      const sy = frame.row * sheet.tileSize;
+      const tileSize = sheet.tileSize || getActiveDwarfTestTileSize();
+      const sx = frame.col * tileSize;
+      const sy = frame.row * tileSize;
       const destX = Math.round(col * destTileSize - offsetX);
-      ctx.drawImage(sheet.image, sx, sy, sheet.tileSize, sheet.tileSize, destX, destY, destTileSize, destTileSize);
+      ctx.drawImage(sheet.image, sx, sy, tileSize, tileSize, destX, destY, destTileSize, destTileSize);
     }
   }
 
   ctx.restore();
 
   const skyGradient = ctx.createLinearGradient(0, 0, 0, Math.max(1, height * 0.45));
-  skyGradient.addColorStop(0, 'rgba(12, 19, 30, 0.9)');
-  skyGradient.addColorStop(1, 'rgba(12, 19, 30, 0)');
-  ctx.fillStyle = skyGradient;
-  ctx.fillRect(0, 0, width, height);
+  const skyStops = getDwarfTestGradientStops('sky');
+  if (Array.isArray(skyStops) && skyStops.length > 0) {
+    for (const stop of skyStops) {
+      if (!stop || !Number.isFinite(stop.offset) || typeof stop.color !== 'string') {
+        continue;
+      }
+      const clampedOffset = clamp(stop.offset, 0, 1);
+      skyGradient.addColorStop(clampedOffset, stop.color);
+    }
+    ctx.fillStyle = skyGradient;
+    ctx.fillRect(0, 0, width, height);
+  }
 
-  const groundGlow = ctx.createLinearGradient(0, height * 0.6, 0, height);
-  groundGlow.addColorStop(0, 'rgba(11, 18, 27, 0)');
-  groundGlow.addColorStop(1, 'rgba(7, 12, 20, 0.55)');
-  ctx.fillStyle = groundGlow;
-  ctx.fillRect(0, 0, width, height);
+  const groundGradient = ctx.createLinearGradient(0, height * 0.6, 0, height);
+  const groundStops = getDwarfTestGradientStops('ground');
+  if (Array.isArray(groundStops) && groundStops.length > 0) {
+    for (const stop of groundStops) {
+      if (!stop || !Number.isFinite(stop.offset) || typeof stop.color !== 'string') {
+        continue;
+      }
+      const clampedOffset = clamp(stop.offset, 0, 1);
+      groundGradient.addColorStop(clampedOffset, stop.color);
+    }
+    ctx.fillStyle = groundGradient;
+    ctx.fillRect(0, 0, width, height);
+  }
 }
 
 function drawDwarfTestCharacter(ctx, spriteDimensions) {
@@ -11003,16 +11242,25 @@ function resetDwarfTestState() {
   if (!ctx) {
     return;
   }
-  dwarfTestState.tileSize = dwarfTestTileSize;
+  const world = getActiveDwarfTestWorld();
+  dwarfTestState.tileSize = getActiveDwarfTestTileSize();
   const resolvedScale = calculateDwarfTestTileScale(ctx.canvas);
   dwarfTestState.tileScale = resolvedScale;
-  dwarfTestState.map = generateDwarfTestMap();
+  const mapGenerator = world.generateMap;
+  dwarfTestState.map = typeof mapGenerator === 'function' ? mapGenerator(world) : null;
   dwarfTestState.animationTime = 0;
   const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
-  const destTileSize = (dwarfTestState.tileSize || dwarfTestTileSize) * (dwarfTestState.tileScale || 1);
-  const defaultCol = Math.floor(dwarfTestMapDimensions.columns * 0.35);
-  const defaultRow = Math.max(0, dwarfTestMapDimensions.rows - 4);
-  const walkable = findNearestDwarfTestWalkableTile(dwarfTestState.map, defaultCol, defaultRow);
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
+  const mapDimensions = world.mapDimensions || { columns: 0, rows: 0 };
+  const defaultSpawn = dwarfTestState.map?.spawn || world.defaultSpawn || {
+    col: Math.floor((mapDimensions.columns || 1) * 0.35),
+    row: Math.max(0, (mapDimensions.rows || 1) - 4)
+  };
+  const walkable = findNearestDwarfTestWalkableTile(
+    dwarfTestState.map,
+    defaultSpawn.col ?? 0,
+    defaultSpawn.row ?? 0
+  );
   const spawnX = (walkable.col + 0.5) * destTileSize;
   const spawnY = (walkable.row + 1) * destTileSize - destTileSize * 0.12;
   const bounds = getDwarfTestBounds(ctx, spriteDimensions);
@@ -11026,7 +11274,7 @@ function resetDwarfTestState() {
   drawDwarfTestCharacter(ctx, spriteDimensions);
 }
 
-function openDwarfTest() {
+function openDwarfTest(worldKey = dwarfTestDefaultWorldKey, options = {}) {
   const area = elements.dwarfTestArea;
   if (!area) {
     return;
@@ -11034,6 +11282,9 @@ function openDwarfTest() {
   if (dwarfTestState.active) {
     return;
   }
+  const world = getDwarfTestWorldConfig(worldKey);
+  dwarfTestState.world = world;
+  dwarfTestState.focusReturnElement = options.trigger || null;
   area.classList.remove('hidden');
   area.classList.add('fullscreen');
   area.setAttribute('aria-hidden', 'false');
@@ -11061,11 +11312,14 @@ function openDwarfTest() {
 }
 
 function closeDwarfTest(options = {}) {
-  const { returnFocus = false } = options;
+  const { returnFocus = false, focusTarget = null } = options;
+  const fallbackButton = elements.dwarfTestButton || null;
   if (!dwarfTestState.active) {
     updateDwarfTestButtonState();
-    if (returnFocus && elements.dwarfTestButton) {
-      elements.dwarfTestButton.focus();
+    const focusElement = focusTarget || dwarfTestState.focusReturnElement || fallbackButton;
+    dwarfTestState.focusReturnElement = null;
+    if (returnFocus && focusElement && typeof focusElement.focus === 'function') {
+      focusElement.focus();
     }
     return;
   }
@@ -11085,17 +11339,23 @@ function closeDwarfTest(options = {}) {
     elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
   }
   updateDwarfTestButtonState();
-  if (returnFocus && elements.dwarfTestButton) {
-    elements.dwarfTestButton.focus();
+  const focusElement = focusTarget || dwarfTestState.focusReturnElement || fallbackButton;
+  dwarfTestState.focusReturnElement = null;
+  if (returnFocus && focusElement && typeof focusElement.focus === 'function') {
+    focusElement.focus();
   }
 }
 
-function toggleDwarfTest() {
+function toggleDwarfTest(worldKey = dwarfTestDefaultWorldKey, options = {}) {
+  const targetWorld = getDwarfTestWorldConfig(worldKey);
+  if (dwarfTestState.active && dwarfTestState.world?.key === targetWorld.key) {
+    closeDwarfTest({ returnFocus: true, focusTarget: options.trigger || dwarfTestState.focusReturnElement });
+    return;
+  }
   if (dwarfTestState.active) {
     closeDwarfTest();
-  } else {
-    openDwarfTest();
   }
+  openDwarfTest(targetWorld.key, options);
 }
 
 function isDwarfTestActive() {

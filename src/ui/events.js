@@ -702,7 +702,13 @@ export function attachEvents(elements, deps) {
 
   if (elements.dwarfTestButton) {
     elements.dwarfTestButton.addEventListener('click', () => {
-      toggleDwarfTest();
+      toggleDwarfTest('overworld', { trigger: elements.dwarfTestButton });
+    });
+  }
+
+  if (elements.dwarfTestDungeonButton) {
+    elements.dwarfTestDungeonButton.addEventListener('click', () => {
+      toggleDwarfTest('dungeon', { trigger: elements.dwarfTestDungeonButton });
     });
   }
 
