@@ -739,6 +739,99 @@
               <!-- Structure highlight options are populated dynamically -->
             </div>
           </div>
+          <div class="map-editor-controls">
+            <button
+              id="toggle-map-editor"
+              class="secondary"
+              type="button"
+              aria-pressed="false"
+              aria-expanded="false"
+              aria-controls="map-editor"
+            >
+              Edit Map
+            </button>
+            <section
+              id="map-editor"
+              class="map-editor hidden"
+              aria-hidden="true"
+              aria-label="World map editor"
+            >
+              <header class="map-editor__header">
+                <h3 class="map-editor__title">Map Editor</h3>
+                <button
+                  type="button"
+                  id="map-editor-close"
+                  class="tertiary map-editor__close"
+                >
+                  Done
+                </button>
+              </header>
+              <div class="map-editor__grid">
+                <label class="map-editor__field" for="map-editor-terrain">
+                  Terrain tile
+                  <input
+                    id="map-editor-terrain"
+                    name="mapEditorTerrain"
+                    type="text"
+                    inputmode="text"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                    list="map-editor-terrain-options"
+                    placeholder="GRASS"
+                  />
+                </label>
+                <label class="map-editor__toggle">
+                  <input
+                    id="map-editor-apply-terrain"
+                    type="checkbox"
+                    checked
+                  />
+                  Apply terrain
+                </label>
+                <label class="map-editor__field" for="map-editor-structure">
+                  Structure
+                  <input
+                    id="map-editor-structure"
+                    name="mapEditorStructure"
+                    type="text"
+                    inputmode="text"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                    list="map-editor-structure-options"
+                    placeholder="None"
+                  />
+                </label>
+                <label class="map-editor__toggle">
+                  <input id="map-editor-apply-structure" type="checkbox" />
+                  Apply structure
+                </label>
+                <label class="map-editor__field" for="map-editor-brush-size">
+                  Brush size
+                  <input
+                    id="map-editor-brush-size"
+                    name="mapEditorBrushSize"
+                    type="number"
+                    min="1"
+                    max="9"
+                    step="1"
+                    value="1"
+                  />
+                </label>
+                <button
+                  type="button"
+                  id="map-editor-clear-structure"
+                  class="secondary map-editor__clear"
+                >
+                  Clear structure
+                </button>
+              </div>
+              <p class="map-editor__hint">
+                Click and drag on the world map to paint with the selected options.
+              </p>
+              <datalist id="map-editor-terrain-options"></datalist>
+              <datalist id="map-editor-structure-options"></datalist>
+            </section>
+          </div>
           <button
             id="dwarf-test"
             class="secondary dwarf-test-button"
