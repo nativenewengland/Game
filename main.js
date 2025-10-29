@@ -15436,6 +15436,9 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
   const badlandsTileKey =
     typeof world.badlandsTileKey === 'string' ? world.badlandsTileKey : null;
   const surfaceNoiseKeys = { snowTileKey, sandTileKey, badlandsTileKey };
+  const icebergOverlayKeys = Object.keys(icebergTileCoords || {}).filter((key) =>
+    tileLookup.has(key)
+  );
 
   for (let coarseY = 0; coarseY < areaHeight; coarseY += 1) {
     const sourceRow = sourceTiles[startY + coarseY];
@@ -15497,6 +15500,107 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
           applySurfaceNoiseVariation(subTile, noiseAt, surfaceNoiseKeys);
 
           targetRow[coarseX * subdivisions + subX] = subTile;
+        }
+      }
+    }
+  }
+
+  if (waterTileKey && icebergOverlayKeys.length > 0) {
+    const localSeedInput = `${seedString}:${startX},${startY}:${areaWidth}x${areaHeight}:icebergs`;
+    const localSeedNumber = stringToSeed(localSeedInput);
+    const shuffleSeed = (localSeedNumber + 0x5ad1f32b) >>> 0;
+    const rng = mulberry32(shuffleSeed || 1);
+    const variantSeed = (localSeedNumber + 0x3d0e12f7) >>> 0;
+    const icebergChance = 1 / 55;
+
+    const candidates = [];
+    let inheritedIcebergCount = 0;
+
+    for (let y = 0; y < patchHeight; y += 1) {
+      const row = patchTiles[y];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let x = 0; x < patchWidth; x += 1) {
+        const cell = row[x];
+        if (!cell || cell.base !== waterTileKey) {
+          continue;
+        }
+        const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+        const hasIceberg = overlayKey && icebergOverlayKeySet.has(overlayKey);
+        const blocked = overlayKey && !hasIceberg;
+        if (hasIceberg) {
+          inheritedIcebergCount += 1;
+          cell.overlay = null;
+        }
+        if (blocked || cell.structure || cell.river) {
+          continue;
+        }
+
+        const parentTileX = Math.floor(x / subdivisions);
+        const parentTileY = Math.floor(y / subdivisions);
+        const subX = x - parentTileX * subdivisions;
+        const subY = y - parentTileY * subdivisions;
+        const globalSubX = (startX + parentTileX) * subdivisions + subX;
+        const globalSubY = (startY + parentTileY) * subdivisions + subY;
+
+        candidates.push({
+          x,
+          y,
+          globalSubX,
+          globalSubY
+        });
+      }
+    }
+
+    if (candidates.length > 0) {
+      for (let i = candidates.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(rng() * (i + 1));
+        const temp = candidates[i];
+        candidates[i] = candidates[j];
+        candidates[j] = temp;
+      }
+
+      let placementTarget = 0;
+      const used = new Array(candidates.length).fill(false);
+      const placements = [];
+
+      for (let i = 0; i < candidates.length; i += 1) {
+        const roll = rng();
+        if (roll < icebergChance) {
+          placements.push(i);
+          used[i] = true;
+        }
+      }
+
+      const baselineTarget = Math.round(candidates.length * icebergChance);
+      placementTarget = Math.min(
+        candidates.length,
+        Math.max(inheritedIcebergCount, baselineTarget)
+      );
+
+      for (let i = 0; i < candidates.length && placements.length < placementTarget; i += 1) {
+        if (used[i]) {
+          continue;
+        }
+        placements.push(i);
+        used[i] = true;
+      }
+
+      for (let p = 0; p < placements.length; p += 1) {
+        const candidate = candidates[placements[p]];
+        if (!candidate) {
+          continue;
+        }
+        const variantNoise = hashCoords(candidate.globalSubX, candidate.globalSubY, variantSeed);
+        const variantIndex = Math.min(
+          icebergOverlayKeys.length - 1,
+          Math.floor(variantNoise * icebergOverlayKeys.length)
+        );
+        const overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        const cell = patchTiles[candidate.y][candidate.x];
+        if (cell) {
+          cell.overlay = overlayKey;
         }
       }
     }
