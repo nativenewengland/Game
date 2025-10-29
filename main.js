@@ -18888,11 +18888,40 @@ function createWorld(seedString) {
     landBaseKeys.add(stoneTileKey);
   }
 
-  const maybeConvertBaseToStoneNearVolcano = (tile) => {
+  const volcanoStoneAreaNoiseSeed = (seedNumber + 0x27d4eb2d) >>> 0;
+  const volcanoStoneDetailNoiseSeed = (seedNumber + 0x165667b1) >>> 0;
+  const volcanoStoneAreaNoiseScale = 0.18 + rng() * 0.06;
+  const volcanoStoneAreaNoiseOffsetX = rng() * 1024;
+  const volcanoStoneAreaNoiseOffsetY = rng() * 1024;
+  const maybeConvertBaseToStoneNearVolcano = (tile, x, y, proximity = 1) => {
     if (!tile || !stoneTileKey) {
       return;
     }
-    if (tile.base === grassTileKey || tile.base === snowTileKey) {
+    if (tile.base !== grassTileKey && tile.base !== snowTileKey) {
+      return;
+    }
+
+    const clampedProximity = clamp(Number.isFinite(proximity) ? proximity : 0, 0, 1);
+    if (clampedProximity <= 0) {
+      return;
+    }
+
+    if (clampedProximity >= 0.95) {
+      tile.base = stoneTileKey;
+      return;
+    }
+
+    const coarseSampleX =
+      (x + volcanoStoneAreaNoiseOffsetX) * volcanoStoneAreaNoiseScale;
+    const coarseSampleY =
+      (y + volcanoStoneAreaNoiseOffsetY) * volcanoStoneAreaNoiseScale;
+    const coarseNoise = valueNoise(coarseSampleX, coarseSampleY, volcanoStoneAreaNoiseSeed) - 0.5;
+    const fineNoise = hashCoords(x, y, volcanoStoneDetailNoiseSeed) - 0.5;
+    const noiseInfluence = coarseNoise * 0.55 + fineNoise * 0.25;
+    const conversionScore = clampedProximity + noiseInfluence;
+    const conversionThreshold = 0.58 - clampedProximity * 0.3;
+
+    if (conversionScore >= conversionThreshold) {
       tile.base = stoneTileKey;
     }
   };
@@ -25388,7 +25417,7 @@ function createWorld(seedString) {
           volcanoMask[idx] = 1;
           hasVolcanoTile = true;
           tile.volcanoProximity = 1;
-          maybeConvertBaseToStoneNearVolcano(tile);
+          maybeConvertBaseToStoneNearVolcano(tile, x, y, 1);
         } else if (!volcanoEligibleBases.has(tile.base) || waterMask[idx]) {
           tile.volcanoProximity = 0;
         }
@@ -25415,7 +25444,7 @@ function createWorld(seedString) {
           const proximity = clamp(1 - distanceToVolcano / volcanoFalloff, 0, 1);
           tile.volcanoProximity = proximity;
           if (proximity >= volcanoStoneConversionThreshold) {
-            maybeConvertBaseToStoneNearVolcano(tile);
+            maybeConvertBaseToStoneNearVolcano(tile, x, y, proximity);
           }
         }
       }
