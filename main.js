@@ -382,68 +382,6 @@ function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientLumberMillStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundWidth = size * 0.8;
-  const groundHeight = size * 0.36;
-  const groundX = (size - groundWidth) / 2;
-  const groundY = size * 0.54;
-
-  ctx.fillStyle = '#8c6d45';
-  ctx.fillRect(groundX, groundY, groundWidth, groundHeight);
-
-  const millWidth = size * 0.42;
-  const millHeight = size * 0.32;
-  const millX = size * 0.18;
-  const millY = size * 0.32;
-
-  ctx.fillStyle = '#a47546';
-  ctx.fillRect(millX, millY, millWidth, millHeight);
-
-  ctx.fillStyle = '#6b4a2a';
-  ctx.beginPath();
-  ctx.moveTo(millX - size * 0.04, millY);
-  ctx.lineTo(millX + millWidth / 2, millY - size * 0.18);
-  ctx.lineTo(millX + millWidth + size * 0.04, millY);
-  ctx.closePath();
-  ctx.fill();
-
-  const doorWidth = millWidth * 0.22;
-  const doorHeight = millHeight * 0.48;
-  ctx.fillStyle = '#3f2b19';
-  ctx.fillRect(millX + millWidth * 0.38, millY + millHeight - doorHeight, doorWidth, doorHeight);
-
-  const wheelRadius = size * 0.18;
-  const wheelCenterX = size * 0.68;
-  const wheelCenterY = size * 0.6;
-  ctx.strokeStyle = '#4b3826';
-  ctx.lineWidth = Math.max(1, size * 0.04);
-  ctx.beginPath();
-  ctx.arc(wheelCenterX, wheelCenterY, wheelRadius, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.lineWidth = Math.max(1, size * 0.03);
-  for (let i = 0; i < 4; i += 1) {
-    const angle = (Math.PI / 2) * i;
-    ctx.beginPath();
-    ctx.moveTo(wheelCenterX, wheelCenterY);
-    ctx.lineTo(
-      wheelCenterX + Math.cos(angle) * wheelRadius,
-      wheelCenterY + Math.sin(angle) * wheelRadius
-    );
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = '#6aa6d1';
-  ctx.beginPath();
-  ctx.ellipse(wheelCenterX + wheelRadius * 0.35, groundY + groundHeight * 0.5, size * 0.16, size * 0.12, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
 function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -615,9 +553,6 @@ registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
   drawAmbientHuntingLodgeStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
-  drawAmbientLumberMillStructure(ctx, drawOptions)
-);
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
   drawAmbientMoonwellStructure(ctx, drawOptions)
 );
@@ -631,8 +566,6 @@ if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
     tileLookup.set('EVIL_WIZARDS_TOWER', { ...fallbackTower });
   }
 }
-
-
 
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
