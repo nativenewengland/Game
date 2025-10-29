@@ -5472,7 +5472,7 @@ const ambientStructureOptionsByCulture = {
     'Wayside Shrine',
     'Market Cross',
     'Village Green',
-    'Homestead',
+    { label: 'Homestead', disallowForestOverlay: true },
     'Riverside Ferry Landing',
     { label: 'Lumber Mill', requiresTreeNeighbor: true }
   ]),
@@ -7055,6 +7055,7 @@ function applyCulturalInfluence({
       }
       let adjacentToTreeCache = null;
       let isMountainTileCache = null;
+      let hasForestOverlayCache = null;
       const eligibleOptions = options.filter((option) => {
         if (option.requiresTreeNeighbor) {
           if (adjacentToTreeCache === null) {
@@ -7068,6 +7069,13 @@ function applyCulturalInfluence({
               isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
           }
           return isMountainTileCache;
+        }
+        if (option.disallowForestOverlay) {
+          if (hasForestOverlayCache === null) {
+            hasForestOverlayCache =
+              isTreeOverlayKey(tile.overlay) || isTreeOverlayKey(tile.hillOverlay);
+          }
+          return !hasForestOverlayCache;
         }
         return true;
       });
