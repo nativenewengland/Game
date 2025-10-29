@@ -25126,6 +25126,41 @@ function createWorld(seedString) {
     }
   }
 
+  const convertBadlandsClusterToNeighbor = (clusterIndex) => {
+    const cluster = biomeClusters[clusterIndex];
+    if (!cluster || cluster.type !== 'badlands') {
+      return;
+    }
+    const neighborCounts = new Map();
+    clusterAdjacency[clusterIndex].forEach((neighborIndex) => {
+      const neighborCluster = biomeClusters[neighborIndex];
+      if (!neighborCluster) {
+        return;
+      }
+      const neighborType = neighborCluster.type;
+      if (!neighborType || neighborType === 'badlands') {
+        return;
+      }
+      neighborCounts.set(neighborType, (neighborCounts.get(neighborType) || 0) + 1);
+    });
+    let replacementType = null;
+    let replacementCount = -1;
+    neighborCounts.forEach((count, type) => {
+      if (count > replacementCount) {
+        replacementType = type;
+        replacementCount = count;
+      }
+    });
+    if (!replacementType) {
+      replacementType = 'grassland';
+    }
+    cluster.type = replacementType;
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      biomeField[clusterIdx] = replacementType;
+    }
+  };
+
   const badlandsMinimumSize = 10;
   for (let i = 0; i < biomeClusters.length; i += 1) {
     const cluster = biomeClusters[i];
@@ -25163,6 +25198,34 @@ function createWorld(seedString) {
       const clusterIdx = cluster.indices[j];
       biomeField[clusterIdx] = replacementType;
     }
+  }
+
+  const badlandsClusterIndices = [];
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    if (biomeClusters[i].type === 'badlands') {
+      badlandsClusterIndices.push(i);
+    }
+  }
+  badlandsClusterIndices.sort((a, b) => biomeClusters[b].size - biomeClusters[a].size);
+
+  const reservedBadlandsClusters = new Set();
+  for (let i = 0; i < badlandsClusterIndices.length; i += 1) {
+    const clusterIndex = badlandsClusterIndices[i];
+    const cluster = biomeClusters[clusterIndex];
+    if (!cluster || cluster.type !== 'badlands') {
+      continue;
+    }
+    let conflictsWithReserved = false;
+    clusterAdjacency[clusterIndex].forEach((neighborIndex) => {
+      if (reservedBadlandsClusters.has(neighborIndex)) {
+        conflictsWithReserved = true;
+      }
+    });
+    if (conflictsWithReserved) {
+      convertBadlandsClusterToNeighbor(clusterIndex);
+      continue;
+    }
+    reservedBadlandsClusters.add(clusterIndex);
   }
 
   const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
