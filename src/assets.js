@@ -610,7 +610,7 @@ export const baseTileCoords = {
   TROLL_CAMP: { row: 5, col: 1 },
   OGRE_CAMP: { row: 5, col: 1 },
   BANDIT_CAMP: { row: 5, col: 1 },
-  TRAVELERS_CAMP: { row: 6, col: 0 },
+  TRAVELERS_CAMP: { row: 5, col: 1 },
   DUNGEON: { row: 2, col: 7 },
   CENTAUR_ENCAMPMENT: { row: 2, col: 10 }
 };
