@@ -203,52 +203,6 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientFarmStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const fieldWidth = size * 0.74;
-  const fieldHeight = size * 0.42;
-  const fieldX = (size - fieldWidth) / 2;
-  const fieldY = size * 0.42;
-
-  ctx.fillStyle = '#cfa96b';
-  ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
-
-  ctx.strokeStyle = '#9b6e39';
-  ctx.lineWidth = Math.max(1, size * 0.035);
-  const furrowCount = 4;
-  for (let i = 1; i <= furrowCount; i += 1) {
-    const x = fieldX + (fieldWidth * i) / (furrowCount + 1);
-    ctx.beginPath();
-    ctx.moveTo(x, fieldY + fieldHeight * 0.08);
-    ctx.lineTo(x - size * 0.06, fieldY + fieldHeight * 0.92);
-    ctx.stroke();
-  }
-
-  const barnWidth = size * 0.26;
-  const barnHeight = size * 0.24;
-  const barnX = size * 0.16;
-  const barnY = size * 0.26;
-
-  ctx.fillStyle = '#b53a30';
-  ctx.fillRect(barnX, barnY, barnWidth, barnHeight);
-
-  ctx.fillStyle = '#7d221b';
-  ctx.beginPath();
-  ctx.moveTo(barnX, barnY);
-  ctx.lineTo(barnX + barnWidth / 2, barnY - size * 0.14);
-  ctx.lineTo(barnX + barnWidth, barnY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#f4e3b3';
-  ctx.fillRect(barnX + barnWidth * 0.64, barnY + barnHeight * 0.34, barnWidth * 0.24, barnHeight * 0.38);
-  ctx.fillRect(barnX + barnWidth * 0.26, barnY + barnHeight * 0.48, barnWidth * 0.18, barnHeight * 0.38);
-
-  ctx.restore();
-}
-
 function drawAmbientHomesteadStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -382,68 +336,6 @@ function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientLumberMillStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundWidth = size * 0.8;
-  const groundHeight = size * 0.36;
-  const groundX = (size - groundWidth) / 2;
-  const groundY = size * 0.54;
-
-  ctx.fillStyle = '#8c6d45';
-  ctx.fillRect(groundX, groundY, groundWidth, groundHeight);
-
-  const millWidth = size * 0.42;
-  const millHeight = size * 0.32;
-  const millX = size * 0.18;
-  const millY = size * 0.32;
-
-  ctx.fillStyle = '#a47546';
-  ctx.fillRect(millX, millY, millWidth, millHeight);
-
-  ctx.fillStyle = '#6b4a2a';
-  ctx.beginPath();
-  ctx.moveTo(millX - size * 0.04, millY);
-  ctx.lineTo(millX + millWidth / 2, millY - size * 0.18);
-  ctx.lineTo(millX + millWidth + size * 0.04, millY);
-  ctx.closePath();
-  ctx.fill();
-
-  const doorWidth = millWidth * 0.22;
-  const doorHeight = millHeight * 0.48;
-  ctx.fillStyle = '#3f2b19';
-  ctx.fillRect(millX + millWidth * 0.38, millY + millHeight - doorHeight, doorWidth, doorHeight);
-
-  const wheelRadius = size * 0.18;
-  const wheelCenterX = size * 0.68;
-  const wheelCenterY = size * 0.6;
-  ctx.strokeStyle = '#4b3826';
-  ctx.lineWidth = Math.max(1, size * 0.04);
-  ctx.beginPath();
-  ctx.arc(wheelCenterX, wheelCenterY, wheelRadius, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.lineWidth = Math.max(1, size * 0.03);
-  for (let i = 0; i < 4; i += 1) {
-    const angle = (Math.PI / 2) * i;
-    ctx.beginPath();
-    ctx.moveTo(wheelCenterX, wheelCenterY);
-    ctx.lineTo(
-      wheelCenterX + Math.cos(angle) * wheelRadius,
-      wheelCenterY + Math.sin(angle) * wheelRadius
-    );
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = '#6aa6d1';
-  ctx.beginPath();
-  ctx.ellipse(wheelCenterX + wheelRadius * 0.35, groundY + groundHeight * 0.5, size * 0.16, size * 0.12, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
 function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -518,87 +410,6 @@ function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientSleepingDragonStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundRadiusX = size * 0.42;
-  const groundRadiusY = size * 0.22;
-  const groundCenterX = size * 0.5;
-  const groundCenterY = size * 0.72;
-  ctx.fillStyle = '#5f6c7a';
-  ctx.beginPath();
-  ctx.ellipse(groundCenterX, groundCenterY, groundRadiusX, groundRadiusY, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#4b5563';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.2, groundCenterY);
-  ctx.lineTo(size * 0.38, size * 0.28);
-  ctx.lineTo(size * 0.5, size * 0.18);
-  ctx.lineTo(size * 0.62, size * 0.34);
-  ctx.lineTo(size * 0.78, groundCenterY);
-  ctx.closePath();
-  ctx.fill();
-
-  const bodyCenterX = size * 0.52;
-  const bodyCenterY = size * 0.56;
-  const bodyRadiusX = size * 0.24;
-  const bodyRadiusY = size * 0.18;
-  ctx.fillStyle = '#b45309';
-  ctx.beginPath();
-  ctx.ellipse(bodyCenterX, bodyCenterY, bodyRadiusX, bodyRadiusY, Math.PI / 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#fbbf24';
-  ctx.beginPath();
-  ctx.ellipse(bodyCenterX + size * 0.02, bodyCenterY + size * 0.02, bodyRadiusX * 0.45, bodyRadiusY * 0.5, Math.PI / 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  const headX = size * 0.32;
-  const headY = size * 0.46;
-  const headRadius = size * 0.1;
-  ctx.fillStyle = '#b45309';
-  ctx.beginPath();
-  ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#fde68a';
-  ctx.beginPath();
-  ctx.arc(headX + size * 0.03, headY, headRadius * 0.55, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#000000';
-  ctx.beginPath();
-  ctx.arc(headX + size * 0.05, headY - size * 0.015, headRadius * 0.15, 0, Math.PI * 2);
-  ctx.arc(headX + size * 0.04, headY + size * 0.02, headRadius * 0.12, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = '#92400e';
-  ctx.lineWidth = Math.max(1, size * 0.025);
-  ctx.beginPath();
-  ctx.moveTo(bodyCenterX + bodyRadiusX * 0.6, bodyCenterY + bodyRadiusY * 0.3);
-  ctx.quadraticCurveTo(size * 0.76, bodyCenterY + size * 0.12, size * 0.74, bodyCenterY - size * 0.02);
-  ctx.stroke();
-
-  ctx.fillStyle = '#f97316';
-  ctx.beginPath();
-  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.8);
-  ctx.lineTo(headX - size * 0.06, headY - headRadius * 1.3);
-  ctx.lineTo(headX + size * 0.01, headY - headRadius);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#facc15';
-  ctx.beginPath();
-  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.4);
-  ctx.quadraticCurveTo(headX - size * 0.16, headY - headRadius * 0.24, headX - size * 0.08, headY + size * 0.04);
-  ctx.quadraticCurveTo(headX - size * 0.02, headY - headRadius * 0.05, headX + size * 0.02, headY - headRadius * 0.2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
@@ -608,23 +419,16 @@ registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTav
 registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
   drawDarkDwarfholdStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
+// AMBIENT_FARM draws from the sprite sheet via baseTileCoords.
 registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
   drawAmbientHomesteadStructure(ctx, drawOptions)
 );
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
   drawAmbientHuntingLodgeStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
-  drawAmbientLumberMillStructure(ctx, drawOptions)
-);
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
   drawAmbientMoonwellStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_SLEEPING_DRAGON', (ctx, drawOptions) =>
-  drawAmbientSleepingDragonStructure(ctx, drawOptions)
-);
-
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   const fallbackTower = tileLookup.get('TOWER');
   if (fallbackTower) {
@@ -632,13 +436,22 @@ if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   }
 }
 
-
-
 const TOWN_ROAD_OVERLAY_KEY = 'TOWN_ROAD';
 
-const hillOverlayKeySet = new Set(['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW']);
+const hillOverlayKeySet = new Set([
+  'HILLS',
+  'HILLS_VARIANT_A',
+  'HILLS_VARIANT_B',
+  'HILLS_SNOW',
+  'HILLS_BADLANDS'
+]);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
+const cutTreeOverlayKey = tileLookup.has('CUT_TREES') ? 'CUT_TREES' : null;
 const jungleOverlayKey = 'JUNGLE_TREE';
+const woodElfGroveStructureKeys = ['WOOD_ELF_GROVES', 'WOOD_ELF_GROVES_LARGE', 'WOOD_ELF_GROVES_GRAND'];
+const woodElfGroveStructureKeySet = new Set(woodElfGroveStructureKeys);
+const isWoodElfGroveStructureKey = (key) =>
+  typeof key === 'string' && woodElfGroveStructureKeySet.has(key);
 
 const volcanoOverlayKeySet = new Set(['VOLCANO', 'ACTIVE_VOLCANO']);
 const isVolcanoOverlayKey = (key) => typeof key === 'string' && volcanoOverlayKeySet.has(key);
@@ -688,7 +501,7 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
       return 0;
     }
     case 'woodElfGrove': {
-      if (tile.structure === 'WOOD_ELF_GROVES') {
+      if (isWoodElfGroveStructureKey(tile.structure)) {
         return 1;
       }
       if (tileHasTreeOverlay(tile)) {
@@ -2438,6 +2251,14 @@ const woodElfGrovePopulationRoleOptions = [
   { key: 'nymphs', label: 'Nymphs', color: '#9bd4a9' },
   { key: 'ents', label: 'Ents', color: '#8bbbcf' }
 ];
+
+const woodElfGroveClassificationPopulationMax = {
+  'Forest Retreat': 180,
+  'Canopy Sanctuary': 240,
+  'Hidden Enclave': 360,
+  'Sacred Grove': 500,
+  'Ancient Grove': 560
+};
 
 const lizardmenCityPopulationRoleOptions = [
   { key: 'lizardmen', label: 'Lizardmen', color: '#3a9f68' }
@@ -4528,6 +4349,8 @@ function generateWoodElfGroveDetails(name, random) {
     classification = 'Canopy Sanctuary';
   }
 
+  const populationMax = woodElfGroveClassificationPopulationMax[classification] || 560;
+
   let populationDescriptor = 'wardens';
   if (classification === 'Ancient Grove') {
     populationDescriptor = 'elders';
@@ -4557,6 +4380,7 @@ function generateWoodElfGroveDetails(name, random) {
     classification,
     name,
     population,
+    populationMax,
     populationLabel: 'Population',
     populationDescriptor,
     isSettlement: true,
@@ -6254,7 +6078,8 @@ const ambientStructureOptionsByCulture = {
     'Tunnel Watch Post'
   ]),
   elves: createAmbientStructureOptions([
-    { label: 'Moonwell Glade', requiresTreeNeighbor: true },
+    { label: 'Great Tree', requiresTreeOverlay: true },
+    { label: 'Moonwell', requiresTreeOverlay: true },
     'Leafweaver Pavilion',
     'Starbloom Archway',
     'Silversong Clearing'
@@ -6891,6 +6716,38 @@ function applyCulturalInfluence({
       }
     }
     return false;
+  };
+
+  const replaceTreesNearLumberMill = (centerX, centerY) => {
+    if (!cutTreeOverlayKey) {
+      return;
+    }
+    const radius = 1;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (!neighborTile || neighborTile.structure || neighborTile.river) {
+          continue;
+        }
+        if (!tileHasTreeOverlay(neighborTile)) {
+          continue;
+        }
+        if (isTreeOverlayKey(neighborTile.hillOverlay)) {
+          neighborTile.hillOverlay = null;
+        }
+        if (neighborTile.overlay !== cutTreeOverlayKey) {
+          neighborTile.overlay = cutTreeOverlayKey;
+        }
+      }
+    }
   };
 
   for (let y = 0; y < mapHeight; y += 1) {
@@ -7904,12 +7761,19 @@ function applyCulturalInfluence({
       let adjacentToTreeCache = null;
       let isMountainTileCache = null;
       let hasForestOverlayCache = null;
+      let hasTreeOverlayCache = null;
       const eligibleOptions = options.filter((option) => {
         if (option.requiresTreeNeighbor) {
           if (adjacentToTreeCache === null) {
             adjacentToTreeCache = isTileAdjacentToTree(x, y);
           }
           return adjacentToTreeCache;
+        }
+        if (option.requiresTreeOverlay) {
+          if (hasTreeOverlayCache === null) {
+            hasTreeOverlayCache = tileHasTreeOverlay(tile);
+          }
+          return hasTreeOverlayCache;
         }
         if (option.requiresMountainOverlay) {
           if (isMountainTileCache === null) {
@@ -7958,10 +7822,18 @@ function applyCulturalInfluence({
 
       if (option.key === 'lumber_mill') {
         assignAmbientStructureToTile('AMBIENT_LUMBER_MILL');
+        replaceTreesNearLumberMill(x, y);
       } else if (option.key === 'homestead') {
         assignAmbientStructureToTile('AMBIENT_HOMESTEAD');
       } else if (option.key === 'sleeping_dragon') {
         assignAmbientStructureToTile('AMBIENT_SLEEPING_DRAGON');
+      } else if (option.key === 'great_tree') {
+        const variantSeed = (seeds.selection + 0x9e3779b9) >>> 0;
+        const variantRoll = hashCoords(x, y, variantSeed);
+        const hasAltGreatTree = tileLookup.has('AMBIENT_GREAT_TREE_ALT');
+        const structureKey =
+          hasAltGreatTree && variantRoll >= 0.5 ? 'AMBIENT_GREAT_TREE_ALT' : 'AMBIENT_GREAT_TREE';
+        assignAmbientStructureToTile(structureKey);
       } else if (option.key === 'moonwell_glade' || option.key === 'moonwell') {
         assignAmbientStructureToTile('AMBIENT_MOONWELL');
       }
@@ -8068,7 +7940,7 @@ const structureHighlightGroups = {
     strokeColor: '#4ade80',
     fillAlpha: 0.26,
     strokeAlpha: 0.88,
-    keys: ['WOOD_ELF_GROVES'],
+    keys: woodElfGroveStructureKeys.filter((key) => tileLookup.has(key)),
     types: ['woodElfGrove']
   }),
   lizardmenCity: createHighlightGroup({
@@ -17115,6 +16987,30 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     {
       file: 'Dwarf-Fortress_2.webp',
       alt: 'Illustration of a dwarven stronghold'
+    },
+    {
+      file: 'Dwarf-Fortress_grass_1.webp',
+      alt: 'Illustration of a dwarven hold nestled in grassy hills'
+    },
+    {
+      file: 'Dwarf_Fortress_3.webp',
+      alt: 'Illustration of a sprawling dwarven fortress'
+    },
+    {
+      file: 'dwarf_fortress_4.webp',
+      alt: 'Illustration of a fortified dwarven city'
+    },
+    {
+      file: 'Dark-Tower_1.webp',
+      alt: 'Illustration of a looming dark tower settlement'
+    },
+    {
+      file: 'Hill-Hold_1.webp',
+      alt: 'Illustration of a dwarven hill hold'
+    },
+    {
+      file: 'ruined_dwarfhold_1.webp',
+      alt: 'Illustration of a ruined dwarven hold'
     }
   ];
   const settlementArtSeedParts = [
@@ -18029,8 +17925,52 @@ function createArchipelagoMask() {
         const radiusY = spacing * (0.24 + activation * 0.28 + (1 - radiusSeed) * 0.12);
         const height = 0.6 + activation * 0.65;
         const power = 1.25 + valueNoise(sampleX - 2.48, sampleY + 8.92, 0x85ebca77) * 0.55;
+        const lobeCount =
+          2 + Math.floor(valueNoise(sampleX - 9.17, sampleY + 2.41, 0x94d049bb) * 6.6);
+        const lobeStrength =
+          0.11 + valueNoise(sampleX + 5.19, sampleY + 1.77, 0x748f82ee) * 0.32;
+        const lobePhase =
+          valueNoise(sampleX - 2.63, sampleY + 4.82, 0x510e527f) * Math.PI * 2;
+        const subLobeCount =
+          lobeCount * 2 +
+          Math.floor(valueNoise(sampleX + 8.41, sampleY - 3.76, 0xbf58476d) * 4.6);
+        const subLobeStrength =
+          0.045 + valueNoise(sampleX - 1.28, sampleY + 9.11, 0x3bd39e10) * 0.13;
+        const subLobePhase =
+          valueNoise(sampleX + 6.73, sampleY + 2.19, 0x2545f491) * Math.PI * 2;
+        const ridgeStrength =
+          0.035 + valueNoise(sampleX * 1.9 + 3.13, sampleY * 1.9 - 4.77, 0x13198a2e) * 0.18;
+        const ridgePhase =
+          valueNoise(sampleX * 2.4 - 5.61, sampleY * 2.4 + 8.37, 0x243f6a88) * Math.PI * 2;
+        const ridgeSeed =
+          Math.floor(valueNoise(sampleX * 3.7 + 1.91, sampleY * 3.7 - 7.42, 0x9e3779b9) * 0xffffffff) >>> 0;
+        const fractureStrength =
+          0.03 + valueNoise(sampleX * 1.7 - 4.22, sampleY * 1.7 + 5.94, 0xbb67ae85) * 0.12;
+        const fracturePhase =
+          valueNoise(sampleX * 2.1 + 7.38, sampleY * 2.1 - 6.57, 0x6c44198c) * Math.PI * 2;
+        const fractureSeed =
+          Math.floor(valueNoise(sampleX * 4.2 - 2.63, sampleY * 4.2 + 3.41, 0x3243f6a9) * 0xffffffff) >>> 0;
 
-        islands.push({ x: centerX, y: centerY, radiusX, radiusY, height, power });
+        islands.push({
+          x: centerX,
+          y: centerY,
+          radiusX,
+          radiusY,
+          height,
+          power,
+          lobeCount,
+          lobeStrength,
+          lobePhase,
+          subLobeCount,
+          subLobeStrength,
+          subLobePhase,
+          ridgeStrength,
+          ridgePhase,
+          ridgeSeed,
+          fractureStrength,
+          fracturePhase,
+          fractureSeed
+        });
       }
     }
 
@@ -18039,18 +17979,46 @@ function createArchipelagoMask() {
       const island = islands[i];
       const dx = nx - island.x;
       const dy = ny - island.y;
-      const distance = Math.sqrt(
+      const baseDistance = Math.sqrt(
         (dx * dx) / (island.radiusX * island.radiusX) +
           (dy * dy) / (island.radiusY * island.radiusY)
       );
+      const angle = Math.atan2(dy, dx);
+      const edgeBlend = clamp(1 - Math.min(baseDistance, 1.6) * 0.55, 0, 1);
+      const lobeWarp =
+        Math.sin(angle * island.lobeCount + island.lobePhase) * island.lobeStrength * edgeBlend;
+      const subLobeWarp =
+        Math.sin(angle * island.subLobeCount + island.subLobePhase) *
+        island.subLobeStrength *
+        edgeBlend;
+      const ridgeNoise =
+        (valueNoise(
+          Math.cos(angle + island.ridgePhase) * 3.3 + baseDistance * 1.4,
+          Math.sin(angle + island.ridgePhase) * 3.3 + baseDistance * 1.4,
+          island.ridgeSeed
+        ) -
+          0.5) *
+        island.ridgeStrength *
+        edgeBlend;
+      const fractureNoise =
+        (valueNoise(
+          Math.cos(angle * 0.6 + island.fracturePhase) * 4.6 + baseDistance * 2.1,
+          Math.sin(angle * 0.6 + island.fracturePhase) * 4.6 + baseDistance * 2.1,
+          island.fractureSeed
+        ) -
+          0.5) *
+        island.fractureStrength *
+        edgeBlend;
+      const warpedDistance = baseDistance - lobeWarp - subLobeWarp - ridgeNoise - fractureNoise;
+      const distance = warpedDistance < 0 ? 0 : warpedDistance;
       let influence = clamp(1 - distance, 0, 1);
       influence = Math.pow(influence, island.power) * island.height;
       sum += influence;
     }
 
-    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.34;
-    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.2;
-    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.1;
+    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.38;
+    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.24;
+    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.12;
     const scatter = Math.max(
       0,
       valueNoise(nx * 11.7 + 1.6, ny * 11.7 + 7.4, 0x51eb851f) - 0.63
@@ -18085,19 +18053,36 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
     const centerX = rng() * width;
     const centerY = rng() * height;
     const radius = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
-    const aspect = 0.6 + rng() * 0.9;
-    const majorRadius = Math.max(radius, 3);
-    const minorRadius = Math.max(majorRadius * aspect, 3);
+    const aspect = 0.45 + rng() * 1.35;
+    let majorRadius = Math.max(radius, 3);
+    let minorRadius = Math.max(majorRadius * aspect, 3);
+    if (rng() < 0.5) {
+      const swap = majorRadius;
+      majorRadius = minorRadius;
+      minorRadius = swap;
+    }
     const rotation = rng() * Math.PI * 2;
     const cosRotation = Math.cos(rotation);
     const sinRotation = Math.sin(rotation);
-    const falloffPower = 1.15 + rng() * 1.6;
-    const shelfStrength = 0.18 + rng() * 0.24;
-    const peakHeight = 0.55 + rng() * 0.4;
-    const coastlineRoughness = 0.12 + rng() * 0.16;
-    const turbulenceStrength = 0.18 + rng() * 0.26;
-    const noiseScale = 3.2 + rng() * 4.8;
+    const falloffPower = 1.1 + rng() * 1.7;
+    const shelfStrength = 0.22 + rng() * 0.34;
+    const peakHeight = 0.55 + rng() * 0.45;
+    const coastlineRoughness = 0.22 + rng() * 0.28;
+    const turbulenceStrength = 0.26 + rng() * 0.36;
+    const noiseScale = 3.4 + rng() * 6.2;
     const tectonicStrength = 0.3 + rng() * 0.5;
+    const lobeCount = 2 + Math.floor(rng() * 7);
+    const lobePhase = rng() * Math.PI * 2;
+    const lobeStrength = 0.12 + rng() * 0.26;
+    const rippleCount = lobeCount * 2 + Math.floor(rng() * 5);
+    const ripplePhase = rng() * Math.PI * 2;
+    const rippleStrength = 0.045 + rng() * 0.11;
+    const ridgeStrength = 0.03 + rng() * 0.11;
+    const ridgePhase = rng() * Math.PI * 2;
+    const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
+    const fractureStrength = 0.035 + rng() * 0.13;
+    const fracturePhase = rng() * Math.PI * 2;
+    const fractureSeed = (islandSeed ^ 0xbb67ae85) >>> 0;
 
     const influenceRadiusX = majorRadius * 1.7;
     const influenceRadiusY = minorRadius * 1.7;
@@ -18114,12 +18099,43 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
         const rotatedX = offsetX * cosRotation - offsetY * sinRotation;
         const rotatedY = offsetX * sinRotation + offsetY * cosRotation;
         const distance = Math.sqrt(rotatedX * rotatedX + rotatedY * rotatedY);
-        if (distance > 1.6) {
+        if (distance > 1.9) {
           continue;
         }
 
         const normalizedX = (x + 0.5) / width;
         const normalizedY = (y + 0.5) / height;
+        const angle = Math.atan2(rotatedY, rotatedX);
+        const edgeBlend = clamp(1 - Math.min(distance, 1.6) * 0.65, 0, 1);
+        const angularWarp =
+          (Math.sin(angle * lobeCount + lobePhase) * lobeStrength +
+            Math.sin(angle * rippleCount + ripplePhase) * rippleStrength) *
+          edgeBlend;
+        const ridgeNoise =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.00013) * 9.1 + Math.cos(angle + ridgePhase) * 3.1,
+            (normalizedY + islandSeed * 0.00013) * 9.1 + Math.sin(angle + ridgePhase) * 3.1,
+            ridgeSeed
+          ) -
+            0.5) *
+          ridgeStrength *
+          edgeBlend;
+        const fractureNoise =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.000091) * 13.2 +
+              Math.cos(angle * 0.65 + fracturePhase) * 4.5,
+            (normalizedY + islandSeed * 0.000091) * 13.2 +
+              Math.sin(angle * 0.65 + fracturePhase) * 4.5,
+            fractureSeed
+          ) -
+            0.5) *
+          fractureStrength *
+          edgeBlend;
+        const warpedDistance = distance - angularWarp - ridgeNoise - fractureNoise;
+        if (warpedDistance > 1.6) {
+          continue;
+        }
+
         const coastlineNoise =
           valueNoise(
             (normalizedX + islandSeed * 0.0000153) * noiseScale,
@@ -18127,7 +18143,7 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
             islandSeed
           ) - 0.5;
         const coastalWarp = coastlineNoise * coastlineRoughness;
-        const adjustedDistance = distance - coastalWarp;
+        const adjustedDistance = warpedDistance - coastalWarp;
         if (adjustedDistance > 1.2) {
           continue;
         }
@@ -18192,37 +18208,37 @@ const continentalPlateConfigs = {
     fragmentDistance: 0.06,
     majorRadiusRange: [0.12, 0.2],
     fragmentRadiusRange: [0.05, 0.11],
-    majorRadiusXMultiplierRange: [0.7, 1.6],
-    majorRadiusYMultiplierRange: [0.65, 1.5],
-    fragmentRadiusXMultiplierRange: [0.65, 1.45],
-    fragmentRadiusYMultiplierRange: [0.6, 1.35],
+    majorRadiusXMultiplierRange: [0.55, 2.2],
+    majorRadiusYMultiplierRange: [0.5, 2.05],
+    fragmentRadiusXMultiplierRange: [0.5, 1.9],
+    fragmentRadiusYMultiplierRange: [0.45, 1.75],
     majorOceanChance: 0.6,
     fragmentOceanChance: 0.45,
     majorLandStrengthRange: [0.45, 0.85],
     fragmentLandStrengthRange: [0.4, 0.75],
     majorOceanStrengthRange: [0.45, 0.7],
     fragmentOceanStrengthRange: [0.35, 0.6],
-    majorFalloffRange: [1.4, 2.4],
-    fragmentFalloffRange: [1.3, 2.2],
+    majorFalloffRange: [1.25, 2.7],
+    fragmentFalloffRange: [1.2, 2.4],
     majorSharpnessRange: [1.2, 2],
     fragmentSharpnessRange: [1.15, 2.05],
-    majorJaggednessRange: [0.7, 1.4],
-    fragmentJaggednessRange: [0.9, 1.8],
-    majorTurbulenceRange: [0.55, 0.95],
-    fragmentTurbulenceRange: [0.6, 1],
-    majorNoiseScaleRange: [3.5, 7.5],
-    fragmentNoiseScaleRange: [6.5, 12],
+    majorJaggednessRange: [1.45, 3.2],
+    fragmentJaggednessRange: [1.6, 3.5],
+    majorTurbulenceRange: [0.85, 1.4],
+    fragmentTurbulenceRange: [0.95, 1.55],
+    majorNoiseScaleRange: [5.2, 10.5],
+    fragmentNoiseScaleRange: [8.5, 16.8],
     majorMinEdge: 0.04,
     fragmentMinEdge: 0.015,
     fallbackPlate: {
       radiusX: 0.18,
-      radiusY: 0.14,
-      falloff: 1.8,
+      radiusY: 0.13,
+      falloff: 1.65,
       sharpness: 1.6,
       strength: 0.6,
-      jaggedness: 0.9,
-      turbulence: 0.7,
-      noiseScale: 6
+      jaggedness: 1.45,
+      turbulence: 0.95,
+      noiseScale: 7.8
     }
   }
 };
@@ -23357,7 +23373,14 @@ function createWorld(seedString) {
   );
   const primaryHillOverlayKey = tileLookup.has('HILLS') ? 'HILLS' : baseHillOverlayOptions[0] || null;
   const snowHillOverlayKey = tileLookup.has('HILLS_SNOW') ? 'HILLS_SNOW' : primaryHillOverlayKey;
-  const hillOverlayPresenceKeys = [...baseHillOverlayOptions, snowHillOverlayKey].filter(Boolean);
+  const badlandsHillOverlayKey = tileLookup.has('HILLS_BADLANDS')
+    ? 'HILLS_BADLANDS'
+    : primaryHillOverlayKey;
+  const hillOverlayPresenceKeys = [
+    ...baseHillOverlayOptions,
+    snowHillOverlayKey,
+    badlandsHillOverlayKey
+  ].filter(Boolean);
   const hillOverlayPresenceKeySet = new Set(hillOverlayPresenceKeys);
   const hillOverlayKeys = Array.from(hillOverlayPresenceKeySet);
   const hillVariantSelectionSeed = (seedNumber + 0x3ab41d7f) >>> 0;
@@ -23376,15 +23399,39 @@ function createWorld(seedString) {
     return baseHillOverlayOptions[index];
   };
   const isHillOverlay = (overlayKey) => overlayKey != null && hillOverlayPresenceKeySet.has(overlayKey);
+  const normalizeHillOverlayKey = (tile, key) => {
+    if (!tile || !key || !hillOverlayPresenceKeySet.has(key)) {
+      return null;
+    }
+    if (
+      badlandsHillOverlayKey &&
+      hasBadlandsTile &&
+      tile.base === badlandsTileKey &&
+      key !== badlandsHillOverlayKey
+    ) {
+      return badlandsHillOverlayKey;
+    }
+    if (
+      snowHillOverlayKey &&
+      tile.base === snowTileKey &&
+      key !== snowHillOverlayKey &&
+      key !== badlandsHillOverlayKey
+    ) {
+      return snowHillOverlayKey;
+    }
+    return key;
+  };
   const getHillOverlayKeyForTile = (tile) => {
     if (!tile) {
       return null;
     }
-    if (tile.hillOverlay && isHillOverlay(tile.hillOverlay)) {
-      return tile.hillOverlay;
+    const hillOverlayKey = normalizeHillOverlayKey(tile, tile.hillOverlay);
+    if (hillOverlayKey) {
+      return hillOverlayKey;
     }
-    if (tile.overlay && isHillOverlay(tile.overlay)) {
-      return tile.overlay;
+    const overlayKey = normalizeHillOverlayKey(tile, tile.overlay);
+    if (overlayKey) {
+      return overlayKey;
     }
     return null;
   };
@@ -23420,7 +23467,8 @@ function createWorld(seedString) {
           }
           const baseIsGrass = tile.base === grassTileKey;
           const baseIsSnow = tile.base === snowTileKey;
-          if (!baseIsGrass && !baseIsSnow) {
+          const baseIsBadlands = hasBadlandsTile && tile.base === badlandsTileKey;
+          if (!baseIsGrass && !baseIsSnow && !baseIsBadlands) {
             continue;
           }
           const heightValue = elevationField[idx];
@@ -23473,7 +23521,11 @@ function createWorld(seedString) {
             noiseValue * 0.12;
           const threshold = 0.5 - mountainBonus * 0.18;
           if (compositeScore > threshold) {
-            const overlayKey = baseIsSnow ? snowHillOverlayKey : selectBaseHillOverlayKey(x, y);
+            const overlayKey = baseIsSnow
+              ? snowHillOverlayKey
+              : baseIsBadlands
+              ? badlandsHillOverlayKey
+              : selectBaseHillOverlayKey(x, y);
             if (overlayKey) {
               tile.hillOverlay = overlayKey;
             }
@@ -24022,8 +24074,10 @@ function createWorld(seedString) {
       }
     }
 
-    const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
-    if (woodElfGroveKey) {
+  const woodElfGroveBaseKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
+  const woodElfGroveLargeKey = tileLookup.has('WOOD_ELF_GROVES_LARGE') ? 'WOOD_ELF_GROVES_LARGE' : null;
+  const woodElfGroveGrandKey = tileLookup.has('WOOD_ELF_GROVES_GRAND') ? 'WOOD_ELF_GROVES_GRAND' : null;
+  if (woodElfGroveBaseKey) {
       const getOceanMask = (() => {
         let computed = false;
         return () => {
@@ -24183,7 +24237,19 @@ function createWorld(seedString) {
           }
           const name = generateWoodElfGroveName(rng);
           const details = generateWoodElfGroveDetails(name, rng);
-          tile.structure = woodElfGroveKey;
+          let structureKey = woodElfGroveBaseKey;
+          const populationMax = Number.isFinite(details?.populationMax) ? details.populationMax : null;
+          const populationValue = Number.isFinite(details?.population) ? details.population : null;
+          if (populationMax && populationMax > 0 && populationValue != null) {
+            const populationRatio = populationValue / populationMax;
+            if (woodElfGroveGrandKey && populationRatio >= 0.9) {
+              structureKey = woodElfGroveGrandKey;
+            } else if (woodElfGroveLargeKey && populationRatio >= 0.8) {
+              structureKey = woodElfGroveLargeKey;
+            }
+          }
+
+          tile.structure = structureKey;
           tile.structureName = details.name || name;
           tile.structureDetails = details;
           placed.push(candidate);
@@ -24533,7 +24599,9 @@ function createWorld(seedString) {
     ...evilWizardTowers
   ];
   const hillOverlayKeysForStructures = new Set(
-    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW'].filter((key) => tileLookup.has(key))
+    ['HILLS', 'HILLS_VARIANT_A', 'HILLS_VARIANT_B', 'HILLS_SNOW', 'HILLS_BADLANDS'].filter((key) =>
+      tileLookup.has(key)
+    )
   );
   const isHillOverlayForStructures = (overlayKey) =>
     overlayKey != null && hillOverlayKeysForStructures.has(overlayKey);
