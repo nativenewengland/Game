@@ -2385,7 +2385,12 @@ const orcCampFeatures = [
   'An arena of packed earth hosts nightly combat rites.',
   'Blacksmith forges belch sparks as crude blades are hammered.',
   'Watchfires burn green with alchemical fumes.',
-  'Captured standards hang as warnings to intruders.'
+  'Captured standards hang as warnings to intruders.',
+  'Siege totems ring the muster fields with carved skulls.',
+  'Wolf pens echo with snarls as wargs are blooded for war.',
+  'Smouldering pyres roast slabs of captured game beneath iron spits.',
+  "Runic totems glow faintly, channeling the shamans' war magic.",
+  'War shamans trace scars of conquest in ash across the ground.'
 ];
 const orcWarLeaders = [
   'Gorath the Red',
@@ -2398,6 +2403,193 @@ const orcWarLeaders = [
   'Druza Stormchant'
 ];
 const orcThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Menacing'];
+const gnollPackAdjectives = [
+  'Dustmane',
+  'Howling',
+  'Sunscar',
+  'Nightmaw',
+  'Boneclaw',
+  'Ashsnout',
+  'Stormsnout',
+  'Ragged',
+  'Skullmuzzle',
+  'Emberfang'
+];
+const gnollPackNouns = [
+  'Pack',
+  'Raid',
+  'Howlers',
+  'Hunters',
+  'Warband',
+  'Maw',
+  'Snarl',
+  'Scavengers'
+];
+const gnollCampFeatures = [
+  'Hyena laughter ripples through the night around bone-festooned totems.',
+  'Racks of scavenged shields rattle in the dusty wind.',
+  'Smoke from marrow fires mingles with the copper scent of fresh kills.',
+  'Bone fetishes clatter from lines strung between crude hide tents.',
+  'Fresh tracks circle the camp where scouts prowl for prey.',
+  'Hidebound drums pulse with erratic, feral rhythms.',
+  'Stolen banners flutter from poles, their colors daubed over in ochre runes.'
+];
+const gnollWarLeaders = [
+  'Szimri Bone-Eater',
+  'Raka Sun-Scar',
+  'Yagra Laughing Maw',
+  'Thokha Dusthowl',
+  'Mekri Clawtaker',
+  'Zharri Emberfur',
+  'Gkala Night-Cackle',
+  'Fenrik Thornsnout'
+];
+const gnollThreatDescriptors = ['Elevated', 'Severe', 'Ravenous', 'Unstable'];
+const trollDenAdjectives = [
+  'Bog',
+  'Stone',
+  'Mire',
+  'Frost',
+  'Grim',
+  'Thunder',
+  'Rot',
+  'Boulder',
+  'Moss',
+  'Brine'
+];
+const trollDenNouns = [
+  'Den',
+  'Brood',
+  'Hollow',
+  'Pit',
+  'Haunt',
+  'Grotto',
+  'Crag',
+  'Hold'
+];
+const trollCampFeatures = [
+  'Sodden logs reinforce earthen berms slick with algae.',
+  'Cauldrons bubble with pungent stews of swamp herbs and bone.',
+  'Huge footprints sink deep into the mud around crude watchposts.',
+  'Petrified trophies hang from stalagmites that jut through the camp.',
+  'Pools of regeneration glow faintly beneath dangling charms.',
+  'Stone totems scarred by claw marks mark the brood\'s territory.',
+  'Fetid mists coil low where shamans chant to forgotten spirits.'
+];
+const trollWarLeaders = [
+  'Gorvul the Regrown',
+  'Svara Mireblood',
+  'Thrum Rockhide',
+  'Ulmak Bone-Twister',
+  'Yrog the Trollfather',
+  'Brelga Marsh-Eye',
+  'Drumm Stonebelly',
+  'Hulra Riverbane'
+];
+const trollThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Relentless'];
+const ogreClanAdjectives = [
+  'Crushjaw',
+  'Bonegrinder',
+  'Thundermaul',
+  'Ironbelly',
+  'Boulderfist',
+  'Skullsmash',
+  'Stormbreaker',
+  'Gorehammer',
+  'Rubblehide',
+  'Maulbrand'
+];
+const ogreClanNouns = [
+  'Clan',
+  'Muster',
+  'Warband',
+  'Brutes',
+  'Crushers',
+  'Maulers',
+  'Slam',
+  'Rend'
+];
+const ogreCampFeatures = [
+  'Enormous clubs lean against boulders beside shattered siege engines.',
+  'Meat racks sag beneath the weight of whole roasted beasts.',
+  'Stone drums boom as ogres challenge one another for dominance.',
+  'Piles of splintered shields form makeshift barricades.',
+  'Massive footprints churn the earth into muddy pits.',
+  'Bone totems crowned with cracked helms tower over the encampment.',
+  'Wagons stripped for timber bolster crude siege towers.'
+];
+const ogreWarLeaders = [
+  'Grunak Boulderborn',
+  'Mazga Skullsplit',
+  'Durmag the Slammer',
+  'Olra Ironbelly',
+  'Thurg Grudgebite',
+  'Rendha Thunderhand',
+  'Krolf Meat-Hewer',
+  'Vorga Stonecrusher'
+];
+const ogreThreatDescriptors = ['Severe', 'Dire', 'Overwhelming', 'Menacing'];
+const banditCrewAdjectives = [
+  'Red',
+  'Black',
+  'Iron',
+  'Rust',
+  'Shadow',
+  'Amber',
+  'Silver',
+  'Wild',
+  'Gravel',
+  'Broken'
+];
+const banditCrewNouns = [
+  'Knives',
+  'Riders',
+  'Coyotes',
+  'Lanterns',
+  'Vultures',
+  'Hands',
+  'Blades',
+  'Company',
+  'Road',
+  'Hollows'
+];
+const banditCampFeatures = [
+  'Lookouts with hooded lanterns signal across hidden paths.',
+  'A palisade of wagons shields caches of stolen goods.',
+  'Practice dummies are riddled with crossbow bolts by moonlight.',
+  'Cookfires smoke with the scent of spiced trail stew and black powder.',
+  'Maps of trade routes lie weighted beneath daggers in the command tent.',
+  'Captured banners hang upside down as trophies of defiance.',
+  'Hidden pitfall traps are dusted over to snare unwary pursuers.'
+];
+const banditLeaders = [
+  'Captain Rysa Blackflint',
+  'Ser Caldor the Spare',
+  'Matron Vel Tallow',
+  'Garrin Embercloak',
+  'The Grinning Fox',
+  'Jessa Quickthorn',
+  'Marshal Darek Ironlace',
+  'Nyra of the Broken Road'
+];
+const banditThreatDescriptors = ['Wary', 'Perilous', 'Severe', 'Menacing'];
+const banditSpecialties = [
+  'ambushing caravans that brave the frontier passes',
+  'selling illicit guides across the border wilds',
+  'smuggling relics through hidden ravines',
+  'extorting frontier villages for tribute',
+  'hijacking supply barges before they reach port',
+  'raiding tax convoys returning to the heartland',
+  'running contraband between rival duchies',
+  'training cutthroat outriders for mercenary companies'
+];
+const warCampTypeBaseWeights = {
+  orcCamp: 1.05,
+  gnollCamp: 0.95,
+  trollCamp: 0.85,
+  ogreCamp: 0.8,
+  banditCamp: 1.1
+};
 const centaurHerdAdjectives = [
   'Swiftwind',
   'Stormhoof',
@@ -4267,7 +4459,7 @@ function generateOrcCampName(random) {
   return `Camp of the ${adjective} ${noun}`;
 }
 
-function generateOrcCampDetails(name, random) {
+function generateOrcCampDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const adjective = pickRandomFrom(orcTribeAdjectives, randomFn) || 'Ironjaw';
   const noun = pickRandomFrom(orcTribeNouns, randomFn) || 'Clan';
@@ -4276,7 +4468,21 @@ function generateOrcCampDetails(name, random) {
   const feature = pickRandomFrom(orcCampFeatures, randomFn) ||
     'War drums thunder at dusk from within the palisade.';
   const threatLevel = pickRandomFrom(orcThreatDescriptors, randomFn) || 'Severe';
-  const raidingFocus = pickRandomFrom(['plundered caravans', 'frontier villages', 'wandering merchants', 'remote farmsteads'], randomFn);
+  const raidingFocus = pickRandomFrom(
+    ['plundered caravans', 'frontier villages', 'wandering merchants', 'remote farmsteads'],
+    randomFn
+  );
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : null;
+  const targetHint = typeof options.targetHint === 'string' && options.targetHint.trim()
+    ? options.targetHint.trim()
+    : null;
+  const descriptionParts = [
+    `${tribeName} raiders gather here, their sights set on ${targetHint || raidingFocus || 'nearby lands'}.`,
+    terrain ? `Scouts prowl ${terrain}, seeking weaknesses in distant defenses.` : null,
+    feature
+  ].filter(Boolean);
 
   return {
     type: 'orcCamp',
@@ -4286,10 +4492,378 @@ function generateOrcCampDetails(name, random) {
     warLeader,
     threatLevel,
     inhabitants: `${tribeName} warriors`,
-    description: `${tribeName} raiders gather here, their sights set on ${raidingFocus || 'nearby lands'}. ${feature}`,
+    description: descriptionParts.join(' '),
     banner: pickRandomFrom(orcTribeAdjectives, randomFn) || 'Rageborn',
     vow: 'Blood Oaths'
   };
+}
+
+function generateGnollCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(gnollPackAdjectives, randomFn) || 'Dustmane';
+  const noun = pickRandomFrom(gnollPackNouns, randomFn) || 'Pack';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun} Den`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} War-Pack`;
+  }
+  return `Den of the ${adjective} ${noun}`;
+}
+
+function generateGnollCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(gnollPackAdjectives, randomFn) || 'Dustmane';
+  const noun = pickRandomFrom(gnollPackNouns, randomFn) || 'Pack';
+  const packName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(gnollWarLeaders, randomFn) || 'Szimri Bone-Eater';
+  const feature = pickRandomFrom(gnollCampFeatures, randomFn) ||
+    'Hyena laughter ripples through the night around bone-festooned totems.';
+  const threatLevel = pickRandomFrom(gnollThreatDescriptors, randomFn) || 'Severe';
+  const target = options.targetHint ||
+    pickRandomFrom(
+      ['desert caravans', 'scattered ranches', 'frontier watchposts', 'pilgrim trains'],
+      randomFn
+    ) ||
+    'border caravans';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the open steppe';
+  const descriptionParts = [
+    `${packName} raiders circle ${terrain}, drawn by ${target}.`,
+    feature
+  ].filter(Boolean);
+
+  return {
+    type: 'gnollCamp',
+    name,
+    displayType: 'Gnoll War Pack',
+    classification: 'Beastman Encampment',
+    tribe: `${packName} pack`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${packName} scavengers`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Bone Fetish', 'Hyena Mane', 'Sun-Torn Hide', 'Fetid Standard'],
+      randomFn
+    ) || 'Bone Fetish',
+    vow: 'Pack Howls'
+  };
+}
+
+function generateTrollCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(trollDenAdjectives, randomFn) || 'Bog';
+  const noun = pickRandomFrom(trollDenNouns, randomFn) || 'Den';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun}`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} Brood`;
+  }
+  return `${noun} of the ${adjective} Tides`;
+}
+
+function generateTrollCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(trollDenAdjectives, randomFn) || 'Bog';
+  const noun = pickRandomFrom(trollDenNouns, randomFn) || 'Den';
+  const broodName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(trollWarLeaders, randomFn) || 'Gorvul the Regrown';
+  const feature = pickRandomFrom(trollCampFeatures, randomFn) ||
+    'Sodden logs reinforce earthen berms slick with algae.';
+  const threatLevel = pickRandomFrom(trollThreatDescriptors, randomFn) || 'Dire';
+  const target = options.targetHint ||
+    pickRandomFrom(
+      ['river barges', 'marsh villages', 'lonely ferries', 'border forts'],
+      randomFn
+    ) ||
+    'river barges';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the dripping marshlands';
+  const descriptionParts = [
+    `${broodName} brutes keep watch over ${terrain}, hungry for ${target}.`,
+    feature
+  ].filter(Boolean);
+
+  return {
+    type: 'trollCamp',
+    name,
+    displayType: 'Troll Den',
+    classification: 'Monstrous Encampment',
+    tribe: `${broodName} brood`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${broodName} trolls`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Bog Totem', 'Stone Fetish', 'Riverbone Mark', 'Rotbrand'],
+      randomFn
+    ) || 'Bog Totem',
+    vow: 'Regrowth Rites'
+  };
+}
+
+function generateOgreCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(ogreClanAdjectives, randomFn) || 'Crushjaw';
+  const noun = pickRandomFrom(ogreClanNouns, randomFn) || 'Clan';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun} Muster`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} Camp`;
+  }
+  return `Stronghold of the ${adjective} ${noun}`;
+}
+
+function generateOgreCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(ogreClanAdjectives, randomFn) || 'Crushjaw';
+  const noun = pickRandomFrom(ogreClanNouns, randomFn) || 'Clan';
+  const clanName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(ogreWarLeaders, randomFn) || 'Grunak Boulderborn';
+  const feature = pickRandomFrom(ogreCampFeatures, randomFn) ||
+    'Enormous clubs lean against boulders beside shattered siege engines.';
+  const threatLevel = pickRandomFrom(ogreThreatDescriptors, randomFn) || 'Dire';
+  const target = options.targetHint ||
+    pickRandomFrom(
+      ['fortified keeps', 'hill villages', 'border caravans', 'stone bridges'],
+      randomFn
+    ) ||
+    'fortified keeps';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the broken uplands';
+  const descriptionParts = [
+    `${clanName} giants muster amid ${terrain}, plotting to smash ${target}.`,
+    feature
+  ].filter(Boolean);
+
+  return {
+    type: 'ogreCamp',
+    name,
+    displayType: 'Ogre War Camp',
+    classification: 'Giantkin Muster',
+    tribe: `${clanName} brutes`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${clanName} ogres`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Skull Brand', 'Hammer Sigil', 'Grudge Banner', 'Cracked Boulder'],
+      randomFn
+    ) || 'Skull Brand',
+    vow: 'Feast Oaths'
+  };
+}
+
+function generateBanditCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(banditCrewAdjectives, randomFn) || 'Red';
+  const noun = pickRandomFrom(banditCrewNouns, randomFn) || 'Knives';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun} Hideout`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} Camp`;
+  }
+  return `Hideout of the ${adjective} ${noun}`;
+}
+
+function generateBanditCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(banditCrewAdjectives, randomFn) || 'Red';
+  const noun = pickRandomFrom(banditCrewNouns, randomFn) || 'Knives';
+  const crewName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(banditLeaders, randomFn) || 'Captain Rysa Blackflint';
+  const feature = pickRandomFrom(banditCampFeatures, randomFn) ||
+    'Lookouts with hooded lanterns signal across hidden paths.';
+  const threatLevel = pickRandomFrom(banditThreatDescriptors, randomFn) || 'Perilous';
+  const specialty = pickRandomFrom(banditSpecialties, randomFn) ||
+    'ambushing caravans that brave the frontier passes';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the border wilds';
+  const settlementDistance = Number.isFinite(options.settlementDistance)
+    ? Math.max(1, Math.round(options.settlementDistance))
+    : null;
+  const descriptionParts = [
+    `${crewName} outlaws keep this hideout, plotting to ${specialty}.`,
+    `They melt into ${terrain} when the crown's riders draw near.`,
+    feature,
+    settlementDistance
+      ? `Scouts report that lawful patrols pass barely ${settlementDistance} leagues away.`
+      : null
+  ].filter(Boolean);
+
+  return {
+    type: 'banditCamp',
+    name,
+    displayType: 'Bandit Encampment',
+    classification: 'Outlaw Hideout',
+    tribe: `${crewName} crew`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${crewName} cutthroats`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Tattered Standard', 'Broken Wheel', 'Smoked Lantern', 'Rust Banner'],
+      randomFn
+    ) || 'Tattered Standard',
+    vow: 'Silent Concord'
+  };
+}
+
+const warCampNameGenerators = {
+  orcCamp: generateOrcCampName,
+  gnollCamp: generateGnollCampName,
+  trollCamp: generateTrollCampName,
+  ogreCamp: generateOgreCampName,
+  banditCamp: generateBanditCampName
+};
+
+const warCampDetailGenerators = {
+  orcCamp: generateOrcCampDetails,
+  gnollCamp: generateGnollCampDetails,
+  trollCamp: generateTrollCampDetails,
+  ogreCamp: generateOgreCampDetails,
+  banditCamp: generateBanditCampDetails
+};
+
+function generateWarCampForType(type, random, options = {}) {
+  const generator = warCampNameGenerators[type] || generateOrcCampName;
+  const detailGenerator = warCampDetailGenerators[type] || generateOrcCampDetails;
+  const name = generator(random);
+  const details = detailGenerator(name, random, options);
+  return { name, details };
+}
+
+function resolveWarCampTerrainDescriptor(candidate) {
+  if (!candidate) {
+    return 'the untamed frontier';
+  }
+  if (candidate.isMarsh) {
+    return 'the reed-choked wetlands';
+  }
+  if (candidate.isSand) {
+    return 'the wind-scoured dunes';
+  }
+  if (candidate.isBadlands) {
+    return 'the jagged badlands';
+  }
+  if (candidate.isSnow) {
+    return 'the frozen marches';
+  }
+  if (candidate.hill) {
+    return 'the rough hill country';
+  }
+  if ((candidate.waterAdjacency || 0) >= 2) {
+    return 'the river-cut lowlands';
+  }
+  const dryness = clamp(Number(candidate.dryness) || 0, 0, 1);
+  if (dryness >= 0.68) {
+    return 'the sunbaked plains';
+  }
+  if (dryness <= 0.32) {
+    return 'the green border meadows';
+  }
+  return 'the untamed frontier';
+}
+
+function resolveWarCampTargetHint(candidate) {
+  const distance = Number(candidate?.settlementDistance);
+  if (!Number.isFinite(distance)) {
+    return null;
+  }
+  if (distance <= 6) {
+    return 'nearby settlements';
+  }
+  if (distance <= 12) {
+    return 'lightly guarded caravans';
+  }
+  if (distance <= 20) {
+    return 'remote patrols';
+  }
+  return null;
+}
+
+function selectWarCampType(randomFn, candidate, availableTypes) {
+  if (!Array.isArray(availableTypes) || availableTypes.length === 0) {
+    return 'orcCamp';
+  }
+  if (availableTypes.length === 1) {
+    return availableTypes[0];
+  }
+  const dryness = clamp(Number(candidate?.dryness) || 0, 0, 1);
+  const waterAdjacency = Math.max(0, Number(candidate?.waterAdjacency) || 0);
+  const settlementDistance = Number(candidate?.settlementDistance);
+  const weights = availableTypes.map((type) => {
+    let weight = warCampTypeBaseWeights[type] || 1;
+    switch (type) {
+      case 'orcCamp':
+        if (candidate?.isBadlands) {
+          weight += 0.6;
+        }
+        if (candidate?.isSand) {
+          weight += 0.4;
+        }
+        break;
+      case 'gnollCamp':
+        weight += dryness * 0.6;
+        if (candidate?.isSand) {
+          weight += 0.5;
+        }
+        break;
+      case 'trollCamp':
+        if (candidate?.isMarsh) {
+          weight += 0.7;
+        }
+        weight += Math.min(waterAdjacency * 0.25, 0.75);
+        if (candidate?.isSnow) {
+          weight -= 0.3;
+        }
+        break;
+      case 'ogreCamp':
+        if (candidate?.hill) {
+          weight += 0.8;
+        }
+        if (candidate?.isBadlands) {
+          weight += 0.2;
+        }
+        break;
+      case 'banditCamp':
+        if (candidate?.isGrass) {
+          weight += 0.25;
+        }
+        if (Number.isFinite(settlementDistance)) {
+          const closeness = clamp(1 - Math.abs(settlementDistance - 9) / 9, 0, 1);
+          weight += closeness * 0.8;
+        }
+        break;
+      default:
+        break;
+    }
+    return Math.max(0.01, weight);
+  });
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (total <= 0) {
+    return availableTypes[0];
+  }
+  let roll = randomFn() * total;
+  for (let i = 0; i < availableTypes.length; i += 1) {
+    roll -= weights[i];
+    if (roll <= 0) {
+      return availableTypes[i];
+    }
+  }
+  return availableTypes[availableTypes.length - 1];
 }
 
 function generateCentaurEncampmentName(random) {
@@ -5376,6 +5950,7 @@ const defaultCultureColorByKey = {
   dragonborn: '#c16a6a',
   tieflings: '#b064b0',
   orcs: '#556b2f',
+  gnolls: '#c58f2d',
   beastmen: '#8f6a3a',
   ogres: '#b7745c',
   trolls: '#5c8563',
@@ -5405,6 +5980,7 @@ const defaultCultureColorByKey = {
   dryad: '#58b072',
   leshy: '#3f7a4d',
   tuskar: '#7e91a8',
+  bandits: '#a16207',
   others: '#9e9e9e'
 };
 
@@ -5777,6 +6353,46 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
       }
     ];
   }
+  if (type === 'gnollCamp') {
+    return [
+      {
+        key: 'gnolls',
+        label: 'Gnolls',
+        percentage: 100,
+        color: defaultCultureColorByKey.gnolls
+      }
+    ];
+  }
+  if (type === 'trollCamp') {
+    return [
+      {
+        key: 'trolls',
+        label: 'Trolls',
+        percentage: 100,
+        color: defaultCultureColorByKey.trolls
+      }
+    ];
+  }
+  if (type === 'ogreCamp') {
+    return [
+      {
+        key: 'ogres',
+        label: 'Ogres',
+        percentage: 100,
+        color: defaultCultureColorByKey.ogres
+      }
+    ];
+  }
+  if (type === 'banditCamp') {
+    return [
+      {
+        key: 'bandits',
+        label: 'Bandits',
+        percentage: 100,
+        color: defaultCultureColorByKey.bandits
+      }
+    ];
+  }
   if (type === 'castle') {
     return [
       {
@@ -5866,6 +6482,10 @@ function resolveFallbackClaimRadius(type) {
     case 'mine':
       return 26;
     case 'orcCamp':
+    case 'gnollCamp':
+    case 'trollCamp':
+    case 'ogreCamp':
+    case 'banditCamp':
       return 28;
     case 'centaurEncampment':
       return 27;
@@ -5899,6 +6519,10 @@ function resolveCulturalRadiusMultiplier(type) {
     case 'mine':
       return 1.55;
     case 'orcCamp':
+    case 'gnollCamp':
+    case 'trollCamp':
+    case 'ogreCamp':
+    case 'banditCamp':
       return 1.75;
     case 'centaurEncampment':
       return 1.7;
@@ -5929,6 +6553,10 @@ function resolveCulturalFalloffPower(type) {
     case 'mine':
       return 1.42;
     case 'orcCamp':
+    case 'gnollCamp':
+    case 'trollCamp':
+    case 'ogreCamp':
+    case 'banditCamp':
       return 1.3;
     case 'centaurEncampment':
       return 1.32;
@@ -7282,8 +7910,16 @@ const structureHighlightGroups = {
     strokeColor: '#4ade80',
     fillAlpha: 0.24,
     strokeAlpha: 0.85,
-    keys: ['ORC_CAMP', 'TRAVELERS_CAMP', 'CENTAUR_ENCAMPMENT'],
-    types: ['orcCamp', 'travelerCamp', 'centaurEncampment']
+    keys: [
+      'ORC_CAMP',
+      'GNOLL_CAMP',
+      'TROLL_CAMP',
+      'OGRE_CAMP',
+      'BANDIT_CAMP',
+      'TRAVELERS_CAMP',
+      'CENTAUR_ENCAMPMENT'
+    ],
+    types: ['orcCamp', 'gnollCamp', 'trollCamp', 'ogreCamp', 'banditCamp', 'travelerCamp', 'centaurEncampment']
   }),
   dungeon: createHighlightGroup({
     label: 'Dungeons',
@@ -18495,6 +19131,11 @@ function createWorld(seedString) {
   const woodElfGroves = [];
   const lizardmenCities = [];
   const orcCamps = [];
+  const gnollCamps = [];
+  const trollCamps = [];
+  const ogreCamps = [];
+  const banditCamps = [];
+  const hostileWarCamps = [];
   const centaurEncampments = [];
   const travelerCamps = [];
   const dungeons = [];
@@ -22575,7 +23216,25 @@ function createWorld(seedString) {
   const tavernNoiseSeed = (seedNumber + 0x9324f8b1) >>> 0;
 
   const orcCampKey = tileLookup.has('ORC_CAMP') ? 'ORC_CAMP' : null;
-  if (orcCampKey) {
+  const gnollCampKey = tileLookup.has('GNOLL_CAMP') ? 'GNOLL_CAMP' : null;
+  const trollCampKey = tileLookup.has('TROLL_CAMP') ? 'TROLL_CAMP' : null;
+  const ogreCampKey = tileLookup.has('OGRE_CAMP') ? 'OGRE_CAMP' : null;
+  const banditCampKey = tileLookup.has('BANDIT_CAMP') ? 'BANDIT_CAMP' : null;
+  const warCampStructureKeys = {
+    orcCamp: orcCampKey,
+    gnollCamp: gnollCampKey || orcCampKey,
+    trollCamp: trollCampKey || orcCampKey,
+    ogreCamp: ogreCampKey || orcCampKey,
+    banditCamp: banditCampKey || orcCampKey
+  };
+  const availableWarCampTypes = Object.entries(warCampStructureKeys)
+    .filter(([, key]) => key)
+    .map(([type]) => type);
+  if (availableWarCampTypes.length > 0) {
+    const resolvedWarCampStructureKeys = availableWarCampTypes.reduce((acc, type) => {
+      acc[type] = warCampStructureKeys[type];
+      return acc;
+    }, {});
     const allowedOrcBases = new Set(
       [grassTileKey, sandTileKey, marshTileKey, badlandsTileKey].filter((key) => typeof key === 'string')
     );
@@ -22612,10 +23271,10 @@ function createWorld(seedString) {
         } else {
           baseScore += 0.24;
         }
-        const hillBonus =
-          (isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay)) && tile.base !== marshTileKey
-            ? 0.16
-            : 0;
+        const hillPresent =
+          (isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay)) &&
+          tile.base !== marshTileKey;
+        const hillBonus = hillPresent ? 0.16 : 0;
         let waterAdjacency = 0;
         for (let i = 0; i < cardinalOffsets.length; i += 1) {
           const nx = x + cardinalOffsets[i][0];
@@ -22630,9 +23289,10 @@ function createWorld(seedString) {
         }
         const waterScore = clamp(waterAdjacency * 0.08, 0, 0.18);
         let settlementPenalty = 0;
+        let settlementDistance = Infinity;
         if (settlementDistSq !== Infinity) {
-          const distance = Math.sqrt(settlementDistSq);
-          settlementPenalty = clamp((10 - distance) * 0.05, 0, 0.35);
+          settlementDistance = Math.sqrt(settlementDistSq);
+          settlementPenalty = clamp((10 - settlementDistance) * 0.05, 0, 0.35);
         }
         const borderDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
         const edgeScore = clamp(borderDistance / Math.max(6, Math.min(width, height) / 3.2), 0, 1) * 0.12;
@@ -22647,7 +23307,22 @@ function createWorld(seedString) {
           rng() * 0.18 -
           settlementPenalty;
         if (score > 0.28) {
-          orcCampCandidates.push({ x, y, score });
+          const baseKey = tile.base;
+          orcCampCandidates.push({
+            x,
+            y,
+            score,
+            dryness,
+            waterAdjacency,
+            hill: hillPresent,
+            settlementDistance,
+            base: baseKey,
+            isSand: baseKey === sandTileKey,
+            isBadlands: baseKey === badlandsTileKey,
+            isMarsh: baseKey === marshTileKey,
+            isSnow: baseKey === snowTileKey,
+            isGrass: baseKey === grassTileKey
+          });
         }
       }
     }
@@ -22692,13 +23367,43 @@ function createWorld(seedString) {
         if (settlementDistSq < 36) {
           continue;
         }
-        const name = generateOrcCampName(rng);
-        const details = generateOrcCampDetails(name, rng);
-        tile.structure = orcCampKey;
+        const campType = selectWarCampType(rng, candidate, availableWarCampTypes);
+        const structureKey = resolvedWarCampStructureKeys[campType];
+        if (!structureKey) {
+          continue;
+        }
+        const warCampContext = {
+          terrain: resolveWarCampTerrainDescriptor(candidate),
+          targetHint: resolveWarCampTargetHint(candidate),
+          settlementDistance: candidate.settlementDistance
+        };
+        const { name, details } = generateWarCampForType(campType, rng, warCampContext);
+        tile.structure = structureKey;
         tile.structureName = name;
         tile.structureDetails = details;
         placed.push(candidate);
-        orcCamps.push({ x: candidate.x, y: candidate.y, ...details });
+        const record = { x: candidate.x, y: candidate.y, ...details };
+        hostileWarCamps.push(record);
+        switch (campType) {
+          case 'orcCamp':
+            orcCamps.push(record);
+            break;
+          case 'gnollCamp':
+            gnollCamps.push(record);
+            break;
+          case 'trollCamp':
+            trollCamps.push(record);
+            break;
+          case 'ogreCamp':
+            ogreCamps.push(record);
+            break;
+          case 'banditCamp':
+            banditCamps.push(record);
+            break;
+          default:
+            orcCamps.push(record);
+            break;
+        }
       }
     }
   }
@@ -22756,7 +23461,7 @@ function createWorld(seedString) {
           if (settlementDistSq < 49) {
             continue;
           }
-          const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+          const distanceToOrcsSq = computeNearestDistanceSq(x, y, hostileWarCamps);
           if (distanceToOrcsSq < 64) {
             continue;
           }
@@ -22868,7 +23573,7 @@ function createWorld(seedString) {
         if (distance < 4 || distance > 26) {
           continue;
         }
-        const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+        const distanceToOrcsSq = computeNearestDistanceSq(x, y, hostileWarCamps);
         if (distanceToOrcsSq < 49) {
           continue;
         }
@@ -23066,7 +23771,7 @@ function createWorld(seedString) {
           }
         }
         if (!tooClose) {
-          const distanceToOrcSq = computeNearestDistanceSq(candidate.x, candidate.y, orcCamps);
+          const distanceToOrcSq = computeNearestDistanceSq(candidate.x, candidate.y, hostileWarCamps);
           if (distanceToOrcSq < 64) {
             tooClose = true;
           }
@@ -23299,7 +24004,7 @@ function createWorld(seedString) {
         if (settlementDistance < 4 || settlementDistance > 46) {
           continue;
         }
-        const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+        const distanceToOrcsSq = computeNearestDistanceSq(x, y, hostileWarCamps);
         if (distanceToOrcsSq < 49) {
           continue;
         }
@@ -24552,6 +25257,10 @@ function createWorld(seedString) {
       ...mines,
       ...castles,
       ...orcCamps,
+      ...gnollCamps,
+      ...trollCamps,
+      ...ogreCamps,
+      ...banditCamps,
       ...centaurEncampments,
       ...caves,
       ...roadsideTaverns,
@@ -24593,6 +25302,11 @@ function createWorld(seedString) {
     lizardmenCities,
     woodElfGroves,
     orcCamps,
+    gnollCamps,
+    trollCamps,
+    ogreCamps,
+    banditCamps,
+    hostileWarCamps,
     centaurEncampments,
     travelerCamps,
     dungeons,
