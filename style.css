@@ -2854,6 +2854,24 @@ button:hover:not(:disabled) {
   z-index: 10;
 }
 
+.trait-attribute__tooltip-title {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff0d0;
+  margin-bottom: 0.35rem;
+}
+
+.trait-attribute__tooltip-title:last-child {
+  margin-bottom: 0;
+}
+
+.trait-attribute__tooltip-description {
+  display: block;
+  color: #f5f0e6;
+}
+
 #dwarf-customizer .trait-attribute__tooltip {
   bottom: calc(100% + 0.5rem * var(--customizer-scale));
   min-width: calc(400px * var(--customizer-scale));
@@ -2862,6 +2880,15 @@ button:hover:not(:disabled) {
   border-radius: calc(10px * var(--customizer-scale));
   box-shadow: 0 calc(0.75rem * var(--customizer-scale))
     calc(1.5rem * var(--customizer-scale)) rgba(0, 0, 0, 0.4);
+}
+
+#dwarf-customizer .trait-attribute__tooltip-title {
+  font-size: calc(1rem * var(--customizer-scale));
+  margin-bottom: calc(0.35rem * var(--customizer-scale));
+}
+
+#dwarf-customizer .trait-attribute__tooltip-title:last-child {
+  margin-bottom: 0;
 }
 
 .trait-attribute__tooltip::after {

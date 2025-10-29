@@ -11697,7 +11697,18 @@ function createTraitAttributeElement(attribute) {
 
   const tooltip = document.createElement('span');
   tooltip.className = 'trait-attribute__tooltip';
-  tooltip.textContent = attribute.description;
+
+  const tooltipTitle = document.createElement('span');
+  tooltipTitle.className = 'trait-attribute__tooltip-title';
+  tooltipTitle.textContent = attribute.label || '';
+  tooltip.appendChild(tooltipTitle);
+
+  if (attribute.description) {
+    const tooltipDescription = document.createElement('span');
+    tooltipDescription.className = 'trait-attribute__tooltip-description';
+    tooltipDescription.textContent = attribute.description;
+    tooltip.appendChild(tooltipDescription);
+  }
 
   item.appendChild(tooltip);
 
