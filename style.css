@@ -389,10 +389,10 @@ select,
   justify-content: center;
   padding: clamp(2rem, 5vw, 4rem);
   background:
-      radial-gradient(circle at 18% 22%, rgba(240, 198, 116, 0.08), transparent 58%),
-      radial-gradient(circle at 82% 18%, rgba(118, 172, 214, 0.08), transparent 62%),
-      linear-gradient(165deg, rgba(8, 9, 15, 0.94), rgba(6, 8, 16, 0.98));
-  backdrop-filter: blur(18px);
+      radial-gradient(circle at 18% 22%, rgba(240, 198, 116, 0.05), transparent 58%),
+      radial-gradient(circle at 82% 18%, rgba(118, 172, 214, 0.05), transparent 64%),
+      linear-gradient(165deg, rgba(8, 9, 15, 0.72), rgba(6, 8, 16, 0.82));
+  backdrop-filter: blur(22px);
 }
 
 .loading-panel {
@@ -3169,6 +3169,11 @@ button:hover:not(:disabled) {
   min-height: 100vh;
   padding: 0;
   overflow: hidden;
+}
+
+#game-container.game-container--loading {
+  pointer-events: none;
+  user-select: none;
 }
 
 .game-ui {
