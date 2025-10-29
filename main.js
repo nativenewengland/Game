@@ -15179,6 +15179,316 @@ function applyMountainVariation(subTile, baseTile, neighbors, subdivisions, subX
   updateRuggedness(ruggednessBase + detailVariance);
 }
 
+function applySnowVariation(
+  subTile,
+  baseTile,
+  neighbors,
+  subdivisions,
+  subX,
+  subY,
+  noiseAt,
+  { snowTileKey, waterTileKey = null, defaultLandKey = null } = {}
+) {
+  if (!subTile || !baseTile || !snowTileKey || subdivisions <= 1) {
+    return;
+  }
+
+  const baseKey = typeof baseTile.base === 'string' ? baseTile.base : null;
+  const subTileBase = typeof subTile.base === 'string' ? subTile.base : null;
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.32;
+
+  const isValidReplacementBase = (base) =>
+    typeof base === 'string' &&
+    base.length > 0 &&
+    base !== snowTileKey &&
+    (!waterTileKey || base !== waterTileKey);
+
+  const neighborOrder = [
+    'north',
+    'south',
+    'west',
+    'east',
+    'northWest',
+    'northEast',
+    'southWest',
+    'southEast'
+  ];
+
+  const hasNonSnowNeighbor = neighborOrder.some((key) => {
+    const neighbor = neighbors[key];
+    return neighbor && isValidReplacementBase(neighbor.baseKey);
+  });
+
+  const hasSnowNeighbor = neighborOrder.some((key) => {
+    const neighbor = neighbors[key];
+    return neighbor && neighbor.baseKey === snowTileKey;
+  });
+
+  const removeSurfaceVariation = () => {
+    if (Object.prototype.hasOwnProperty.call(subTile, 'surfaceVariation')) {
+      delete subTile.surfaceVariation;
+    }
+  };
+
+  const selectNeighborBase = () => {
+    for (let i = 0; i < neighborOrder.length; i += 1) {
+      const neighbor = neighbors[neighborOrder[i]];
+      if (neighbor && isValidReplacementBase(neighbor.baseKey)) {
+        return neighbor.baseKey;
+      }
+    }
+    if (isValidReplacementBase(defaultLandKey)) {
+      return defaultLandKey;
+    }
+    return null;
+  };
+
+  if (baseKey === snowTileKey) {
+    if (!hasNonSnowNeighbor) {
+      return;
+    }
+
+    const candidateScores = new Map();
+    const addCandidate = (base, score) => {
+      if (!isValidReplacementBase(base)) {
+        return;
+      }
+      const existing = candidateScores.get(base);
+      if (!existing || score > existing) {
+        candidateScores.set(base, score);
+      }
+    };
+
+    const directions = [
+      {
+        key: 'north',
+        nearEdge: normalizedY < edgeThreshold,
+        proximity: normalizedY,
+        channel: 140
+      },
+      {
+        key: 'south',
+        nearEdge: normalizedY > 1 - edgeThreshold,
+        proximity: 1 - normalizedY,
+        channel: 141
+      },
+      {
+        key: 'west',
+        nearEdge: normalizedX < edgeThreshold,
+        proximity: normalizedX,
+        channel: 142
+      },
+      {
+        key: 'east',
+        nearEdge: normalizedX > 1 - edgeThreshold,
+        proximity: 1 - normalizedX,
+        channel: 143
+      }
+    ];
+
+    for (let i = 0; i < directions.length; i += 1) {
+      const { key, nearEdge, proximity, channel } = directions[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !isValidReplacementBase(neighbor.baseKey)) {
+        continue;
+      }
+      const threshold = 0.45 + proximity * 0.45;
+      const roll = noiseAt(channel);
+      if (roll > threshold) {
+        addCandidate(neighbor.baseKey, roll);
+      }
+    }
+
+    const corners = [
+      {
+        key: 'northWest',
+        nearEdge: normalizedX < edgeThreshold && normalizedY < edgeThreshold,
+        distance: normalizedX + normalizedY,
+        channel: 144
+      },
+      {
+        key: 'northEast',
+        nearEdge: normalizedX > 1 - edgeThreshold && normalizedY < edgeThreshold,
+        distance: 1 - normalizedX + normalizedY,
+        channel: 145
+      },
+      {
+        key: 'southWest',
+        nearEdge: normalizedX < edgeThreshold && normalizedY > 1 - edgeThreshold,
+        distance: normalizedX + (1 - normalizedY),
+        channel: 146
+      },
+      {
+        key: 'southEast',
+        nearEdge: normalizedX > 1 - edgeThreshold && normalizedY > 1 - edgeThreshold,
+        distance: 2 - normalizedX - normalizedY,
+        channel: 147
+      }
+    ];
+
+    for (let i = 0; i < corners.length; i += 1) {
+      const { key, nearEdge, distance, channel } = corners[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !isValidReplacementBase(neighbor.baseKey)) {
+        continue;
+      }
+      const threshold = 0.42 + distance * 0.25;
+      const roll = noiseAt(channel);
+      if (roll > threshold) {
+        addCandidate(neighbor.baseKey, roll);
+      }
+    }
+
+    if (candidateScores.size > 0) {
+      let selectedBase = null;
+      let bestScore = -Infinity;
+      candidateScores.forEach((score, base) => {
+        if (score > bestScore) {
+          bestScore = score;
+          selectedBase = base;
+        }
+      });
+      if (selectedBase && selectedBase !== subTileBase) {
+        subTile.base = selectedBase;
+        removeSurfaceVariation();
+      }
+      return;
+    }
+
+    const edgeDistance = Math.min(
+      Math.min(normalizedX, 1 - normalizedX),
+      Math.min(normalizedY, 1 - normalizedY)
+    );
+
+    if (edgeDistance < 0.38) {
+      const erosionThreshold = 0.14 + (0.38 - edgeDistance) * 0.3;
+      if (noiseAt(148) < erosionThreshold) {
+        const fallbackBase = selectNeighborBase();
+        if (fallbackBase && fallbackBase !== subTileBase) {
+          subTile.base = fallbackBase;
+          removeSurfaceVariation();
+        }
+      }
+    }
+    return;
+  }
+
+  if (!hasSnowNeighbor) {
+    return;
+  }
+
+  if (waterTileKey && subTileBase === waterTileKey) {
+    return;
+  }
+
+  if (subTileBase === snowTileKey) {
+    return;
+  }
+
+  let adoptSnow = false;
+  const snowDirections = [
+    {
+      key: 'north',
+      nearEdge: normalizedY < edgeThreshold,
+      proximity: normalizedY,
+      channel: 150
+    },
+    {
+      key: 'south',
+      nearEdge: normalizedY > 1 - edgeThreshold,
+      proximity: 1 - normalizedY,
+      channel: 151
+    },
+    {
+      key: 'west',
+      nearEdge: normalizedX < edgeThreshold,
+      proximity: normalizedX,
+      channel: 152
+    },
+    {
+      key: 'east',
+      nearEdge: normalizedX > 1 - edgeThreshold,
+      proximity: 1 - normalizedX,
+      channel: 153
+    }
+  ];
+
+  for (let i = 0; i < snowDirections.length && !adoptSnow; i += 1) {
+    const { key, nearEdge, proximity, channel } = snowDirections[i];
+    if (!nearEdge || !(neighbors[key] && neighbors[key].baseKey === snowTileKey)) {
+      continue;
+    }
+    const threshold = 0.68 - proximity * 0.35;
+    if (noiseAt(channel) > threshold) {
+      adoptSnow = true;
+    }
+  }
+
+  const snowCorners = [
+    {
+      key: 'northWest',
+      nearEdge: normalizedX < edgeThreshold && normalizedY < edgeThreshold,
+      distance: normalizedX + normalizedY,
+      channel: 154
+    },
+    {
+      key: 'northEast',
+      nearEdge: normalizedX > 1 - edgeThreshold && normalizedY < edgeThreshold,
+      distance: 1 - normalizedX + normalizedY,
+      channel: 155
+    },
+    {
+      key: 'southWest',
+      nearEdge: normalizedX < edgeThreshold && normalizedY > 1 - edgeThreshold,
+      distance: normalizedX + (1 - normalizedY),
+      channel: 156
+    },
+    {
+      key: 'southEast',
+      nearEdge: normalizedX > 1 - edgeThreshold && normalizedY > 1 - edgeThreshold,
+      distance: 2 - normalizedX - normalizedY,
+      channel: 157
+    }
+  ];
+
+  for (let i = 0; i < snowCorners.length && !adoptSnow; i += 1) {
+    const { key, nearEdge, distance, channel } = snowCorners[i];
+    if (!nearEdge || !(neighbors[key] && neighbors[key].baseKey === snowTileKey)) {
+      continue;
+    }
+    const threshold = 0.7 - distance * 0.2;
+    if (noiseAt(channel) > threshold) {
+      adoptSnow = true;
+    }
+  }
+
+  if (!adoptSnow) {
+    const edgeDistance = Math.min(
+      Math.min(normalizedX, 1 - normalizedX),
+      Math.min(normalizedY, 1 - normalizedY)
+    );
+    if (edgeDistance < 0.35) {
+      const bonus = Math.max(0, 0.35 - edgeDistance);
+      if (noiseAt(158) > 0.72 - bonus * 0.5) {
+        adoptSnow = true;
+      }
+    }
+  }
+
+  if (adoptSnow) {
+    subTile.base = snowTileKey;
+    removeSurfaceVariation();
+  }
+}
+
 function applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey) {
   if (!subTile || !baseTile) {
     return;
@@ -15506,6 +15816,16 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
           );
           applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
           applyMountainVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
+          applySnowVariation(
+            subTile,
+            baseTile,
+            neighbors,
+            subdivisions,
+            subX,
+            subY,
+            noiseAt,
+            { snowTileKey, waterTileKey, defaultLandKey }
+          );
           applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey);
           applyRiverSubtileVariation(subTile, riverVariation, subX, subY);
           applySurfaceNoiseVariation(subTile, noiseAt, surfaceNoiseKeys);
