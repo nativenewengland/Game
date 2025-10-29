@@ -18033,6 +18033,49 @@ function createArchipelagoMask() {
   });
 }
 
+const continentalPlateConfigs = {
+  archipelago: {
+    majorTargetRange: [1, 2],
+    fragmentTargetRange: [9, 13],
+    minDistance: 0.1,
+    fragmentDistance: 0.06,
+    majorRadiusRange: [0.12, 0.2],
+    fragmentRadiusRange: [0.05, 0.11],
+    majorRadiusXMultiplierRange: [0.7, 1.6],
+    majorRadiusYMultiplierRange: [0.65, 1.5],
+    fragmentRadiusXMultiplierRange: [0.65, 1.45],
+    fragmentRadiusYMultiplierRange: [0.6, 1.35],
+    majorOceanChance: 0.6,
+    fragmentOceanChance: 0.45,
+    majorLandStrengthRange: [0.45, 0.85],
+    fragmentLandStrengthRange: [0.4, 0.75],
+    majorOceanStrengthRange: [0.45, 0.7],
+    fragmentOceanStrengthRange: [0.35, 0.6],
+    majorFalloffRange: [1.4, 2.4],
+    fragmentFalloffRange: [1.3, 2.2],
+    majorSharpnessRange: [1.2, 2],
+    fragmentSharpnessRange: [1.15, 2.05],
+    majorJaggednessRange: [0.7, 1.4],
+    fragmentJaggednessRange: [0.9, 1.8],
+    majorTurbulenceRange: [0.55, 0.95],
+    fragmentTurbulenceRange: [0.6, 1],
+    majorNoiseScaleRange: [3.5, 7.5],
+    fragmentNoiseScaleRange: [6.5, 12],
+    majorMinEdge: 0.04,
+    fragmentMinEdge: 0.015,
+    fallbackPlate: {
+      radiusX: 0.18,
+      radiusY: 0.14,
+      falloff: 1.8,
+      sharpness: 1.6,
+      strength: 0.6,
+      jaggedness: 0.9,
+      turbulence: 0.7,
+      noiseScale: 6
+    }
+  }
+};
+
 const worldGenerationProfiles = {
   normal: {
     key: 'normal',
@@ -18113,36 +18156,120 @@ function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.
   return sum / maxAmplitude;
 }
 
-function generateContinentalPlates(rng) {
+function generateContinentalPlates(rng, options = {}) {
+  const profileKey = options && typeof options.profileKey === 'string' ? options.profileKey : null;
+  const config =
+    profileKey && Object.prototype.hasOwnProperty.call(continentalPlateConfigs, profileKey)
+      ? continentalPlateConfigs[profileKey]
+      : null;
+
+  const sampleRangeValue = (range, defaultMin, defaultMax) => {
+    let min = defaultMin;
+    let max = defaultMax;
+    if (Array.isArray(range) && range.length >= 2) {
+      if (Number.isFinite(range[0])) {
+        min = range[0];
+      }
+      if (Number.isFinite(range[1])) {
+        max = range[1];
+      }
+    } else if (Number.isFinite(range)) {
+      return range;
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      min = defaultMin;
+      max = defaultMax;
+    }
+    if (max <= min) {
+      return min;
+    }
+    return min + rng() * (max - min);
+  };
+
+  const sampleIntRange = (range, defaultMin, defaultMax) => {
+    let min = defaultMin;
+    let max = defaultMax;
+    if (Array.isArray(range) && range.length >= 2) {
+      if (Number.isFinite(range[0])) {
+        min = Math.round(range[0]);
+      }
+      if (Number.isFinite(range[1])) {
+        max = Math.round(range[1]);
+      }
+    } else if (Number.isFinite(range)) {
+      return Math.round(range);
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      min = defaultMin;
+      max = defaultMax;
+    }
+    if (max <= min) {
+      return min;
+    }
+    return min + Math.floor(rng() * (max - min + 1));
+  };
+
   const plates = [];
-  const majorTarget = 4 + Math.floor(rng() * 4);
-  const fragmentTarget = 3 + Math.floor(rng() * 5);
+  const majorTarget = sampleIntRange(config && config.majorTargetRange, 4, 7);
+  const fragmentTarget = sampleIntRange(config && config.fragmentTargetRange, 3, 7);
   const totalTarget = majorTarget + fragmentTarget;
   const maxAttempts = totalTarget * 40;
-  const minDistance = 0.14;
-  const fragmentDistance = 0.08;
+  const minDistance = config && Number.isFinite(config.minDistance) ? config.minDistance : 0.14;
+  const fragmentDistance =
+    config && Number.isFinite(config.fragmentDistance) ? config.fragmentDistance : 0.08;
 
   const randomUint32 = () => Math.floor(rng() * 0xffffffff);
 
   for (let attempt = 0; attempt < maxAttempts && plates.length < totalTarget; attempt += 1) {
     const isFragment = plates.length >= majorTarget;
-    const radiusBase = isFragment ? 0.08 + rng() * 0.14 : 0.18 + rng() * 0.24;
+    const radiusBase = isFragment
+      ? sampleRangeValue(config && config.fragmentRadiusRange, 0.08, 0.22)
+      : sampleRangeValue(config && config.majorRadiusRange, 0.18, 0.42);
     const rotation = rng() * Math.PI * 2;
-    const oceanChance = isFragment ? 0.25 : 0.4;
+    const oceanChance = clamp(
+      isFragment
+        ? sampleRangeValue(config && config.fragmentOceanChance, 0.25, 0.25)
+        : sampleRangeValue(config && config.majorOceanChance, 0.4, 0.4),
+      0,
+      1
+    );
     const isOcean = rng() < oceanChance;
-    const strengthBase = isOcean
-      ? -(0.4 + rng() * 0.35) * (isFragment ? 0.7 : 1)
-      : (0.6 + rng() * 0.55) * (isFragment ? 0.75 : 1);
-    const jaggedness = isFragment ? 0.8 + rng() * 1.1 : 0.45 + rng() * 0.8;
-    const turbulence = 0.4 + rng() * 0.6;
+    const oceanStrength = isFragment
+      ? sampleRangeValue(config && config.fragmentOceanStrengthRange, 0.28, 0.525)
+      : sampleRangeValue(config && config.majorOceanStrengthRange, 0.4, 0.75);
+    const landStrength = isFragment
+      ? sampleRangeValue(config && config.fragmentLandStrengthRange, 0.45, 0.8625)
+      : sampleRangeValue(config && config.majorLandStrengthRange, 0.6, 1.15);
+    const strengthBase = isOcean ? -oceanStrength : landStrength;
+    const jaggedness = isFragment
+      ? sampleRangeValue(config && config.fragmentJaggednessRange, 0.8, 1.9)
+      : sampleRangeValue(config && config.majorJaggednessRange, 0.45, 1.25);
+    const turbulence = isFragment
+      ? sampleRangeValue(config && config.fragmentTurbulenceRange, 0.4, 1)
+      : sampleRangeValue(config && config.majorTurbulenceRange, 0.4, 1);
+    const radiusXMultiplier = isFragment
+      ? sampleRangeValue(config && config.fragmentRadiusXMultiplierRange, 0.7, 2.3)
+      : sampleRangeValue(config && config.majorRadiusXMultiplierRange, 0.7, 2.3);
+    const radiusYMultiplier = isFragment
+      ? sampleRangeValue(config && config.fragmentRadiusYMultiplierRange, 0.6, 2)
+      : sampleRangeValue(config && config.majorRadiusYMultiplierRange, 0.6, 2);
+    const falloff = isFragment
+      ? sampleRangeValue(config && config.fragmentFalloffRange, 1.15, 2.95)
+      : sampleRangeValue(config && config.majorFalloffRange, 1.15, 2.95);
+    const sharpness = isFragment
+      ? sampleRangeValue(config && config.fragmentSharpnessRange, 1.1, 2.4)
+      : sampleRangeValue(config && config.majorSharpnessRange, 1.1, 2.4);
+    const noiseScale = isFragment
+      ? sampleRangeValue(config && config.fragmentNoiseScaleRange, 6, 16)
+      : sampleRangeValue(config && config.majorNoiseScaleRange, 3, 9);
 
     const candidate = {
       x: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
       y: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
-      radiusX: radiusBase * (0.7 + rng() * 1.6),
-      radiusY: radiusBase * (0.6 + rng() * 1.4),
-      falloff: 1.15 + rng() * 1.8,
-      sharpness: 1.1 + rng() * 1.3,
+      radiusX: radiusBase * radiusXMultiplier,
+      radiusY: radiusBase * radiusYMultiplier,
+      falloff,
+      sharpness,
       strength: strengthBase,
       rotation,
       cos: Math.cos(rotation),
@@ -18150,14 +18277,16 @@ function generateContinentalPlates(rng) {
       type: isOcean ? 'ocean' : 'land',
       jaggedness,
       turbulence,
-      noiseScale: isFragment ? 6 + rng() * 10 : 3 + rng() * 6,
+      noiseScale,
       noiseSeed: randomUint32(),
       noiseOffsetX: rng() * 256,
       noiseOffsetY: rng() * 256
     };
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
-    const minEdge = isFragment ? 0.02 : 0.06;
+    const minEdge = isFragment
+      ? (config && Number.isFinite(config.fragmentMinEdge) ? config.fragmentMinEdge : 0.02)
+      : (config && Number.isFinite(config.majorMinEdge) ? config.majorMinEdge : 0.06);
     if (edgeDistance < minEdge) {
       continue;
     }
@@ -18166,7 +18295,12 @@ function generateContinentalPlates(rng) {
     for (let i = 0; i < plates.length; i += 1) {
       const existing = plates[i];
       const separation = Math.hypot(candidate.x - existing.x, candidate.y - existing.y);
-      const limit = existing.type === candidate.type ? (isFragment ? fragmentDistance : minDistance) : minDistance * 0.75;
+      const limit =
+        existing.type === candidate.type
+          ? isFragment
+            ? fragmentDistance
+            : minDistance
+          : minDistance * 0.75;
       if (separation < limit) {
         tooClose = true;
         break;
@@ -18182,21 +18316,30 @@ function generateContinentalPlates(rng) {
 
   if (!plates.some((plate) => plate.strength > 0)) {
     const rotation = rng() * Math.PI * 2;
+    const fallback = config && config.fallbackPlate ? config.fallbackPlate : null;
+    const radiusX = fallback && Number.isFinite(fallback.radiusX) ? fallback.radiusX : 0.26;
+    const radiusY = fallback && Number.isFinite(fallback.radiusY) ? fallback.radiusY : 0.2;
+    const falloff = fallback && Number.isFinite(fallback.falloff) ? fallback.falloff : 1.5;
+    const sharpness = fallback && Number.isFinite(fallback.sharpness) ? fallback.sharpness : 1.3;
+    const strength = fallback && Number.isFinite(fallback.strength) ? fallback.strength : 0.85;
+    const jaggedness = fallback && Number.isFinite(fallback.jaggedness) ? fallback.jaggedness : 0.7;
+    const turbulence = fallback && Number.isFinite(fallback.turbulence) ? fallback.turbulence : 0.6;
+    const noiseScale = fallback && Number.isFinite(fallback.noiseScale) ? fallback.noiseScale : 4.5;
     plates.push({
       x: 0.5,
       y: 0.5,
-      radiusX: 0.26,
-      radiusY: 0.2,
-      falloff: 1.5,
-      sharpness: 1.3,
-      strength: 0.85,
+      radiusX,
+      radiusY,
+      falloff,
+      sharpness,
+      strength,
       rotation,
       cos: Math.cos(rotation),
       sin: Math.sin(rotation),
       type: 'land',
-      jaggedness: 0.7,
-      turbulence: 0.6,
-      noiseScale: 4.5,
+      jaggedness,
+      turbulence,
+      noiseScale,
       noiseSeed: randomUint32(),
       noiseOffsetX: rng() * 128,
       noiseOffsetY: rng() * 128
@@ -19165,7 +19308,7 @@ function createWorld(seedString) {
   const mountainScarcity = 1 - mountainFrequencyNormalized;
   const mountainGrowthFactor = 0.42 + mountainFrequencyNormalized * 0.7;
 
-  const continentalPlates = generateContinentalPlates(rng);
+  const continentalPlates = generateContinentalPlates(rng, { profileKey: profile.key });
   const elevationField = new Float32Array(width * height);
   const tectonicActivityField = new Float32Array(width * height);
 
