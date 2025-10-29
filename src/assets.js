@@ -18,6 +18,12 @@ export const tileSheets = {
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_edge_glacier.png',
     tileSize: 16,
     image: null
+  },
+  dwarfTest: {
+    key: 'dwarfTest',
+    path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_tiles.png',
+    tileSize: 16,
+    image: null
   }
 };
 
@@ -566,14 +572,20 @@ export const baseTileCoords = {
   HAMLET: { row: 1, col: 13 },
   ACTIVE_VOLCANO: { row: 2, col: 12 },
   VOLCANO: { row: 2, col: 13 },
+  LAVA: { row: 2, col: 14 },
   OASIS: { row: 0, col: 12 },
   HAMLET_SNOW: { row: 0, col: 13 },
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
   ORC_CAMP: { row: 6, col: 0 },
+  GNOLL_CAMP: { row: 6, col: 0 },
+  TROLL_CAMP: { row: 6, col: 0 },
+  OGRE_CAMP: { row: 6, col: 0 },
+  BANDIT_CAMP: { row: 6, col: 0 },
   TRAVELERS_CAMP: { row: 6, col: 0 },
-  DUNGEON: { row: 2, col: 7 }
+  DUNGEON: { row: 2, col: 7 },
+  CENTAUR_ENCAMPMENT: { row: 2, col: 10 }
 };
 
 export const ROAD_DIRECTION_BITS = {
@@ -589,7 +601,7 @@ export const roadTileSpriteDefinitions = (() => {
     return null;
   }
   const tileSize = sheet.tileSize;
-  const row = 5;
+  const row = 4;
   const makeDefinition = (column) => ({
     sheetKey: sheet.key,
     sx: column * tileSize,
@@ -599,17 +611,17 @@ export const roadTileSpriteDefinitions = (() => {
 
   return {
     isolated: makeDefinition(18),
-    deadEndWest: makeDefinition(2),
+    deadEndWest: makeDefinition(21),
     straightEastWest: makeDefinition(8),
     cornerNorthEast: makeDefinition(11),
     cornerSouthEast: makeDefinition(9),
     cornerSouthWest: makeDefinition(10),
     cornerNorthWest: makeDefinition(12),
-    teeMissingWest: makeDefinition(7),
-    teeMissingEast: makeDefinition(1),
+    teeMissingWest: makeDefinition(13),
+    teeMissingEast: makeDefinition(16),
     teeMissingNorth: makeDefinition(14),
     teeMissingSouth: makeDefinition(15),
-    cross: makeDefinition(16)
+    cross: makeDefinition(17)
   };
 })();
 

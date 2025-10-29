@@ -580,52 +580,6 @@
                     </select>
                   </div>
 
-                  <div class="field-group" data-draggable-id="field-guild">
-                    <label for="dwarf-guild-select" class="field-label">Guild</label>
-                    <select id="dwarf-guild-select" class="field-control">
-                      <option value="miners-guild">Miners Guild</option>
-                      <option value="merchants-guild">Merchants Guild</option>
-                      <option value="commerce-guild">Commerce Guild</option>
-                      <option value="armourers-weaponsmiths-guild">Armourers and Weaponsmiths Guild</option>
-                      <option value="artisans-guild">Artisans Guild</option>
-                      <option value="bakers-guild">Bakers Guild</option>
-                      <option value="brewers-guild">Brewers Guild</option>
-                      <option value="carpenters-guild">Carpenters Guild</option>
-                      <option value="construction-guild">Construction Guild</option>
-                      <option value="corpsebinders-guild">Corpsebinders Guild</option>
-                      <option value="distiller-guild">Distiller Guild</option>
-                      <option value="dyers-guild">Dyers Guild</option>
-                      <option value="engineers-guild">Engineers Guild</option>
-                      <option value="farmers-herders-guild">Farmers and Herders Guild</option>
-                      <option value="gemcutters-guild">Gemcutters Guild</option>
-                      <option value="goldsmiths-guild">Goldsmiths Guild</option>
-                      <option value="guild-of-alchemists">Guild of Alchemists</option>
-                      <option value="jewelsmiths-guild">Jewelsmiths Guild</option>
-                      <option value="leatherworkers-guild">Leatherworkers Guild</option>
-                      <option value="metalsmiths-guild">Metalsmiths Guild</option>
-                      <option value="powdermakers-guild">Powdermakers Guild</option>
-                      <option value="saltworkers-guild">Saltworkers Guild</option>
-                      <option value="stonemasons-guild">Stonemasons Guild</option>
-                      <option value="runescribes-guild">Runescribes Guild</option>
-                      <option value="runesmiths">Runesmiths</option>
-                      <option value="warriors-guild">Warriors Guild</option>
-                      <option value="toolmakers-guild">Toolmakers' Guild</option>
-                      <option value="soapmakers-guild">Soapmakers Guild</option>
-                      <option value="candlelighters-guild">Candlelighters Guild</option>
-                      <option value="lamplighters-guild">Lamplighters Guild</option>
-                      <option value="butchers-guild">Butchers Guild</option>
-                      <option value="ropemakers-guild">Ropemakers Guild</option>
-                      <option value="cartwrights-wheelwrights-guild">Cartwrights &amp; Wheelwrights Guild</option>
-                      <option value="glassblowers-guild">Glassblowers Guild</option>
-                      <option value="millers-guild">Millers Guild</option>
-                      <option value="cobblers-guild">Cobblers Guild</option>
-                      <option value="cartographers-guild">Cartographers Guild</option>
-                      <option value="lorekeepers-guild">Lorekeepers Guild</option>
-                      <option value="tunnel-wardens-guild">Tunnel Wardens Guild</option>
-                      <option value="smelters-guild">Smelters Guild</option>
-                    </select>
-                  </div>
-
                 </div>
 
               </div>
@@ -682,25 +636,6 @@
                   aria-hidden="true"
                 ></canvas>
               </div>
-              <div
-                id="dwarf-test-area"
-                class="dwarf-test-area hidden"
-                aria-hidden="true"
-                tabindex="-1"
-                role="group"
-                aria-label="Dwarf test arena"
-              >
-                <canvas
-                  id="dwarf-test-canvas"
-                  class="dwarf-test-canvas"
-                  width="320"
-                  height="220"
-                  aria-hidden="true"
-                ></canvas>
-                <p class="dwarf-test-instructions">
-                  Use the arrow keys or WASD to move your dwarf around the proving grounds.
-                </p>
-              </div>
             </div>
             <div class="customizer-sidebar__actions">
               <button
@@ -727,15 +662,6 @@
                 data-draggable-id="create-button"
               >
                 <span class="sr-only">Begin Expedition</span>
-              </button>
-              <button
-                type="button"
-                id="dwarf-test"
-                class="secondary dwarf-test-button"
-                data-draggable-id="test-button"
-                aria-pressed="false"
-              >
-                Test
               </button>
             </div>
           </aside>
@@ -787,6 +713,40 @@
             aria-pressed="false"
           >
             Show Temperature
+          </button>
+          <div class="structure-highlight-control">
+            <button
+              id="toggle-structure-highlights"
+              class="secondary structure-highlight-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-haspopup="true"
+              aria-controls="structure-highlight-menu"
+            >
+              Show Highlights
+            </button>
+            <div
+              id="structure-highlight-menu"
+              class="structure-highlight-menu"
+              role="group"
+              aria-label="Structure highlights"
+              aria-hidden="true"
+              tabindex="-1"
+            >
+              <p class="structure-highlight-menu__hint">
+                Select the structures you want to glow on the world map.
+              </p>
+              <!-- Structure highlight options are populated dynamically -->
+            </div>
+          </div>
+          <button
+            id="dwarf-test"
+            class="secondary dwarf-test-button"
+            type="button"
+            data-draggable-id="test-button"
+            aria-pressed="false"
+          >
+            Test
           </button>
         </div>
         <div class="audio-controls" role="region" aria-label="Music controls">
@@ -846,9 +806,26 @@
               Select a site to examine the surrounding terrain.
             </p>
           </div>
-          <button id="local-map-close" type="button" class="secondary" aria-label="Close local map">
-            Close
-          </button>
+          <div class="local-map-header-actions">
+            <div
+              class="local-map-zoom-controls"
+              role="group"
+              aria-label="Local map zoom controls"
+            >
+              <button id="local-map-zoom-out" type="button" class="tertiary" aria-label="Zoom out">
+                −
+              </button>
+              <button id="local-map-zoom-reset" type="button" class="tertiary" aria-label="Reset zoom">
+                1×
+              </button>
+              <button id="local-map-zoom-in" type="button" class="tertiary" aria-label="Zoom in">
+                +
+              </button>
+            </div>
+            <button id="local-map-close" type="button" class="secondary" aria-label="Close local map">
+              Close
+            </button>
+          </div>
         </div>
         <canvas
           id="local-map-canvas"
@@ -865,6 +842,25 @@
         </div>
       </aside>
       <section
+        id="dwarf-test-area"
+        class="dwarf-test-area hidden"
+        aria-hidden="true"
+        tabindex="-1"
+        role="group"
+        aria-label="Dwarf test arena"
+      >
+        <canvas
+          id="dwarf-test-canvas"
+          class="dwarf-test-canvas"
+          width="320"
+          height="220"
+          aria-hidden="true"
+        ></canvas>
+        <p class="dwarf-test-instructions">
+          Use the arrow keys or WASD to move your dwarf around the proving grounds.
+        </p>
+      </section>
+      <section
         id="structure-details"
         class="modal hidden"
         role="dialog"
@@ -872,6 +868,29 @@
         aria-hidden="true"
         aria-labelledby="structure-details-title"
       >
+        <nav
+          class="structure-details-tabs"
+          aria-label="Settlement information views"
+        >
+          <button
+            type="button"
+            class="structure-details-tab is-active"
+            data-tab-id="history"
+            aria-controls="structure-details-content"
+            aria-current="page"
+          >
+            History
+          </button>
+          <button
+            type="button"
+            class="structure-details-tab"
+            data-tab-id="statistics"
+            aria-controls="structure-details-content"
+            aria-current="false"
+          >
+            Statistics
+          </button>
+        </nav>
         <div class="modal-header">
           <div class="structure-details-titles">
             <h2 id="structure-details-title">Structure Details</h2>

@@ -9,9 +9,13 @@ export function attachEvents(elements, deps) {
     showDwarfholdInterior,
     showStructureDetails,
     hideLocalView,
+    adjustLocalMapZoom,
+    resetLocalMapZoom,
     closeDwarfholdInterior,
     state,
     refreshOverlayToggleButtons,
+    refreshStructureHighlightControls,
+    ensureStructureHighlightState,
     drawWorld,
     updateFrequencyDisplay,
     sanitizeFrequencyValue,
@@ -41,6 +45,7 @@ export function attachEvents(elements, deps) {
     isDwarfTestActive,
     closeDwarfTest,
     structureDetailsState,
+    setActiveStructureDetailsTab,
     isOptionsVisible,
     updateWorldInfoSeedDisplay,
     updateWorldInfoSizeDisplay,
@@ -71,18 +76,61 @@ export function attachEvents(elements, deps) {
     }
   };
 
+  function closeStructureHighlightMenu({ returnFocus = false } = {}) {
+    const highlightState = ensureStructureHighlightState();
+    if (!highlightState.menuOpen) {
+      return;
+    }
+    highlightState.menuOpen = false;
+    refreshStructureHighlightControls();
+    if (returnFocus && elements.structureHighlightToggle) {
+      const toggle = elements.structureHighlightToggle;
+      if (typeof toggle.focus === 'function') {
+        toggle.focus();
+      }
+    }
+  }
+
   const dismissContextMenuOnScroll = () => {
     if (structureContextMenuState.visible) {
       hideStructureContextMenu();
     }
+    closeStructureHighlightMenu();
+  };
+
+  const handleStructureHighlightPointerDown = (event) => {
+    const highlightState = ensureStructureHighlightState();
+    if (!highlightState.menuOpen) {
+      return;
+    }
+    const toggle = elements.structureHighlightToggle;
+    const menu = elements.structureHighlightMenu;
+    if ((toggle && toggle.contains(event.target)) || (menu && menu.contains(event.target))) {
+      return;
+    }
+    closeStructureHighlightMenu();
+  };
+
+  const handleStructureHighlightKeyDown = (event) => {
+    if (event.key !== 'Escape' && event.key !== 'Esc') {
+      return;
+    }
+    const highlightState = ensureStructureHighlightState();
+    if (!highlightState.menuOpen) {
+      return;
+    }
+    closeStructureHighlightMenu({ returnFocus: true });
   };
 
   if (typeof document !== 'undefined') {
     document.addEventListener('pointerdown', dismissContextMenuOnPointerDown, true);
+    document.addEventListener('pointerdown', handleStructureHighlightPointerDown, true);
     document.addEventListener('keydown', dismissContextMenuOnKeyDown, true);
+    document.addEventListener('keydown', handleStructureHighlightKeyDown, true);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
         hideStructureContextMenu();
+        closeStructureHighlightMenu();
       }
     });
   }
@@ -124,7 +172,65 @@ export function attachEvents(elements, deps) {
     });
   }
 
-  const dwarfholdStructureKeys = new Set(['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD', 'HILLHOLD']);
+  if (Array.isArray(elements.structureDetailsTabs) && elements.structureDetailsTabs.length > 0) {
+    elements.structureDetailsTabs.forEach((tab) => {
+      if (!tab) {
+        return;
+      }
+      tab.addEventListener('click', () => {
+        if (!structureDetailsState.visible) {
+          return;
+        }
+        setActiveStructureDetailsTab(tab.getAttribute('data-tab-id'));
+      });
+    });
+  }
+
+  if (elements.structureHighlightToggle) {
+    elements.structureHighlightToggle.addEventListener('click', () => {
+      const highlightState = ensureStructureHighlightState();
+      highlightState.menuOpen = !highlightState.menuOpen;
+      refreshStructureHighlightControls();
+      if (
+        highlightState.menuOpen &&
+        elements.structureHighlightMenu &&
+        typeof elements.structureHighlightMenu.focus === 'function'
+      ) {
+        elements.structureHighlightMenu.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  if (elements.structureHighlightMenu) {
+    elements.structureHighlightMenu.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!target || !target.matches("input[type='checkbox'][data-highlight-type]")) {
+        return;
+      }
+      const type = target.getAttribute('data-highlight-type');
+      if (!type) {
+        return;
+      }
+      const highlightState = ensureStructureHighlightState();
+      if (!Object.prototype.hasOwnProperty.call(highlightState, type)) {
+        return;
+      }
+      highlightState[type] = target.checked;
+      refreshStructureHighlightControls();
+      if (state.currentWorld) {
+        drawWorld(state.currentWorld, { preserveView: true });
+      }
+    });
+  }
+
+  const dwarfholdStructureKeys = new Set([
+    'DWARFHOLD',
+    'GREAT_DWARFHOLD',
+    'ABANDONED_DWARFHOLD',
+    'DARK_DWARFHOLD',
+    'DARKDWARFHOLD',
+    'HILLHOLD'
+  ]);
   const isDwarfholdStructureTile = (tile) => {
     if (!tile) {
       return false;
@@ -236,6 +342,45 @@ export function attachEvents(elements, deps) {
     elements.localMapClose.addEventListener('click', () => {
       hideLocalView({ returnFocus: true });
     });
+  }
+
+  if (elements.localMapZoomIn) {
+    elements.localMapZoomIn.addEventListener('click', () => {
+      adjustLocalMapZoom('in');
+    });
+  }
+
+  if (elements.localMapZoomOut) {
+    elements.localMapZoomOut.addEventListener('click', () => {
+      adjustLocalMapZoom('out');
+    });
+  }
+
+  if (elements.localMapZoomReset) {
+    elements.localMapZoomReset.addEventListener('click', () => {
+      resetLocalMapZoom();
+    });
+  }
+
+  if (elements.localMapCanvas) {
+    elements.localMapCanvas.addEventListener(
+      'wheel',
+      (event) => {
+        if (!state.localView || !state.localView.active) {
+          return;
+        }
+        if (event.ctrlKey || event.metaKey) {
+          return;
+        }
+        event.preventDefault();
+        if (event.deltaY < 0) {
+          adjustLocalMapZoom('in');
+        } else if (event.deltaY > 0) {
+          adjustLocalMapZoom('out');
+        }
+      },
+      { passive: false }
+    );
   }
 
   if (elements.dwarfholdExit) {
@@ -614,12 +759,6 @@ export function attachEvents(elements, deps) {
   if (elements.dwarfClanSelect) {
     elements.dwarfClanSelect.addEventListener('change', (event) => {
       updateDwarfTrait('clan', event.target.value);
-    });
-  }
-
-  if (elements.dwarfGuildSelect) {
-    elements.dwarfGuildSelect.addEventListener('change', (event) => {
-      updateDwarfTrait('guild', event.target.value);
     });
   }
 
