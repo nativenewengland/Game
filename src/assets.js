@@ -592,7 +592,7 @@ export const baseTileCoords = {
   VOLCANO: { row: 2, col: 13 },
   LAVA: { row: 2, col: 14 },
   OASIS: { row: 0, col: 12 },
-  HAMLET_SNOW: { row: 0, col: 16 },
+  HAMLET_SNOW: { row: 0, col: 13 },
   AMBIENT_SLEEPING_DRAGON: { row: 0, col: 14 },
   AMBIENT_HUNTING_LODGE: { row: 0, col: 16 },
   AMBIENT_HOMESTEAD: { row: 1, col: 13 },
