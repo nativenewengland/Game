@@ -16987,6 +16987,30 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
     {
       file: 'Dwarf-Fortress_2.webp',
       alt: 'Illustration of a dwarven stronghold'
+    },
+    {
+      file: 'Dwarf-Fortress_grass_1.webp',
+      alt: 'Illustration of a dwarven hold nestled in grassy hills'
+    },
+    {
+      file: 'Dwarf_Fortress_3.webp',
+      alt: 'Illustration of a sprawling dwarven fortress'
+    },
+    {
+      file: 'dwarf_fortress_4.webp',
+      alt: 'Illustration of a fortified dwarven city'
+    },
+    {
+      file: 'Dark-Tower_1.webp',
+      alt: 'Illustration of a looming dark tower settlement'
+    },
+    {
+      file: 'Hill-Hold_1.webp',
+      alt: 'Illustration of a dwarven hill hold'
+    },
+    {
+      file: 'ruined_dwarfhold_1.webp',
+      alt: 'Illustration of a ruined dwarven hold'
     }
   ];
   const settlementArtSeedParts = [
