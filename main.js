@@ -8504,7 +8504,8 @@ const dwarfProfessionOptions = [
   { value: 'scholar', label: 'Lore Scholar' },
   { value: 'ranger', label: 'Ranger Captain' },
   { value: 'carpenter', label: 'Master Carpenter' },
-  { value: 'jewelcrafter', label: 'Gemcutter' }
+  { value: 'jewelcrafter', label: 'Gemcutter' },
+  { value: 'banker', label: 'Banker' }
 ];
 
 const dwarfHairStyles = {
@@ -8738,6 +8739,12 @@ const dwarfTraitAttributeDefinitions = [
     isActive: (dwarf) => dwarf?.skin === 'umber' || dwarf?.skin === 'coal'
   },
   {
+    key: 'banker-profession',
+    label: 'Banker',
+    description:
+      'Among men you would be in a respected profession, among dwarves its the opposite, expect your increased income to be met with glaring judgments and distain from your peers who think your very livilooh to be undwarvsmen like.',
+    icon: 'tilesheet/dice1.png',
+    isActive: (dwarf) => dwarf?.profession === 'banker'
     key: 'grey-dwarf',
     label: 'Grey Dwarf Heritage',
     description:
