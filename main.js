@@ -17926,24 +17926,30 @@ function createArchipelagoMask() {
         const height = 0.6 + activation * 0.65;
         const power = 1.25 + valueNoise(sampleX - 2.48, sampleY + 8.92, 0x85ebca77) * 0.55;
         const lobeCount =
-          2 + Math.floor(valueNoise(sampleX - 9.17, sampleY + 2.41, 0x94d049bb) * 4.8);
+          2 + Math.floor(valueNoise(sampleX - 9.17, sampleY + 2.41, 0x94d049bb) * 6.6);
         const lobeStrength =
-          0.08 + valueNoise(sampleX + 5.19, sampleY + 1.77, 0x748f82ee) * 0.24;
+          0.11 + valueNoise(sampleX + 5.19, sampleY + 1.77, 0x748f82ee) * 0.32;
         const lobePhase =
           valueNoise(sampleX - 2.63, sampleY + 4.82, 0x510e527f) * Math.PI * 2;
         const subLobeCount =
           lobeCount * 2 +
-          Math.floor(valueNoise(sampleX + 8.41, sampleY - 3.76, 0xbf58476d) * 3.4);
+          Math.floor(valueNoise(sampleX + 8.41, sampleY - 3.76, 0xbf58476d) * 4.6);
         const subLobeStrength =
-          0.03 + valueNoise(sampleX - 1.28, sampleY + 9.11, 0x3bd39e10) * 0.09;
+          0.045 + valueNoise(sampleX - 1.28, sampleY + 9.11, 0x3bd39e10) * 0.13;
         const subLobePhase =
           valueNoise(sampleX + 6.73, sampleY + 2.19, 0x2545f491) * Math.PI * 2;
         const ridgeStrength =
-          0.02 + valueNoise(sampleX * 1.9 + 3.13, sampleY * 1.9 - 4.77, 0x13198a2e) * 0.12;
+          0.035 + valueNoise(sampleX * 1.9 + 3.13, sampleY * 1.9 - 4.77, 0x13198a2e) * 0.18;
         const ridgePhase =
           valueNoise(sampleX * 2.4 - 5.61, sampleY * 2.4 + 8.37, 0x243f6a88) * Math.PI * 2;
         const ridgeSeed =
           Math.floor(valueNoise(sampleX * 3.7 + 1.91, sampleY * 3.7 - 7.42, 0x9e3779b9) * 0xffffffff) >>> 0;
+        const fractureStrength =
+          0.03 + valueNoise(sampleX * 1.7 - 4.22, sampleY * 1.7 + 5.94, 0xbb67ae85) * 0.12;
+        const fracturePhase =
+          valueNoise(sampleX * 2.1 + 7.38, sampleY * 2.1 - 6.57, 0x6c44198c) * Math.PI * 2;
+        const fractureSeed =
+          Math.floor(valueNoise(sampleX * 4.2 - 2.63, sampleY * 4.2 + 3.41, 0x3243f6a9) * 0xffffffff) >>> 0;
 
         islands.push({
           x: centerX,
@@ -17960,7 +17966,10 @@ function createArchipelagoMask() {
           subLobePhase,
           ridgeStrength,
           ridgePhase,
-          ridgeSeed
+          ridgeSeed,
+          fractureStrength,
+          fracturePhase,
+          fractureSeed
         });
       }
     }
@@ -17991,16 +18000,25 @@ function createArchipelagoMask() {
           0.5) *
         island.ridgeStrength *
         edgeBlend;
-      const warpedDistance = baseDistance - lobeWarp - subLobeWarp - ridgeNoise;
+      const fractureNoise =
+        (valueNoise(
+          Math.cos(angle * 0.6 + island.fracturePhase) * 4.6 + baseDistance * 2.1,
+          Math.sin(angle * 0.6 + island.fracturePhase) * 4.6 + baseDistance * 2.1,
+          island.fractureSeed
+        ) -
+          0.5) *
+        island.fractureStrength *
+        edgeBlend;
+      const warpedDistance = baseDistance - lobeWarp - subLobeWarp - ridgeNoise - fractureNoise;
       const distance = warpedDistance < 0 ? 0 : warpedDistance;
       let influence = clamp(1 - distance, 0, 1);
       influence = Math.pow(influence, island.power) * island.height;
       sum += influence;
     }
 
-    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.34;
-    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.2;
-    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.1;
+    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.38;
+    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.24;
+    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.12;
     const scatter = Math.max(
       0,
       valueNoise(nx * 11.7 + 1.6, ny * 11.7 + 7.4, 0x51eb851f) - 0.63
@@ -18046,22 +18064,25 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
     const rotation = rng() * Math.PI * 2;
     const cosRotation = Math.cos(rotation);
     const sinRotation = Math.sin(rotation);
-    const falloffPower = 1.15 + rng() * 1.6;
-    const shelfStrength = 0.2 + rng() * 0.3;
-    const peakHeight = 0.55 + rng() * 0.4;
-    const coastlineRoughness = 0.18 + rng() * 0.22;
-    const turbulenceStrength = 0.22 + rng() * 0.32;
-    const noiseScale = 3.8 + rng() * 5.6;
+    const falloffPower = 1.1 + rng() * 1.7;
+    const shelfStrength = 0.22 + rng() * 0.34;
+    const peakHeight = 0.55 + rng() * 0.45;
+    const coastlineRoughness = 0.22 + rng() * 0.28;
+    const turbulenceStrength = 0.26 + rng() * 0.36;
+    const noiseScale = 3.4 + rng() * 6.2;
     const tectonicStrength = 0.3 + rng() * 0.5;
-    const lobeCount = 2 + Math.floor(rng() * 5);
+    const lobeCount = 2 + Math.floor(rng() * 7);
     const lobePhase = rng() * Math.PI * 2;
-    const lobeStrength = 0.09 + rng() * 0.22;
-    const rippleCount = lobeCount * 2 + Math.floor(rng() * 4);
+    const lobeStrength = 0.12 + rng() * 0.26;
+    const rippleCount = lobeCount * 2 + Math.floor(rng() * 5);
     const ripplePhase = rng() * Math.PI * 2;
-    const rippleStrength = 0.035 + rng() * 0.09;
-    const ridgeStrength = 0.02 + rng() * 0.08;
+    const rippleStrength = 0.045 + rng() * 0.11;
+    const ridgeStrength = 0.03 + rng() * 0.11;
     const ridgePhase = rng() * Math.PI * 2;
     const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
+    const fractureStrength = 0.035 + rng() * 0.13;
+    const fracturePhase = rng() * Math.PI * 2;
+    const fractureSeed = (islandSeed ^ 0xbb67ae85) >>> 0;
 
     const influenceRadiusX = majorRadius * 1.7;
     const influenceRadiusY = minorRadius * 1.7;
@@ -18099,7 +18120,18 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
             0.5) *
           ridgeStrength *
           edgeBlend;
-        const warpedDistance = distance - angularWarp - ridgeNoise;
+        const fractureNoise =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.000091) * 13.2 +
+              Math.cos(angle * 0.65 + fracturePhase) * 4.5,
+            (normalizedY + islandSeed * 0.000091) * 13.2 +
+              Math.sin(angle * 0.65 + fracturePhase) * 4.5,
+            fractureSeed
+          ) -
+            0.5) *
+          fractureStrength *
+          edgeBlend;
+        const warpedDistance = distance - angularWarp - ridgeNoise - fractureNoise;
         if (warpedDistance > 1.6) {
           continue;
         }
@@ -18190,12 +18222,12 @@ const continentalPlateConfigs = {
     fragmentFalloffRange: [1.2, 2.4],
     majorSharpnessRange: [1.2, 2],
     fragmentSharpnessRange: [1.15, 2.05],
-    majorJaggednessRange: [1.1, 2.6],
-    fragmentJaggednessRange: [1.2, 2.8],
-    majorTurbulenceRange: [0.75, 1.25],
-    fragmentTurbulenceRange: [0.8, 1.3],
-    majorNoiseScaleRange: [4.5, 9.5],
-    fragmentNoiseScaleRange: [7.5, 14.5],
+    majorJaggednessRange: [1.45, 3.2],
+    fragmentJaggednessRange: [1.6, 3.5],
+    majorTurbulenceRange: [0.85, 1.4],
+    fragmentTurbulenceRange: [0.95, 1.55],
+    majorNoiseScaleRange: [5.2, 10.5],
+    fragmentNoiseScaleRange: [8.5, 16.8],
     majorMinEdge: 0.04,
     fragmentMinEdge: 0.015,
     fallbackPlate: {
