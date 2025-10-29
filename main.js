@@ -203,52 +203,6 @@ function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
-function drawAmbientFarmStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const fieldWidth = size * 0.74;
-  const fieldHeight = size * 0.42;
-  const fieldX = (size - fieldWidth) / 2;
-  const fieldY = size * 0.42;
-
-  ctx.fillStyle = '#cfa96b';
-  ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
-
-  ctx.strokeStyle = '#9b6e39';
-  ctx.lineWidth = Math.max(1, size * 0.035);
-  const furrowCount = 4;
-  for (let i = 1; i <= furrowCount; i += 1) {
-    const x = fieldX + (fieldWidth * i) / (furrowCount + 1);
-    ctx.beginPath();
-    ctx.moveTo(x, fieldY + fieldHeight * 0.08);
-    ctx.lineTo(x - size * 0.06, fieldY + fieldHeight * 0.92);
-    ctx.stroke();
-  }
-
-  const barnWidth = size * 0.26;
-  const barnHeight = size * 0.24;
-  const barnX = size * 0.16;
-  const barnY = size * 0.26;
-
-  ctx.fillStyle = '#b53a30';
-  ctx.fillRect(barnX, barnY, barnWidth, barnHeight);
-
-  ctx.fillStyle = '#7d221b';
-  ctx.beginPath();
-  ctx.moveTo(barnX, barnY);
-  ctx.lineTo(barnX + barnWidth / 2, barnY - size * 0.14);
-  ctx.lineTo(barnX + barnWidth, barnY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#f4e3b3';
-  ctx.fillRect(barnX + barnWidth * 0.64, barnY + barnHeight * 0.34, barnWidth * 0.24, barnHeight * 0.38);
-  ctx.fillRect(barnX + barnWidth * 0.26, barnY + barnHeight * 0.48, barnWidth * 0.18, barnHeight * 0.38);
-
-  ctx.restore();
-}
-
 function drawAmbientHomesteadStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -465,7 +419,7 @@ registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTav
 registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
   drawDarkDwarfholdStructure(ctx, drawOptions)
 );
-registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
+// AMBIENT_FARM draws from the sprite sheet via baseTileCoords.
 registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
   drawAmbientHomesteadStructure(ctx, drawOptions)
 );
