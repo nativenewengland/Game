@@ -13898,7 +13898,7 @@ const dwarfholdScreenConfig = {
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
 
-const structureDetailsTabIds = ['history', 'statistics'];
+const structureDetailsTabIds = ['history', 'main', 'features', 'economy'];
 
 const structureDetailsState = {
   visible: false,
@@ -13914,10 +13914,14 @@ function normalizeStructureDetailsTabId(tabId) {
   return structureDetailsTabIds.includes(normalized) ? normalized : structureDetailsTabIds[0];
 }
 
-function getStructureDetailsStatisticsPlaceholder() {
+function getStructureDetailsPlaceholder(message) {
+  const resolvedMessage =
+    typeof message === 'string' && message.trim().length > 0
+      ? message.trim()
+      : 'No additional records are available for this settlement yet.';
   return `
     <div class="structure-details-column structure-details-column--primary">
-      <p class="structure-details-empty structure-details-empty--standalone">No statistical records are available for this settlement yet.</p>
+      <p class="structure-details-empty structure-details-empty--standalone">${escapeHtml(resolvedMessage)}</p>
     </div>
   `;
 }
@@ -18585,8 +18589,14 @@ function showStructureDetails(tile, context = {}) {
   }
 
   structureDetailsState.tabContent = {
-    history: content.body,
-    statistics: getStructureDetailsStatisticsPlaceholder()
+    history: content.history || content.body,
+    main: content.main || content.body,
+    features:
+      content.features ||
+      getStructureDetailsPlaceholder('No notable features have been recorded for this settlement yet.'),
+    economy:
+      content.economy ||
+      getStructureDetailsPlaceholder('No economic records are available for this settlement yet.')
   };
 
   setActiveStructureDetailsTab('history', { force: true });
