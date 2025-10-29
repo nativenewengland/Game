@@ -18029,8 +18029,43 @@ function createArchipelagoMask() {
         const radiusY = spacing * (0.24 + activation * 0.28 + (1 - radiusSeed) * 0.12);
         const height = 0.6 + activation * 0.65;
         const power = 1.25 + valueNoise(sampleX - 2.48, sampleY + 8.92, 0x85ebca77) * 0.55;
+        const lobeCount =
+          2 + Math.floor(valueNoise(sampleX - 9.17, sampleY + 2.41, 0x94d049bb) * 4.8);
+        const lobeStrength =
+          0.08 + valueNoise(sampleX + 5.19, sampleY + 1.77, 0x748f82ee) * 0.24;
+        const lobePhase =
+          valueNoise(sampleX - 2.63, sampleY + 4.82, 0x510e527f) * Math.PI * 2;
+        const subLobeCount =
+          lobeCount * 2 +
+          Math.floor(valueNoise(sampleX + 8.41, sampleY - 3.76, 0xbf58476d) * 3.4);
+        const subLobeStrength =
+          0.03 + valueNoise(sampleX - 1.28, sampleY + 9.11, 0x3bd39e10) * 0.09;
+        const subLobePhase =
+          valueNoise(sampleX + 6.73, sampleY + 2.19, 0x2545f491) * Math.PI * 2;
+        const ridgeStrength =
+          0.02 + valueNoise(sampleX * 1.9 + 3.13, sampleY * 1.9 - 4.77, 0x13198a2e) * 0.12;
+        const ridgePhase =
+          valueNoise(sampleX * 2.4 - 5.61, sampleY * 2.4 + 8.37, 0x243f6a88) * Math.PI * 2;
+        const ridgeSeed =
+          Math.floor(valueNoise(sampleX * 3.7 + 1.91, sampleY * 3.7 - 7.42, 0x9e3779b9) * 0xffffffff) >>> 0;
 
-        islands.push({ x: centerX, y: centerY, radiusX, radiusY, height, power });
+        islands.push({
+          x: centerX,
+          y: centerY,
+          radiusX,
+          radiusY,
+          height,
+          power,
+          lobeCount,
+          lobeStrength,
+          lobePhase,
+          subLobeCount,
+          subLobeStrength,
+          subLobePhase,
+          ridgeStrength,
+          ridgePhase,
+          ridgeSeed
+        });
       }
     }
 
@@ -18039,10 +18074,29 @@ function createArchipelagoMask() {
       const island = islands[i];
       const dx = nx - island.x;
       const dy = ny - island.y;
-      const distance = Math.sqrt(
+      const baseDistance = Math.sqrt(
         (dx * dx) / (island.radiusX * island.radiusX) +
           (dy * dy) / (island.radiusY * island.radiusY)
       );
+      const angle = Math.atan2(dy, dx);
+      const edgeBlend = clamp(1 - Math.min(baseDistance, 1.6) * 0.55, 0, 1);
+      const lobeWarp =
+        Math.sin(angle * island.lobeCount + island.lobePhase) * island.lobeStrength * edgeBlend;
+      const subLobeWarp =
+        Math.sin(angle * island.subLobeCount + island.subLobePhase) *
+        island.subLobeStrength *
+        edgeBlend;
+      const ridgeNoise =
+        (valueNoise(
+          Math.cos(angle + island.ridgePhase) * 3.3 + baseDistance * 1.4,
+          Math.sin(angle + island.ridgePhase) * 3.3 + baseDistance * 1.4,
+          island.ridgeSeed
+        ) -
+          0.5) *
+        island.ridgeStrength *
+        edgeBlend;
+      const warpedDistance = baseDistance - lobeWarp - subLobeWarp - ridgeNoise;
+      const distance = warpedDistance < 0 ? 0 : warpedDistance;
       let influence = clamp(1 - distance, 0, 1);
       influence = Math.pow(influence, island.power) * island.height;
       sum += influence;
@@ -18085,19 +18139,33 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
     const centerX = rng() * width;
     const centerY = rng() * height;
     const radius = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
-    const aspect = 0.6 + rng() * 0.9;
-    const majorRadius = Math.max(radius, 3);
-    const minorRadius = Math.max(majorRadius * aspect, 3);
+    const aspect = 0.45 + rng() * 1.35;
+    let majorRadius = Math.max(radius, 3);
+    let minorRadius = Math.max(majorRadius * aspect, 3);
+    if (rng() < 0.5) {
+      const swap = majorRadius;
+      majorRadius = minorRadius;
+      minorRadius = swap;
+    }
     const rotation = rng() * Math.PI * 2;
     const cosRotation = Math.cos(rotation);
     const sinRotation = Math.sin(rotation);
     const falloffPower = 1.15 + rng() * 1.6;
-    const shelfStrength = 0.18 + rng() * 0.24;
+    const shelfStrength = 0.2 + rng() * 0.3;
     const peakHeight = 0.55 + rng() * 0.4;
-    const coastlineRoughness = 0.12 + rng() * 0.16;
-    const turbulenceStrength = 0.18 + rng() * 0.26;
-    const noiseScale = 3.2 + rng() * 4.8;
+    const coastlineRoughness = 0.18 + rng() * 0.22;
+    const turbulenceStrength = 0.22 + rng() * 0.32;
+    const noiseScale = 3.8 + rng() * 5.6;
     const tectonicStrength = 0.3 + rng() * 0.5;
+    const lobeCount = 2 + Math.floor(rng() * 5);
+    const lobePhase = rng() * Math.PI * 2;
+    const lobeStrength = 0.09 + rng() * 0.22;
+    const rippleCount = lobeCount * 2 + Math.floor(rng() * 4);
+    const ripplePhase = rng() * Math.PI * 2;
+    const rippleStrength = 0.035 + rng() * 0.09;
+    const ridgeStrength = 0.02 + rng() * 0.08;
+    const ridgePhase = rng() * Math.PI * 2;
+    const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
 
     const influenceRadiusX = majorRadius * 1.7;
     const influenceRadiusY = minorRadius * 1.7;
@@ -18114,12 +18182,32 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
         const rotatedX = offsetX * cosRotation - offsetY * sinRotation;
         const rotatedY = offsetX * sinRotation + offsetY * cosRotation;
         const distance = Math.sqrt(rotatedX * rotatedX + rotatedY * rotatedY);
-        if (distance > 1.6) {
+        if (distance > 1.9) {
           continue;
         }
 
         const normalizedX = (x + 0.5) / width;
         const normalizedY = (y + 0.5) / height;
+        const angle = Math.atan2(rotatedY, rotatedX);
+        const edgeBlend = clamp(1 - Math.min(distance, 1.6) * 0.65, 0, 1);
+        const angularWarp =
+          (Math.sin(angle * lobeCount + lobePhase) * lobeStrength +
+            Math.sin(angle * rippleCount + ripplePhase) * rippleStrength) *
+          edgeBlend;
+        const ridgeNoise =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.00013) * 9.1 + Math.cos(angle + ridgePhase) * 3.1,
+            (normalizedY + islandSeed * 0.00013) * 9.1 + Math.sin(angle + ridgePhase) * 3.1,
+            ridgeSeed
+          ) -
+            0.5) *
+          ridgeStrength *
+          edgeBlend;
+        const warpedDistance = distance - angularWarp - ridgeNoise;
+        if (warpedDistance > 1.6) {
+          continue;
+        }
+
         const coastlineNoise =
           valueNoise(
             (normalizedX + islandSeed * 0.0000153) * noiseScale,
@@ -18127,7 +18215,7 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
             islandSeed
           ) - 0.5;
         const coastalWarp = coastlineNoise * coastlineRoughness;
-        const adjustedDistance = distance - coastalWarp;
+        const adjustedDistance = warpedDistance - coastalWarp;
         if (adjustedDistance > 1.2) {
           continue;
         }
@@ -18192,37 +18280,37 @@ const continentalPlateConfigs = {
     fragmentDistance: 0.06,
     majorRadiusRange: [0.12, 0.2],
     fragmentRadiusRange: [0.05, 0.11],
-    majorRadiusXMultiplierRange: [0.7, 1.6],
-    majorRadiusYMultiplierRange: [0.65, 1.5],
-    fragmentRadiusXMultiplierRange: [0.65, 1.45],
-    fragmentRadiusYMultiplierRange: [0.6, 1.35],
+    majorRadiusXMultiplierRange: [0.55, 2.2],
+    majorRadiusYMultiplierRange: [0.5, 2.05],
+    fragmentRadiusXMultiplierRange: [0.5, 1.9],
+    fragmentRadiusYMultiplierRange: [0.45, 1.75],
     majorOceanChance: 0.6,
     fragmentOceanChance: 0.45,
     majorLandStrengthRange: [0.45, 0.85],
     fragmentLandStrengthRange: [0.4, 0.75],
     majorOceanStrengthRange: [0.45, 0.7],
     fragmentOceanStrengthRange: [0.35, 0.6],
-    majorFalloffRange: [1.4, 2.4],
-    fragmentFalloffRange: [1.3, 2.2],
+    majorFalloffRange: [1.25, 2.7],
+    fragmentFalloffRange: [1.2, 2.4],
     majorSharpnessRange: [1.2, 2],
     fragmentSharpnessRange: [1.15, 2.05],
-    majorJaggednessRange: [0.7, 1.4],
-    fragmentJaggednessRange: [0.9, 1.8],
-    majorTurbulenceRange: [0.55, 0.95],
-    fragmentTurbulenceRange: [0.6, 1],
-    majorNoiseScaleRange: [3.5, 7.5],
-    fragmentNoiseScaleRange: [6.5, 12],
+    majorJaggednessRange: [1.1, 2.6],
+    fragmentJaggednessRange: [1.2, 2.8],
+    majorTurbulenceRange: [0.75, 1.25],
+    fragmentTurbulenceRange: [0.8, 1.3],
+    majorNoiseScaleRange: [4.5, 9.5],
+    fragmentNoiseScaleRange: [7.5, 14.5],
     majorMinEdge: 0.04,
     fragmentMinEdge: 0.015,
     fallbackPlate: {
       radiusX: 0.18,
-      radiusY: 0.14,
-      falloff: 1.8,
+      radiusY: 0.13,
+      falloff: 1.65,
       sharpness: 1.6,
       strength: 0.6,
-      jaggedness: 0.9,
-      turbulence: 0.7,
-      noiseScale: 6
+      jaggedness: 1.45,
+      turbulence: 0.95,
+      noiseScale: 7.8
     }
   }
 };
