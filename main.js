@@ -446,6 +446,7 @@ const hillOverlayKeySet = new Set([
   'HILLS_BADLANDS'
 ]);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
+const cutTreeOverlayKey = tileLookup.has('CUT_TREES') ? 'CUT_TREES' : null;
 const jungleOverlayKey = 'JUNGLE_TREE';
 const woodElfGroveStructureKeys = ['WOOD_ELF_GROVES', 'WOOD_ELF_GROVES_LARGE', 'WOOD_ELF_GROVES_GRAND'];
 const woodElfGroveStructureKeySet = new Set(woodElfGroveStructureKeys);
@@ -6717,6 +6718,38 @@ function applyCulturalInfluence({
     return false;
   };
 
+  const replaceTreesNearLumberMill = (centerX, centerY) => {
+    if (!cutTreeOverlayKey) {
+      return;
+    }
+    const radius = 1;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (!neighborTile || neighborTile.structure || neighborTile.river) {
+          continue;
+        }
+        if (!tileHasTreeOverlay(neighborTile)) {
+          continue;
+        }
+        if (isTreeOverlayKey(neighborTile.hillOverlay)) {
+          neighborTile.hillOverlay = null;
+        }
+        if (neighborTile.overlay !== cutTreeOverlayKey) {
+          neighborTile.overlay = cutTreeOverlayKey;
+        }
+      }
+    }
+  };
+
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
     if (!row) {
@@ -7789,6 +7822,7 @@ function applyCulturalInfluence({
 
       if (option.key === 'lumber_mill') {
         assignAmbientStructureToTile('AMBIENT_LUMBER_MILL');
+        replaceTreesNearLumberMill(x, y);
       } else if (option.key === 'homestead') {
         assignAmbientStructureToTile('AMBIENT_HOMESTEAD');
       } else if (option.key === 'sleeping_dragon') {
