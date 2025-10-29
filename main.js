@@ -6169,6 +6169,7 @@ const ambientStructureOptionsByCulture = {
     'Tunnel Watch Post'
   ]),
   elves: createAmbientStructureOptions([
+    { label: 'Great Tree', requiresTreeOverlay: true },
     { label: 'Moonwell Glade', requiresTreeNeighbor: true },
     'Leafweaver Pavilion',
     'Starbloom Archway',
@@ -7819,12 +7820,19 @@ function applyCulturalInfluence({
       let adjacentToTreeCache = null;
       let isMountainTileCache = null;
       let hasForestOverlayCache = null;
+      let hasTreeOverlayCache = null;
       const eligibleOptions = options.filter((option) => {
         if (option.requiresTreeNeighbor) {
           if (adjacentToTreeCache === null) {
             adjacentToTreeCache = isTileAdjacentToTree(x, y);
           }
           return adjacentToTreeCache;
+        }
+        if (option.requiresTreeOverlay) {
+          if (hasTreeOverlayCache === null) {
+            hasTreeOverlayCache = tileHasTreeOverlay(tile);
+          }
+          return hasTreeOverlayCache;
         }
         if (option.requiresMountainOverlay) {
           if (isMountainTileCache === null) {
@@ -7877,6 +7885,8 @@ function applyCulturalInfluence({
         assignAmbientStructureToTile('AMBIENT_HOMESTEAD');
       } else if (option.key === 'sleeping_dragon') {
         assignAmbientStructureToTile('AMBIENT_SLEEPING_DRAGON');
+      } else if (option.key === 'great_tree') {
+        assignAmbientStructureToTile('AMBIENT_GREAT_TREE');
       } else if (option.key === 'moonwell_glade' || option.key === 'moonwell') {
         assignAmbientStructureToTile('AMBIENT_MOONWELL');
       }
