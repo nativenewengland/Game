@@ -8596,7 +8596,7 @@ const dwarfTraitAttributeDefinitions = [
     label: 'Banker',
     description:
       'Among men you would be in a respected profession, among dwarves its the opposite, expect your increased income to be met with glaring judgments and distain from your peers who think your very livilooh to be undwarvsmen like.',
-    icon: 'tilesheet/dice1.png',
+    icon: 'tilesheet/banker.png',
     isActive: (dwarf) => dwarf?.profession === 'banker'
   },
   {
