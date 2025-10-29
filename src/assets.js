@@ -544,6 +544,7 @@ export const baseTileCoords = {
   TREE_LONE: { row: 5, col: 6 },
   TREE_SNOW: { row: 1, col: 1 },
   JUNGLE_TREE: { row: 3, col: 0 },
+  CUT_TREES: { row: 6, col: 1 },
   AMBIENT_LUMBER_MILL: { row: 6, col: 0 },
   WATER: { row: 1, col: 4 },
   MOUNTAIN: { row: 0, col: 3 },
