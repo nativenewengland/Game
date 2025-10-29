@@ -50,7 +50,15 @@ export function attachEvents(elements, deps) {
     updateWorldInfoSeedDisplay,
     updateWorldInfoSizeDisplay,
     updateWorldInfoGenerationTypeDisplay,
-    setWorldGenerationType
+    setWorldGenerationType,
+    toggleMapEditor,
+    closeMapEditor,
+    setMapEditorTerrainKey,
+    setMapEditorStructureKey,
+    setMapEditorApplyTerrain,
+    setMapEditorApplyStructure,
+    setMapEditorBrushSize,
+    clearMapEditorStructure
   } = deps;
 
   const dismissContextMenuOnPointerDown = (event) => {
@@ -220,6 +228,73 @@ export function attachEvents(elements, deps) {
       if (state.currentWorld) {
         drawWorld(state.currentWorld, { preserveView: true });
       }
+    });
+  }
+
+  if (elements.mapEditorToggle) {
+    elements.mapEditorToggle.addEventListener('click', () => {
+      const enabled = toggleMapEditor();
+      if (enabled && elements.mapEditorTerrainInput && typeof elements.mapEditorTerrainInput.focus === 'function') {
+        elements.mapEditorTerrainInput.focus({ preventScroll: true });
+        elements.mapEditorTerrainInput.select?.();
+      }
+    });
+  }
+
+  if (elements.mapEditorClose) {
+    elements.mapEditorClose.addEventListener('click', () => {
+      closeMapEditor({ returnFocus: true });
+    });
+  }
+
+  const handleMapEditorTerrainChange = (event) => {
+    setMapEditorTerrainKey(event.target.value);
+  };
+
+  if (elements.mapEditorTerrainInput) {
+    elements.mapEditorTerrainInput.addEventListener('change', handleMapEditorTerrainChange);
+    elements.mapEditorTerrainInput.addEventListener('blur', handleMapEditorTerrainChange);
+    elements.mapEditorTerrainInput.addEventListener('input', () => {
+      setMapEditorTerrainKey(elements.mapEditorTerrainInput.value);
+    });
+  }
+
+  const handleMapEditorStructureChange = (event) => {
+    setMapEditorStructureKey(event.target.value);
+  };
+
+  if (elements.mapEditorStructureInput) {
+    elements.mapEditorStructureInput.addEventListener('change', handleMapEditorStructureChange);
+    elements.mapEditorStructureInput.addEventListener('blur', handleMapEditorStructureChange);
+    elements.mapEditorStructureInput.addEventListener('input', () => {
+      setMapEditorStructureKey(elements.mapEditorStructureInput.value);
+    });
+  }
+
+  if (elements.mapEditorApplyTerrain) {
+    elements.mapEditorApplyTerrain.addEventListener('change', (event) => {
+      setMapEditorApplyTerrain(event.target.checked);
+    });
+  }
+
+  if (elements.mapEditorApplyStructure) {
+    elements.mapEditorApplyStructure.addEventListener('change', (event) => {
+      setMapEditorApplyStructure(event.target.checked);
+    });
+  }
+
+  if (elements.mapEditorBrushSizeInput) {
+    elements.mapEditorBrushSizeInput.addEventListener('input', (event) => {
+      setMapEditorBrushSize(event.target.value);
+    });
+    elements.mapEditorBrushSizeInput.addEventListener('change', (event) => {
+      setMapEditorBrushSize(event.target.value);
+    });
+  }
+
+  if (elements.mapEditorClearStructure) {
+    elements.mapEditorClearStructure.addEventListener('click', () => {
+      clearMapEditorStructure();
     });
   }
 
