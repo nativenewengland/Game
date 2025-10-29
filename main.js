@@ -6284,8 +6284,10 @@ function applyCulturalInfluence({
   const marshCultureSeed = (ambientSeedBase + 0xcbf29ce4) >>> 0;
   const grasslandAmbientSeed = (ambientSeedBase + 0x243f6a88) >>> 0;
   const grasslandRadiusSeed = (ambientSeedBase + 0x13198a2e) >>> 0;
+  const grasslandCultureSeed = (ambientSeedBase + 0x98badcfe) >>> 0;
   const badlandsAmbientSeed = (ambientSeedBase + 0xd56f0b27) >>> 0;
   const badlandsRadiusSeed = (ambientSeedBase + 0x68b57a19) >>> 0;
+  const badlandsCultureSeed = (ambientSeedBase + 0x243f6a9b) >>> 0;
   const jungleAmbientSeed = (ambientSeedBase + 0x9e3779b9) >>> 0;
   const jungleRadiusSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
   const desertAmbientSeed = (ambientSeedBase + 0x6a09e667) >>> 0;
@@ -6698,6 +6700,14 @@ function applyCulturalInfluence({
         if (roll < 0.0028) {
           const radiusRoll = hashCoords(x, y, grasslandRadiusSeed);
           const radius = lerp(11, 23, radiusRoll);
+          const cultureRoll = hashCoords(x, y, grasslandCultureSeed);
+          const cultures = [
+            { key: 'centaurs', label: 'Centaurs' },
+            { key: 'gnolls', label: 'Gnolls' },
+            { key: 'quilboar', label: 'Quilboar' }
+          ];
+          const index = Math.floor(cultureRoll * cultures.length) % cultures.length;
+          const selected = cultures[index] || cultures[0];
           addCulturalSource({
             x,
             y,
@@ -6705,9 +6715,9 @@ function applyCulturalInfluence({
             falloff: 1.31,
             entries: [
               {
-                key: 'centaurs',
+                key: selected.key,
                 share: 1,
-                label: 'Centaurs'
+                label: selected.label
               }
             ]
           });
@@ -6763,6 +6773,14 @@ function applyCulturalInfluence({
         if (roll < 0.0032) {
           const radiusRoll = hashCoords(x, y, badlandsRadiusSeed);
           const radius = lerp(11, 21, radiusRoll);
+          const cultureRoll = hashCoords(x, y, badlandsCultureSeed);
+          const cultures = [
+            { key: 'centaurs', label: 'Centaurs' },
+            { key: 'gnolls', label: 'Gnolls' },
+            { key: 'quilboar', label: 'Quilboar' }
+          ];
+          const index = Math.floor(cultureRoll * cultures.length) % cultures.length;
+          const selected = cultures[index] || cultures[0];
           addCulturalSource({
             x,
             y,
@@ -6770,9 +6788,9 @@ function applyCulturalInfluence({
             falloff: 1.31,
             entries: [
               {
-                key: 'centaurs',
+                key: selected.key,
                 share: 1,
-                label: 'Centaurs'
+                label: selected.label
               }
             ]
           });
