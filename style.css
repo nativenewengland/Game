@@ -1951,14 +1951,16 @@ button:hover:not(:disabled) {
 
 .body-panel-frame {
   position: relative;
-  width: min(85%, 301.75px);
+  width: 280px;
+  height: 300px;
 }
 
 .body-panel-image {
   display: block;
-  height: auto;
   width: 100%;
+  height: 100%;
   image-rendering: pixelated;
+  object-fit: fill;
 }
 
 .dwarf-body-portrait-canvas {
@@ -3060,7 +3062,7 @@ button:hover:not(:disabled) {
 
   .body-panel-image {
     width: 100%;
-    max-width: 355px;
+    height: 100%;
   }
 
   .customizer-main {
