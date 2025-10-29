@@ -9,5 +9,6 @@ We have an ambitious roadmap planned for the world of **Game**. Here are just a 
 - **Demon Update** – Visit the underworld or demon realm and uncover its secrets.
 - **Real-Time Strategy Elements Update** – Command your forces in dynamic, real-time encounters.
 - **Story Mode** – Experience a narrative-driven campaign that reacts to your choices.
+- **Map Painter** – Sketch and edit the overworld tile by tile to sculpt your ideal realm before embarking.
 
 We are always listening to player suggestions—and there is much, much more to come!
