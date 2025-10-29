@@ -493,6 +493,10 @@ const hillOverlayKeySet = new Set([
 ]);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const jungleOverlayKey = 'JUNGLE_TREE';
+const woodElfGroveStructureKeys = ['WOOD_ELF_GROVES', 'WOOD_ELF_GROVES_LARGE', 'WOOD_ELF_GROVES_GRAND'];
+const woodElfGroveStructureKeySet = new Set(woodElfGroveStructureKeys);
+const isWoodElfGroveStructureKey = (key) =>
+  typeof key === 'string' && woodElfGroveStructureKeySet.has(key);
 
 const volcanoOverlayKeySet = new Set(['VOLCANO', 'ACTIVE_VOLCANO']);
 const isVolcanoOverlayKey = (key) => typeof key === 'string' && volcanoOverlayKeySet.has(key);
@@ -542,7 +546,7 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
       return 0;
     }
     case 'woodElfGrove': {
-      if (tile.structure === 'WOOD_ELF_GROVES') {
+      if (isWoodElfGroveStructureKey(tile.structure)) {
         return 1;
       }
       if (tileHasTreeOverlay(tile)) {
@@ -2292,6 +2296,14 @@ const woodElfGrovePopulationRoleOptions = [
   { key: 'nymphs', label: 'Nymphs', color: '#9bd4a9' },
   { key: 'ents', label: 'Ents', color: '#8bbbcf' }
 ];
+
+const woodElfGroveClassificationPopulationMax = {
+  'Forest Retreat': 180,
+  'Canopy Sanctuary': 240,
+  'Hidden Enclave': 360,
+  'Sacred Grove': 500,
+  'Ancient Grove': 560
+};
 
 const lizardmenCityPopulationRoleOptions = [
   { key: 'lizardmen', label: 'Lizardmen', color: '#3a9f68' }
@@ -4382,6 +4394,8 @@ function generateWoodElfGroveDetails(name, random) {
     classification = 'Canopy Sanctuary';
   }
 
+  const populationMax = woodElfGroveClassificationPopulationMax[classification] || 560;
+
   let populationDescriptor = 'wardens';
   if (classification === 'Ancient Grove') {
     populationDescriptor = 'elders';
@@ -4411,6 +4425,7 @@ function generateWoodElfGroveDetails(name, random) {
     classification,
     name,
     population,
+    populationMax,
     populationLabel: 'Population',
     populationDescriptor,
     isSettlement: true,
@@ -7932,7 +7947,7 @@ const structureHighlightGroups = {
     strokeColor: '#4ade80',
     fillAlpha: 0.26,
     strokeAlpha: 0.88,
-    keys: ['WOOD_ELF_GROVES'],
+    keys: woodElfGroveStructureKeys.filter((key) => tileLookup.has(key)),
     types: ['woodElfGrove']
   }),
   lizardmenCity: createHighlightGroup({
@@ -24010,8 +24025,10 @@ function createWorld(seedString) {
       }
     }
 
-    const woodElfGroveKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
-    if (woodElfGroveKey) {
+  const woodElfGroveBaseKey = tileLookup.has('WOOD_ELF_GROVES') ? 'WOOD_ELF_GROVES' : null;
+  const woodElfGroveLargeKey = tileLookup.has('WOOD_ELF_GROVES_LARGE') ? 'WOOD_ELF_GROVES_LARGE' : null;
+  const woodElfGroveGrandKey = tileLookup.has('WOOD_ELF_GROVES_GRAND') ? 'WOOD_ELF_GROVES_GRAND' : null;
+  if (woodElfGroveBaseKey) {
       const getOceanMask = (() => {
         let computed = false;
         return () => {
@@ -24171,7 +24188,19 @@ function createWorld(seedString) {
           }
           const name = generateWoodElfGroveName(rng);
           const details = generateWoodElfGroveDetails(name, rng);
-          tile.structure = woodElfGroveKey;
+          let structureKey = woodElfGroveBaseKey;
+          const populationMax = Number.isFinite(details?.populationMax) ? details.populationMax : null;
+          const populationValue = Number.isFinite(details?.population) ? details.population : null;
+          if (populationMax && populationMax > 0 && populationValue != null) {
+            const populationRatio = populationValue / populationMax;
+            if (woodElfGroveGrandKey && populationRatio >= 0.9) {
+              structureKey = woodElfGroveGrandKey;
+            } else if (woodElfGroveLargeKey && populationRatio >= 0.8) {
+              structureKey = woodElfGroveLargeKey;
+            }
+          }
+
+          tile.structure = structureKey;
           tile.structureName = details.name || name;
           tile.structureDetails = details;
           placed.push(candidate);
