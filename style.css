@@ -1947,7 +1947,7 @@ button:hover:not(:disabled) {
 
 .body-panel-frame {
   position: relative;
-  width: min(100%, 444px);
+  width: min(100%, 355px);
 }
 
 .body-panel-image {
@@ -3057,7 +3057,7 @@ button:hover:not(:disabled) {
 
   .body-panel-image {
     width: 100%;
-    max-width: 444px;
+    max-width: 355px;
   }
 
   .customizer-main {
