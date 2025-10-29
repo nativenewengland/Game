@@ -114,6 +114,60 @@ function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawDarkDwarfholdStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const baseWidth = size * 0.72;
+  const baseHeight = size * 0.38;
+  const baseX = (size - baseWidth) / 2;
+  const baseY = size * 0.44;
+
+  ctx.fillStyle = '#241b2b';
+  ctx.fillRect(baseX, baseY, baseWidth, baseHeight);
+
+  const towerWidth = size * 0.18;
+  const towerHeight = size * 0.46;
+  const towerY = size * 0.18;
+  ctx.fillStyle = '#35263d';
+  ctx.fillRect(baseX - size * 0.04, towerY, towerWidth, towerHeight);
+  ctx.fillRect(baseX + baseWidth - towerWidth + size * 0.04, towerY, towerWidth, towerHeight);
+
+  ctx.fillStyle = '#4a2e3a';
+  ctx.fillRect(size * 0.44, size * 0.34, size * 0.12, size * 0.48);
+
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(baseX + baseWidth * 0.22, baseY + baseHeight * 0.1, baseWidth * 0.18, baseHeight * 0.26);
+  ctx.fillRect(baseX + baseWidth * 0.6, baseY + baseHeight * 0.08, baseWidth * 0.18, baseHeight * 0.28);
+
+  ctx.fillStyle = '#1f2937';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.18, towerY);
+  ctx.lineTo(size * 0.32, towerY - size * 0.12);
+  ctx.lineTo(size * 0.46, towerY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(size * 0.54, towerY);
+  ctx.lineTo(size * 0.68, towerY - size * 0.12);
+  ctx.lineTo(size * 0.82, towerY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(size * 0.46, size * 0.62, size * 0.08, size * 0.2);
+
+  ctx.strokeStyle = 'rgba(249, 115, 22, 0.65)';
+  ctx.lineWidth = Math.max(1, size * 0.06);
+  ctx.beginPath();
+  ctx.moveTo(baseX + baseWidth * 0.1, baseY + baseHeight * 0.9);
+  ctx.lineTo(baseX + baseWidth * 0.9, baseY + baseHeight * 0.9);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -195,6 +249,89 @@ function drawAmbientFarmStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawAmbientHomesteadStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const yardWidth = size * 0.82;
+  const yardHeight = size * 0.38;
+  const yardX = (size - yardWidth) / 2;
+  const yardY = size * 0.54;
+
+  ctx.fillStyle = '#7f9c4a';
+  ctx.beginPath();
+  ctx.ellipse(size * 0.5, yardY + yardHeight * 0.5, yardWidth * 0.5, yardHeight * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#b38c61';
+  const pathWidth = size * 0.18;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5 - pathWidth / 2, yardY + yardHeight * 0.2);
+  ctx.lineTo(size * 0.5 + pathWidth / 2, yardY + yardHeight * 0.2);
+  ctx.lineTo(size * 0.5 + pathWidth * 0.6, yardY + yardHeight);
+  ctx.lineTo(size * 0.5 - pathWidth * 0.6, yardY + yardHeight);
+  ctx.closePath();
+  ctx.fill();
+
+  const houseWidth = size * 0.5;
+  const houseHeight = size * 0.3;
+  const houseX = (size - houseWidth) / 2;
+  const houseY = size * 0.3;
+
+  ctx.fillStyle = '#d5b38a';
+  ctx.fillRect(houseX, houseY, houseWidth, houseHeight);
+
+  ctx.fillStyle = '#8b5a2b';
+  ctx.beginPath();
+  ctx.moveTo(houseX - size * 0.05, houseY);
+  ctx.lineTo(size * 0.5, houseY - size * 0.2);
+  ctx.lineTo(houseX + houseWidth + size * 0.05, houseY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#63351d';
+  const doorWidth = houseWidth * 0.22;
+  const doorHeight = houseHeight * 0.65;
+  ctx.fillRect(size * 0.5 - doorWidth / 2, houseY + houseHeight - doorHeight, doorWidth, doorHeight);
+
+  ctx.fillStyle = '#f8f0d2';
+  const windowSize = houseWidth * 0.18;
+  ctx.fillRect(houseX + houseWidth * 0.18 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
+  ctx.fillRect(houseX + houseWidth * 0.82 - windowSize / 2, houseY + houseHeight * 0.34, windowSize, windowSize);
+
+  ctx.fillStyle = '#4f3420';
+  ctx.fillRect(houseX + houseWidth * 0.72, houseY - size * 0.06, size * 0.06, size * 0.18);
+
+  ctx.globalAlpha = 0.6;
+  ctx.fillStyle = '#d8d8d8';
+  ctx.beginPath();
+  ctx.ellipse(houseX + houseWidth * 0.74, houseY - size * 0.12, size * 0.09, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.ellipse(houseX + houseWidth * 0.66, houseY - size * 0.22, size * 0.07, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.ellipse(houseX + houseWidth * 0.6, houseY - size * 0.3, size * 0.06, size * 0.09, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  const fenceY = yardY + yardHeight * 0.55;
+  const fenceWidth = size * 0.74;
+  const fenceX = (size - fenceWidth) / 2;
+  const postCount = 5;
+  ctx.strokeStyle = '#8d653a';
+  ctx.lineWidth = Math.max(1, size * 0.025);
+  ctx.beginPath();
+  ctx.moveTo(fenceX, fenceY);
+  ctx.lineTo(fenceX + fenceWidth, fenceY);
+  ctx.stroke();
+  for (let i = 0; i <= postCount; i += 1) {
+    const px = fenceX + (fenceWidth * i) / postCount;
+    ctx.beginPath();
+    ctx.moveTo(px, fenceY - size * 0.08);
+    ctx.lineTo(px, fenceY + size * 0.08);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.save();
   ctx.translate(pixelX, pixelY);
@@ -245,15 +382,247 @@ function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
   ctx.restore();
 }
 
+function drawAmbientLumberMillStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const groundWidth = size * 0.8;
+  const groundHeight = size * 0.36;
+  const groundX = (size - groundWidth) / 2;
+  const groundY = size * 0.54;
+
+  ctx.fillStyle = '#8c6d45';
+  ctx.fillRect(groundX, groundY, groundWidth, groundHeight);
+
+  const millWidth = size * 0.42;
+  const millHeight = size * 0.32;
+  const millX = size * 0.18;
+  const millY = size * 0.32;
+
+  ctx.fillStyle = '#a47546';
+  ctx.fillRect(millX, millY, millWidth, millHeight);
+
+  ctx.fillStyle = '#6b4a2a';
+  ctx.beginPath();
+  ctx.moveTo(millX - size * 0.04, millY);
+  ctx.lineTo(millX + millWidth / 2, millY - size * 0.18);
+  ctx.lineTo(millX + millWidth + size * 0.04, millY);
+  ctx.closePath();
+  ctx.fill();
+
+  const doorWidth = millWidth * 0.22;
+  const doorHeight = millHeight * 0.48;
+  ctx.fillStyle = '#3f2b19';
+  ctx.fillRect(millX + millWidth * 0.38, millY + millHeight - doorHeight, doorWidth, doorHeight);
+
+  const wheelRadius = size * 0.18;
+  const wheelCenterX = size * 0.68;
+  const wheelCenterY = size * 0.6;
+  ctx.strokeStyle = '#4b3826';
+  ctx.lineWidth = Math.max(1, size * 0.04);
+  ctx.beginPath();
+  ctx.arc(wheelCenterX, wheelCenterY, wheelRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  for (let i = 0; i < 4; i += 1) {
+    const angle = (Math.PI / 2) * i;
+    ctx.beginPath();
+    ctx.moveTo(wheelCenterX, wheelCenterY);
+    ctx.lineTo(
+      wheelCenterX + Math.cos(angle) * wheelRadius,
+      wheelCenterY + Math.sin(angle) * wheelRadius
+    );
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#6aa6d1';
+  ctx.beginPath();
+  ctx.ellipse(wheelCenterX + wheelRadius * 0.35, groundY + groundHeight * 0.5, size * 0.16, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const clearingRadiusX = size * 0.46;
+  const clearingRadiusY = size * 0.28;
+  const clearingCenterX = size * 0.5;
+  const clearingCenterY = size * 0.64;
+
+  ctx.fillStyle = '#355640';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, clearingRadiusX, clearingRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4e7256';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, clearingRadiusX * 0.84, clearingRadiusY * 0.82, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const poolRadiusX = clearingRadiusX * 0.62;
+  const poolRadiusY = clearingRadiusY * 0.68;
+  ctx.fillStyle = '#7cd6ff';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, poolRadiusX, poolRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#b6f4ff';
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY - size * 0.04, poolRadiusX * 0.65, poolRadiusY * 0.62, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#d6f7ff';
+  ctx.lineWidth = Math.max(1.2, size * 0.025);
+  ctx.beginPath();
+  ctx.ellipse(clearingCenterX, clearingCenterY, poolRadiusX, poolRadiusY, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const stoneCount = 6;
+  const ringRadius = poolRadiusX * 1.1;
+  ctx.fillStyle = '#d4d8f0';
+  for (let i = 0; i < stoneCount; i += 1) {
+    const angle = (Math.PI * 2 * i) / stoneCount;
+    const stoneX = clearingCenterX + Math.cos(angle) * ringRadius;
+    const stoneY = clearingCenterY + Math.sin(angle) * ringRadius * 0.8;
+    const stoneWidth = size * 0.12;
+    const stoneHeight = size * 0.18;
+    ctx.save();
+    ctx.translate(stoneX, stoneY);
+    ctx.rotate(Math.sin(angle) * 0.12);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, stoneWidth * 0.5, stoneHeight * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const lightCount = 4;
+  ctx.fillStyle = 'rgba(180, 246, 255, 0.85)';
+  for (let i = 0; i < lightCount; i += 1) {
+    const angle = (Math.PI * 2 * i) / lightCount + Math.PI / lightCount;
+    const lightX = clearingCenterX + Math.cos(angle) * poolRadiusX * 0.55;
+    const lightY = clearingCenterY + Math.sin(angle) * poolRadiusY * 0.5 - size * 0.1;
+    const lightRadius = size * 0.06;
+    const gradient = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, lightRadius);
+    gradient.addColorStop(0, 'rgba(210, 255, 255, 0.95)');
+    gradient.addColorStop(1, 'rgba(180, 246, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(lightX, lightY, lightRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawAmbientSleepingDragonStructure(ctx, { pixelX, pixelY, size }) {
+  ctx.save();
+  ctx.translate(pixelX, pixelY);
+
+  const groundRadiusX = size * 0.42;
+  const groundRadiusY = size * 0.22;
+  const groundCenterX = size * 0.5;
+  const groundCenterY = size * 0.72;
+  ctx.fillStyle = '#5f6c7a';
+  ctx.beginPath();
+  ctx.ellipse(groundCenterX, groundCenterY, groundRadiusX, groundRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4b5563';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.2, groundCenterY);
+  ctx.lineTo(size * 0.38, size * 0.28);
+  ctx.lineTo(size * 0.5, size * 0.18);
+  ctx.lineTo(size * 0.62, size * 0.34);
+  ctx.lineTo(size * 0.78, groundCenterY);
+  ctx.closePath();
+  ctx.fill();
+
+  const bodyCenterX = size * 0.52;
+  const bodyCenterY = size * 0.56;
+  const bodyRadiusX = size * 0.24;
+  const bodyRadiusY = size * 0.18;
+  ctx.fillStyle = '#b45309';
+  ctx.beginPath();
+  ctx.ellipse(bodyCenterX, bodyCenterY, bodyRadiusX, bodyRadiusY, Math.PI / 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.ellipse(bodyCenterX + size * 0.02, bodyCenterY + size * 0.02, bodyRadiusX * 0.45, bodyRadiusY * 0.5, Math.PI / 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  const headX = size * 0.32;
+  const headY = size * 0.46;
+  const headRadius = size * 0.1;
+  ctx.fillStyle = '#b45309';
+  ctx.beginPath();
+  ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#fde68a';
+  ctx.beginPath();
+  ctx.arc(headX + size * 0.03, headY, headRadius * 0.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(headX + size * 0.05, headY - size * 0.015, headRadius * 0.15, 0, Math.PI * 2);
+  ctx.arc(headX + size * 0.04, headY + size * 0.02, headRadius * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#92400e';
+  ctx.lineWidth = Math.max(1, size * 0.025);
+  ctx.beginPath();
+  ctx.moveTo(bodyCenterX + bodyRadiusX * 0.6, bodyCenterY + bodyRadiusY * 0.3);
+  ctx.quadraticCurveTo(size * 0.76, bodyCenterY + size * 0.12, size * 0.74, bodyCenterY - size * 0.02);
+  ctx.stroke();
+
+  ctx.fillStyle = '#f97316';
+  ctx.beginPath();
+  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.8);
+  ctx.lineTo(headX - size * 0.06, headY - headRadius * 1.3);
+  ctx.lineTo(headX + size * 0.01, headY - headRadius);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath();
+  ctx.moveTo(headX - size * 0.02, headY - headRadius * 0.4);
+  ctx.quadraticCurveTo(headX - size * 0.16, headY - headRadius * 0.24, headX - size * 0.08, headY + size * 0.04);
+  ctx.quadraticCurveTo(headX - size * 0.02, headY - headRadius * 0.05, headX + size * 0.02, headY - headRadius * 0.2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
 
 registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
 registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTavernStructure(ctx, drawOptions));
+registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
+  drawDarkDwarfholdStructure(ctx, drawOptions)
+);
 registerCustomStructure('AMBIENT_FARM', (ctx, drawOptions) => drawAmbientFarmStructure(ctx, drawOptions));
+registerCustomStructure('AMBIENT_HOMESTEAD', (ctx, drawOptions) =>
+  drawAmbientHomesteadStructure(ctx, drawOptions)
+);
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
   drawAmbientHuntingLodgeStructure(ctx, drawOptions)
+);
+registerCustomStructure('AMBIENT_LUMBER_MILL', (ctx, drawOptions) =>
+  drawAmbientLumberMillStructure(ctx, drawOptions)
+);
+registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
+  drawAmbientMoonwellStructure(ctx, drawOptions)
+);
+registerCustomStructure('AMBIENT_SLEEPING_DRAGON', (ctx, drawOptions) =>
+  drawAmbientSleepingDragonStructure(ctx, drawOptions)
 );
 
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
@@ -282,6 +651,7 @@ const tileHasTreeOverlay = (tile) =>
 const isJungleOverlayKey = (key) => typeof key === 'string' && key === jungleOverlayKey;
 const tileHasJungleOverlay = (tile) =>
   Boolean(tile) && (isJungleOverlayKey(tile.overlay) || isJungleOverlayKey(tile.hillOverlay));
+const darkDwarfholdVolcanoRadius = 4;
 const townSettlementTypes = new Set(['town', 'city', 'village']);
 const isTownSettlementDetails = (details) =>
   Boolean(details) &&
@@ -763,6 +1133,15 @@ const dwarfholdRulerTitles = {
     'High Runesmith'
   ]
 };
+
+const darkDwarfholdLeaderTitles = [
+  'Emperor',
+  'Sorcerer-Thane',
+  'Warlork High Lord',
+  'Sorcerer-Prophet',
+  'Lawgiver',
+  'Dark-Thane'
+];
 
 const dwarfholdHallmarks = [
   'Renowned for adamantine vaults that hum with runic wards.',
@@ -2150,7 +2529,12 @@ const orcCampFeatures = [
   'An arena of packed earth hosts nightly combat rites.',
   'Blacksmith forges belch sparks as crude blades are hammered.',
   'Watchfires burn green with alchemical fumes.',
-  'Captured standards hang as warnings to intruders.'
+  'Captured standards hang as warnings to intruders.',
+  'Siege totems ring the muster fields with carved skulls.',
+  'Wolf pens echo with snarls as wargs are blooded for war.',
+  'Smouldering pyres roast slabs of captured game beneath iron spits.',
+  "Runic totems glow faintly, channeling the shamans' war magic.",
+  'War shamans trace scars of conquest in ash across the ground.'
 ];
 const orcWarLeaders = [
   'Gorath the Red',
@@ -2163,6 +2547,193 @@ const orcWarLeaders = [
   'Druza Stormchant'
 ];
 const orcThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Menacing'];
+const gnollPackAdjectives = [
+  'Dustmane',
+  'Howling',
+  'Sunscar',
+  'Nightmaw',
+  'Boneclaw',
+  'Ashsnout',
+  'Stormsnout',
+  'Ragged',
+  'Skullmuzzle',
+  'Emberfang'
+];
+const gnollPackNouns = [
+  'Pack',
+  'Raid',
+  'Howlers',
+  'Hunters',
+  'Warband',
+  'Maw',
+  'Snarl',
+  'Scavengers'
+];
+const gnollCampFeatures = [
+  'Hyena laughter ripples through the night around bone-festooned totems.',
+  'Racks of scavenged shields rattle in the dusty wind.',
+  'Smoke from marrow fires mingles with the copper scent of fresh kills.',
+  'Bone fetishes clatter from lines strung between crude hide tents.',
+  'Fresh tracks circle the camp where scouts prowl for prey.',
+  'Hidebound drums pulse with erratic, feral rhythms.',
+  'Stolen banners flutter from poles, their colors daubed over in ochre runes.'
+];
+const gnollWarLeaders = [
+  'Szimri Bone-Eater',
+  'Raka Sun-Scar',
+  'Yagra Laughing Maw',
+  'Thokha Dusthowl',
+  'Mekri Clawtaker',
+  'Zharri Emberfur',
+  'Gkala Night-Cackle',
+  'Fenrik Thornsnout'
+];
+const gnollThreatDescriptors = ['Elevated', 'Severe', 'Ravenous', 'Unstable'];
+const trollDenAdjectives = [
+  'Bog',
+  'Stone',
+  'Mire',
+  'Frost',
+  'Grim',
+  'Thunder',
+  'Rot',
+  'Boulder',
+  'Moss',
+  'Brine'
+];
+const trollDenNouns = [
+  'Den',
+  'Brood',
+  'Hollow',
+  'Pit',
+  'Haunt',
+  'Grotto',
+  'Crag',
+  'Hold'
+];
+const trollCampFeatures = [
+  'Sodden logs reinforce earthen berms slick with algae.',
+  'Cauldrons bubble with pungent stews of swamp herbs and bone.',
+  'Huge footprints sink deep into the mud around crude watchposts.',
+  'Petrified trophies hang from stalagmites that jut through the camp.',
+  'Pools of regeneration glow faintly beneath dangling charms.',
+  'Stone totems scarred by claw marks mark the brood\'s territory.',
+  'Fetid mists coil low where shamans chant to forgotten spirits.'
+];
+const trollWarLeaders = [
+  'Gorvul the Regrown',
+  'Svara Mireblood',
+  'Thrum Rockhide',
+  'Ulmak Bone-Twister',
+  'Yrog the Trollfather',
+  'Brelga Marsh-Eye',
+  'Drumm Stonebelly',
+  'Hulra Riverbane'
+];
+const trollThreatDescriptors = ['Elevated', 'Severe', 'Dire', 'Relentless'];
+const ogreClanAdjectives = [
+  'Crushjaw',
+  'Bonegrinder',
+  'Thundermaul',
+  'Ironbelly',
+  'Boulderfist',
+  'Skullsmash',
+  'Stormbreaker',
+  'Gorehammer',
+  'Rubblehide',
+  'Maulbrand'
+];
+const ogreClanNouns = [
+  'Clan',
+  'Muster',
+  'Warband',
+  'Brutes',
+  'Crushers',
+  'Maulers',
+  'Slam',
+  'Rend'
+];
+const ogreCampFeatures = [
+  'Enormous clubs lean against boulders beside shattered siege engines.',
+  'Meat racks sag beneath the weight of whole roasted beasts.',
+  'Stone drums boom as ogres challenge one another for dominance.',
+  'Piles of splintered shields form makeshift barricades.',
+  'Massive footprints churn the earth into muddy pits.',
+  'Bone totems crowned with cracked helms tower over the encampment.',
+  'Wagons stripped for timber bolster crude siege towers.'
+];
+const ogreWarLeaders = [
+  'Grunak Boulderborn',
+  'Mazga Skullsplit',
+  'Durmag the Slammer',
+  'Olra Ironbelly',
+  'Thurg Grudgebite',
+  'Rendha Thunderhand',
+  'Krolf Meat-Hewer',
+  'Vorga Stonecrusher'
+];
+const ogreThreatDescriptors = ['Severe', 'Dire', 'Overwhelming', 'Menacing'];
+const banditCrewAdjectives = [
+  'Red',
+  'Black',
+  'Iron',
+  'Rust',
+  'Shadow',
+  'Amber',
+  'Silver',
+  'Wild',
+  'Gravel',
+  'Broken'
+];
+const banditCrewNouns = [
+  'Knives',
+  'Riders',
+  'Coyotes',
+  'Lanterns',
+  'Vultures',
+  'Hands',
+  'Blades',
+  'Company',
+  'Road',
+  'Hollows'
+];
+const banditCampFeatures = [
+  'Lookouts with hooded lanterns signal across hidden paths.',
+  'A palisade of wagons shields caches of stolen goods.',
+  'Practice dummies are riddled with crossbow bolts by moonlight.',
+  'Cookfires smoke with the scent of spiced trail stew and black powder.',
+  'Maps of trade routes lie weighted beneath daggers in the command tent.',
+  'Captured banners hang upside down as trophies of defiance.',
+  'Hidden pitfall traps are dusted over to snare unwary pursuers.'
+];
+const banditLeaders = [
+  'Captain Rysa Blackflint',
+  'Ser Caldor the Spare',
+  'Matron Vel Tallow',
+  'Garrin Embercloak',
+  'The Grinning Fox',
+  'Jessa Quickthorn',
+  'Marshal Darek Ironlace',
+  'Nyra of the Broken Road'
+];
+const banditThreatDescriptors = ['Wary', 'Perilous', 'Severe', 'Menacing'];
+const banditSpecialties = [
+  'ambushing caravans that brave the frontier passes',
+  'selling illicit guides across the border wilds',
+  'smuggling relics through hidden ravines',
+  'extorting frontier villages for tribute',
+  'hijacking supply barges before they reach port',
+  'raiding tax convoys returning to the heartland',
+  'running contraband between rival duchies',
+  'training cutthroat outriders for mercenary companies'
+];
+const warCampTypeBaseWeights = {
+  orcCamp: 1.05,
+  gnollCamp: 0.95,
+  trollCamp: 0.85,
+  ogreCamp: 0.8,
+  banditCamp: 1.1
+};
 const centaurHerdAdjectives = [
   'Swiftwind',
   'Stormhoof',
@@ -3069,6 +3640,7 @@ function generateDwarfholdName(random) {
 function generateDwarfholdDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const isAbandoned = Boolean(options && options.isAbandoned);
+  const isDarkHold = Boolean(options && options.isDarkHold);
 
   if (isAbandoned) {
     const variantRoll = randomFn();
@@ -3174,14 +3746,19 @@ function generateDwarfholdDetails(name, random, options = {}) {
   const firstName = pickRandomFrom(namePool, randomFn) || 'Urist';
   const clanOption = pickRandomFrom(dwarfOptions.clan, randomFn) || dwarfOptions.clan?.[0];
   const clanName = clanOption?.label || 'Stonebeard';
-  const titlePool = dwarfholdRulerTitles[gender] || dwarfholdRulerTitles.male;
-  const titleFallback = 'Thane';
-  const thaneBiasRoll = randomFn();
-  const nonThaneTitles = titlePool.filter((title) => title !== 'Thane');
-  const rulerTitle =
-    thaneBiasRoll < 0.65 || nonThaneTitles.length === 0
-      ? 'Thane'
-      : pickRandomFrom(nonThaneTitles, randomFn) || titleFallback;
+  let rulerTitle;
+  if (isDarkHold) {
+    rulerTitle = pickRandomFrom(darkDwarfholdLeaderTitles, randomFn) || 'Sorcerer-Prophet';
+  } else {
+    const titlePool = dwarfholdRulerTitles[gender] || dwarfholdRulerTitles.male;
+    const titleFallback = 'Thane';
+    const thaneBiasRoll = randomFn();
+    const nonThaneTitles = titlePool.filter((title) => title !== 'Thane');
+    rulerTitle =
+      thaneBiasRoll < 0.65 || nonThaneTitles.length === 0
+        ? 'Thane'
+        : pickRandomFrom(nonThaneTitles, randomFn) || titleFallback;
+  }
   const hallmark = pickRandomFrom(dwarfholdHallmarks, randomFn) ||
     'Renowned for stout walls and heartier spirits.';
   const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
@@ -3225,7 +3802,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
   const classification = population >= 4000 ? 'greatDwarfhold' : 'dwarfhold';
   const classificationLabel = classification === 'greatDwarfhold' ? 'Great Dwarfhold' : 'Dwarfhold';
 
-  return {
+  const baseDetails = {
     type: classification,
     classification: classificationLabel,
     name,
@@ -3251,6 +3828,50 @@ function generateDwarfholdDetails(name, random, options = {}) {
     guildBreakdown,
     description
   };
+
+  if (isDarkHold) {
+    const moltenExports = Array.isArray(baseDetails.majorExports)
+      ? baseDetails.majorExports.slice()
+      : [];
+    moltenExports.push('Obsidian Ingots');
+    moltenExports.push('Sulfur-Glass Relics');
+    const uniqueExports = Array.from(new Set(moltenExports));
+
+    const augmentedGuilds = Array.isArray(baseDetails.majorGuilds)
+      ? Array.from(new Set([...baseDetails.majorGuilds, 'Ashforged Covenant']))
+      : ['Ashforged Covenant'];
+
+    const darkPopulationBreakdown = Array.isArray(baseDetails.populationBreakdown)
+      ? baseDetails.populationBreakdown.map((entry) =>
+          entry && entry.key === 'dwarves'
+            ? {
+                ...entry,
+                label: 'Dark Dwarves',
+                color: '#3b2a3d'
+              }
+            : entry
+        )
+      : [];
+
+    const darkHallmark = `${baseDetails.hallmark} Magma channels drawn from nearby volcanoes keep their forges blazing.`;
+    const darkDescription = baseDetails.description
+      ? `${baseDetails.description} Ash-stained banners and magma sluices define every hall.`
+      : 'Ash-stained banners and magma sluices define every hall.';
+
+    return {
+      ...baseDetails,
+      type: 'darkDwarfhold',
+      classification: 'Dark Dwarfhold',
+      populationDescriptor: 'dark dwarves',
+      majorExports: uniqueExports,
+      majorGuilds: augmentedGuilds,
+      populationBreakdown: darkPopulationBreakdown,
+      hallmark: darkHallmark,
+      description: darkDescription
+    };
+  }
+
+  return baseDetails;
 }
 
 function generateMineName(random) {
@@ -4032,7 +4653,7 @@ function generateOrcCampName(random) {
   return `Camp of the ${adjective} ${noun}`;
 }
 
-function generateOrcCampDetails(name, random) {
+function generateOrcCampDetails(name, random, options = {}) {
   const randomFn = typeof random === 'function' ? random : Math.random;
   const adjective = pickRandomFrom(orcTribeAdjectives, randomFn) || 'Ironjaw';
   const noun = pickRandomFrom(orcTribeNouns, randomFn) || 'Clan';
@@ -4041,7 +4662,21 @@ function generateOrcCampDetails(name, random) {
   const feature = pickRandomFrom(orcCampFeatures, randomFn) ||
     'War drums thunder at dusk from within the palisade.';
   const threatLevel = pickRandomFrom(orcThreatDescriptors, randomFn) || 'Severe';
-  const raidingFocus = pickRandomFrom(['plundered caravans', 'frontier villages', 'wandering merchants', 'remote farmsteads'], randomFn);
+  const raidingFocus = pickRandomFrom(
+    ['plundered caravans', 'frontier villages', 'wandering merchants', 'remote farmsteads'],
+    randomFn
+  );
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : null;
+  const targetHint = typeof options.targetHint === 'string' && options.targetHint.trim()
+    ? options.targetHint.trim()
+    : null;
+  const descriptionParts = [
+    `${tribeName} raiders gather here, their sights set on ${targetHint || raidingFocus || 'nearby lands'}.`,
+    terrain ? `Scouts prowl ${terrain}, seeking weaknesses in distant defenses.` : null,
+    feature
+  ].filter(Boolean);
 
   return {
     type: 'orcCamp',
@@ -4051,10 +4686,378 @@ function generateOrcCampDetails(name, random) {
     warLeader,
     threatLevel,
     inhabitants: `${tribeName} warriors`,
-    description: `${tribeName} raiders gather here, their sights set on ${raidingFocus || 'nearby lands'}. ${feature}`,
+    description: descriptionParts.join(' '),
     banner: pickRandomFrom(orcTribeAdjectives, randomFn) || 'Rageborn',
     vow: 'Blood Oaths'
   };
+}
+
+function generateGnollCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(gnollPackAdjectives, randomFn) || 'Dustmane';
+  const noun = pickRandomFrom(gnollPackNouns, randomFn) || 'Pack';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun} Den`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} War-Pack`;
+  }
+  return `Den of the ${adjective} ${noun}`;
+}
+
+function generateGnollCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(gnollPackAdjectives, randomFn) || 'Dustmane';
+  const noun = pickRandomFrom(gnollPackNouns, randomFn) || 'Pack';
+  const packName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(gnollWarLeaders, randomFn) || 'Szimri Bone-Eater';
+  const feature = pickRandomFrom(gnollCampFeatures, randomFn) ||
+    'Hyena laughter ripples through the night around bone-festooned totems.';
+  const threatLevel = pickRandomFrom(gnollThreatDescriptors, randomFn) || 'Severe';
+  const target = options.targetHint ||
+    pickRandomFrom(
+      ['desert caravans', 'scattered ranches', 'frontier watchposts', 'pilgrim trains'],
+      randomFn
+    ) ||
+    'border caravans';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the open steppe';
+  const descriptionParts = [
+    `${packName} raiders circle ${terrain}, drawn by ${target}.`,
+    feature
+  ].filter(Boolean);
+
+  return {
+    type: 'gnollCamp',
+    name,
+    displayType: 'Gnoll War Pack',
+    classification: 'Beastman Encampment',
+    tribe: `${packName} pack`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${packName} scavengers`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Bone Fetish', 'Hyena Mane', 'Sun-Torn Hide', 'Fetid Standard'],
+      randomFn
+    ) || 'Bone Fetish',
+    vow: 'Pack Howls'
+  };
+}
+
+function generateTrollCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(trollDenAdjectives, randomFn) || 'Bog';
+  const noun = pickRandomFrom(trollDenNouns, randomFn) || 'Den';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun}`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} Brood`;
+  }
+  return `${noun} of the ${adjective} Tides`;
+}
+
+function generateTrollCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(trollDenAdjectives, randomFn) || 'Bog';
+  const noun = pickRandomFrom(trollDenNouns, randomFn) || 'Den';
+  const broodName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(trollWarLeaders, randomFn) || 'Gorvul the Regrown';
+  const feature = pickRandomFrom(trollCampFeatures, randomFn) ||
+    'Sodden logs reinforce earthen berms slick with algae.';
+  const threatLevel = pickRandomFrom(trollThreatDescriptors, randomFn) || 'Dire';
+  const target = options.targetHint ||
+    pickRandomFrom(
+      ['river barges', 'marsh villages', 'lonely ferries', 'border forts'],
+      randomFn
+    ) ||
+    'river barges';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the dripping marshlands';
+  const descriptionParts = [
+    `${broodName} brutes keep watch over ${terrain}, hungry for ${target}.`,
+    feature
+  ].filter(Boolean);
+
+  return {
+    type: 'trollCamp',
+    name,
+    displayType: 'Troll Den',
+    classification: 'Monstrous Encampment',
+    tribe: `${broodName} brood`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${broodName} trolls`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Bog Totem', 'Stone Fetish', 'Riverbone Mark', 'Rotbrand'],
+      randomFn
+    ) || 'Bog Totem',
+    vow: 'Regrowth Rites'
+  };
+}
+
+function generateOgreCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(ogreClanAdjectives, randomFn) || 'Crushjaw';
+  const noun = pickRandomFrom(ogreClanNouns, randomFn) || 'Clan';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun} Muster`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} Camp`;
+  }
+  return `Stronghold of the ${adjective} ${noun}`;
+}
+
+function generateOgreCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(ogreClanAdjectives, randomFn) || 'Crushjaw';
+  const noun = pickRandomFrom(ogreClanNouns, randomFn) || 'Clan';
+  const clanName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(ogreWarLeaders, randomFn) || 'Grunak Boulderborn';
+  const feature = pickRandomFrom(ogreCampFeatures, randomFn) ||
+    'Enormous clubs lean against boulders beside shattered siege engines.';
+  const threatLevel = pickRandomFrom(ogreThreatDescriptors, randomFn) || 'Dire';
+  const target = options.targetHint ||
+    pickRandomFrom(
+      ['fortified keeps', 'hill villages', 'border caravans', 'stone bridges'],
+      randomFn
+    ) ||
+    'fortified keeps';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the broken uplands';
+  const descriptionParts = [
+    `${clanName} giants muster amid ${terrain}, plotting to smash ${target}.`,
+    feature
+  ].filter(Boolean);
+
+  return {
+    type: 'ogreCamp',
+    name,
+    displayType: 'Ogre War Camp',
+    classification: 'Giantkin Muster',
+    tribe: `${clanName} brutes`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${clanName} ogres`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Skull Brand', 'Hammer Sigil', 'Grudge Banner', 'Cracked Boulder'],
+      randomFn
+    ) || 'Skull Brand',
+    vow: 'Feast Oaths'
+  };
+}
+
+function generateBanditCampName(random) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(banditCrewAdjectives, randomFn) || 'Red';
+  const noun = pickRandomFrom(banditCrewNouns, randomFn) || 'Knives';
+  const style = randomFn();
+  if (style < 0.33) {
+    return `${adjective} ${noun} Hideout`;
+  }
+  if (style < 0.66) {
+    return `${adjective} ${noun} Camp`;
+  }
+  return `Hideout of the ${adjective} ${noun}`;
+}
+
+function generateBanditCampDetails(name, random, options = {}) {
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(banditCrewAdjectives, randomFn) || 'Red';
+  const noun = pickRandomFrom(banditCrewNouns, randomFn) || 'Knives';
+  const crewName = `${adjective} ${noun}`;
+  const warLeader = pickRandomFrom(banditLeaders, randomFn) || 'Captain Rysa Blackflint';
+  const feature = pickRandomFrom(banditCampFeatures, randomFn) ||
+    'Lookouts with hooded lanterns signal across hidden paths.';
+  const threatLevel = pickRandomFrom(banditThreatDescriptors, randomFn) || 'Perilous';
+  const specialty = pickRandomFrom(banditSpecialties, randomFn) ||
+    'ambushing caravans that brave the frontier passes';
+  const terrain = typeof options.terrain === 'string' && options.terrain.trim()
+    ? options.terrain.trim()
+    : 'the border wilds';
+  const settlementDistance = Number.isFinite(options.settlementDistance)
+    ? Math.max(1, Math.round(options.settlementDistance))
+    : null;
+  const descriptionParts = [
+    `${crewName} outlaws keep this hideout, plotting to ${specialty}.`,
+    `They melt into ${terrain} when the crown's riders draw near.`,
+    feature,
+    settlementDistance
+      ? `Scouts report that lawful patrols pass barely ${settlementDistance} leagues away.`
+      : null
+  ].filter(Boolean);
+
+  return {
+    type: 'banditCamp',
+    name,
+    displayType: 'Bandit Encampment',
+    classification: 'Outlaw Hideout',
+    tribe: `${crewName} crew`,
+    warLeader,
+    threatLevel,
+    inhabitants: `${crewName} cutthroats`,
+    description: descriptionParts.join(' '),
+    banner: pickRandomFrom(
+      ['Tattered Standard', 'Broken Wheel', 'Smoked Lantern', 'Rust Banner'],
+      randomFn
+    ) || 'Tattered Standard',
+    vow: 'Silent Concord'
+  };
+}
+
+const warCampNameGenerators = {
+  orcCamp: generateOrcCampName,
+  gnollCamp: generateGnollCampName,
+  trollCamp: generateTrollCampName,
+  ogreCamp: generateOgreCampName,
+  banditCamp: generateBanditCampName
+};
+
+const warCampDetailGenerators = {
+  orcCamp: generateOrcCampDetails,
+  gnollCamp: generateGnollCampDetails,
+  trollCamp: generateTrollCampDetails,
+  ogreCamp: generateOgreCampDetails,
+  banditCamp: generateBanditCampDetails
+};
+
+function generateWarCampForType(type, random, options = {}) {
+  const generator = warCampNameGenerators[type] || generateOrcCampName;
+  const detailGenerator = warCampDetailGenerators[type] || generateOrcCampDetails;
+  const name = generator(random);
+  const details = detailGenerator(name, random, options);
+  return { name, details };
+}
+
+function resolveWarCampTerrainDescriptor(candidate) {
+  if (!candidate) {
+    return 'the untamed frontier';
+  }
+  if (candidate.isMarsh) {
+    return 'the reed-choked wetlands';
+  }
+  if (candidate.isSand) {
+    return 'the wind-scoured dunes';
+  }
+  if (candidate.isBadlands) {
+    return 'the jagged badlands';
+  }
+  if (candidate.isSnow) {
+    return 'the frozen marches';
+  }
+  if (candidate.hill) {
+    return 'the rough hill country';
+  }
+  if ((candidate.waterAdjacency || 0) >= 2) {
+    return 'the river-cut lowlands';
+  }
+  const dryness = clamp(Number(candidate.dryness) || 0, 0, 1);
+  if (dryness >= 0.68) {
+    return 'the sunbaked plains';
+  }
+  if (dryness <= 0.32) {
+    return 'the green border meadows';
+  }
+  return 'the untamed frontier';
+}
+
+function resolveWarCampTargetHint(candidate) {
+  const distance = Number(candidate?.settlementDistance);
+  if (!Number.isFinite(distance)) {
+    return null;
+  }
+  if (distance <= 6) {
+    return 'nearby settlements';
+  }
+  if (distance <= 12) {
+    return 'lightly guarded caravans';
+  }
+  if (distance <= 20) {
+    return 'remote patrols';
+  }
+  return null;
+}
+
+function selectWarCampType(randomFn, candidate, availableTypes) {
+  if (!Array.isArray(availableTypes) || availableTypes.length === 0) {
+    return 'orcCamp';
+  }
+  if (availableTypes.length === 1) {
+    return availableTypes[0];
+  }
+  const dryness = clamp(Number(candidate?.dryness) || 0, 0, 1);
+  const waterAdjacency = Math.max(0, Number(candidate?.waterAdjacency) || 0);
+  const settlementDistance = Number(candidate?.settlementDistance);
+  const weights = availableTypes.map((type) => {
+    let weight = warCampTypeBaseWeights[type] || 1;
+    switch (type) {
+      case 'orcCamp':
+        if (candidate?.isBadlands) {
+          weight += 0.6;
+        }
+        if (candidate?.isSand) {
+          weight += 0.4;
+        }
+        break;
+      case 'gnollCamp':
+        weight += dryness * 0.6;
+        if (candidate?.isSand) {
+          weight += 0.5;
+        }
+        break;
+      case 'trollCamp':
+        if (candidate?.isMarsh) {
+          weight += 0.7;
+        }
+        weight += Math.min(waterAdjacency * 0.25, 0.75);
+        if (candidate?.isSnow) {
+          weight -= 0.3;
+        }
+        break;
+      case 'ogreCamp':
+        if (candidate?.hill) {
+          weight += 0.8;
+        }
+        if (candidate?.isBadlands) {
+          weight += 0.2;
+        }
+        break;
+      case 'banditCamp':
+        if (candidate?.isGrass) {
+          weight += 0.25;
+        }
+        if (Number.isFinite(settlementDistance)) {
+          const closeness = clamp(1 - Math.abs(settlementDistance - 9) / 9, 0, 1);
+          weight += closeness * 0.8;
+        }
+        break;
+      default:
+        break;
+    }
+    return Math.max(0.01, weight);
+  });
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (total <= 0) {
+    return availableTypes[0];
+  }
+  let roll = randomFn() * total;
+  for (let i = 0; i < availableTypes.length; i += 1) {
+    roll -= weights[i];
+    if (roll <= 0) {
+      return availableTypes[i];
+    }
+  }
+  return availableTypes[availableTypes.length - 1];
 }
 
 function generateCentaurEncampmentName(random) {
@@ -5141,6 +6144,7 @@ const defaultCultureColorByKey = {
   dragonborn: '#c16a6a',
   tieflings: '#b064b0',
   orcs: '#556b2f',
+  gnolls: '#c58f2d',
   beastmen: '#8f6a3a',
   ogres: '#b7745c',
   trolls: '#5c8563',
@@ -5165,9 +6169,12 @@ const defaultCultureColorByKey = {
   karkinos: '#4a6f8c',
   blemaayae: '#a35fa9',
   pygmy: '#c28b5b',
-  half_orc_half_elf: '#708f76',
+  half_orcs: '#647a57',
+  half_elves: '#7ba696',
   dryad: '#58b072',
   leshy: '#3f7a4d',
+  tuskar: '#7e91a8',
+  bandits: '#a16207',
   others: '#9e9e9e'
 };
 
@@ -5236,7 +6243,7 @@ const ambientStructureOptionsByCulture = {
     'Wayside Shrine',
     'Market Cross',
     'Village Green',
-    'Homestead',
+    { label: 'Homestead', disallowForestOverlay: true },
     'Riverside Ferry Landing',
     { label: 'Lumber Mill', requiresTreeNeighbor: true }
   ]),
@@ -5247,7 +6254,7 @@ const ambientStructureOptionsByCulture = {
     'Tunnel Watch Post'
   ]),
   elves: createAmbientStructureOptions([
-    'Moonwell Glade',
+    { label: 'Moonwell Glade', requiresTreeNeighbor: true },
     'Leafweaver Pavilion',
     'Starbloom Archway',
     'Silversong Clearing'
@@ -5413,7 +6420,8 @@ const ambientStructureOptionsByCulture = {
     'Molten Perch',
     'Treasure Scatter',
     'Windworn Ledge',
-    'Skycoil Outlook'
+    'Skycoil Outlook',
+    { label: 'Sleeping Dragon', requiresMountainOverlay: true }
   ]),
   elwetritsch: createAmbientStructureOptions([
     'Briar Nest',
@@ -5439,11 +6447,17 @@ const ambientStructureOptionsByCulture = {
     'Leaf Hammock Camp',
     'Storyfire Circle'
   ]),
-  half_orc_half_elf: createAmbientStructureOptions([
+  half_orcs: createAmbientStructureOptions([
     'Frontier Trading Circle',
     'Border Watchfire',
-    'River Bargaining Jetty',
-    'Moot of Accord'
+    'Ironbond War Lodge',
+    'River Bargaining Jetty'
+  ]),
+  half_elves: createAmbientStructureOptions([
+    'Moonlit Moot Ring',
+    'Forest Accord Glade',
+    'Woven-Lantern Pier',
+    'River Bargaining Jetty'
   ]),
   dryad: createAmbientStructureOptions([
     'Heart-Tree Grove',
@@ -5456,6 +6470,12 @@ const ambientStructureOptionsByCulture = {
     'Totem Thicket',
     'Carved Bark Gate',
     'Frostbough Hide'
+  ]),
+  tuskar: createAmbientStructureOptions([
+    'Carved Tusk Stele',
+    'Icewind Moot Ring',
+    'Frosttusk Longhouse',
+    'Snowdrift Watch'
   ]),
   others: createAmbientStructureOptions([
     "Wanderer's Obelisk",
@@ -5524,6 +6544,46 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
         label: 'Orcs',
         percentage: 100,
         color: defaultCultureColorByKey.orcs
+      }
+    ];
+  }
+  if (type === 'gnollCamp') {
+    return [
+      {
+        key: 'gnolls',
+        label: 'Gnolls',
+        percentage: 100,
+        color: defaultCultureColorByKey.gnolls
+      }
+    ];
+  }
+  if (type === 'trollCamp') {
+    return [
+      {
+        key: 'trolls',
+        label: 'Trolls',
+        percentage: 100,
+        color: defaultCultureColorByKey.trolls
+      }
+    ];
+  }
+  if (type === 'ogreCamp') {
+    return [
+      {
+        key: 'ogres',
+        label: 'Ogres',
+        percentage: 100,
+        color: defaultCultureColorByKey.ogres
+      }
+    ];
+  }
+  if (type === 'banditCamp') {
+    return [
+      {
+        key: 'bandits',
+        label: 'Bandits',
+        percentage: 100,
+        color: defaultCultureColorByKey.bandits
       }
     ];
   }
@@ -5616,6 +6676,10 @@ function resolveFallbackClaimRadius(type) {
     case 'mine':
       return 26;
     case 'orcCamp':
+    case 'gnollCamp':
+    case 'trollCamp':
+    case 'ogreCamp':
+    case 'banditCamp':
       return 28;
     case 'centaurEncampment':
       return 27;
@@ -5649,6 +6713,10 @@ function resolveCulturalRadiusMultiplier(type) {
     case 'mine':
       return 1.55;
     case 'orcCamp':
+    case 'gnollCamp':
+    case 'trollCamp':
+    case 'ogreCamp':
+    case 'banditCamp':
       return 1.75;
     case 'centaurEncampment':
       return 1.7;
@@ -5679,6 +6747,10 @@ function resolveCulturalFalloffPower(type) {
     case 'mine':
       return 1.42;
     case 'orcCamp':
+    case 'gnollCamp':
+    case 'trollCamp':
+    case 'ogreCamp':
+    case 'banditCamp':
       return 1.3;
     case 'centaurEncampment':
       return 1.32;
@@ -5747,6 +6819,7 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
     for (let x = 0; x < mapWidth; x += 1) {
       const tile = row[x];
       if (!tile || tile.structure || tile.river) {
+        // Preserve existing structures (including ambient lumber mills) and river tiles.
         continue;
       }
       const humanIntensity = resolveHumanPresenceIntensity(tile);
@@ -6033,12 +7106,16 @@ function applyCulturalInfluence({
   const marshCultureSeed = (ambientSeedBase + 0xcbf29ce4) >>> 0;
   const grasslandAmbientSeed = (ambientSeedBase + 0x243f6a88) >>> 0;
   const grasslandRadiusSeed = (ambientSeedBase + 0x13198a2e) >>> 0;
+  const grasslandCultureSeed = (ambientSeedBase + 0x98badcfe) >>> 0;
   const badlandsAmbientSeed = (ambientSeedBase + 0xd56f0b27) >>> 0;
   const badlandsRadiusSeed = (ambientSeedBase + 0x68b57a19) >>> 0;
+  const badlandsCultureSeed = (ambientSeedBase + 0x243f6a9b) >>> 0;
   const jungleAmbientSeed = (ambientSeedBase + 0x9e3779b9) >>> 0;
   const jungleRadiusSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
   const desertAmbientSeed = (ambientSeedBase + 0x6a09e667) >>> 0;
   const desertRadiusSeed = (ambientSeedBase + 0xbb67ae85) >>> 0;
+  const tundraAmbientSeed = (ambientSeedBase + 0x4ed8aa4a) >>> 0;
+  const tundraRadiusSeed = (ambientSeedBase + 0xa953fd4e) >>> 0;
   const halflingHillAmbientSeed = (ambientSeedBase + 0x1cf11a13) >>> 0;
   const halflingHillRadiusSeed = (ambientSeedBase + 0xf5a5a6b9) >>> 0;
   const humanAmbientSeed = (ambientSeedBase + 0x7f4a7c15) >>> 0;
@@ -6062,7 +7139,8 @@ function applyCulturalInfluence({
     { key: 'karkinos', label: 'Karkinos', biomes: ['ocean', 'lake', 'marsh'] },
     { key: 'blemaayae', label: 'Blemaayae', biomes: ['desert', 'badlands', 'jungle', 'mountain'] },
     { key: 'pygmy', label: 'Pygmy', biomes: ['jungle', 'grassland', 'forest'] },
-    { key: 'half_orc_half_elf', label: 'Half-Orc Half-Elf', biomes: ['grassland', 'forest', 'badlands', 'desert'] },
+    { key: 'half_orcs', label: 'Half-Orcs', biomes: ['grassland', 'badlands', 'desert'] },
+    { key: 'half_elves', label: 'Half-Elves', biomes: ['forest', 'grassland'] },
     { key: 'dryad', label: 'Dryad', biomes: ['forest', 'marsh', 'lake'] },
     { key: 'leshy', label: 'Leshy', biomes: ['forest', 'tundra', 'marsh'] }
   ];
@@ -6444,6 +7522,14 @@ function applyCulturalInfluence({
         if (roll < 0.0028) {
           const radiusRoll = hashCoords(x, y, grasslandRadiusSeed);
           const radius = lerp(11, 23, radiusRoll);
+          const cultureRoll = hashCoords(x, y, grasslandCultureSeed);
+          const cultures = [
+            { key: 'centaurs', label: 'Centaurs' },
+            { key: 'gnolls', label: 'Gnolls' },
+            { key: 'quilboar', label: 'Quilboar' }
+          ];
+          const index = Math.floor(cultureRoll * cultures.length) % cultures.length;
+          const selected = cultures[index] || cultures[0];
           addCulturalSource({
             x,
             y,
@@ -6451,13 +7537,35 @@ function applyCulturalInfluence({
             falloff: 1.31,
             entries: [
               {
-                key: 'centaurs',
+                key: selected.key,
                 share: 1,
-                label: 'Centaurs'
+                label: selected.label
               }
             ]
           });
         }
+      }
+
+      if (biomeType === 'tundra') {
+        const roll = hashCoords(x, y, tundraAmbientSeed);
+        if (roll < 0.0029) {
+          const radiusRoll = hashCoords(x, y, tundraRadiusSeed);
+          const radius = lerp(10, 22, radiusRoll);
+          addCulturalSource({
+            x,
+            y,
+            radius,
+            falloff: 1.32,
+            entries: [
+              {
+                key: 'tuskar',
+                share: 1,
+                label: 'Tuskar'
+              }
+            ]
+          });
+        }
+        continue;
       }
 
       if (biomeType === 'desert') {
@@ -6487,6 +7595,14 @@ function applyCulturalInfluence({
         if (roll < 0.0032) {
           const radiusRoll = hashCoords(x, y, badlandsRadiusSeed);
           const radius = lerp(11, 21, radiusRoll);
+          const cultureRoll = hashCoords(x, y, badlandsCultureSeed);
+          const cultures = [
+            { key: 'centaurs', label: 'Centaurs' },
+            { key: 'gnolls', label: 'Gnolls' },
+            { key: 'quilboar', label: 'Quilboar' }
+          ];
+          const index = Math.floor(cultureRoll * cultures.length) % cultures.length;
+          const selected = cultures[index] || cultures[0];
           addCulturalSource({
             x,
             y,
@@ -6494,9 +7610,9 @@ function applyCulturalInfluence({
             falloff: 1.31,
             entries: [
               {
-                key: 'centaurs',
+                key: selected.key,
                 share: 1,
-                label: 'Centaurs'
+                label: selected.label
               }
             ]
           });
@@ -6786,12 +7902,28 @@ function applyCulturalInfluence({
         continue;
       }
       let adjacentToTreeCache = null;
+      let isMountainTileCache = null;
+      let hasForestOverlayCache = null;
       const eligibleOptions = options.filter((option) => {
         if (option.requiresTreeNeighbor) {
           if (adjacentToTreeCache === null) {
             adjacentToTreeCache = isTileAdjacentToTree(x, y);
           }
           return adjacentToTreeCache;
+        }
+        if (option.requiresMountainOverlay) {
+          if (isMountainTileCache === null) {
+            isMountainTileCache =
+              isMountainOverlayKey(tile.overlay) || isMountainOverlayKey(tile.hillOverlay);
+          }
+          return isMountainTileCache;
+        }
+        if (option.disallowForestOverlay) {
+          if (hasForestOverlayCache === null) {
+            hasForestOverlayCache =
+              isTreeOverlayKey(tile.overlay) || isTreeOverlayKey(tile.hillOverlay);
+          }
+          return !hasForestOverlayCache;
         }
         return true;
       });
@@ -6804,7 +7936,8 @@ function applyCulturalInfluence({
       if (!option) {
         continue;
       }
-      tile.ambientStructure = {
+
+      const ambientStructureData = {
         key: option.key,
         label: option.label,
         culture: cultureKey || 'others',
@@ -6812,6 +7945,28 @@ function applyCulturalInfluence({
           (typeof influence.label === 'string' && influence.label.trim()) ||
           formatCultureLabel(cultureKey || 'others')
       };
+
+      const assignAmbientStructureToTile = (structureKey) => {
+        tile.structure = structureKey;
+        tile.structureName = option.label;
+        tile.structureDetails = {
+          isAmbientStructure: true,
+          ambientStructure: ambientStructureData,
+          displayType: option.label
+        };
+      };
+
+      if (option.key === 'lumber_mill') {
+        assignAmbientStructureToTile('AMBIENT_LUMBER_MILL');
+      } else if (option.key === 'homestead') {
+        assignAmbientStructureToTile('AMBIENT_HOMESTEAD');
+      } else if (option.key === 'sleeping_dragon') {
+        assignAmbientStructureToTile('AMBIENT_SLEEPING_DRAGON');
+      } else if (option.key === 'moonwell_glade' || option.key === 'moonwell') {
+        assignAmbientStructureToTile('AMBIENT_MOONWELL');
+      }
+
+      tile.ambientStructure = ambientStructureData;
     }
   }
 }
@@ -6873,6 +8028,58 @@ function createHighlightGroup({
 }
 
 const structureHighlightGroups = {
+  dwarfhold: createHighlightGroup({
+    label: 'Dwarven Holds',
+    color: '#f59e0b',
+    strokeColor: '#fbbf24',
+    fillAlpha: 0.28,
+    strokeAlpha: 0.92,
+    keys: ['DWARFHOLD', 'GREAT_DWARFHOLD', 'ABANDONED_DWARFHOLD', 'DARK_DWARFHOLD'],
+    types: [
+      'dwarfhold',
+      'greatDwarfhold',
+      'abandonedDwarfhold',
+      'ruinedDwarfhold',
+      'occupiedDwarfhold',
+      'darkDwarfhold'
+    ]
+  }),
+  hillhold: createHighlightGroup({
+    label: 'Hillholds',
+    color: '#fb7185',
+    strokeColor: '#f9a8d4',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['HILLHOLD'],
+    types: ['hillhold']
+  }),
+  humanSettlement: createHighlightGroup({
+    label: 'Human Settlements',
+    color: '#ef4444',
+    strokeColor: '#f87171',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['TOWN', 'PORT_TOWN', 'HAMLET', 'HAMLET_SNOW'],
+    types: ['city', 'town', 'village']
+  }),
+  woodElfGrove: createHighlightGroup({
+    label: 'Wood Elf Groves',
+    color: '#22c55e',
+    strokeColor: '#4ade80',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['WOOD_ELF_GROVES'],
+    types: ['woodElfGrove']
+  }),
+  lizardmenCity: createHighlightGroup({
+    label: 'Lizardmen Cities',
+    color: '#06b6d4',
+    strokeColor: '#22d3ee',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['LIZARDMEN_CITY'],
+    types: ['lizardmenCity']
+  }),
   mine: createHighlightGroup({
     label: 'Mines',
     color: '#f97316',
@@ -6880,18 +8087,16 @@ const structureHighlightGroups = {
     fillAlpha: 0.28,
     strokeAlpha: 0.9,
     keys: ['MINE'],
-    types: ['MINE'],
-    nameTokens: ['Mine', 'Delve', 'Excavation', 'Works']
+    types: ['mine']
   }),
-  camp: createHighlightGroup({
-    label: 'Camps',
-    color: '#16a34a',
-    strokeColor: '#4ade80',
+  dam: createHighlightGroup({
+    label: 'Dams',
+    color: '#38bdf8',
+    strokeColor: '#7dd3fc',
     fillAlpha: 0.24,
     strokeAlpha: 0.85,
-    keys: ['ORC_CAMP', 'TRAVELERS_CAMP'],
-    types: ['orcCamp', 'travelerCamp'],
-    nameTokens: ['Camp', 'Encampment', 'Warcamp', 'Waystation']
+    keys: ['DAM'],
+    types: ['dam']
   }),
   tower: createHighlightGroup({
     label: 'Towers',
@@ -6900,12 +8105,156 @@ const structureHighlightGroups = {
     fillAlpha: 0.26,
     strokeAlpha: 0.88,
     keys: ['TOWER', 'EVIL_WIZARDS_TOWER'],
-    types: ['tower', 'evilWizardTower'],
-    nameTokens: ['Tower', 'Watchtower']
+    types: ['tower', 'evilWizardTower']
+  }),
+  camp: createHighlightGroup({
+    label: 'Camps & Encampments',
+    color: '#16a34a',
+    strokeColor: '#4ade80',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: [
+      'ORC_CAMP',
+      'GNOLL_CAMP',
+      'TROLL_CAMP',
+      'OGRE_CAMP',
+      'BANDIT_CAMP',
+      'TRAVELERS_CAMP',
+      'CENTAUR_ENCAMPMENT'
+    ],
+    types: ['orcCamp', 'gnollCamp', 'trollCamp', 'ogreCamp', 'banditCamp', 'travelerCamp', 'centaurEncampment']
+  }),
+  dungeon: createHighlightGroup({
+    label: 'Dungeons',
+    color: '#6366f1',
+    strokeColor: '#818cf8',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.9,
+    keys: ['DUNGEON'],
+    types: ['dungeon']
+  }),
+  cave: createHighlightGroup({
+    label: 'Caves',
+    color: '#a855f7',
+    strokeColor: '#c084fc',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['CAVE'],
+    types: ['cave']
+  }),
+  castle: createHighlightGroup({
+    label: 'Castles',
+    color: '#f97316',
+    strokeColor: '#fdba74',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['CASTLE'],
+    types: ['castle']
+  }),
+  monastery: createHighlightGroup({
+    label: 'Monasteries',
+    color: '#eab308',
+    strokeColor: '#fde047',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['MONASTERY'],
+    types: ['monastery']
+  }),
+  saintShrine: createHighlightGroup({
+    label: 'Saint Shrines',
+    color: '#d946ef',
+    strokeColor: '#f0abfc',
+    fillAlpha: 0.26,
+    strokeAlpha: 0.88,
+    keys: ['SAINT_SHRINE'],
+    types: ['saintShrine']
+  }),
+  tavern: createHighlightGroup({
+    label: 'Roadside Taverns',
+    color: '#f472b6',
+    strokeColor: '#f9a8d4',
+    fillAlpha: 0.24,
+    strokeAlpha: 0.85,
+    keys: ['ROADSIDE_TAVERN'],
+    types: ['roadsideTavern']
+  }),
+  homestead: createHighlightGroup({
+    label: 'Homesteads',
+    color: '#84cc16',
+    strokeColor: '#bef264',
+    fillAlpha: 0.2,
+    strokeAlpha: 0.75,
+    keys: ['AMBIENT_FARM', 'AMBIENT_HUNTING_LODGE', 'AMBIENT_HOMESTEAD'],
+    types: ['farm', 'huntingLodge', 'homestead']
   })
 };
 
 const structureHighlightTypeKeys = Object.keys(structureHighlightGroups);
+
+let lastStructureHighlightMenuSignature = null;
+
+function syncStructureHighlightMenuOptions(menu) {
+  if (!menu || typeof document === 'undefined') {
+    return;
+  }
+  const signature = structureHighlightTypeKeys
+    .map((key) => {
+      const group = structureHighlightGroups[key];
+      const label = group && typeof group.label === 'string' ? group.label : '';
+      const color = group && typeof group.color === 'string' ? group.color : '';
+      return `${key}:${label}:${color}`;
+    })
+    .join('|');
+  if (signature === lastStructureHighlightMenuSignature) {
+    return;
+  }
+  lastStructureHighlightMenuSignature = signature;
+
+  const existingOptions = menu.querySelectorAll('.structure-highlight-option');
+  existingOptions.forEach((option) => option.remove());
+
+  const fragment = document.createDocumentFragment();
+  structureHighlightTypeKeys.forEach((typeKey) => {
+    const group = structureHighlightGroups[typeKey];
+    if (!group) {
+      return;
+    }
+    const optionId = `highlight-structure-${typeKey}`;
+    const label = document.createElement('label');
+    label.className = 'structure-highlight-option';
+    label.setAttribute('for', optionId);
+    label.setAttribute('data-highlight-option', typeKey);
+    if (group.color) {
+      label.style.setProperty('--highlight-color', group.color);
+    }
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = optionId;
+    input.name = optionId;
+    input.setAttribute('data-highlight-type', typeKey);
+
+    const swatch = document.createElement('span');
+    swatch.className = 'structure-highlight-option__swatch';
+    swatch.setAttribute('aria-hidden', 'true');
+
+    const text = document.createElement('span');
+    text.className = 'structure-highlight-option__label';
+    text.textContent = group.label || typeKey;
+
+    label.appendChild(input);
+    label.appendChild(swatch);
+    label.appendChild(text);
+    fragment.appendChild(label);
+  });
+
+  const hint = menu.querySelector('.structure-highlight-menu__hint');
+  if (hint && hint.parentNode === menu) {
+    menu.insertBefore(fragment, hint.nextSibling);
+  } else {
+    menu.appendChild(fragment);
+  }
+}
 
 function createDefaultStructureHighlightState() {
   const baseState = { menuOpen: false };
@@ -6918,6 +8267,23 @@ function createDefaultStructureHighlightState() {
 let loadingProgressValue = 0;
 let loadingProgressIntervalId = null;
 let hasManualLoadingProgress = false;
+
+const localViewConfig = {
+  radius: 4,
+  baseScale: 3,
+  minScale: 2,
+  maxCanvasSize: 768,
+  highResolutionTileSubdivisions: 4,
+  highResolutionExtraPadding: 2,
+  highResolutionMinScale: 2,
+  highResolutionMaxTileSize: 28,
+  minZoom: 0.5,
+  maxZoom: 3,
+  zoomStep: 0.2,
+  defaultZoom: 1,
+  absoluteMinScale: 0.5,
+  structureScaleCap: 1
+};
 
 const state = {
   settings: {
@@ -7138,7 +8504,8 @@ const dwarfProfessionOptions = [
   { value: 'scholar', label: 'Lore Scholar' },
   { value: 'ranger', label: 'Ranger Captain' },
   { value: 'carpenter', label: 'Master Carpenter' },
-  { value: 'jewelcrafter', label: 'Gemcutter' }
+  { value: 'jewelcrafter', label: 'Gemcutter' },
+  { value: 'banker', label: 'Banker' }
 ];
 
 const dwarfHairStyles = {
@@ -7370,6 +8737,22 @@ const dwarfTraitAttributeDefinitions = [
       'Your soot colored skin indicates you to hail from the ash covered lands of Dun Mortis. You are known by your ivory skinned cousins as the Dark Dwarves, a race cast away from the light of the All-father into the refuge bin of Stonebeards furance. You are hated by your kin as an oathbreaker by virture of your birthright and if you attempt to enter into their holds will likely be killed on sight.',
     icon: 'tilesheet/darkdwarf.png',
     isActive: (dwarf) => dwarf?.skin === 'umber' || dwarf?.skin === 'coal'
+  },
+  {
+    key: 'banker-profession',
+    label: 'Banker',
+    description:
+      'Among men you would be in a respected profession, among dwarves its the opposite, expect your increased income to be met with glaring judgments and distain from your peers who think your very livilooh to be undwarvsmen like.',
+    icon: 'tilesheet/dice1.png',
+    isActive: (dwarf) => dwarf?.profession === 'banker'
+  },
+  {
+    key: 'grey-dwarf',
+    label: 'Grey Dwarf Heritage',
+    description:
+      'Your skin is the colour of ashes and your heart is that of steel. Known as a Dwügar you may not be as despised as the dark dwarves are yet the kinship you have with the rest of Dwarfdom is strained. Your ancestors were followers of the Lawgiver and Forgebearers of the Forgotten Era who preached a strain of total dwarven separatism and supremacy that led your people to form holds far away from your homeland. You may be welcomed into any dwarf hold but not well liked and the races you hunt as slaves will attack you on sight.',
+    monogram: 'GD',
+    isActive: (dwarf) => dwarf?.skin === 'ashen'
   }
 ];
 
@@ -8075,8 +9458,12 @@ const assetPromises = Promise.all([
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
 
-elements.startButton.disabled = true;
-elements.startButton.textContent = 'Loading tiles…';
+let startRequestedBeforeReady = false;
+
+if (elements.startButton) {
+  elements.startButton.disabled = true;
+  elements.startButton.textContent = 'Loading tiles…';
+}
 
 assetPromises
   .catch((error) => {
@@ -8084,8 +9471,14 @@ assetPromises
   })
   .finally(() => {
     state.ready = true;
-    elements.startButton.disabled = false;
-    elements.startButton.textContent = 'Start Game';
+    if (elements.startButton) {
+      elements.startButton.disabled = false;
+      elements.startButton.textContent = 'Start Game';
+    }
+    if (startRequestedBeforeReady) {
+      startRequestedBeforeReady = false;
+      handleStartButtonRequest();
+    }
   });
 
 let optionsVisible = false;
@@ -8094,11 +9487,12 @@ let optionsContext = {
   returnFocus: null
 };
 
-
-
-
-
-
+function handleStartButtonRequest() {
+  if (optionsVisible) {
+    closeOptionsScreen({ restoreScreen: false, returnFocus: false });
+  }
+  openWorldInfoModal();
+}
 
 function updateOptionsBackButtonLabel() {
   if (!elements.closeOptions) {
@@ -8972,6 +10366,64 @@ function computeDwarfholdDistributionAdjustment(x, y, height, seed) {
   return centerLift + southernBoost - northernPenalty + jitter;
 }
 
+function isCandidateNearVolcano(candidate, options) {
+  if (!candidate || !options || !options.tiles) {
+    return false;
+  }
+
+  const radius = Math.max(
+    0,
+    Math.floor(
+      Number.isFinite(options.darkDwarfholdVolcanoRadius)
+        ? options.darkDwarfholdVolcanoRadius
+        : darkDwarfholdVolcanoRadius
+    )
+  );
+
+  if (radius <= 0) {
+    return false;
+  }
+
+  const { width, height, tiles } = options;
+  const { x, y } = candidate;
+
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return false;
+  }
+
+  for (let dy = -radius; dy <= radius; dy += 1) {
+    const ny = y + dy;
+    if (ny < 0 || ny >= height) {
+      continue;
+    }
+    const row = tiles[ny];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      const nx = x + dx;
+      if (nx < 0 || nx >= width) {
+        continue;
+      }
+      if (dx === 0 && dy === 0) {
+        continue;
+      }
+      if (dx * dx + dy * dy > radius * radius) {
+        continue;
+      }
+      const neighbor = row[nx];
+      if (!neighbor) {
+        continue;
+      }
+      if (isVolcanoOverlayKey(neighbor.overlay) || isVolcanoOverlayKey(neighbor.hillOverlay)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function tryPlaceDwarfhold(candidate, options) {
   if (!candidate || !options) {
     return false;
@@ -8981,11 +10433,13 @@ function tryPlaceDwarfhold(candidate, options) {
     minDistanceSq,
     tiles,
     width,
+    height,
     waterMask,
     mountainScores,
     fallbackMountainScoreThreshold,
     mountainOverlayKey,
     dwarfholdKey,
+    darkDwarfholdKey,
     greatDwarfholdKey,
     abandonedDwarfholdKey,
     abandonedDwarfholdChance,
@@ -8993,7 +10447,8 @@ function tryPlaceDwarfhold(candidate, options) {
     mountainRuggednessSeed,
     dwarfholds,
     towns,
-    nearbyTownDistanceSq
+    nearbyTownDistanceSq,
+    darkDwarfholdVolcanoRadius: customDarkVolcanoRadius
   } = options;
 
   if (!tiles || !Array.isArray(tiles[candidate.y])) {
@@ -9033,6 +10488,13 @@ function tryPlaceDwarfhold(candidate, options) {
   if (!qualifiesForPlacement) {
     return false;
   }
+
+  const nearVolcano = isCandidateNearVolcano(candidate, {
+    tiles,
+    width,
+    height,
+    darkDwarfholdVolcanoRadius: customDarkVolcanoRadius
+  });
 
   if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
     tile.overlay = mountainOverlayKey;
@@ -9079,11 +10541,12 @@ function tryPlaceDwarfhold(candidate, options) {
     0,
     1
   );
-  const isAbandoned = resolvedAbandonedChance > 0 && randomFn() < resolvedAbandonedChance;
+  const isAbandoned = !nearVolcano && resolvedAbandonedChance > 0 && randomFn() < resolvedAbandonedChance;
   const name = generateDwarfholdName(randomFn);
   const details = generateDwarfholdDetails(name, randomFn, {
     hasNearbyHumanSettlement,
-    isAbandoned
+    isAbandoned,
+    isDarkHold: nearVolcano
   });
   let structureKey = dwarfholdKey;
   if (
@@ -9092,6 +10555,8 @@ function tryPlaceDwarfhold(candidate, options) {
     details.type === 'occupiedDwarfhold'
   ) {
     structureKey = abandonedDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
+  } else if (details.type === 'darkDwarfhold') {
+    structureKey = darkDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
   } else if (details.type === 'greatDwarfhold') {
     structureKey = greatDwarfholdKey || dwarfholdKey || null;
   }
@@ -10208,17 +11673,43 @@ function createTraitAttributeElement(attribute) {
   item.setAttribute('tabindex', '0');
   item.setAttribute('aria-label', attribute.label);
 
-  const icon = document.createElement('img');
-  icon.className = 'trait-attribute__icon';
-  icon.src = attribute.icon;
-  icon.alt = attribute.label;
-  icon.loading = 'lazy';
+  if (attribute.icon) {
+    const icon = document.createElement('img');
+    icon.className = 'trait-attribute__icon';
+    icon.src = attribute.icon;
+    icon.alt = attribute.label;
+    icon.loading = 'lazy';
+    item.appendChild(icon);
+  } else {
+    const monogram = document.createElement('span');
+    monogram.className = 'trait-attribute__icon trait-attribute__icon--monogram';
+    const fallback = attribute.monogram || attribute.label || '';
+    monogram.textContent = fallback
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((segment) => segment[0] || '')
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+    monogram.setAttribute('aria-hidden', 'true');
+    item.appendChild(monogram);
+  }
 
   const tooltip = document.createElement('span');
   tooltip.className = 'trait-attribute__tooltip';
-  tooltip.textContent = attribute.description;
 
-  item.appendChild(icon);
+  const tooltipTitle = document.createElement('span');
+  tooltipTitle.className = 'trait-attribute__tooltip-title';
+  tooltipTitle.textContent = attribute.label || '';
+  tooltip.appendChild(tooltipTitle);
+
+  if (attribute.description) {
+    const tooltipDescription = document.createElement('span');
+    tooltipDescription.className = 'trait-attribute__tooltip-description';
+    tooltipDescription.textContent = attribute.description;
+    tooltip.appendChild(tooltipDescription);
+  }
+
   item.appendChild(tooltip);
 
   return item;
@@ -11064,23 +12555,6 @@ const viewState = {
   hasInteracted: false
 };
 
-const localViewConfig = {
-  radius: 4,
-  baseScale: 3,
-  minScale: 2,
-  maxCanvasSize: 768,
-  highResolutionTileSubdivisions: 4,
-  highResolutionExtraPadding: 2,
-  highResolutionMinScale: 2,
-  highResolutionMaxTileSize: 28,
-  minZoom: 0.5,
-  maxZoom: 3,
-  zoomStep: 0.2,
-  defaultZoom: 1,
-  absoluteMinScale: 0.5,
-  structureScaleCap: 1
-};
-
 const dwarfholdScreenConfig = {
   baseTileSize: 28,
   minTileSize: 8,
@@ -11089,9 +12563,60 @@ const dwarfholdScreenConfig = {
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
 
+const structureDetailsTabIds = ['history', 'statistics'];
+
 const structureDetailsState = {
-  visible: false
+  visible: false,
+  activeTab: structureDetailsTabIds[0],
+  tabContent: {}
 };
+
+function normalizeStructureDetailsTabId(tabId) {
+  if (typeof tabId !== 'string') {
+    return structureDetailsTabIds[0];
+  }
+  const normalized = tabId.trim().toLowerCase();
+  return structureDetailsTabIds.includes(normalized) ? normalized : structureDetailsTabIds[0];
+}
+
+function getStructureDetailsStatisticsPlaceholder() {
+  return `
+    <div class="structure-details-column structure-details-column--primary">
+      <p class="structure-details-empty structure-details-empty--standalone">No statistical records are available for this settlement yet.</p>
+    </div>
+  `;
+}
+
+function setActiveStructureDetailsTab(tabId, options = {}) {
+  const { force = false, skipContent = false } = options;
+  const resolvedTabId = normalizeStructureDetailsTabId(tabId);
+  if (!force && structureDetailsState.activeTab === resolvedTabId && !skipContent) {
+    return;
+  }
+
+  structureDetailsState.activeTab = resolvedTabId;
+
+  if (Array.isArray(elements.structureDetailsTabs)) {
+    elements.structureDetailsTabs.forEach((tab) => {
+      if (!tab) {
+        return;
+      }
+      const tabIdValue = normalizeStructureDetailsTabId(tab.getAttribute('data-tab-id'));
+      const isActive = tabIdValue === resolvedTabId;
+      tab.classList.toggle('is-active', isActive);
+      if (isActive) {
+        tab.setAttribute('aria-current', 'page');
+      } else {
+        tab.setAttribute('aria-current', 'false');
+      }
+    });
+  }
+
+  if (!skipContent && elements.structureDetailsContent) {
+    const tabContent = structureDetailsState.tabContent?.[resolvedTabId] || '';
+    elements.structureDetailsContent.innerHTML = tabContent;
+  }
+}
 
 function gatherStructureDescriptorInfo(tile) {
   const descriptors = new Set();
@@ -11837,64 +13362,76 @@ function buildStructureTooltipContent(tile) {
     return null;
   }
 
+  const details = tile.structureDetails;
+
+  const buildAmbientTooltip = (ambientStructure) => {
+    if (!ambientStructure || !ambientStructure.label) {
+      return null;
+    }
+    const sections = [`<div class="tooltip-title">${escapeHtml(ambientStructure.label)}</div>`];
+    const entries = [];
+    const cultureLabel = ambientStructure.cultureLabel || tile.culturalInfluence?.label || null;
+    const influenceDescription = tile.culturalInfluence
+      ? describeInfluenceStrength(tile.culturalInfluence.strength)
+      : null;
+    if (cultureLabel) {
+      const value = influenceDescription ? `${cultureLabel} — ${influenceDescription}` : cultureLabel;
+      entries.push({ label: 'Cultural Tie', value });
+    }
+    const areaName = tile.areaName;
+    if (areaName) {
+      entries.push({ label: 'Region', value: areaName });
+    }
+    const biomeType = tile.biomeType;
+    if (biomeType) {
+      const definition = biomeTypeDefinitions[biomeType] || null;
+      let biomeLabel = definition && definition.label ? definition.label : null;
+      if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
+        biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
+      }
+      if (biomeLabel) {
+        entries.push({ label: 'Biome', value: biomeLabel });
+      }
+    }
+    const climateDescription = describeTileClimate(tile);
+    if (climateDescription) {
+      entries.push({ label: 'Climate', value: climateDescription });
+    }
+    const resourceSummary = summarizeTileResources(tile);
+    if (resourceSummary.length > 0) {
+      const formattedResources = formatListWithConjunction(resourceSummary);
+      if (formattedResources) {
+        entries.push({ label: 'Resources', value: formattedResources });
+      }
+    }
+    const populationGroups = derivePopulationGroupsFromCulture(tile);
+    if (populationGroups.major) {
+      entries.push({ label: 'Major Population Groups', value: populationGroups.major });
+    }
+    if (populationGroups.minor) {
+      entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
+    }
+    if (entries.length > 0) {
+      const listItems = entries
+        .map(
+          ({ label, value }) =>
+            `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+              value
+            )}</span></li>`
+        )
+        .join('');
+      sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+    }
+    return sections.join('');
+  };
+
   if (!tile.structureName) {
     const ambientStructure = tile.ambientStructure;
-    const biomeType = tile.biomeType;
     const areaName = tile.areaName;
-    if (ambientStructure && ambientStructure.label) {
-      const sections = [`<div class="tooltip-title">${escapeHtml(ambientStructure.label)}</div>`];
-      const entries = [];
-      const cultureLabel = ambientStructure.cultureLabel || tile.culturalInfluence?.label || null;
-      const influenceDescription = tile.culturalInfluence
-        ? describeInfluenceStrength(tile.culturalInfluence.strength)
-        : null;
-      if (cultureLabel) {
-        const value = influenceDescription ? `${cultureLabel} — ${influenceDescription}` : cultureLabel;
-        entries.push({ label: 'Cultural Tie', value });
-      }
-      if (areaName) {
-        entries.push({ label: 'Region', value: areaName });
-      }
-      if (biomeType) {
-        const definition = biomeTypeDefinitions[biomeType] || null;
-        let biomeLabel = definition && definition.label ? definition.label : null;
-        if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
-          biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
-        }
-        if (biomeLabel) {
-          entries.push({ label: 'Biome', value: biomeLabel });
-        }
-      }
-      const climateDescription = describeTileClimate(tile);
-      if (climateDescription) {
-        entries.push({ label: 'Climate', value: climateDescription });
-      }
-      const resourceSummary = summarizeTileResources(tile);
-      if (resourceSummary.length > 0) {
-        const formattedResources = formatListWithConjunction(resourceSummary);
-        if (formattedResources) {
-          entries.push({ label: 'Resources', value: formattedResources });
-        }
-      }
-      const populationGroups = derivePopulationGroupsFromCulture(tile);
-      if (populationGroups.major) {
-        entries.push({ label: 'Major Population Groups', value: populationGroups.major });
-      }
-      if (populationGroups.minor) {
-        entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
-      }
-      if (entries.length > 0) {
-        const listItems = entries
-          .map(
-            ({ label, value }) =>
-              `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
-                value
-              )}</span></li>`
-          )
-          .join('');
-        sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
-      }
-      return sections.join('');
+    const biomeType = tile.biomeType;
+    const ambientContent = buildAmbientTooltip(ambientStructure);
+    if (ambientContent) {
+      return ambientContent;
     }
     if (!biomeType && !areaName) {
       return null;
@@ -11951,7 +13488,13 @@ function buildStructureTooltipContent(tile) {
     return sections.join('');
   }
 
-  const details = tile.structureDetails;
+  if (details?.isAmbientStructure) {
+    const ambientContent = buildAmbientTooltip(details.ambientStructure);
+    if (ambientContent) {
+      return ambientContent;
+    }
+  }
+
   const isSettlement =
     details && (details.isSettlement || (details.type && settlementDetailTypes.has(details.type)));
   if (isSettlement) {
@@ -12794,7 +14337,8 @@ function refreshLocalMapPreview() {
       ? world.tiles[localView.centerY][localView.centerX] || null
       : null;
 
-  const zoom = clampLocalMapZoom(localView.zoom ?? localViewConfig.defaultZoom || 1);
+  const zoomSource = (localView.zoom ?? localViewConfig.defaultZoom) || 1;
+  const zoom = clampLocalMapZoom(zoomSource);
   if (localView.zoom !== zoom) {
     localView.zoom = zoom;
   }
@@ -13256,7 +14800,8 @@ function adjustLocalMapZoom(direction) {
     return;
   }
   const step = Number.isFinite(localViewConfig.zoomStep) ? localViewConfig.zoomStep : 0.2;
-  const current = clampLocalMapZoom(state.localView.zoom ?? localViewConfig.defaultZoom || 1);
+  const currentZoomSource = (state.localView.zoom ?? localViewConfig.defaultZoom) || 1;
+  const current = clampLocalMapZoom(currentZoomSource);
   let next = current;
   if (direction === 'in') {
     next = current + step;
@@ -13478,6 +15023,43 @@ function applyRiverSubtileVariation(subTile, variation, subX, subY) {
   }
 }
 
+function applySurfaceNoiseVariation(subTile, noiseAt, baseKeys = {}) {
+  if (!subTile || typeof subTile.base !== 'string') {
+    if (subTile && Object.prototype.hasOwnProperty.call(subTile, 'surfaceVariation')) {
+      delete subTile.surfaceVariation;
+    }
+    return;
+  }
+
+  const { snowTileKey = null, sandTileKey = null, badlandsTileKey = null } = baseKeys;
+  const baseKey = subTile.base;
+  let channel = null;
+  let strength = 0;
+
+  if (snowTileKey && baseKey === snowTileKey) {
+    channel = 180;
+    strength = 0.75;
+  } else if (sandTileKey && baseKey === sandTileKey) {
+    channel = 182;
+    strength = 0.85;
+  } else if (badlandsTileKey && baseKey === badlandsTileKey) {
+    channel = 184;
+    strength = 0.8;
+  }
+
+  if (channel === null) {
+    if (Object.prototype.hasOwnProperty.call(subTile, 'surfaceVariation')) {
+      delete subTile.surfaceVariation;
+    }
+    return;
+  }
+
+  const baseNoise = noiseAt(channel) * 2 - 1;
+  const detailNoise = noiseAt(channel + 1) * 2 - 1;
+  const variation = clamp((baseNoise * 0.65 + detailNoise * 0.35) * strength, -1, 1);
+  subTile.surfaceVariation = variation;
+}
+
 function applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt) {
   if (!subTile || !baseTile) {
     return;
@@ -13646,6 +15228,316 @@ function applyMountainVariation(subTile, baseTile, neighbors, subdivisions, subX
   const ruggednessBase = 0.38 + noiseAt(109) * 0.45;
   const detailVariance = (noiseAt(110) - 0.5) * 0.2;
   updateRuggedness(ruggednessBase + detailVariance);
+}
+
+function applySnowVariation(
+  subTile,
+  baseTile,
+  neighbors,
+  subdivisions,
+  subX,
+  subY,
+  noiseAt,
+  { snowTileKey, waterTileKey = null, defaultLandKey = null } = {}
+) {
+  if (!subTile || !baseTile || !snowTileKey || subdivisions <= 1) {
+    return;
+  }
+
+  const baseKey = typeof baseTile.base === 'string' ? baseTile.base : null;
+  const subTileBase = typeof subTile.base === 'string' ? subTile.base : null;
+  const normalizedX = (subX + 0.5) / subdivisions;
+  const normalizedY = (subY + 0.5) / subdivisions;
+  const edgeThreshold = 0.32;
+
+  const isValidReplacementBase = (base) =>
+    typeof base === 'string' &&
+    base.length > 0 &&
+    base !== snowTileKey &&
+    (!waterTileKey || base !== waterTileKey);
+
+  const neighborOrder = [
+    'north',
+    'south',
+    'west',
+    'east',
+    'northWest',
+    'northEast',
+    'southWest',
+    'southEast'
+  ];
+
+  const hasNonSnowNeighbor = neighborOrder.some((key) => {
+    const neighbor = neighbors[key];
+    return neighbor && isValidReplacementBase(neighbor.baseKey);
+  });
+
+  const hasSnowNeighbor = neighborOrder.some((key) => {
+    const neighbor = neighbors[key];
+    return neighbor && neighbor.baseKey === snowTileKey;
+  });
+
+  const removeSurfaceVariation = () => {
+    if (Object.prototype.hasOwnProperty.call(subTile, 'surfaceVariation')) {
+      delete subTile.surfaceVariation;
+    }
+  };
+
+  const selectNeighborBase = () => {
+    for (let i = 0; i < neighborOrder.length; i += 1) {
+      const neighbor = neighbors[neighborOrder[i]];
+      if (neighbor && isValidReplacementBase(neighbor.baseKey)) {
+        return neighbor.baseKey;
+      }
+    }
+    if (isValidReplacementBase(defaultLandKey)) {
+      return defaultLandKey;
+    }
+    return null;
+  };
+
+  if (baseKey === snowTileKey) {
+    if (!hasNonSnowNeighbor) {
+      return;
+    }
+
+    const candidateScores = new Map();
+    const addCandidate = (base, score) => {
+      if (!isValidReplacementBase(base)) {
+        return;
+      }
+      const existing = candidateScores.get(base);
+      if (!existing || score > existing) {
+        candidateScores.set(base, score);
+      }
+    };
+
+    const directions = [
+      {
+        key: 'north',
+        nearEdge: normalizedY < edgeThreshold,
+        proximity: normalizedY,
+        channel: 140
+      },
+      {
+        key: 'south',
+        nearEdge: normalizedY > 1 - edgeThreshold,
+        proximity: 1 - normalizedY,
+        channel: 141
+      },
+      {
+        key: 'west',
+        nearEdge: normalizedX < edgeThreshold,
+        proximity: normalizedX,
+        channel: 142
+      },
+      {
+        key: 'east',
+        nearEdge: normalizedX > 1 - edgeThreshold,
+        proximity: 1 - normalizedX,
+        channel: 143
+      }
+    ];
+
+    for (let i = 0; i < directions.length; i += 1) {
+      const { key, nearEdge, proximity, channel } = directions[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !isValidReplacementBase(neighbor.baseKey)) {
+        continue;
+      }
+      const threshold = 0.45 + proximity * 0.45;
+      const roll = noiseAt(channel);
+      if (roll > threshold) {
+        addCandidate(neighbor.baseKey, roll);
+      }
+    }
+
+    const corners = [
+      {
+        key: 'northWest',
+        nearEdge: normalizedX < edgeThreshold && normalizedY < edgeThreshold,
+        distance: normalizedX + normalizedY,
+        channel: 144
+      },
+      {
+        key: 'northEast',
+        nearEdge: normalizedX > 1 - edgeThreshold && normalizedY < edgeThreshold,
+        distance: 1 - normalizedX + normalizedY,
+        channel: 145
+      },
+      {
+        key: 'southWest',
+        nearEdge: normalizedX < edgeThreshold && normalizedY > 1 - edgeThreshold,
+        distance: normalizedX + (1 - normalizedY),
+        channel: 146
+      },
+      {
+        key: 'southEast',
+        nearEdge: normalizedX > 1 - edgeThreshold && normalizedY > 1 - edgeThreshold,
+        distance: 2 - normalizedX - normalizedY,
+        channel: 147
+      }
+    ];
+
+    for (let i = 0; i < corners.length; i += 1) {
+      const { key, nearEdge, distance, channel } = corners[i];
+      if (!nearEdge) {
+        continue;
+      }
+      const neighbor = neighbors[key];
+      if (!neighbor || !isValidReplacementBase(neighbor.baseKey)) {
+        continue;
+      }
+      const threshold = 0.42 + distance * 0.25;
+      const roll = noiseAt(channel);
+      if (roll > threshold) {
+        addCandidate(neighbor.baseKey, roll);
+      }
+    }
+
+    if (candidateScores.size > 0) {
+      let selectedBase = null;
+      let bestScore = -Infinity;
+      candidateScores.forEach((score, base) => {
+        if (score > bestScore) {
+          bestScore = score;
+          selectedBase = base;
+        }
+      });
+      if (selectedBase && selectedBase !== subTileBase) {
+        subTile.base = selectedBase;
+        removeSurfaceVariation();
+      }
+      return;
+    }
+
+    const edgeDistance = Math.min(
+      Math.min(normalizedX, 1 - normalizedX),
+      Math.min(normalizedY, 1 - normalizedY)
+    );
+
+    if (edgeDistance < 0.38) {
+      const erosionThreshold = 0.14 + (0.38 - edgeDistance) * 0.3;
+      if (noiseAt(148) < erosionThreshold) {
+        const fallbackBase = selectNeighborBase();
+        if (fallbackBase && fallbackBase !== subTileBase) {
+          subTile.base = fallbackBase;
+          removeSurfaceVariation();
+        }
+      }
+    }
+    return;
+  }
+
+  if (!hasSnowNeighbor) {
+    return;
+  }
+
+  if (waterTileKey && subTileBase === waterTileKey) {
+    return;
+  }
+
+  if (subTileBase === snowTileKey) {
+    return;
+  }
+
+  let adoptSnow = false;
+  const snowDirections = [
+    {
+      key: 'north',
+      nearEdge: normalizedY < edgeThreshold,
+      proximity: normalizedY,
+      channel: 150
+    },
+    {
+      key: 'south',
+      nearEdge: normalizedY > 1 - edgeThreshold,
+      proximity: 1 - normalizedY,
+      channel: 151
+    },
+    {
+      key: 'west',
+      nearEdge: normalizedX < edgeThreshold,
+      proximity: normalizedX,
+      channel: 152
+    },
+    {
+      key: 'east',
+      nearEdge: normalizedX > 1 - edgeThreshold,
+      proximity: 1 - normalizedX,
+      channel: 153
+    }
+  ];
+
+  for (let i = 0; i < snowDirections.length && !adoptSnow; i += 1) {
+    const { key, nearEdge, proximity, channel } = snowDirections[i];
+    if (!nearEdge || !(neighbors[key] && neighbors[key].baseKey === snowTileKey)) {
+      continue;
+    }
+    const threshold = 0.68 - proximity * 0.35;
+    if (noiseAt(channel) > threshold) {
+      adoptSnow = true;
+    }
+  }
+
+  const snowCorners = [
+    {
+      key: 'northWest',
+      nearEdge: normalizedX < edgeThreshold && normalizedY < edgeThreshold,
+      distance: normalizedX + normalizedY,
+      channel: 154
+    },
+    {
+      key: 'northEast',
+      nearEdge: normalizedX > 1 - edgeThreshold && normalizedY < edgeThreshold,
+      distance: 1 - normalizedX + normalizedY,
+      channel: 155
+    },
+    {
+      key: 'southWest',
+      nearEdge: normalizedX < edgeThreshold && normalizedY > 1 - edgeThreshold,
+      distance: normalizedX + (1 - normalizedY),
+      channel: 156
+    },
+    {
+      key: 'southEast',
+      nearEdge: normalizedX > 1 - edgeThreshold && normalizedY > 1 - edgeThreshold,
+      distance: 2 - normalizedX - normalizedY,
+      channel: 157
+    }
+  ];
+
+  for (let i = 0; i < snowCorners.length && !adoptSnow; i += 1) {
+    const { key, nearEdge, distance, channel } = snowCorners[i];
+    if (!nearEdge || !(neighbors[key] && neighbors[key].baseKey === snowTileKey)) {
+      continue;
+    }
+    const threshold = 0.7 - distance * 0.2;
+    if (noiseAt(channel) > threshold) {
+      adoptSnow = true;
+    }
+  }
+
+  if (!adoptSnow) {
+    const edgeDistance = Math.min(
+      Math.min(normalizedX, 1 - normalizedX),
+      Math.min(normalizedY, 1 - normalizedY)
+    );
+    if (edgeDistance < 0.35) {
+      const bonus = Math.max(0, 0.35 - edgeDistance);
+      if (noiseAt(158) > 0.72 - bonus * 0.5) {
+        adoptSnow = true;
+      }
+    }
+  }
+
+  if (adoptSnow) {
+    subTile.base = snowTileKey;
+    removeSurfaceVariation();
+  }
 }
 
 function applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey) {
@@ -13911,6 +15803,14 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
   );
   const waterTileKey = world.waterTileKey || resolveTileName('WATER');
   const defaultLandKey = world.grassTileKey || resolveTileName('GRASS');
+  const snowTileKey = typeof world.snowTileKey === 'string' ? world.snowTileKey : null;
+  const sandTileKey = typeof world.sandTileKey === 'string' ? world.sandTileKey : null;
+  const badlandsTileKey =
+    typeof world.badlandsTileKey === 'string' ? world.badlandsTileKey : null;
+  const surfaceNoiseKeys = { snowTileKey, sandTileKey, badlandsTileKey };
+  const icebergOverlayKeys = Object.keys(icebergTileCoords || {}).filter((key) =>
+    tileLookup.has(key)
+  );
 
   for (let coarseY = 0; coarseY < areaHeight; coarseY += 1) {
     const sourceRow = sourceTiles[startY + coarseY];
@@ -13967,13 +15867,124 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
           );
           applyHillOverlayVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
           applyMountainVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt);
+          applySnowVariation(
+            subTile,
+            baseTile,
+            neighbors,
+            subdivisions,
+            subX,
+            subY,
+            noiseAt,
+            { snowTileKey, waterTileKey, defaultLandKey }
+          );
           applyForestVariation(subTile, baseTile, neighbors, subdivisions, subX, subY, noiseAt, waterTileKey);
           applyRiverSubtileVariation(subTile, riverVariation, subX, subY);
+          applySurfaceNoiseVariation(subTile, noiseAt, surfaceNoiseKeys);
 
           targetRow[coarseX * subdivisions + subX] = subTile;
         }
       }
     }
+  }
+
+  if (waterTileKey && icebergOverlayKeys.length > 0) {
+    const localSeedInput = `${seedString}:${startX},${startY}:${areaWidth}x${areaHeight}:icebergs`;
+    const localSeedNumber = stringToSeed(localSeedInput);
+    const shuffleSeed = (localSeedNumber + 0x5ad1f32b) >>> 0;
+    const rng = mulberry32(shuffleSeed || 1);
+    const variantSeed = (localSeedNumber + 0x3d0e12f7) >>> 0;
+
+    const icebergParentTiles = new Map();
+
+    for (let y = 0; y < patchHeight; y += 1) {
+      const row = patchTiles[y];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let x = 0; x < patchWidth; x += 1) {
+        const cell = row[x];
+        if (!cell || cell.base !== waterTileKey) {
+          continue;
+        }
+
+        const parentTileX = Math.floor(x / subdivisions);
+        const parentTileY = Math.floor(y / subdivisions);
+        const parentKey = `${parentTileX},${parentTileY}`;
+        let parentEntry = icebergParentTiles.get(parentKey);
+
+        const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+        const hasIceberg = overlayKey && icebergOverlayKeySet.has(overlayKey);
+        const blocked = overlayKey && !hasIceberg;
+
+        if (hasIceberg) {
+          if (!parentEntry) {
+            parentEntry = {
+              candidates: [],
+              originalOverlayKeys: new Set(),
+              originalOverlays: []
+            };
+            icebergParentTiles.set(parentKey, parentEntry);
+          }
+          if (overlayKey && !parentEntry.originalOverlayKeys.has(overlayKey)) {
+            parentEntry.originalOverlayKeys.add(overlayKey);
+            parentEntry.originalOverlays.push(overlayKey);
+          }
+          cell.overlay = null;
+        }
+
+        parentEntry = icebergParentTiles.get(parentKey);
+        if (!parentEntry || blocked || cell.structure || cell.river) {
+          continue;
+        }
+
+        const subX = x - parentTileX * subdivisions;
+        const subY = y - parentTileY * subdivisions;
+        const globalSubX = (startX + parentTileX) * subdivisions + subX;
+        const globalSubY = (startY + parentTileY) * subdivisions + subY;
+
+        parentEntry.candidates.push({
+          x,
+          y,
+          globalSubX,
+          globalSubY
+        });
+      }
+    }
+
+    icebergParentTiles.forEach((entry) => {
+      if (!entry || entry.originalOverlays.length === 0 || entry.candidates.length === 0) {
+        return;
+      }
+
+      const shuffledCandidates = entry.candidates.slice();
+      for (let i = shuffledCandidates.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(rng() * (i + 1));
+        const temp = shuffledCandidates[i];
+        shuffledCandidates[i] = shuffledCandidates[j];
+        shuffledCandidates[j] = temp;
+      }
+
+      const placements = Math.min(entry.originalOverlays.length, shuffledCandidates.length);
+      for (let i = 0; i < placements; i += 1) {
+        const candidate = shuffledCandidates[i];
+        if (!candidate) {
+          continue;
+        }
+        const variantNoise = hashCoords(candidate.globalSubX, candidate.globalSubY, variantSeed);
+        const variantIndex = Math.min(
+          icebergOverlayKeys.length - 1,
+          Math.floor(variantNoise * icebergOverlayKeys.length)
+        );
+        let overlayKey = entry.originalOverlays[i] || null;
+        if (!overlayKey) {
+          overlayKey = icebergOverlayKeys[Math.max(0, variantIndex)];
+        }
+        const cell = patchTiles[candidate.y][candidate.x];
+        if (cell) {
+          cell.overlay = overlayKey || icebergOverlayKeys[Math.max(0, variantIndex)];
+        }
+      }
+    });
   }
 
   const centerX = clamp(
@@ -14003,6 +16014,9 @@ function generateHighResolutionLocalPatch(world, tileX, tileY) {
       seaLevel: world.seaLevel,
       waterTileKey: world.waterTileKey || resolveTileName('WATER'),
       grassTileKey: world.grassTileKey || resolveTileName('GRASS'),
+      snowTileKey: snowTileKey || null,
+      sandTileKey: sandTileKey || null,
+      badlandsTileKey: badlandsTileKey || null,
       factions: Array.isArray(world.factions) ? world.factions : [],
       seedString:
         (typeof world.seedString === 'string' && world.seedString) ||
@@ -14023,6 +16037,10 @@ function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
   const metadata = patch.metadata || {};
   const waterTileKey = metadata.waterTileKey || resolveTileName('WATER');
   const grassTileKey = metadata.grassTileKey || resolveTileName('GRASS');
+  const snowTileKey = metadata.snowTileKey || null;
+  const sandTileKey = metadata.sandTileKey || null;
+  const badlandsTileKey = metadata.badlandsTileKey || null;
+  const surfaceNoiseKeys = { snowTileKey, sandTileKey, badlandsTileKey };
   const patchWorld = {
     tiles,
     width,
@@ -14063,6 +16081,7 @@ function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
         }
       }
 
+      applySurfaceNoiseShading(ctx, cell, x, y, tileSize, surfaceNoiseKeys);
       applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize);
       applyVolcanoShading(ctx, cell, x, y, tileSize);
 
@@ -14108,6 +16127,7 @@ function drawHighResolutionLocalPatch(ctx, patch, tileSize, options = {}) {
         }
       }
 
+      applyBadlandsHillTint(ctx, cell, x, y, tileSize);
       applyDesertMountainTint(ctx, cell, x, y, tileSize);
       applyMountainShading(ctx, cell, x, y, tileSize);
 
@@ -15205,9 +17225,12 @@ function showStructureDetails(tile, context = {}) {
     }
   }
 
-  if (elements.structureDetailsContent) {
-    elements.structureDetailsContent.innerHTML = content.body;
-  }
+  structureDetailsState.tabContent = {
+    history: content.body,
+    statistics: getStructureDetailsStatisticsPlaceholder()
+  };
+
+  setActiveStructureDetailsTab('history', { force: true });
 
   playStructureAmbienceForTile(tile);
 
@@ -15229,6 +17252,8 @@ function hideStructureDetails(options = {}) {
   if (elements.structureDetailsContent) {
     elements.structureDetailsContent.innerHTML = '';
   }
+  structureDetailsState.tabContent = {};
+  setActiveStructureDetailsTab('history', { force: true, skipContent: true });
   structureDetailsState.visible = false;
 
   if (options.returnFocus && elements.canvasWrapper && typeof elements.canvasWrapper.focus === 'function') {
@@ -15696,11 +17721,9 @@ function setupAudioControls() {
   }
 
   const initialVolumeSource = volumeInputs[0];
-  const initialVolume = clamp(
-    parseFloat(initialVolumeSource ? initialVolumeSource.value : elements.audioElement.volume) || 0.5,
-    0,
-    1
-  );
+  const parsedInputVolume = initialVolumeSource ? Number.parseFloat(initialVolumeSource.value) : Number.NaN;
+  const fallbackVolume = Number.isNaN(parsedInputVolume) ? elements.audioElement.volume : parsedInputVolume;
+  const initialVolume = clamp(Number.isNaN(fallbackVolume) ? 0.5 : fallbackVolume, 0, 1);
   elements.audioElement.volume = initialVolume;
   volumeInputs.forEach((input) => {
     input.value = initialVolume.toString();
@@ -15970,15 +17993,41 @@ function createInlandSeaMask() {
 function createArchipelagoMask() {
   const size = 512;
   return createProceduralMask(size, size, (nx, ny) => {
-    const islands = [
-      { x: 0.28, y: 0.32, radiusX: 0.22, radiusY: 0.18, height: 1.05, power: 1.35 },
-      { x: 0.52, y: 0.28, radiusX: 0.18, radiusY: 0.16, height: 0.92, power: 1.4 },
-      { x: 0.68, y: 0.38, radiusX: 0.16, radiusY: 0.2, height: 0.88, power: 1.45 },
-      { x: 0.36, y: 0.62, radiusX: 0.2, radiusY: 0.18, height: 0.94, power: 1.3 },
-      { x: 0.54, y: 0.58, radiusX: 0.22, radiusY: 0.2, height: 1.02, power: 1.32 },
-      { x: 0.73, y: 0.57, radiusX: 0.15, radiusY: 0.17, height: 0.86, power: 1.48 },
-      { x: 0.46, y: 0.44, radiusX: 0.24, radiusY: 0.22, height: 1.08, power: 1.28 }
-    ];
+    const gridSize = 6;
+    const spacing = 1 / gridSize;
+    const islands = [];
+
+    for (let gx = 0; gx < gridSize; gx += 1) {
+      for (let gy = 0; gy < gridSize; gy += 1) {
+        const sampleX = (gx + 0.37) * 2.17;
+        const sampleY = (gy + 0.63) * 2.03;
+        const activation = valueNoise(sampleX, sampleY, 0x9e3779b9);
+        if (activation <= 0.42) {
+          continue;
+        }
+
+        const offsetSeedX = valueNoise(sampleX + 4.91, sampleY - 6.44, 0xc2b2ae35) - 0.5;
+        const offsetSeedY = valueNoise(sampleX - 7.73, sampleY + 3.57, 0x165667b1) - 0.5;
+        const centerX = clamp(
+          (gx + 0.5) * spacing + offsetSeedX * spacing * 0.45,
+          0.04,
+          0.96
+        );
+        const centerY = clamp(
+          (gy + 0.5) * spacing + offsetSeedY * spacing * 0.45,
+          0.04,
+          0.96
+        );
+
+        const radiusSeed = valueNoise(sampleX + 3.11, sampleY + 5.81, 0x27d4eb2f);
+        const radiusX = spacing * (0.26 + activation * 0.3 + radiusSeed * 0.1);
+        const radiusY = spacing * (0.24 + activation * 0.28 + (1 - radiusSeed) * 0.12);
+        const height = 0.6 + activation * 0.65;
+        const power = 1.25 + valueNoise(sampleX - 2.48, sampleY + 8.92, 0x85ebca77) * 0.55;
+
+        islands.push({ x: centerX, y: centerY, radiusX, radiusY, height, power });
+      }
+    }
 
     let sum = 0;
     for (let i = 0; i < islands.length; i += 1) {
@@ -15994,20 +18043,65 @@ function createArchipelagoMask() {
       sum += influence;
     }
 
-    const jagged = (valueNoise(nx * 18.3 + 4.7, ny * 18.3 + 9.1, 0x3c6ef372) - 0.5) * 0.32;
-    const detail = (valueNoise(nx * 42.7 + 12.5, ny * 42.7 + 3.8, 0xa54ff53a) - 0.5) * 0.18;
-    const micro = (valueNoise(nx * 82.1 + 6.2, ny * 82.1 + 14.4, 0x510e527f) - 0.5) * 0.08;
+    const jagged = (valueNoise(nx * 22.5 + 4.7, ny * 22.5 + 9.1, 0x3c6ef372) - 0.5) * 0.34;
+    const detail = (valueNoise(nx * 48.1 + 12.5, ny * 48.1 + 3.8, 0xa54ff53a) - 0.5) * 0.2;
+    const micro = (valueNoise(nx * 86.3 + 6.2, ny * 86.3 + 14.4, 0x510e527f) - 0.5) * 0.1;
+    const scatter = Math.max(
+      0,
+      valueNoise(nx * 11.7 + 1.6, ny * 11.7 + 7.4, 0x51eb851f) - 0.63
+    ) * 0.32;
 
-    let value = sum * 0.7 + jagged + detail + micro;
-    const clusterBias = 1 - Math.hypot(nx - 0.52, ny - 0.49) * 1.1;
-    value += clusterBias * 0.08;
+    let value = sum * 0.58 + jagged + detail + micro + scatter;
 
     const edge = Math.min(nx, 1 - nx, ny, 1 - ny);
-    value -= clamp(0.2 - edge, 0, 0.2) * 3.2;
-    value -= 0.46;
+    value -= clamp(0.22 - edge, 0, 0.22) * 3.6;
+    value -= 0.52;
     return value;
   });
 }
+
+const continentalPlateConfigs = {
+  archipelago: {
+    majorTargetRange: [1, 2],
+    fragmentTargetRange: [9, 13],
+    minDistance: 0.1,
+    fragmentDistance: 0.06,
+    majorRadiusRange: [0.12, 0.2],
+    fragmentRadiusRange: [0.05, 0.11],
+    majorRadiusXMultiplierRange: [0.7, 1.6],
+    majorRadiusYMultiplierRange: [0.65, 1.5],
+    fragmentRadiusXMultiplierRange: [0.65, 1.45],
+    fragmentRadiusYMultiplierRange: [0.6, 1.35],
+    majorOceanChance: 0.6,
+    fragmentOceanChance: 0.45,
+    majorLandStrengthRange: [0.45, 0.85],
+    fragmentLandStrengthRange: [0.4, 0.75],
+    majorOceanStrengthRange: [0.45, 0.7],
+    fragmentOceanStrengthRange: [0.35, 0.6],
+    majorFalloffRange: [1.4, 2.4],
+    fragmentFalloffRange: [1.3, 2.2],
+    majorSharpnessRange: [1.2, 2],
+    fragmentSharpnessRange: [1.15, 2.05],
+    majorJaggednessRange: [0.7, 1.4],
+    fragmentJaggednessRange: [0.9, 1.8],
+    majorTurbulenceRange: [0.55, 0.95],
+    fragmentTurbulenceRange: [0.6, 1],
+    majorNoiseScaleRange: [3.5, 7.5],
+    fragmentNoiseScaleRange: [6.5, 12],
+    majorMinEdge: 0.04,
+    fragmentMinEdge: 0.015,
+    fallbackPlate: {
+      radiusX: 0.18,
+      radiusY: 0.14,
+      falloff: 1.8,
+      sharpness: 1.6,
+      strength: 0.6,
+      jaggedness: 0.9,
+      turbulence: 0.7,
+      noiseScale: 6
+    }
+  }
+};
 
 const worldGenerationProfiles = {
   normal: {
@@ -16089,36 +18183,120 @@ function octaveNoise(x, y, seed, octaves = 4, persistence = 0.5, lacunarity = 2.
   return sum / maxAmplitude;
 }
 
-function generateContinentalPlates(rng) {
+function generateContinentalPlates(rng, options = {}) {
+  const profileKey = options && typeof options.profileKey === 'string' ? options.profileKey : null;
+  const config =
+    profileKey && Object.prototype.hasOwnProperty.call(continentalPlateConfigs, profileKey)
+      ? continentalPlateConfigs[profileKey]
+      : null;
+
+  const sampleRangeValue = (range, defaultMin, defaultMax) => {
+    let min = defaultMin;
+    let max = defaultMax;
+    if (Array.isArray(range) && range.length >= 2) {
+      if (Number.isFinite(range[0])) {
+        min = range[0];
+      }
+      if (Number.isFinite(range[1])) {
+        max = range[1];
+      }
+    } else if (Number.isFinite(range)) {
+      return range;
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      min = defaultMin;
+      max = defaultMax;
+    }
+    if (max <= min) {
+      return min;
+    }
+    return min + rng() * (max - min);
+  };
+
+  const sampleIntRange = (range, defaultMin, defaultMax) => {
+    let min = defaultMin;
+    let max = defaultMax;
+    if (Array.isArray(range) && range.length >= 2) {
+      if (Number.isFinite(range[0])) {
+        min = Math.round(range[0]);
+      }
+      if (Number.isFinite(range[1])) {
+        max = Math.round(range[1]);
+      }
+    } else if (Number.isFinite(range)) {
+      return Math.round(range);
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      min = defaultMin;
+      max = defaultMax;
+    }
+    if (max <= min) {
+      return min;
+    }
+    return min + Math.floor(rng() * (max - min + 1));
+  };
+
   const plates = [];
-  const majorTarget = 4 + Math.floor(rng() * 4);
-  const fragmentTarget = 3 + Math.floor(rng() * 5);
+  const majorTarget = sampleIntRange(config && config.majorTargetRange, 4, 7);
+  const fragmentTarget = sampleIntRange(config && config.fragmentTargetRange, 3, 7);
   const totalTarget = majorTarget + fragmentTarget;
   const maxAttempts = totalTarget * 40;
-  const minDistance = 0.14;
-  const fragmentDistance = 0.08;
+  const minDistance = config && Number.isFinite(config.minDistance) ? config.minDistance : 0.14;
+  const fragmentDistance =
+    config && Number.isFinite(config.fragmentDistance) ? config.fragmentDistance : 0.08;
 
   const randomUint32 = () => Math.floor(rng() * 0xffffffff);
 
   for (let attempt = 0; attempt < maxAttempts && plates.length < totalTarget; attempt += 1) {
     const isFragment = plates.length >= majorTarget;
-    const radiusBase = isFragment ? 0.08 + rng() * 0.14 : 0.18 + rng() * 0.24;
+    const radiusBase = isFragment
+      ? sampleRangeValue(config && config.fragmentRadiusRange, 0.08, 0.22)
+      : sampleRangeValue(config && config.majorRadiusRange, 0.18, 0.42);
     const rotation = rng() * Math.PI * 2;
-    const oceanChance = isFragment ? 0.25 : 0.4;
+    const oceanChance = clamp(
+      isFragment
+        ? sampleRangeValue(config && config.fragmentOceanChance, 0.25, 0.25)
+        : sampleRangeValue(config && config.majorOceanChance, 0.4, 0.4),
+      0,
+      1
+    );
     const isOcean = rng() < oceanChance;
-    const strengthBase = isOcean
-      ? -(0.4 + rng() * 0.35) * (isFragment ? 0.7 : 1)
-      : (0.6 + rng() * 0.55) * (isFragment ? 0.75 : 1);
-    const jaggedness = isFragment ? 0.8 + rng() * 1.1 : 0.45 + rng() * 0.8;
-    const turbulence = 0.4 + rng() * 0.6;
+    const oceanStrength = isFragment
+      ? sampleRangeValue(config && config.fragmentOceanStrengthRange, 0.28, 0.525)
+      : sampleRangeValue(config && config.majorOceanStrengthRange, 0.4, 0.75);
+    const landStrength = isFragment
+      ? sampleRangeValue(config && config.fragmentLandStrengthRange, 0.45, 0.8625)
+      : sampleRangeValue(config && config.majorLandStrengthRange, 0.6, 1.15);
+    const strengthBase = isOcean ? -oceanStrength : landStrength;
+    const jaggedness = isFragment
+      ? sampleRangeValue(config && config.fragmentJaggednessRange, 0.8, 1.9)
+      : sampleRangeValue(config && config.majorJaggednessRange, 0.45, 1.25);
+    const turbulence = isFragment
+      ? sampleRangeValue(config && config.fragmentTurbulenceRange, 0.4, 1)
+      : sampleRangeValue(config && config.majorTurbulenceRange, 0.4, 1);
+    const radiusXMultiplier = isFragment
+      ? sampleRangeValue(config && config.fragmentRadiusXMultiplierRange, 0.7, 2.3)
+      : sampleRangeValue(config && config.majorRadiusXMultiplierRange, 0.7, 2.3);
+    const radiusYMultiplier = isFragment
+      ? sampleRangeValue(config && config.fragmentRadiusYMultiplierRange, 0.6, 2)
+      : sampleRangeValue(config && config.majorRadiusYMultiplierRange, 0.6, 2);
+    const falloff = isFragment
+      ? sampleRangeValue(config && config.fragmentFalloffRange, 1.15, 2.95)
+      : sampleRangeValue(config && config.majorFalloffRange, 1.15, 2.95);
+    const sharpness = isFragment
+      ? sampleRangeValue(config && config.fragmentSharpnessRange, 1.1, 2.4)
+      : sampleRangeValue(config && config.majorSharpnessRange, 1.1, 2.4);
+    const noiseScale = isFragment
+      ? sampleRangeValue(config && config.fragmentNoiseScaleRange, 6, 16)
+      : sampleRangeValue(config && config.majorNoiseScaleRange, 3, 9);
 
     const candidate = {
       x: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
       y: clamp(rng() * 0.82 + 0.09, 0.03, 0.97),
-      radiusX: radiusBase * (0.7 + rng() * 1.6),
-      radiusY: radiusBase * (0.6 + rng() * 1.4),
-      falloff: 1.15 + rng() * 1.8,
-      sharpness: 1.1 + rng() * 1.3,
+      radiusX: radiusBase * radiusXMultiplier,
+      radiusY: radiusBase * radiusYMultiplier,
+      falloff,
+      sharpness,
       strength: strengthBase,
       rotation,
       cos: Math.cos(rotation),
@@ -16126,14 +18304,16 @@ function generateContinentalPlates(rng) {
       type: isOcean ? 'ocean' : 'land',
       jaggedness,
       turbulence,
-      noiseScale: isFragment ? 6 + rng() * 10 : 3 + rng() * 6,
+      noiseScale,
       noiseSeed: randomUint32(),
       noiseOffsetX: rng() * 256,
       noiseOffsetY: rng() * 256
     };
 
     const edgeDistance = Math.min(candidate.x, 1 - candidate.x, candidate.y, 1 - candidate.y);
-    const minEdge = isFragment ? 0.02 : 0.06;
+    const minEdge = isFragment
+      ? (config && Number.isFinite(config.fragmentMinEdge) ? config.fragmentMinEdge : 0.02)
+      : (config && Number.isFinite(config.majorMinEdge) ? config.majorMinEdge : 0.06);
     if (edgeDistance < minEdge) {
       continue;
     }
@@ -16142,7 +18322,12 @@ function generateContinentalPlates(rng) {
     for (let i = 0; i < plates.length; i += 1) {
       const existing = plates[i];
       const separation = Math.hypot(candidate.x - existing.x, candidate.y - existing.y);
-      const limit = existing.type === candidate.type ? (isFragment ? fragmentDistance : minDistance) : minDistance * 0.75;
+      const limit =
+        existing.type === candidate.type
+          ? isFragment
+            ? fragmentDistance
+            : minDistance
+          : minDistance * 0.75;
       if (separation < limit) {
         tooClose = true;
         break;
@@ -16158,21 +18343,30 @@ function generateContinentalPlates(rng) {
 
   if (!plates.some((plate) => plate.strength > 0)) {
     const rotation = rng() * Math.PI * 2;
+    const fallback = config && config.fallbackPlate ? config.fallbackPlate : null;
+    const radiusX = fallback && Number.isFinite(fallback.radiusX) ? fallback.radiusX : 0.26;
+    const radiusY = fallback && Number.isFinite(fallback.radiusY) ? fallback.radiusY : 0.2;
+    const falloff = fallback && Number.isFinite(fallback.falloff) ? fallback.falloff : 1.5;
+    const sharpness = fallback && Number.isFinite(fallback.sharpness) ? fallback.sharpness : 1.3;
+    const strength = fallback && Number.isFinite(fallback.strength) ? fallback.strength : 0.85;
+    const jaggedness = fallback && Number.isFinite(fallback.jaggedness) ? fallback.jaggedness : 0.7;
+    const turbulence = fallback && Number.isFinite(fallback.turbulence) ? fallback.turbulence : 0.6;
+    const noiseScale = fallback && Number.isFinite(fallback.noiseScale) ? fallback.noiseScale : 4.5;
     plates.push({
       x: 0.5,
       y: 0.5,
-      radiusX: 0.26,
-      radiusY: 0.2,
-      falloff: 1.5,
-      sharpness: 1.3,
-      strength: 0.85,
+      radiusX,
+      radiusY,
+      falloff,
+      sharpness,
+      strength,
       rotation,
       cos: Math.cos(rotation),
       sin: Math.sin(rotation),
       type: 'land',
-      jaggedness: 0.7,
-      turbulence: 0.6,
-      noiseScale: 4.5,
+      jaggedness,
+      turbulence,
+      noiseScale,
       noiseSeed: randomUint32(),
       noiseOffsetX: rng() * 128,
       noiseOffsetY: rng() * 128
@@ -16992,6 +19186,7 @@ function ensureRiverConnectionsToWater(riverMap, waterMask, tiles, width, height
     tile.ambientStructure = null;
     tile.river = null;
     tile.biomeType = null;
+    tile.biomeClusterId = null;
     tile.areaName = null;
     tile.waterDepth = 0;
     tile.coastProximity = 0;
@@ -17140,7 +19335,7 @@ function createWorld(seedString) {
   const mountainScarcity = 1 - mountainFrequencyNormalized;
   const mountainGrowthFactor = 0.42 + mountainFrequencyNormalized * 0.7;
 
-  const continentalPlates = generateContinentalPlates(rng);
+  const continentalPlates = generateContinentalPlates(rng, { profileKey: profile.key });
   const elevationField = new Float32Array(width * height);
   const tectonicActivityField = new Float32Array(width * height);
 
@@ -17328,6 +19523,8 @@ function createWorld(seedString) {
   const hasMarshTile = tileLookup.has('MARSH');
   const marshTileKey = hasMarshTile ? 'MARSH' : grassTileKey;
   const waterTileKey = resolveTileName('WATER');
+  const hasLavaTile = tileLookup.has('LAVA');
+  const lavaTileKey = hasLavaTile ? 'LAVA' : null;
   const hasSnowTile = tileLookup.has('SNOW');
   const snowTileKey = hasSnowTile ? 'SNOW' : grassTileKey;
   // Enable desert generation so sand tiles can appear on the world map.
@@ -17352,8 +19549,49 @@ function createWorld(seedString) {
   if (hasStoneTile) {
     landBaseKeys.add(stoneTileKey);
   }
+
+  const volcanoStoneAreaNoiseSeed = (seedNumber + 0x27d4eb2d) >>> 0;
+  const volcanoStoneDetailNoiseSeed = (seedNumber + 0x165667b1) >>> 0;
+  const volcanoStoneAreaNoiseScale = 0.18 + rng() * 0.06;
+  const volcanoStoneAreaNoiseOffsetX = rng() * 1024;
+  const volcanoStoneAreaNoiseOffsetY = rng() * 1024;
+  const maybeConvertBaseToStoneNearVolcano = (tile, x, y, proximity = 1) => {
+    if (!tile || !stoneTileKey) {
+      return;
+    }
+    if (tile.base !== grassTileKey && tile.base !== snowTileKey) {
+      return;
+    }
+
+    const clampedProximity = clamp(Number.isFinite(proximity) ? proximity : 0, 0, 1);
+    if (clampedProximity <= 0) {
+      return;
+    }
+
+    if (clampedProximity >= 0.95) {
+      tile.base = stoneTileKey;
+      return;
+    }
+
+    const coarseSampleX =
+      (x + volcanoStoneAreaNoiseOffsetX) * volcanoStoneAreaNoiseScale;
+    const coarseSampleY =
+      (y + volcanoStoneAreaNoiseOffsetY) * volcanoStoneAreaNoiseScale;
+    const coarseNoise = valueNoise(coarseSampleX, coarseSampleY, volcanoStoneAreaNoiseSeed) - 0.5;
+    const fineNoise = hashCoords(x, y, volcanoStoneDetailNoiseSeed) - 0.5;
+    const noiseInfluence = coarseNoise * 0.55 + fineNoise * 0.25;
+    const conversionScore = clampedProximity + noiseInfluence;
+    const conversionThreshold = 0.58 - clampedProximity * 0.3;
+
+    if (conversionScore >= conversionThreshold) {
+      tile.base = stoneTileKey;
+    }
+  };
   if (hasMarshTile) {
     landBaseKeys.add(marshTileKey);
+  }
+  if (hasLavaTile && lavaTileKey) {
+    landBaseKeys.add(lavaTileKey);
   }
   const snowLatitudeStart = 0.7;
   const snowLatitudeFull = 0.86;
@@ -17631,18 +19869,10 @@ function createWorld(seedString) {
         1;
       threshold = clamp(threshold + thresholdNoise * marshThresholdStrength, 0.5, 0.7);
     }
-    const qualifiesByScore = suitability > threshold;
-    if (recordFields && marshSuitabilityField) {
-      marshSuitabilityField[idx] = suitability;
-    }
-    if (!qualifiesByScore) {
-      if (recordFields && marshMaskField) {
-        marshMaskField[idx] = 0;
-      }
-      return { score: suitability, threshold, qualifies: false };
-    }
     let touchesSurfaceWater = false;
-    for (let dy = -1; dy <= 1 && !touchesSurfaceWater; dy += 1) {
+    let nearSeaLevelNeighborCount = 0;
+    let lowerNeighborCount = 0;
+    for (let dy = -1; dy <= 1; dy += 1) {
       for (let dx = -1; dx <= 1; dx += 1) {
         if (dx === 0 && dy === 0) {
           continue;
@@ -17653,17 +19883,43 @@ function createWorld(seedString) {
           continue;
         }
         const nIdx = ny * width + nx;
-        if (elevationField[nIdx] <= seaLevel) {
+        const neighborElevation = elevationField[nIdx];
+        if (neighborElevation <= seaLevel) {
           touchesSurfaceWater = true;
-          break;
+        }
+        if (neighborElevation <= seaLevel + 0.02) {
+          nearSeaLevelNeighborCount += 1;
+        }
+        if (neighborElevation < heightValue) {
+          lowerNeighborCount += 1;
         }
       }
     }
-    if (!touchesSurfaceWater) {
+    const inlandMarshCandidate =
+      !touchesSurfaceWater &&
+      nearSeaLevelNeighborCount >= 4 &&
+      wetness > marshWetnessThreshold + 0.05 &&
+      drainageValue < 0.42 &&
+      lowlandFactor > 0.34 &&
+      lowerNeighborCount >= 2;
+    if (inlandMarshCandidate && !touchesSurfaceWater) {
+      threshold = clamp(threshold + 0.03, 0.5, 0.75);
+    }
+    const qualifiesByScore = suitability > threshold;
+    if (recordFields && marshSuitabilityField) {
+      marshSuitabilityField[idx] = suitability;
+    }
+    if (!touchesSurfaceWater && !inlandMarshCandidate) {
       if (recordFields && marshMaskField) {
         marshMaskField[idx] = 0;
       }
       return { score: -Infinity, threshold, qualifies: false };
+    }
+    if (!qualifiesByScore) {
+      if (recordFields && marshMaskField) {
+        marshMaskField[idx] = 0;
+      }
+      return { score: suitability, threshold, qualifies: false };
     }
     if (recordFields && marshMaskField) {
       marshMaskField[idx] = 1;
@@ -17867,6 +20123,7 @@ function createWorld(seedString) {
         ambientStructure: null,
         river: null,
         biomeType: null,
+        biomeClusterId: null,
         areaName: null,
         waterDepth: 0,
         coastProximity: 0,
@@ -17891,6 +20148,11 @@ function createWorld(seedString) {
   const woodElfGroves = [];
   const lizardmenCities = [];
   const orcCamps = [];
+  const gnollCamps = [];
+  const trollCamps = [];
+  const ogreCamps = [];
+  const banditCamps = [];
+  const hostileWarCamps = [];
   const centaurEncampments = [];
   const travelerCamps = [];
   const dungeons = [];
@@ -18046,6 +20308,7 @@ function createWorld(seedString) {
       tile.ambientStructure = null;
       tile.river = null;
       tile.biomeType = null;
+      tile.biomeClusterId = null;
       tile.areaName = null;
       tile.waterDepth = 0;
       tile.coastProximity = 0;
@@ -19482,6 +21745,52 @@ function createWorld(seedString) {
 
             placedVolcanoes.push({ x: candidate.x, y: candidate.y, overlayKey });
           }
+
+          if (lavaTileKey && placedVolcanoes.length > 0) {
+            for (let i = 0; i < placedVolcanoes.length; i += 1) {
+              const volcano = placedVolcanoes[i];
+              if (!volcano) {
+                continue;
+              }
+              for (let j = 0; j < neighborOffsets8.length; j += 1) {
+                const offset = neighborOffsets8[j];
+                const nx = volcano.x + offset[0];
+                const ny = volcano.y + offset[1];
+                if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                  continue;
+                }
+                const neighborIdx = ny * width + nx;
+                if (!waterMask[neighborIdx]) {
+                  continue;
+                }
+                const neighborTile = tiles[ny][nx];
+                if (!neighborTile || neighborTile.base !== waterTileKey) {
+                  continue;
+                }
+                if (neighborTile.biomeType !== 'lake') {
+                  continue;
+                }
+                neighborTile.base = lavaTileKey;
+                neighborTile.overlay = null;
+                neighborTile.hillOverlay = null;
+                neighborTile.structure = null;
+                neighborTile.structureName = null;
+                neighborTile.structureDetails = null;
+                neighborTile.ambientStructure = null;
+                neighborTile.river = null;
+                neighborTile.biomeType = null;
+                neighborTile.biomeClusterId = null;
+                neighborTile.areaName = null;
+                neighborTile.waterDepth = 0;
+                neighborTile.coastProximity = 0;
+                neighborTile.marshProximity = 0;
+                neighborTile.desertProximity = 0;
+                const currentProximity = Number(neighborTile.volcanoProximity) || 0;
+                neighborTile.volcanoProximity = Math.max(currentProximity, 1);
+                waterMask[neighborIdx] = 0;
+              }
+            }
+          }
         }
       }
     }
@@ -19503,6 +21812,7 @@ function createWorld(seedString) {
     }
 
     const dwarfholdKey = tileLookup.has('DWARFHOLD') ? 'DWARFHOLD' : null;
+    const darkDwarfholdKey = tileLookup.has('DARK_DWARFHOLD') ? 'DARK_DWARFHOLD' : null;
     const greatDwarfholdKey = tileLookup.has('GREAT_DWARFHOLD') ? 'GREAT_DWARFHOLD' : null;
     const abandonedDwarfholdKey = tileLookup.has('ABANDONED_DWARFHOLD') ? 'ABANDONED_DWARFHOLD' : null;
     const mineKey = tileLookup.has('MINE') ? 'MINE' : null;
@@ -19551,12 +21861,20 @@ function createWorld(seedString) {
               )
             : score;
 
+          const biomeType = tile.biomeType || null;
+          const areaName = typeof tile.areaName === 'string' ? tile.areaName : null;
+          const biomeClusterId = Number.isFinite(tile.biomeClusterId)
+            ? tile.biomeClusterId
+            : null;
           mountainSettlementCandidates.push({
             x,
             y,
             score,
             isMountainTile,
-            dwarfholdPriority
+            dwarfholdPriority,
+            biomeType,
+            areaName,
+            biomeClusterId
           });
         }
       }
@@ -19599,11 +21917,13 @@ function createWorld(seedString) {
         const basePlacementContext = {
           tiles,
           width,
+          height,
           waterMask,
           mountainScores,
           fallbackMountainScoreThreshold,
           mountainOverlayKey,
           dwarfholdKey,
+          darkDwarfholdKey,
           greatDwarfholdKey,
           abandonedDwarfholdKey,
           abandonedDwarfholdChance,
@@ -19611,7 +21931,8 @@ function createWorld(seedString) {
           mountainRuggednessSeed,
           dwarfholds,
           towns,
-          nearbyTownDistanceSq: dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius
+          nearbyTownDistanceSq: dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius,
+          darkDwarfholdVolcanoRadius
         };
 
         for (let i = 0; i < dwarfholdCandidates.length && placed.length < maxDwarfholds; i += 1) {
@@ -19635,6 +21956,110 @@ function createWorld(seedString) {
               break;
             }
           }
+        }
+
+        if (dwarfholdCandidates.length > 0) {
+          const getMountainAreaKey = (name, clusterId, x, y) => {
+            if (Number.isFinite(clusterId)) {
+              return `cluster:${clusterId}`;
+            }
+            if (typeof name === 'string') {
+              const trimmed = name.trim();
+              if (trimmed) {
+                return `name:${trimmed.toLowerCase()}`;
+              }
+            }
+            if (Number.isFinite(x) && Number.isFinite(y)) {
+              return `coord:${Math.round(x)}:${Math.round(y)}`;
+            }
+            return null;
+          };
+
+          const mountainAreasWithHolds = new Set();
+          if (Array.isArray(dwarfholds)) {
+            for (let i = 0; i < dwarfholds.length; i += 1) {
+              const hold = dwarfholds[i];
+              if (!hold || !Number.isFinite(hold.x) || !Number.isFinite(hold.y)) {
+                continue;
+              }
+              const row = tiles[hold.y];
+              if (!Array.isArray(row)) {
+                continue;
+              }
+              const holdTile = row[hold.x];
+              if (!holdTile || holdTile.biomeType !== 'mountain') {
+                continue;
+              }
+              const areaKey = getMountainAreaKey(
+                holdTile.areaName,
+                holdTile.biomeClusterId,
+                hold.x,
+                hold.y
+              );
+              if (areaKey) {
+                mountainAreasWithHolds.add(areaKey);
+              }
+            }
+          }
+
+          const missingAreaKeys = new Set();
+          for (let i = 0; i < dwarfholdCandidates.length; i += 1) {
+            const candidate = dwarfholdCandidates[i];
+            if (candidate.biomeType !== 'mountain') {
+              continue;
+            }
+            const areaKey = getMountainAreaKey(
+              candidate.areaName,
+              candidate.biomeClusterId,
+              candidate.x,
+              candidate.y
+            );
+            if (!areaKey || mountainAreasWithHolds.has(areaKey)) {
+              continue;
+            }
+            missingAreaKeys.add(areaKey);
+          }
+
+          const attemptFocusedPlacement = (respectDistance) => {
+            if (missingAreaKeys.size === 0) {
+              return;
+            }
+            const focusedMinDistanceSq =
+              respectDistance && Number.isFinite(minDistanceSq)
+                ? minDistanceSq
+                : null;
+            for (
+              let i = 0;
+              i < dwarfholdCandidates.length && missingAreaKeys.size > 0;
+              i += 1
+            ) {
+              const candidate = dwarfholdCandidates[i];
+              if (candidate.biomeType !== 'mountain') {
+                continue;
+              }
+              const areaKey = getMountainAreaKey(
+                candidate.areaName,
+                candidate.biomeClusterId,
+                candidate.x,
+                candidate.y
+              );
+              if (!areaKey || !missingAreaKeys.has(areaKey)) {
+                continue;
+              }
+              if (
+                tryPlaceDwarfhold(candidate, {
+                  ...basePlacementContext,
+                  placed,
+                  minDistanceSq: focusedMinDistanceSq
+                })
+              ) {
+                missingAreaKeys.delete(areaKey);
+              }
+            }
+          };
+
+          attemptFocusedPlacement(true);
+          attemptFocusedPlacement(false);
         }
 
         const southBoundary = Math.floor(height * 0.45);
@@ -20067,6 +22492,7 @@ function createWorld(seedString) {
         tile.ambientStructure = null;
         tile.river = null;
         tile.biomeType = null;
+        tile.biomeClusterId = null;
         tile.areaName = null;
       }
     }
@@ -20153,6 +22579,7 @@ function createWorld(seedString) {
         tile.ambientStructure = null;
         tile.river = null;
         tile.biomeType = null;
+        tile.biomeClusterId = null;
         tile.areaName = null;
         tile.waterDepth = 0;
         tile.coastProximity = 0;
@@ -21926,7 +24353,25 @@ function createWorld(seedString) {
   const tavernNoiseSeed = (seedNumber + 0x9324f8b1) >>> 0;
 
   const orcCampKey = tileLookup.has('ORC_CAMP') ? 'ORC_CAMP' : null;
-  if (orcCampKey) {
+  const gnollCampKey = tileLookup.has('GNOLL_CAMP') ? 'GNOLL_CAMP' : null;
+  const trollCampKey = tileLookup.has('TROLL_CAMP') ? 'TROLL_CAMP' : null;
+  const ogreCampKey = tileLookup.has('OGRE_CAMP') ? 'OGRE_CAMP' : null;
+  const banditCampKey = tileLookup.has('BANDIT_CAMP') ? 'BANDIT_CAMP' : null;
+  const warCampStructureKeys = {
+    orcCamp: orcCampKey,
+    gnollCamp: gnollCampKey || orcCampKey,
+    trollCamp: trollCampKey || orcCampKey,
+    ogreCamp: ogreCampKey || orcCampKey,
+    banditCamp: banditCampKey || orcCampKey
+  };
+  const availableWarCampTypes = Object.entries(warCampStructureKeys)
+    .filter(([, key]) => key)
+    .map(([type]) => type);
+  if (availableWarCampTypes.length > 0) {
+    const resolvedWarCampStructureKeys = availableWarCampTypes.reduce((acc, type) => {
+      acc[type] = warCampStructureKeys[type];
+      return acc;
+    }, {});
     const allowedOrcBases = new Set(
       [grassTileKey, sandTileKey, marshTileKey, badlandsTileKey].filter((key) => typeof key === 'string')
     );
@@ -21963,10 +24408,10 @@ function createWorld(seedString) {
         } else {
           baseScore += 0.24;
         }
-        const hillBonus =
-          (isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay)) && tile.base !== marshTileKey
-            ? 0.16
-            : 0;
+        const hillPresent =
+          (isHillOverlayForStructures(tile.overlay) || isHillOverlayForStructures(tile.hillOverlay)) &&
+          tile.base !== marshTileKey;
+        const hillBonus = hillPresent ? 0.16 : 0;
         let waterAdjacency = 0;
         for (let i = 0; i < cardinalOffsets.length; i += 1) {
           const nx = x + cardinalOffsets[i][0];
@@ -21981,9 +24426,10 @@ function createWorld(seedString) {
         }
         const waterScore = clamp(waterAdjacency * 0.08, 0, 0.18);
         let settlementPenalty = 0;
+        let settlementDistance = Infinity;
         if (settlementDistSq !== Infinity) {
-          const distance = Math.sqrt(settlementDistSq);
-          settlementPenalty = clamp((10 - distance) * 0.05, 0, 0.35);
+          settlementDistance = Math.sqrt(settlementDistSq);
+          settlementPenalty = clamp((10 - settlementDistance) * 0.05, 0, 0.35);
         }
         const borderDistance = Math.min(x, width - 1 - x, y, height - 1 - y);
         const edgeScore = clamp(borderDistance / Math.max(6, Math.min(width, height) / 3.2), 0, 1) * 0.12;
@@ -21998,7 +24444,22 @@ function createWorld(seedString) {
           rng() * 0.18 -
           settlementPenalty;
         if (score > 0.28) {
-          orcCampCandidates.push({ x, y, score });
+          const baseKey = tile.base;
+          orcCampCandidates.push({
+            x,
+            y,
+            score,
+            dryness,
+            waterAdjacency,
+            hill: hillPresent,
+            settlementDistance,
+            base: baseKey,
+            isSand: baseKey === sandTileKey,
+            isBadlands: baseKey === badlandsTileKey,
+            isMarsh: baseKey === marshTileKey,
+            isSnow: baseKey === snowTileKey,
+            isGrass: baseKey === grassTileKey
+          });
         }
       }
     }
@@ -22043,13 +24504,43 @@ function createWorld(seedString) {
         if (settlementDistSq < 36) {
           continue;
         }
-        const name = generateOrcCampName(rng);
-        const details = generateOrcCampDetails(name, rng);
-        tile.structure = orcCampKey;
+        const campType = selectWarCampType(rng, candidate, availableWarCampTypes);
+        const structureKey = resolvedWarCampStructureKeys[campType];
+        if (!structureKey) {
+          continue;
+        }
+        const warCampContext = {
+          terrain: resolveWarCampTerrainDescriptor(candidate),
+          targetHint: resolveWarCampTargetHint(candidate),
+          settlementDistance: candidate.settlementDistance
+        };
+        const { name, details } = generateWarCampForType(campType, rng, warCampContext);
+        tile.structure = structureKey;
         tile.structureName = name;
         tile.structureDetails = details;
         placed.push(candidate);
-        orcCamps.push({ x: candidate.x, y: candidate.y, ...details });
+        const record = { x: candidate.x, y: candidate.y, ...details };
+        hostileWarCamps.push(record);
+        switch (campType) {
+          case 'orcCamp':
+            orcCamps.push(record);
+            break;
+          case 'gnollCamp':
+            gnollCamps.push(record);
+            break;
+          case 'trollCamp':
+            trollCamps.push(record);
+            break;
+          case 'ogreCamp':
+            ogreCamps.push(record);
+            break;
+          case 'banditCamp':
+            banditCamps.push(record);
+            break;
+          default:
+            orcCamps.push(record);
+            break;
+        }
       }
     }
   }
@@ -22107,7 +24598,7 @@ function createWorld(seedString) {
           if (settlementDistSq < 49) {
             continue;
           }
-          const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+          const distanceToOrcsSq = computeNearestDistanceSq(x, y, hostileWarCamps);
           if (distanceToOrcsSq < 64) {
             continue;
           }
@@ -22219,7 +24710,7 @@ function createWorld(seedString) {
         if (distance < 4 || distance > 26) {
           continue;
         }
-        const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+        const distanceToOrcsSq = computeNearestDistanceSq(x, y, hostileWarCamps);
         if (distanceToOrcsSq < 49) {
           continue;
         }
@@ -22417,7 +24908,7 @@ function createWorld(seedString) {
           }
         }
         if (!tooClose) {
-          const distanceToOrcSq = computeNearestDistanceSq(candidate.x, candidate.y, orcCamps);
+          const distanceToOrcSq = computeNearestDistanceSq(candidate.x, candidate.y, hostileWarCamps);
           if (distanceToOrcSq < 64) {
             tooClose = true;
           }
@@ -22650,7 +25141,7 @@ function createWorld(seedString) {
         if (settlementDistance < 4 || settlementDistance > 46) {
           continue;
         }
-        const distanceToOrcsSq = computeNearestDistanceSq(x, y, orcCamps);
+        const distanceToOrcsSq = computeNearestDistanceSq(x, y, hostileWarCamps);
         if (distanceToOrcsSq < 49) {
           continue;
         }
@@ -23215,6 +25706,7 @@ function createWorld(seedString) {
       initialBiomeField[idx] = biomeType;
       if (tile) {
         tile.biomeType = null;
+        tile.biomeClusterId = null;
         tile.areaName = null;
       }
     }
@@ -23309,6 +25801,7 @@ function createWorld(seedString) {
         biomeVisited[idx] = 1;
         if (tile) {
           tile.biomeType = null;
+          tile.biomeClusterId = null;
           tile.areaName = null;
         }
         continue;
@@ -23461,6 +25954,41 @@ function createWorld(seedString) {
     }
   }
 
+  const convertBadlandsClusterToNeighbor = (clusterIndex) => {
+    const cluster = biomeClusters[clusterIndex];
+    if (!cluster || cluster.type !== 'badlands') {
+      return;
+    }
+    const neighborCounts = new Map();
+    clusterAdjacency[clusterIndex].forEach((neighborIndex) => {
+      const neighborCluster = biomeClusters[neighborIndex];
+      if (!neighborCluster) {
+        return;
+      }
+      const neighborType = neighborCluster.type;
+      if (!neighborType || neighborType === 'badlands') {
+        return;
+      }
+      neighborCounts.set(neighborType, (neighborCounts.get(neighborType) || 0) + 1);
+    });
+    let replacementType = null;
+    let replacementCount = -1;
+    neighborCounts.forEach((count, type) => {
+      if (count > replacementCount) {
+        replacementType = type;
+        replacementCount = count;
+      }
+    });
+    if (!replacementType) {
+      replacementType = 'grassland';
+    }
+    cluster.type = replacementType;
+    for (let j = 0; j < cluster.indices.length; j += 1) {
+      const clusterIdx = cluster.indices[j];
+      biomeField[clusterIdx] = replacementType;
+    }
+  };
+
   const badlandsMinimumSize = 10;
   for (let i = 0; i < biomeClusters.length; i += 1) {
     const cluster = biomeClusters[i];
@@ -23500,6 +26028,34 @@ function createWorld(seedString) {
     }
   }
 
+  const badlandsClusterIndices = [];
+  for (let i = 0; i < biomeClusters.length; i += 1) {
+    if (biomeClusters[i].type === 'badlands') {
+      badlandsClusterIndices.push(i);
+    }
+  }
+  badlandsClusterIndices.sort((a, b) => biomeClusters[b].size - biomeClusters[a].size);
+
+  const reservedBadlandsClusters = new Set();
+  for (let i = 0; i < badlandsClusterIndices.length; i += 1) {
+    const clusterIndex = badlandsClusterIndices[i];
+    const cluster = biomeClusters[clusterIndex];
+    if (!cluster || cluster.type !== 'badlands') {
+      continue;
+    }
+    let conflictsWithReserved = false;
+    clusterAdjacency[clusterIndex].forEach((neighborIndex) => {
+      if (reservedBadlandsClusters.has(neighborIndex)) {
+        conflictsWithReserved = true;
+      }
+    });
+    if (conflictsWithReserved) {
+      convertBadlandsClusterToNeighbor(clusterIndex);
+      continue;
+    }
+    reservedBadlandsClusters.add(clusterIndex);
+  }
+
   const oceanSizeThreshold = Math.max(80, Math.round((width * height) / 80));
 
   for (let i = 0; i < biomeClusters.length; i += 1) {
@@ -23526,6 +26082,7 @@ function createWorld(seedString) {
         oceanMask[clusterIdx] = 1;
       }
       clusterTile.biomeType = resolvedType;
+      clusterTile.biomeClusterId = i;
       clusterTile.areaName = resolvedName;
       if (hasBadlandsTile && resolvedType === 'badlands') {
         const isWaterTile =
@@ -23643,8 +26200,11 @@ function createWorld(seedString) {
     const volcanoMask = new Uint8Array(width * height);
     let hasVolcanoTile = false;
     const volcanoEligibleBases = new Set(
-      [grassTileKey, stoneTileKey, sandTileKey, snowTileKey].filter((key) => typeof key === 'string')
+      [grassTileKey, stoneTileKey, sandTileKey, snowTileKey, lavaTileKey].filter(
+        (key) => typeof key === 'string'
+      )
     );
+    const volcanoStoneConversionThreshold = 0.45;
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -23657,6 +26217,7 @@ function createWorld(seedString) {
           volcanoMask[idx] = 1;
           hasVolcanoTile = true;
           tile.volcanoProximity = 1;
+          maybeConvertBaseToStoneNearVolcano(tile, x, y, 1);
         } else if (!volcanoEligibleBases.has(tile.base) || waterMask[idx]) {
           tile.volcanoProximity = 0;
         }
@@ -23682,6 +26243,9 @@ function createWorld(seedString) {
           const distanceToVolcano = Math.sqrt(volcanoDistanceField[idx]);
           const proximity = clamp(1 - distanceToVolcano / volcanoFalloff, 0, 1);
           tile.volcanoProximity = proximity;
+          if (proximity >= volcanoStoneConversionThreshold) {
+            maybeConvertBaseToStoneNearVolcano(tile, x, y, proximity);
+          }
         }
       }
     } else {
@@ -23896,6 +26460,10 @@ function createWorld(seedString) {
       ...mines,
       ...castles,
       ...orcCamps,
+      ...gnollCamps,
+      ...trollCamps,
+      ...ogreCamps,
+      ...banditCamps,
       ...centaurEncampments,
       ...caves,
       ...roadsideTaverns,
@@ -23916,6 +26484,9 @@ function createWorld(seedString) {
     tiles,
     grassTileKey,
     waterTileKey,
+    snowTileKey,
+    sandTileKey,
+    badlandsTileKey,
     width,
     height,
     seaLevel,
@@ -23934,6 +26505,11 @@ function createWorld(seedString) {
     lizardmenCities,
     woodElfGroves,
     orcCamps,
+    gnollCamps,
+    trollCamps,
+    ogreCamps,
+    banditCamps,
+    hostileWarCamps,
     centaurEncampments,
     travelerCamps,
     dungeons,
@@ -24272,6 +26848,79 @@ function getBiomeOverlayColor(type) {
   return biomeOverlayColors[normalized] || null;
 }
 
+function applySurfaceNoiseShading(
+  ctx,
+  cell,
+  x,
+  y,
+  tileSize = drawSize,
+  baseKeys = {}
+) {
+  if (!ctx || !cell || typeof cell.base !== 'string') {
+    return;
+  }
+
+  const { snowTileKey = null, sandTileKey = null, badlandsTileKey = null } = baseKeys;
+  const baseKey = cell.base;
+  if (baseKey !== snowTileKey && baseKey !== sandTileKey && baseKey !== badlandsTileKey) {
+    return;
+  }
+
+  const variation = clamp(
+    Number.isFinite(cell.surfaceVariation) ? cell.surfaceVariation : 0,
+    -1,
+    1
+  );
+  if (Math.abs(variation) < 0.01) {
+    return;
+  }
+
+  const pixelX = x * tileSize;
+  const pixelY = y * tileSize;
+  const lighten = variation > 0;
+  const intensity = Math.min(1, Math.abs(variation));
+
+  let colorComponents = null;
+  let alpha = 0;
+
+  if (baseKey === snowTileKey) {
+    if (lighten) {
+      colorComponents = '255, 255, 255';
+      alpha = 0.1 + intensity * 0.28;
+    } else {
+      colorComponents = '120, 146, 182';
+      alpha = 0.08 + intensity * 0.26;
+    }
+  } else if (baseKey === sandTileKey) {
+    if (lighten) {
+      colorComponents = '255, 236, 192';
+      alpha = 0.08 + intensity * 0.24;
+    } else {
+      colorComponents = '184, 140, 78';
+      alpha = 0.08 + intensity * 0.22;
+    }
+  } else if (baseKey === badlandsTileKey) {
+    if (lighten) {
+      colorComponents = '235, 206, 168';
+      alpha = 0.08 + intensity * 0.22;
+    } else {
+      colorComponents = '143, 102, 66';
+      alpha = 0.08 + intensity * 0.24;
+    }
+  }
+
+  if (!colorComponents || alpha <= 0) {
+    return;
+  }
+
+  const clampedAlpha = clamp(alpha, 0, 0.55);
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = `rgba(${colorComponents}, ${clampedAlpha})`;
+  ctx.fillRect(pixelX, pixelY, tileSize, tileSize);
+  ctx.restore();
+}
+
 function applyCoastalShading(ctx, cell, x, y, waterTileKey, grassTileKey, tileSize = drawSize) {
   if (!ctx || !cell) {
     return;
@@ -24386,28 +27035,40 @@ function applyMountainShading(ctx, cell, x, y, tileSize = drawSize) {
     return;
   }
 
-  const peakOverlay = typeof overlayKey === 'string' && overlayKey.includes('PEAK');
-  const volcanoOverlay = isVolcanoOverlayKey(overlayKey) || isVolcanoOverlayKey(hillOverlayKey);
-  const baseAlpha = volcanoOverlay ? 0.35 : peakOverlay ? 0.35 : 0.3;
-  const volcanoProximity = clamp(
-    Number.isFinite(cell.volcanoProximity) ? cell.volcanoProximity : 0,
-    0,
-    1
-  );
-  const volcanoAlphaBoost = volcanoProximity > 0 ? volcanoProximity * 0.35 : 0;
-  const ruggedness = clamp(
-    Number.isFinite(cell.mountainRuggedness) ? cell.mountainRuggedness : 0,
-    0,
-    1
-  );
-  const ruggednessBoost = (ruggedness - 0.45) * 0.22;
-  const shadingAlpha = clamp(baseAlpha + volcanoAlphaBoost + ruggednessBoost, 0.18, 0.85);
-  const shadeRed = Math.round(24 + ruggedness * 8);
-  const shadeGreen = Math.round(20 + ruggedness * 6);
-  const shadeBlue = Math.round(18 + ruggedness * 4);
+  // Previously mountain tiles were darkened to create a shaded effect. This made
+  // grass bases appear unintentionally darker wherever a mountain overlay was
+  // present. By returning early, we avoid applying any additional shading while
+  // keeping the function signature intact for future adjustments.
+  return;
+}
+
+function applyBadlandsHillTint(ctx, cell, x, y, tileSize = drawSize) {
+  if (!ctx || !cell) {
+    return;
+  }
+
+  const baseKey = typeof cell.base === 'string' ? cell.base : null;
+  if (baseKey !== 'BADLANDS') {
+    return;
+  }
+
+  const overlayKey = typeof cell.overlay === 'string' ? cell.overlay : null;
+  const hillOverlayKey = typeof cell.hillOverlay === 'string' ? cell.hillOverlay : null;
+  const hasHillOverlay =
+    (overlayKey && isHillOverlayKey(overlayKey)) || (hillOverlayKey && isHillOverlayKey(hillOverlayKey));
+
+  if (!hasHillOverlay) {
+    return;
+  }
+
+  const variationValue = Number(cell.surfaceVariation);
+  const variation = clamp(Number.isFinite(variationValue) ? Math.abs(variationValue) : 0, 0, 1);
+  const alpha = clamp(0.2 + variation * 0.22, 0.18, 0.42);
+
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
-  ctx.fillStyle = `rgba(${shadeRed}, ${shadeGreen}, ${shadeBlue}, ${shadingAlpha})`;
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#b34723';
   ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   ctx.restore();
 }
@@ -24570,6 +27231,7 @@ function drawWorld(world, options = {}) {
         }
       }
 
+      applyBadlandsHillTint(ctx, cell, x, y);
       applyDesertMountainTint(ctx, cell, x, y);
       applyMountainShading(ctx, cell, x, y);
 
@@ -24898,17 +27560,24 @@ function beginGame() {
     elements.titleScreen.classList.add('hidden');
   }
   if (elements.gameContainer) {
-    elements.gameContainer.classList.add('hidden');
+    elements.gameContainer.classList.remove('hidden');
+    elements.gameContainer.classList.add('game-container--loading');
+    elements.gameContainer.setAttribute('aria-busy', 'true');
   }
   elements.seedDisplay.textContent = '';
   runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
     .then(() => {
       if (elements.gameContainer) {
-        elements.gameContainer.classList.remove('hidden');
+        elements.gameContainer.classList.remove('game-container--loading');
+        elements.gameContainer.removeAttribute('aria-busy');
       }
     })
     .catch((error) => {
       console.error('Failed to generate world.', error);
+      if (elements.gameContainer) {
+        elements.gameContainer.classList.remove('game-container--loading');
+        elements.gameContainer.removeAttribute('aria-busy');
+      }
       if (elements.titleScreen) {
         elements.titleScreen.classList.remove('hidden');
       }
@@ -24967,6 +27636,7 @@ function refreshStructureHighlightControls() {
   }
 
   if (menu) {
+    syncStructureHighlightMenuOptions(menu);
     menu.classList.toggle('is-open', isOpen);
     menu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
     const inputs = menu.querySelectorAll("input[type='checkbox'][data-highlight-type]");
@@ -25158,26 +27828,30 @@ function syncInputsWithSettings() {
     });
   }
 
-  elements.optionsForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    applyFormSettings();
-    const previousSource = closeOptionsScreen();
-    if (previousSource === 'game' && elements.gameContainer) {
-      runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
-        console.error('Failed to apply new world settings.', error);
-      });
-    }
-  });
+  if (elements.optionsForm) {
+    elements.optionsForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      applyFormSettings();
+      const previousSource = closeOptionsScreen();
+      if (previousSource === 'game' && elements.gameContainer) {
+        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
+          console.error('Failed to apply new world settings.', error);
+        });
+      }
+    });
+  }
 
-  elements.startButton.addEventListener('click', () => {
-    if (!state.ready) {
-      return;
-    }
-    if (optionsVisible) {
-      closeOptionsScreen({ restoreScreen: false, returnFocus: false });
-    }
-    openWorldInfoModal();
-  });
+  if (elements.startButton) {
+    elements.startButton.addEventListener('click', () => {
+      if (!state.ready) {
+        startRequestedBeforeReady = true;
+        elements.startButton.disabled = true;
+        elements.startButton.textContent = 'Finishing loading…';
+        return;
+      }
+      handleStartButtonRequest();
+    });
+  }
 
   if (elements.worldInfoForm) {
     elements.worldInfoForm.addEventListener('submit', (event) => {
@@ -25511,6 +28185,7 @@ attachEvents(elements, {
   isDwarfTestActive,
   closeDwarfTest,
   structureDetailsState,
+  setActiveStructureDetailsTab,
   isOptionsVisible: () => optionsVisible,
   updateWorldInfoSeedDisplay,
   updateWorldInfoSizeDisplay,

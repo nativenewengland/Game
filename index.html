@@ -736,36 +736,7 @@
               <p class="structure-highlight-menu__hint">
                 Select the structures you want to glow on the world map.
               </p>
-              <label class="structure-highlight-option" for="highlight-structure-mine" style="--highlight-color: #f97316">
-                <input
-                  type="checkbox"
-                  id="highlight-structure-mine"
-                  data-highlight-type="mine"
-                  name="highlight-structure-mine"
-                />
-                <span class="structure-highlight-option__swatch" aria-hidden="true"></span>
-                <span class="structure-highlight-option__label">Mines</span>
-              </label>
-              <label class="structure-highlight-option" for="highlight-structure-camp" style="--highlight-color: #16a34a">
-                <input
-                  type="checkbox"
-                  id="highlight-structure-camp"
-                  data-highlight-type="camp"
-                  name="highlight-structure-camp"
-                />
-                <span class="structure-highlight-option__swatch" aria-hidden="true"></span>
-                <span class="structure-highlight-option__label">Camps</span>
-              </label>
-              <label class="structure-highlight-option" for="highlight-structure-tower" style="--highlight-color: #2563eb">
-                <input
-                  type="checkbox"
-                  id="highlight-structure-tower"
-                  data-highlight-type="tower"
-                  name="highlight-structure-tower"
-                />
-                <span class="structure-highlight-option__swatch" aria-hidden="true"></span>
-                <span class="structure-highlight-option__label">Towers</span>
-              </label>
+              <!-- Structure highlight options are populated dynamically -->
             </div>
           </div>
           <button
@@ -904,11 +875,21 @@
           <button
             type="button"
             class="structure-details-tab is-active"
+            data-tab-id="history"
+            aria-controls="structure-details-content"
             aria-current="page"
           >
             History
           </button>
-          <button type="button" class="structure-details-tab">Statistics</button>
+          <button
+            type="button"
+            class="structure-details-tab"
+            data-tab-id="statistics"
+            aria-controls="structure-details-content"
+            aria-current="false"
+          >
+            Statistics
+          </button>
         </nav>
         <div class="modal-header">
           <div class="structure-details-titles">

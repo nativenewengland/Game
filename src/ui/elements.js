@@ -42,6 +42,7 @@ export const elements = {
   structureDetailsTitle: document.getElementById('structure-details-title'),
   structureDetailsSubtitle: document.getElementById('structure-details-subtitle'),
   structureDetailsContent: document.getElementById('structure-details-content'),
+  structureDetailsTabs: Array.from(document.querySelectorAll('.structure-details-tab')),
   structureDetailsClose: document.getElementById('structure-details-close'),
   seedDisplay: document.querySelector('.seed-display'),
   politicalBordersToggle: document.getElementById('toggle-political-borders'),
