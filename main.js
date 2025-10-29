@@ -6548,10 +6548,51 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
     return placements;
   }
 
-  const farmSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x51d7348f) >>> 0;
-  const farmVariantSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x27d4eb2d) >>> 0;
-  const farmCropSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x85ebca6b) >>> 0;
-  const huntingSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x41c6ce57) >>> 0;
+  const numericSeed = Number.isFinite(seedNumber) ? seedNumber >>> 0 : 0;
+  const farmSeed = (numericSeed + 0x51d7348f) >>> 0;
+  const farmVariantSeed = (numericSeed + 0x27d4eb2d) >>> 0;
+  const farmCropSeed = (numericSeed + 0x85ebca6b) >>> 0;
+  const farmRelocationSeed = (numericSeed + 0x6c8e9cf5) >>> 0;
+  const farmRelocationTargetSeed = (numericSeed + 0x0b6d0f1d) >>> 0;
+  const farmRelocationAltSeed = (numericSeed + 0x8f2a5c4b) >>> 0;
+  const huntingSeed = (numericSeed + 0x41c6ce57) >>> 0;
+
+  const farmStructureKeys = [];
+  if (tileLookup.has('AMBIENT_FARM')) {
+    farmStructureKeys.push('AMBIENT_FARM');
+  }
+  if (tileLookup.has('AMBIENT_FARM_VARIANT')) {
+    farmStructureKeys.push('AMBIENT_FARM_VARIANT');
+  }
+  const farmStructureKeySet = new Set(farmStructureKeys);
+  const farmStructureDefaultKey = tileLookup.has('AMBIENT_FARM') ? 'AMBIENT_FARM' : null;
+  const farmStructureVariantKey = tileLookup.has('AMBIENT_FARM_VARIANT') ? 'AMBIENT_FARM_VARIANT' : null;
+  const homesteadKey = tileLookup.has('AMBIENT_HOMESTEAD') ? 'AMBIENT_HOMESTEAD' : null;
+  const tavernKey = tileLookup.has('ROADSIDE_TAVERN') ? 'ROADSIDE_TAVERN' : null;
+  const monasteryStructureKey = tileLookup.has('MONASTERY') ? 'MONASTERY' : null;
+  const saintShrineStructureKey = tileLookup.has('SAINT_SHRINE') ? 'SAINT_SHRINE' : null;
+
+  const createRelocationRng = (x, y, seed) => {
+    const hashedSeed = (seed + Math.imul(x + 0x9e3779b9, 0x27d4eb2d) + Math.imul(y + 0x85ebca6b, 0x165667b1)) >>> 0;
+    return mulberry32(hashedSeed || 1);
+  };
+
+  const pickByHash = (items, seed) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return -1;
+    }
+    let bestIndex = 0;
+    let bestScore = Infinity;
+    for (let i = 0; i < items.length; i += 1) {
+      const item = items[i];
+      const score = hashCoords(item.x, item.y, seed);
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = i;
+      }
+    }
+    return bestIndex;
+  };
 
   const generateCropsNearFarm = (centerX, centerY) => {
     if (!farmCropOverlayKey) {
@@ -6653,6 +6694,216 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
           tile.structureDetails = null;
           placements.push({ x, y, type: 'huntingLodge' });
         }
+      }
+    }
+  }
+
+  const relocationCandidates = [];
+  for (let y = 0; y < mapHeight; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < mapWidth; x += 1) {
+      const tile = row[x];
+      if (!tile || tile.structure || tile.river) {
+        continue;
+      }
+      if (tile.overlay || tile.hillOverlay) {
+        continue;
+      }
+      if (grassTileKey && tile.base !== grassTileKey) {
+        continue;
+      }
+      relocationCandidates.push({ x, y });
+    }
+  }
+
+  if (farmStructureKeys.length > 0 && relocationCandidates.length > 0) {
+    const visited = new Array(mapWidth * mapHeight).fill(false);
+    const neighborOffsets = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ];
+    let relocationCounter = 0;
+    let outOfRelocationSpots = false;
+
+    for (let y = 0; y < mapHeight; y += 1) {
+      if (outOfRelocationSpots) {
+        break;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        const idx = y * mapWidth + x;
+        if (visited[idx]) {
+          continue;
+        }
+        const tile = tiles[y]?.[x];
+        if (!tile || !farmStructureKeySet.has(tile.structure)) {
+          continue;
+        }
+
+        const cluster = [];
+        const queue = [[x, y]];
+        while (queue.length > 0) {
+          const [cx, cy] = queue.pop();
+          if (cx < 0 || cy < 0 || cx >= mapWidth || cy >= mapHeight) {
+            continue;
+          }
+          const cIdx = cy * mapWidth + cx;
+          if (visited[cIdx]) {
+            continue;
+          }
+          const currentTile = tiles[cy]?.[cx];
+          if (!currentTile || !farmStructureKeySet.has(currentTile.structure)) {
+            continue;
+          }
+          visited[cIdx] = true;
+          cluster.push({ x: cx, y: cy });
+          for (let i = 0; i < neighborOffsets.length; i += 1) {
+            const nx = cx + neighborOffsets[i][0];
+            const ny = cy + neighborOffsets[i][1];
+            if (nx < 0 || ny < 0 || nx >= mapWidth || ny >= mapHeight) {
+              continue;
+            }
+            const nIdx = ny * mapWidth + nx;
+            if (visited[nIdx]) {
+              continue;
+            }
+            queue.push([nx, ny]);
+          }
+        }
+
+        if (cluster.length <= 3) {
+          continue;
+        }
+        if (relocationCandidates.length === 0) {
+          outOfRelocationSpots = true;
+          break;
+        }
+
+        const relocationSeedOffset = (farmRelocationSeed + Math.imul(relocationCounter, 0x9e3779b9)) >>> 0;
+        const farmIndex = pickByHash(cluster, relocationSeedOffset);
+        if (farmIndex < 0 || farmIndex >= cluster.length) {
+          continue;
+        }
+
+        const targetSeedOffset = (farmRelocationTargetSeed + Math.imul(relocationCounter, 0x27d4eb2d)) >>> 0;
+        const candidateIndex = pickByHash(relocationCandidates, targetSeedOffset);
+        if (candidateIndex < 0 || candidateIndex >= relocationCandidates.length) {
+          continue;
+        }
+
+        const farmCoord = cluster[farmIndex];
+        const farmTile = tiles[farmCoord.y]?.[farmCoord.x];
+        const destination = relocationCandidates.splice(candidateIndex, 1)[0];
+        if (!farmTile || !destination) {
+          relocationCounter += 1;
+          continue;
+        }
+        const destinationTile = tiles[destination.y]?.[destination.x];
+        if (!destinationTile || destinationTile.structure || destinationTile.river) {
+          relocationCounter += 1;
+          continue;
+        }
+
+        farmTile.structure = null;
+        farmTile.structureName = null;
+        farmTile.structureDetails = null;
+
+        const placementIndex = placements.findIndex(
+          (entry) => entry && entry.type === 'farm' && entry.x === farmCoord.x && entry.y === farmCoord.y
+        );
+        if (placementIndex !== -1) {
+          placements.splice(placementIndex, 1);
+        }
+
+        const altSeedOffset = (farmRelocationAltSeed + Math.imul(relocationCounter, 0x85ebca6b)) >>> 0;
+        const convertRoll = hashCoords(destination.x, destination.y, altSeedOffset);
+        const altStructures = [];
+        if (homesteadKey) {
+          altStructures.push({ key: homesteadKey, type: 'homestead' });
+        }
+        if (saintShrineStructureKey) {
+          altStructures.push({ key: saintShrineStructureKey, type: 'saintShrine' });
+        }
+        if (monasteryStructureKey) {
+          altStructures.push({ key: monasteryStructureKey, type: 'monastery' });
+        }
+        if (tavernKey) {
+          altStructures.push({ key: tavernKey, type: 'roadsideTavern' });
+        }
+
+        const assignFarmStructure = () => {
+          if (!farmStructureDefaultKey && !farmStructureVariantKey) {
+            return false;
+          }
+          let structureKey = farmStructureDefaultKey || farmStructureVariantKey;
+          if (farmStructureDefaultKey && farmStructureVariantKey) {
+            const variantRoll = hashCoords(destination.x, destination.y, farmVariantSeed);
+            if (variantRoll >= 0.5) {
+              structureKey = farmStructureVariantKey;
+            }
+          }
+          destinationTile.structure = structureKey;
+          destinationTile.structureName = 'Farm';
+          destinationTile.structureDetails = null;
+          placements.push({ x: destination.x, y: destination.y, type: 'farm' });
+          generateCropsNearFarm(destination.x, destination.y);
+          return true;
+        };
+
+        const assignAlternativeStructure = () => {
+          if (altStructures.length === 0 || convertRoll >= 0.55) {
+            return false;
+          }
+          const selectionSeed = (altSeedOffset + 0x27d4eb2d) >>> 0;
+          const selectionRoll = hashCoords(destination.x, destination.y, selectionSeed);
+          const optionIndex = Math.max(0, Math.min(altStructures.length - 1, Math.floor(selectionRoll * altStructures.length)));
+          const option = altStructures[optionIndex] || altStructures[0];
+          if (!option) {
+            return false;
+          }
+          const rng = createRelocationRng(destination.x, destination.y, altSeedOffset);
+          if (option.type === 'homestead') {
+            destinationTile.structure = option.key;
+            destinationTile.structureName = 'Homestead';
+            destinationTile.structureDetails = {
+              type: 'homestead',
+              displayType: 'Homestead',
+              description: 'A modest rural homestead tended by local farmers.'
+            };
+          } else if (option.type === 'saintShrine') {
+            const name = generateSaintShrineName(rng);
+            const details = generateSaintShrineDetails(name, rng);
+            destinationTile.structure = option.key;
+            destinationTile.structureName = name;
+            destinationTile.structureDetails = details;
+          } else if (option.type === 'monastery') {
+            const name = generateMonasteryName(rng);
+            const details = generateMonasteryDetails(name, rng);
+            destinationTile.structure = option.key;
+            destinationTile.structureName = name;
+            destinationTile.structureDetails = details;
+          } else if (option.type === 'roadsideTavern') {
+            const name = generateRoadsideTavernName(rng);
+            const details = generateRoadsideTavernDetails(name, rng);
+            destinationTile.structure = option.key;
+            destinationTile.structureName = name;
+            destinationTile.structureDetails = details;
+          } else {
+            return false;
+          }
+          placements.push({ x: destination.x, y: destination.y, type: option.type });
+          return true;
+        };
+
+        if (!assignAlternativeStructure()) {
+          assignFarmStructure();
+        }
+
+        relocationCounter += 1;
       }
     }
   }
