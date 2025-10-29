@@ -3253,6 +3253,13 @@ button:hover:not(:disabled) {
   flex-wrap: wrap;
 }
 
+.game-ui .controls .secondary.active {
+  background: rgba(244, 224, 178, 0.16);
+  border-color: rgba(244, 224, 178, 0.35);
+  color: #fdf5e1;
+  box-shadow: 0 0.65rem 1.6rem rgba(244, 224, 178, 0.22);
+}
+
 .structure-highlight-control {
   position: relative;
   display: flex;
@@ -3492,6 +3499,14 @@ button:hover:not(:disabled) {
   z-index: 0;
 }
 
+.canvas-wrapper--illustrated {
+  background: radial-gradient(circle at 50% 18%, rgba(58, 47, 32, 0.55), rgba(12, 14, 22, 0.95));
+}
+
+.canvas-wrapper--illustrated canvas {
+  filter: saturate(0.86) contrast(1.12) brightness(1.03);
+}
+
 .canvas-wrapper:focus {
   outline: 2px solid var(--accent);
   outline-offset: 6px;
@@ -3499,6 +3514,26 @@ button:hover:not(:disabled) {
 
 .canvas-wrapper::after {
   display: none;
+}
+
+.canvas-wrapper--illustrated::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 30% 20%, rgba(245, 236, 214, 0.18), transparent 60%),
+    radial-gradient(circle at 70% 80%, rgba(210, 185, 150, 0.12), transparent 70%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(94, 74, 48, 0.08) 0,
+      rgba(94, 74, 48, 0.08) 2px,
+      transparent 2px,
+      transparent 18px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.7;
 }
 
 .local-map-panel {

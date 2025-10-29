@@ -8869,6 +8869,7 @@ const state = {
     showElevation: false,
     showBiomes: false,
     showTemperature: false,
+    showLocationLabels: false,
     structureHighlights: createDefaultStructureHighlightState(),
     mapEditor: {
       enabled: false,
@@ -29290,6 +29291,436 @@ function applyDesertMountainTint(ctx, cell, x, y, tileSize = drawSize) {
   ctx.restore();
 }
 
+const locationLabelStylesByCategory = {
+  capital: {
+    fontSize: 22,
+    fontWeight: '700',
+    fill: '#29190e',
+    outline: 'rgba(252, 243, 224, 0.9)',
+    innerOutline: 'rgba(80, 48, 24, 0.6)',
+    shadowColor: 'rgba(28, 15, 8, 0.4)'
+  },
+  city: {
+    fontSize: 18,
+    fontWeight: '700',
+    fill: '#2d1b10',
+    outline: 'rgba(250, 240, 219, 0.85)',
+    innerOutline: 'rgba(84, 50, 28, 0.55)'
+  },
+  dwarfhold: {
+    fontSize: 19,
+    fontWeight: '700',
+    fill: '#271d17',
+    outline: 'rgba(246, 235, 213, 0.85)',
+    innerOutline: 'rgba(76, 56, 32, 0.58)'
+  },
+  hillhold: {
+    fontSize: 18,
+    fontWeight: '700',
+    fill: '#2a1e16',
+    outline: 'rgba(246, 234, 208, 0.82)',
+    innerOutline: 'rgba(74, 51, 30, 0.55)'
+  },
+  castle: {
+    fontSize: 17,
+    fontWeight: '700',
+    fill: '#2b1c12',
+    outline: 'rgba(245, 234, 210, 0.82)',
+    innerOutline: 'rgba(78, 52, 30, 0.54)'
+  },
+  town: {
+    fontSize: 16,
+    fontWeight: '600',
+    fill: '#2b1f15',
+    outline: 'rgba(244, 233, 208, 0.8)',
+    innerOutline: 'rgba(80, 56, 34, 0.52)'
+  },
+  village: {
+    fontSize: 15,
+    fontWeight: '600',
+    fill: '#2d2116',
+    outline: 'rgba(242, 231, 205, 0.78)',
+    innerOutline: 'rgba(82, 58, 36, 0.5)'
+  },
+  temple: {
+    fontSize: 15,
+    fontWeight: '600',
+    fill: '#2a1c12',
+    outline: 'rgba(244, 232, 209, 0.78)',
+    innerOutline: 'rgba(78, 54, 32, 0.52)'
+  },
+  monastery: {
+    fontSize: 15,
+    fontWeight: '600',
+    fill: '#281d12',
+    outline: 'rgba(244, 232, 208, 0.78)',
+    innerOutline: 'rgba(76, 54, 33, 0.5)'
+  },
+  grove: {
+    fontSize: 15,
+    fontWeight: '600',
+    fill: '#241e13',
+    outline: 'rgba(242, 232, 212, 0.78)',
+    innerOutline: 'rgba(68, 52, 30, 0.48)'
+  },
+  tower: {
+    fontSize: 14,
+    fontWeight: '600',
+    fill: '#281d14',
+    outline: 'rgba(240, 229, 205, 0.76)',
+    innerOutline: 'rgba(70, 50, 32, 0.46)'
+  },
+  shrine: {
+    fontSize: 14,
+    fontWeight: '600',
+    fill: '#281d13',
+    outline: 'rgba(240, 229, 206, 0.76)',
+    innerOutline: 'rgba(68, 49, 30, 0.45)'
+  },
+  mine: {
+    fontSize: 14,
+    fontWeight: '600',
+    fill: '#261d14',
+    outline: 'rgba(238, 227, 204, 0.74)',
+    innerOutline: 'rgba(68, 50, 32, 0.44)'
+  },
+  dungeon: {
+    fontSize: 14,
+    fontWeight: '600',
+    fill: '#261c17',
+    outline: 'rgba(237, 226, 205, 0.74)',
+    innerOutline: 'rgba(70, 51, 34, 0.44)'
+  }
+};
+
+const locationLabelImportanceByCategory = {
+  capital: 6,
+  city: 5,
+  dwarfhold: 5,
+  hillhold: 4,
+  castle: 4,
+  temple: 3,
+  monastery: 3,
+  town: 3,
+  grove: 2,
+  village: 2,
+  tower: 2,
+  shrine: 2,
+  mine: 2,
+  dungeon: 2
+};
+
+function resolveLocationLabelCategory(...values) {
+  const descriptors = values
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) =>
+      value
+        .replace(/[_-]+/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+    );
+  if (descriptors.length === 0) {
+    return 'location';
+  }
+  const combined = descriptors.join(' ');
+  if (combined.includes('capital')) {
+    return 'capital';
+  }
+  if (combined.includes('great dwarfhold') || combined.includes('dwarfhold')) {
+    return 'dwarfhold';
+  }
+  if (combined.includes('hillhold')) {
+    return 'hillhold';
+  }
+  if (combined.includes('metropolis') || combined.includes('city')) {
+    return 'city';
+  }
+  if (combined.includes('large town') || combined.includes('town')) {
+    return 'town';
+  }
+  if (combined.includes('village') || combined.includes('hamlet')) {
+    return 'village';
+  }
+  if (combined.includes('castle') || combined.includes('citadel') || combined.includes('keep')) {
+    return 'castle';
+  }
+  if (combined.includes('temple city')) {
+    return 'temple';
+  }
+  if (combined.includes('temple')) {
+    return 'temple';
+  }
+  if (combined.includes('monastery') || combined.includes('abbey')) {
+    return 'monastery';
+  }
+  if (combined.includes('grove')) {
+    return 'grove';
+  }
+  if (combined.includes('tower')) {
+    return 'tower';
+  }
+  if (combined.includes('shrine')) {
+    return 'shrine';
+  }
+  if (combined.includes('mine')) {
+    return 'mine';
+  }
+  if (combined.includes('dungeon')) {
+    return 'dungeon';
+  }
+  if (combined.includes('camp')) {
+    return 'camp';
+  }
+  return descriptors[0];
+}
+
+function resolveLocationLabelStyle(category) {
+  const defaultStyle = {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: '"Georgia", "Times New Roman", serif',
+    fill: '#281d13',
+    outline: 'rgba(240, 228, 206, 0.75)',
+    innerOutline: 'rgba(70, 50, 32, 0.45)',
+    shadowColor: 'rgba(20, 12, 6, 0.35)'
+  };
+  if (!category) {
+    return defaultStyle;
+  }
+  const style = locationLabelStylesByCategory[category];
+  if (!style) {
+    return defaultStyle;
+  }
+  return {
+    ...defaultStyle,
+    ...style
+  };
+}
+
+function rectanglesOverlap(a, b) {
+  if (!a || !b) {
+    return false;
+  }
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function collectLocationLabelEntries(world) {
+  if (!world) {
+    return [];
+  }
+  const entries = [];
+  const seen = new Set();
+
+  const register = (item, fallbackType) => {
+    if (!item) {
+      return;
+    }
+    const x = Number(item.x);
+    const y = Number(item.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return;
+    }
+    const labelCandidate = [item.name, item.label, item.structureName]
+      .find((value) => typeof value === 'string' && value.trim());
+    if (!labelCandidate) {
+      return;
+    }
+    const label = labelCandidate.trim();
+    if (!label) {
+      return;
+    }
+    const category = resolveLocationLabelCategory(
+      item.type,
+      item.classification,
+      item.settlementKind,
+      fallbackType
+    );
+    const importance = locationLabelImportanceByCategory[category] || 1;
+    if (importance < 2) {
+      return;
+    }
+    const key = `${Math.round(x)}:${Math.round(y)}:${label.toLowerCase()}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    entries.push({
+      x,
+      y,
+      label,
+      category,
+      importance,
+      population: Number.isFinite(item.population) ? item.population : null
+    });
+  };
+
+  const registerAll = (items, fallbackType) => {
+    if (!Array.isArray(items)) {
+      return;
+    }
+    items.forEach((item) => register(item, fallbackType));
+  };
+
+  registerAll(world.dwarfholds, 'dwarfhold');
+  registerAll(world.hillholds, 'hillhold');
+  registerAll(world.towns, 'town');
+  registerAll(world.castles, 'castle');
+  registerAll(world.towers, 'tower');
+  registerAll(world.monasteries, 'monastery');
+  registerAll(world.lizardmenCities, 'temple');
+  registerAll(world.woodElfGroves, 'grove');
+  registerAll(world.saintShrines, 'shrine');
+  registerAll(world.mines, 'mine');
+  registerAll(world.dungeons, 'dungeon');
+
+  return entries;
+}
+
+function applyIllustratedMapEffect(ctx, width, height, drawSizeValue) {
+  if (!ctx) {
+    return;
+  }
+  const spacing = Math.max(Math.round(drawSizeValue * 3.5), 96);
+  ctx.save();
+  ctx.globalCompositeOperation = 'soft-light';
+  ctx.fillStyle = 'rgba(248, 238, 216, 0.35)';
+  ctx.fillRect(0, 0, width, height);
+  ctx.globalCompositeOperation = 'color-burn';
+  ctx.fillStyle = 'rgba(94, 72, 46, 0.09)';
+  ctx.fillRect(0, 0, width, height);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.strokeStyle = 'rgba(90, 72, 50, 0.08)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([12, spacing - 12]);
+  ctx.beginPath();
+  for (let y = -height; y < height * 2; y += spacing) {
+    ctx.moveTo(-width, y);
+    ctx.lineTo(width * 2, y + width);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawLocationLabels(ctx, world, options = {}) {
+  if (!ctx || !world) {
+    return;
+  }
+  const drawSizeValue = Number.isFinite(options.drawSize) ? options.drawSize : drawSize;
+  const pixelWidth = Number.isFinite(options.pixelWidth) ? options.pixelWidth : ctx.canvas.width;
+  const pixelHeight = Number.isFinite(options.pixelHeight) ? options.pixelHeight : ctx.canvas.height;
+  const entries = collectLocationLabelEntries(world);
+  if (entries.length === 0) {
+    return;
+  }
+
+  const sortedEntries = entries.slice().sort((a, b) => {
+    if (b.importance !== a.importance) {
+      return b.importance - a.importance;
+    }
+    const populationA = Number.isFinite(a.population) ? a.population : 0;
+    const populationB = Number.isFinite(b.population) ? b.population : 0;
+    return populationB - populationA;
+  });
+
+  const placements = [];
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.miterLimit = 2;
+
+  sortedEntries.forEach((entry) => {
+    const style = resolveLocationLabelStyle(entry.category);
+    const fontSpec = `${style.fontWeight || '600'} ${style.fontSize}px ${style.fontFamily || '"Georgia", serif'}`;
+    ctx.font = fontSpec;
+    const metrics = ctx.measureText(entry.label);
+    const textWidth = metrics.width;
+    const ascent = metrics.actualBoundingBoxAscent || style.fontSize * 0.8;
+    const descent = metrics.actualBoundingBoxDescent || style.fontSize * 0.25;
+    const textHeight = ascent + descent;
+    const paddingX = style.paddingX || style.fontSize * 0.5;
+    const paddingY = style.paddingY || style.fontSize * 0.35;
+    const halfWidth = textWidth / 2 + paddingX;
+    const halfHeight = textHeight / 2 + paddingY;
+    const anchorX = entry.x * drawSizeValue + drawSizeValue / 2;
+    const anchorY = entry.y * drawSizeValue + drawSizeValue / 2;
+    const offsetDistance = Math.max(drawSizeValue * 0.9, style.offsetDistance || style.fontSize * 2.2);
+    const candidateOffsets = style.offsets || [
+      [0, -offsetDistance * 0.75],
+      [0, offsetDistance * 0.75],
+      [offsetDistance, 0],
+      [-offsetDistance, 0],
+      [offsetDistance * 0.85, -offsetDistance * 0.45],
+      [-offsetDistance * 0.85, -offsetDistance * 0.45],
+      [offsetDistance * 0.85, offsetDistance * 0.45],
+      [-offsetDistance * 0.85, offsetDistance * 0.45],
+      [0, -offsetDistance * 1.35]
+    ];
+
+    let placement = null;
+    for (let i = 0; i < candidateOffsets.length; i += 1) {
+      const offset = candidateOffsets[i];
+      const px = anchorX + offset[0];
+      const py = anchorY + offset[1];
+      const rect = {
+        left: px - halfWidth,
+        right: px + halfWidth,
+        top: py - halfHeight,
+        bottom: py + halfHeight
+      };
+      if (rect.left < 0 || rect.right > pixelWidth || rect.top < 0 || rect.bottom > pixelHeight) {
+        continue;
+      }
+      let overlap = false;
+      for (let j = 0; j < placements.length; j += 1) {
+        if (rectanglesOverlap(rect, placements[j].rect)) {
+          overlap = true;
+          break;
+        }
+      }
+      if (!overlap) {
+        placement = { x: px, y: py, rect };
+        break;
+      }
+    }
+
+    if (!placement) {
+      const px = clamp(anchorX, halfWidth, pixelWidth - halfWidth);
+      const py = clamp(anchorY, halfHeight, pixelHeight - halfHeight);
+      placement = {
+        x: px,
+        y: py,
+        rect: {
+          left: px - halfWidth,
+          right: px + halfWidth,
+          top: py - halfHeight,
+          bottom: py + halfHeight
+        }
+      };
+    }
+
+    placements.push({ rect: placement.rect });
+
+    ctx.save();
+    ctx.font = fontSpec;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = style.shadowColor || 'rgba(20, 12, 6, 0.35)';
+    ctx.shadowBlur = style.shadowBlur || style.fontSize * 0.4;
+    ctx.lineWidth = Math.max(2, Math.round(style.fontSize * 0.18));
+    ctx.strokeStyle = style.outline || 'rgba(242, 232, 210, 0.78)';
+    ctx.strokeText(entry.label, placement.x, placement.y);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = Math.max(1, Math.round(style.fontSize * 0.12));
+    ctx.strokeStyle = style.innerOutline || 'rgba(76, 54, 32, 0.5)';
+    ctx.strokeText(entry.label, placement.x, placement.y);
+    ctx.fillStyle = style.fill || '#281d13';
+    ctx.fillText(entry.label, placement.x, placement.y);
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
 function drawWorld(world, options = {}) {
   const { preserveView = false } = options;
   const { tiles, seedString } = world;
@@ -29299,6 +29730,7 @@ function drawWorld(world, options = {}) {
   const showElevation = Boolean(state.ui && state.ui.showElevation);
   const showBiomes = Boolean(state.ui && state.ui.showBiomes);
   const showTemperature = Boolean(state.ui && state.ui.showTemperature);
+  const showLocationLabels = Boolean(state.ui && state.ui.showLocationLabels);
   const shouldDrawDataOverlay = showElevation || showBiomes || showTemperature;
   const elevationField = showElevation && world.elevationField ? world.elevationField : null;
   const temperatureField = showTemperature && world.temperatureField ? world.temperatureField : null;
@@ -29333,6 +29765,9 @@ function drawWorld(world, options = {}) {
   const pixelHeight = height * drawSize;
   elements.canvas.style.width = `${pixelWidth}px`;
   elements.canvas.style.height = `${pixelHeight}px`;
+  if (elements.canvasWrapper) {
+    elements.canvasWrapper.classList.toggle('canvas-wrapper--illustrated', showLocationLabels);
+  }
 
   if (preserveView && elements.canvasWrapper) {
     const rect = elements.canvasWrapper.getBoundingClientRect();
@@ -29565,7 +30000,15 @@ function drawWorld(world, options = {}) {
     }
   }
 
+  if (showLocationLabels) {
+    applyIllustratedMapEffect(ctx, pixelWidth, pixelHeight, drawSize);
+  }
+
   drawLocalSelectionOverlay(ctx);
+
+  if (showLocationLabels) {
+    drawLocationLabels(ctx, world, { drawSize, pixelWidth, pixelHeight });
+  }
   refreshLocalMapPreview();
 
   state.settings.lastSeedString = seedString;
@@ -29850,6 +30293,7 @@ function refreshOverlayToggleButtons() {
   const showElevation = Boolean(state.ui && state.ui.showElevation);
   const showBiomes = Boolean(state.ui && state.ui.showBiomes);
   const showTemperature = Boolean(state.ui && state.ui.showTemperature);
+  const showLocationLabels = Boolean(state.ui && state.ui.showLocationLabels);
   updateOverlayToggleButton(elements.politicalBordersToggle, showBorders, {
     active: 'Hide Borders',
     inactive: 'Show Borders'
@@ -29869,6 +30313,10 @@ function refreshOverlayToggleButtons() {
   updateOverlayToggleButton(elements.temperatureToggle, showTemperature, {
     active: 'Hide Temperature',
     inactive: 'Show Temperature'
+  });
+  updateOverlayToggleButton(elements.locationLabelToggle, showLocationLabels, {
+    active: 'Hide Location Labels',
+    inactive: 'Show Location Labels'
   });
   refreshStructureHighlightControls();
 }
