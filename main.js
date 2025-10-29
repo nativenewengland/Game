@@ -8745,6 +8745,8 @@ const dwarfTraitAttributeDefinitions = [
       'Among men you would be in a respected profession, among dwarves its the opposite, expect your increased income to be met with glaring judgments and distain from your peers who think your very livilooh to be undwarvsmen like.',
     icon: 'tilesheet/dice1.png',
     isActive: (dwarf) => dwarf?.profession === 'banker'
+  },
+  {
     key: 'grey-dwarf',
     label: 'Grey Dwarf Heritage',
     description:
