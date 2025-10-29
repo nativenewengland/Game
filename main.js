@@ -753,6 +753,102 @@ function pickFactionColor(index) {
   return factionColorPalette[normalized];
 }
 
+const dwarfholdCuratedNames = [
+  'Khazadûn Kharn',
+  'Dhurnomli Bûr',
+  'Zarak-az-Garaz',
+  'Barûn-karag',
+  'Gundûm Garmak',
+  'Azar-khazad',
+  'Thûrdrim Duraz',
+  'Kazad-grimil',
+  'Bêrdûm Barak',
+  'Zirak-khazad',
+  'Uzbad-az-Narg',
+  'Karag Gor',
+  'Dûmthûr Mîn',
+  'Gûndâl Grum',
+  'Thrâng-khazad',
+  'Khirûn-karag',
+  'Gazad-az-Bôr',
+  'Dûrgrim Dûm',
+  'Bazâr-durin',
+  'Kharak-khazad',
+  'Thûrdûn Thrum',
+  'Gazûl-dûm',
+  'Gor Dûrgheled',
+  'Khûrmak Dûm',
+  'Barak-dûrûn',
+  'Gadrin-karag',
+  'Mornûl Khazad',
+  'Tharûm Barûn',
+  'Dûr-az-Gor',
+  'Kûzad Thrang',
+  'Grumkhaz Dûm',
+  'Narûm-barak',
+  'Khûldar Narg',
+  'Azûl-az-Khazad',
+  'Dûmthrûn Garaz',
+  'Grom-dûrin',
+  'Khazdûl Garm',
+  'Burin-dûm',
+  'Zarak-nâl',
+  'Thuldûn Karag',
+  'Durgrûn Khazad',
+  'Garak-dûm',
+  'Tharn-az-Dûr',
+  'Kharûm Grimdûm',
+  'Balzûr Karûn',
+  'Mûrkhaz Barak',
+  'Thrûm-az-Garaz',
+  'Gundûl-dûm',
+  'Bârgrin Khazad',
+  'Dûmbar Thûr',
+  'Nûrgrim Karag',
+  'Thûlûm Dûrûn',
+  'Kharn-dûm-nâl',
+  'Throgar-Mâl',
+  'Krundûn Barak',
+  'Dûrkhal Varrum',
+  'Ghazdûr Grimbar',
+  'Kuldûn-Dûr',
+  'Brakûl Thrang',
+  'Zarnak-dûm',
+  'Throldar Kharn',
+  'Mûldûn Grakhaz',
+  'Durmûr Barûn',
+  'Merûn Barin',
+  'Dûldar Harnûm',
+  'Bronarûm',
+  'Kharalûn Dûr',
+  'Garûn-kaz',
+  'Thûrli Barûn',
+  'Balnar Dûm',
+  'Orûn Khazal',
+  'Dûmren Thûr',
+  'Beldûr Karûn',
+  'Uldûm Nargaz',
+  'Khardûl Barzûn',
+  'Thûrkûn-Môr',
+  'Zuldarûn',
+  'Dûrthang Kharûz',
+  'Brûm-dûl',
+  'Gûldûn Thazrak',
+  'Khazûr-Dumli',
+  'Thrûnûl Barûz',
+  'Mûrzan-Dûm',
+  'Grendûl Varrin',
+  'Kharnfell',
+  'Dûmholm',
+  'Barakdel',
+  'Thûrdûn Holdfast',
+  'Gromir Karûn',
+  'Kharûm Tor',
+  "Thulgar's Deep",
+  'Brumkeldûm',
+  'Dûrmar Hollow'
+];
+
 const dwarfholdNamePrefixes = [
   'Stone',
   'Iron',
@@ -3355,6 +3451,15 @@ function generateLizardmenCityPopulationBreakdown(population, random) {
 
 function generateDwarfholdName(random) {
   const randomFn = typeof random === 'function' ? random : Math.random;
+  if (Array.isArray(dwarfholdCuratedNames) && dwarfholdCuratedNames.length > 0) {
+    const curatedRoll = randomFn();
+    if (curatedRoll < 0.8) {
+      const curatedName = pickRandomFrom(dwarfholdCuratedNames, randomFn);
+      if (typeof curatedName === 'string' && curatedName.length > 0) {
+        return curatedName;
+      }
+    }
+  }
   const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn) || 'Stone';
   const suffix = pickRandomFrom(dwarfholdNameSuffixes, randomFn) || 'hold';
   const baseName = `${prefix}${suffix}`;
