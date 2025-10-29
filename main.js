@@ -447,6 +447,7 @@ const hillOverlayKeySet = new Set([
 ]);
 const treeOverlayKeySet = new Set(['TREE', 'TREE_LONE', 'TREE_SNOW', 'JUNGLE_TREE']);
 const cutTreeOverlayKey = tileLookup.has('CUT_TREES') ? 'CUT_TREES' : null;
+const farmCropOverlayKey = tileLookup.has('FARM_CROPS') ? 'FARM_CROPS' : null;
 const jungleOverlayKey = 'JUNGLE_TREE';
 const woodElfGroveStructureKeys = ['WOOD_ELF_GROVES', 'WOOD_ELF_GROVES_LARGE', 'WOOD_ELF_GROVES_GRAND'];
 const woodElfGroveStructureKeySet = new Set(woodElfGroveStructureKeys);
@@ -6635,7 +6636,64 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
 
   const farmSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x51d7348f) >>> 0;
   const farmVariantSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x27d4eb2d) >>> 0;
+  const farmCropSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x85ebca6b) >>> 0;
   const huntingSeed = ((Number.isFinite(seedNumber) ? seedNumber : 0) + 0x41c6ce57) >>> 0;
+
+  const generateCropsNearFarm = (centerX, centerY) => {
+    if (!farmCropOverlayKey) {
+      return;
+    }
+    const radius = 3;
+    const centerSeed =
+      (farmCropSeed + Math.imul(centerX, 0x27d4eb2d) + Math.imul(centerY, 0x9e3779b9)) >>> 0;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+          continue;
+        }
+        const neighborTile = tiles[ny][nx];
+        if (!neighborTile || neighborTile.structure || neighborTile.river) {
+          continue;
+        }
+        if (neighborTile.overlay && neighborTile.overlay !== farmCropOverlayKey) {
+          continue;
+        }
+        if (neighborTile.hillOverlay) {
+          continue;
+        }
+        if (grassTileKey && neighborTile.base !== grassTileKey) {
+          continue;
+        }
+
+        const distance = Math.max(Math.abs(dx), Math.abs(dy));
+        if (distance > radius) {
+          continue;
+        }
+
+        let chance = 0;
+        if (distance <= 1) {
+          chance = 0.65;
+        } else if (distance === 2) {
+          chance = 0.4;
+        } else if (distance === 3) {
+          chance = 0.22;
+        }
+        if (chance <= 0) {
+          continue;
+        }
+
+        const roll = hashCoords(nx, ny, centerSeed);
+        if (roll < chance) {
+          neighborTile.overlay = farmCropOverlayKey;
+        }
+      }
+    }
+  };
 
   for (let y = 0; y < mapHeight; y += 1) {
     const row = tiles[y];
@@ -6668,6 +6726,7 @@ function spawnAmbientStructures({ tiles, width, height, grassTileKey, seedNumber
           tile.structureName = 'Farm';
           tile.structureDetails = null;
           placements.push({ x, y, type: 'farm' });
+          generateCropsNearFarm(x, y);
           continue;
         }
       }
