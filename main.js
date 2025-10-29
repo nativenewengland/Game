@@ -1,6 +1,7 @@
 import {
   tileSheets,
   dwarfSpriteSheets,
+  orcSpriteSheets,
   characterCreatorPortraitAssets,
   characterCreatorBeardAssetMap,
   characterCreatorHairAssetMap,
@@ -9097,7 +9098,9 @@ const dwarfTestState = {
   camera: { x: 0, y: 0 },
   animationTime: 0,
   world: null,
-  focusReturnElement: null
+  focusReturnElement: null,
+  player: null,
+  enemies: []
 };
 const dwarfTestDefaultWorldKey = 'overworld';
 const dwarfTestOverworldTileSheetKey = 'dwarfTest';
@@ -9189,6 +9192,394 @@ const dwarfTestDungeonTilePalette = {
     animationSpeed: 1.35
   }
 };
+
+const orcAnimationTemplates = {
+  orc1: {
+    idle: { sheet: 'orc1_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
+    walk: { sheet: 'orc1_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
+    attack: {
+      sheet: 'orc1_attack',
+      row: 0,
+      frameCount: 12,
+      speed: 11,
+      loop: false,
+      impactFrame: 6,
+      columns: 32,
+      rows: 16
+    },
+    hurt: { sheet: 'orc1_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
+    death: { sheet: 'orc1_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
+  },
+  orc2: {
+    idle: { sheet: 'orc2_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
+    walk: { sheet: 'orc2_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
+    attack: {
+      sheet: 'orc2_attack',
+      row: 0,
+      frameCount: 12,
+      speed: 11,
+      loop: false,
+      impactFrame: 6,
+      columns: 32,
+      rows: 16
+    },
+    hurt: { sheet: 'orc2_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
+    death: { sheet: 'orc2_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
+  },
+  orc3: {
+    idle: { sheet: 'orc3_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
+    walk: { sheet: 'orc3_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
+    attack: {
+      sheet: 'orc3_attack',
+      row: 0,
+      frameCount: 12,
+      speed: 11,
+      loop: false,
+      impactFrame: 6,
+      columns: 32,
+      rows: 16
+    },
+    hurt: { sheet: 'orc3_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
+    death: { sheet: 'orc3_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
+  }
+};
+
+const orcAnimationCache = new Map();
+let dwarfTestEnemyIdCounter = 0;
+
+function getOrcAnimationDefinition(type, key) {
+  if (!type || !key) {
+    return null;
+  }
+  const cacheKey = `${type}:${key}`;
+  if (orcAnimationCache.has(cacheKey)) {
+    return orcAnimationCache.get(cacheKey);
+  }
+  const template = orcAnimationTemplates[type]?.[key];
+  if (!template) {
+    return null;
+  }
+  const columns = Math.max(1, template.columns || orcSpriteSheets[template.sheet]?.columns || 1);
+  const rows = Math.max(1, template.rows || orcSpriteSheets[template.sheet]?.rows || 1);
+  const rowIndex = clamp(template.row ?? 0, 0, rows - 1);
+  const frameTotal = Math.max(1, Math.min(template.frameCount || columns, columns));
+  const frames = [];
+  for (let i = 0; i < frameTotal; i += 1) {
+    frames.push({ sheet: template.sheet, col: i, row: rowIndex });
+  }
+  const definition = {
+    type,
+    key,
+    frames,
+    speed: Math.max(1, template.speed || 8),
+    loop: template.loop !== false,
+    impactFrame: Number.isFinite(template.impactFrame) ? clamp(template.impactFrame, 0, frameTotal - 1) : null
+  };
+  orcAnimationCache.set(cacheKey, definition);
+  return definition;
+}
+
+function createOrcEnemyAnimationState(key) {
+  return {
+    key,
+    frameIndex: 0,
+    elapsed: 0,
+    completed: false,
+    hitApplied: false
+  };
+}
+
+function setOrcEnemyAnimation(enemy, key, { reset = false } = {}) {
+  if (!enemy) {
+    return;
+  }
+  const currentKey = enemy.animation?.key;
+  if (!reset && currentKey === key) {
+    return;
+  }
+  enemy.animation = createOrcEnemyAnimationState(key);
+}
+
+function advanceOrcEnemyAnimation(enemy, delta) {
+  if (!enemy?.animation) {
+    return;
+  }
+  const definition = getOrcAnimationDefinition(enemy.type, enemy.animation.key);
+  if (!definition || !definition.frames || definition.frames.length === 0) {
+    return;
+  }
+  const frameDuration = 1 / definition.speed;
+  enemy.animation.elapsed += delta;
+  while (enemy.animation.elapsed >= frameDuration) {
+    enemy.animation.elapsed -= frameDuration;
+    enemy.animation.frameIndex += 1;
+    if (enemy.animation.frameIndex >= definition.frames.length) {
+      if (definition.loop) {
+        enemy.animation.frameIndex = 0;
+        enemy.animation.completed = false;
+      } else {
+        enemy.animation.frameIndex = definition.frames.length - 1;
+        enemy.animation.completed = true;
+        break;
+      }
+    }
+  }
+}
+
+function isDwarfTestPositionWalkable(x, y, destTileSize, map) {
+  if (!map || !Array.isArray(map.tiles) || !Number.isFinite(destTileSize) || destTileSize <= 0) {
+    return true;
+  }
+  const col = clamp(Math.floor(x / destTileSize), 0, map.columns - 1);
+  const row = clamp(Math.floor((y - destTileSize * 0.25) / destTileSize), 0, map.rows - 1);
+  const tileKey = map.tiles[row]?.[col];
+  if (!tileKey) {
+    return false;
+  }
+  return !isDwarfTestWaterTileKey(tileKey);
+}
+
+function createOrcEnemy(type, spawnTile, destTileSize) {
+  dwarfTestEnemyIdCounter += 1;
+  const baseX = (spawnTile.col + 0.5) * destTileSize;
+  const baseY = (spawnTile.row + 1) * destTileSize - destTileSize * 0.12;
+  return {
+    id: `orc-${dwarfTestEnemyIdCounter}`,
+    type,
+    position: { x: baseX, y: baseY },
+    facing: 1,
+    animation: createOrcEnemyAnimationState('idle'),
+    tileSpeed: 0.9,
+    attackRangeTiles: 0.7,
+    attackCooldown: Math.random() * 0.6,
+    attackCooldownDuration: 1.2,
+    damage: 8
+  };
+}
+
+function getDefaultOrcSpawnTiles(map, referenceTile) {
+  if (!map) {
+    return [];
+  }
+  const { col: refCol = Math.floor(map.columns / 2), row: refRow = Math.floor(map.rows / 2) } = referenceTile || {};
+  const spawnOffsets = [
+    { type: 'orc1', col: refCol + 5, row: refRow - 1 },
+    { type: 'orc2', col: refCol - 6, row: refRow - 2 },
+    { type: 'orc3', col: refCol + 2, row: refRow + 4 }
+  ];
+  const results = [];
+  for (const entry of spawnOffsets) {
+    const targetCol = clamp(entry.col, 0, map.columns - 1);
+    const targetRow = clamp(entry.row, 0, map.rows - 1);
+    const walkable = findNearestDwarfTestWalkableTile(map, targetCol, targetRow);
+    results.push({ type: entry.type, col: walkable.col, row: walkable.row });
+  }
+  return results;
+}
+
+function spawnDwarfTestEnemies(map, destTileSize, referenceTile) {
+  if (!map || !Number.isFinite(destTileSize) || destTileSize <= 0) {
+    dwarfTestState.enemies = [];
+    return;
+  }
+  dwarfTestEnemyIdCounter = 0;
+  const spawnTiles = getDefaultOrcSpawnTiles(map, referenceTile);
+  dwarfTestState.enemies = spawnTiles.map((entry) => createOrcEnemy(entry.type, entry, destTileSize));
+}
+
+function applyDamageToDwarfTestPlayer(amount) {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return;
+  }
+  const player = dwarfTestState.player;
+  if (!player || player.damageCooldown > 0 || player.dead) {
+    return;
+  }
+  player.health = clamp(player.health - amount, 0, player.maxHealth);
+  player.damageCooldown = 0.6;
+  player.hurtFlash = 0.35;
+  if (player.health <= 0) {
+    player.dead = true;
+  }
+}
+
+function updateOrcEnemies(delta, spriteDimensions, bounds) {
+  const enemies = dwarfTestState.enemies;
+  if (!Array.isArray(enemies) || enemies.length === 0) {
+    return;
+  }
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
+  const playerPosition = dwarfTestState.position;
+  const map = dwarfTestState.map;
+  for (const enemy of enemies) {
+    if (!enemy || !enemy.position) {
+      continue;
+    }
+    enemy.attackCooldown = Math.max(0, (enemy.attackCooldown || 0) - delta);
+    const dx = playerPosition.x - enemy.position.x;
+    const dy = playerPosition.y - enemy.position.y;
+    const distance = Math.hypot(dx, dy);
+    const directionX = distance > 0 ? dx / distance : 0;
+    const directionY = distance > 0 ? dy / distance : 0;
+    const attackRange = enemy.attackRangeTiles * destTileSize;
+    const moveSpeed = enemy.tileSpeed * destTileSize;
+    const isAttacking = enemy.animation?.key === 'attack' && !enemy.animation.completed;
+
+    if (!isAttacking) {
+      if (distance > attackRange * 0.85) {
+        const moveDistance = Math.min(distance, moveSpeed * delta);
+        if (moveDistance > 0.01) {
+          const nextX = enemy.position.x + directionX * moveDistance;
+          const nextY = enemy.position.y + directionY * moveDistance;
+          if (isDwarfTestPositionWalkable(nextX, nextY, destTileSize, map)) {
+            enemy.position.x = nextX;
+            enemy.position.y = nextY;
+          }
+          enemy.facing = directionX < 0 ? -1 : 1;
+          setOrcEnemyAnimation(enemy, 'walk');
+        } else {
+          setOrcEnemyAnimation(enemy, 'idle');
+        }
+      } else if (enemy.attackCooldown <= 0) {
+        setOrcEnemyAnimation(enemy, 'attack', { reset: true });
+      } else {
+        setOrcEnemyAnimation(enemy, 'idle');
+      }
+    }
+
+    if (distance > 0.1 && Math.abs(directionX) > 0.05) {
+      enemy.facing = directionX < 0 ? -1 : 1;
+    }
+
+    advanceOrcEnemyAnimation(enemy, delta);
+
+    const animation = enemy.animation;
+    const definition = animation ? getOrcAnimationDefinition(enemy.type, animation.key) : null;
+    if (animation && definition && animation.key === 'attack') {
+      if (!animation.hitApplied && definition.impactFrame !== null && animation.frameIndex >= definition.impactFrame) {
+        applyDamageToDwarfTestPlayer(enemy.damage);
+        animation.hitApplied = true;
+      }
+      if (animation.completed) {
+        enemy.attackCooldown = enemy.attackCooldownDuration;
+        setOrcEnemyAnimation(enemy, 'idle', { reset: true });
+      }
+    }
+
+    enemy.position.x = clamp(enemy.position.x, bounds.minX, bounds.maxX);
+    enemy.position.y = clamp(enemy.position.y, bounds.minY, bounds.maxY);
+  }
+}
+
+function drawOrcEnemy(ctx, enemy, camera, destTileSize) {
+  const { width, height } = ctx.canvas;
+  const baseX = enemy.position.x - camera.x;
+  const baseY = enemy.position.y - camera.y;
+  const margin = destTileSize * 2;
+  if (baseX < -margin || baseX > width + margin || baseY < -margin || baseY > height + margin) {
+    return;
+  }
+  const shadowWidth = destTileSize * 0.75;
+  const shadowHeight = Math.max(4, destTileSize * 0.24);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(baseX, baseY - destTileSize * 0.08, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const animation = enemy.animation;
+  const definition = animation ? getOrcAnimationDefinition(enemy.type, animation.key) : null;
+  const frame = definition?.frames?.[Math.min(animation?.frameIndex || 0, (definition?.frames?.length || 1) - 1)];
+  if (!frame) {
+    ctx.fillStyle = '#374151';
+    ctx.beginPath();
+    ctx.arc(baseX, baseY - destTileSize * 0.6, destTileSize * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  const sheet = orcSpriteSheets[frame.sheet];
+  if (!sheet?.image) {
+    return;
+  }
+  const tileSize = sheet.tileSize || 16;
+  const sx = frame.col * tileSize;
+  const sy = frame.row * tileSize;
+  const sw = tileSize;
+  const sh = tileSize;
+  const destWidth = destTileSize;
+  const destHeight = destTileSize;
+
+  ctx.save();
+  ctx.translate(baseX, baseY - destHeight);
+  if (enemy.facing === -1) {
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(sheet.image, sx, sy, sw, sh, -destWidth / 2, 0, destWidth, destHeight);
+  ctx.restore();
+}
+
+function drawDwarfTestEnemies(ctx) {
+  const enemies = dwarfTestState.enemies;
+  if (!Array.isArray(enemies) || enemies.length === 0) {
+    return;
+  }
+  const camera = dwarfTestState.camera || { x: 0, y: 0 };
+  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
+  const sorted = [...enemies];
+  sorted.sort((a, b) => (a?.position?.y || 0) - (b?.position?.y || 0));
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  for (const enemy of sorted) {
+    if (!enemy?.position) {
+      continue;
+    }
+    drawOrcEnemy(ctx, enemy, camera, destTileSize);
+  }
+  ctx.restore();
+}
+
+function drawDwarfTestHud(ctx) {
+  const player = dwarfTestState.player;
+  if (!player) {
+    return;
+  }
+  const { width } = ctx.canvas;
+  const barWidth = Math.min(width * 0.32, 200);
+  const barHeight = 12;
+  const x = 18;
+  const y = 18;
+  ctx.save();
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+  ctx.fillRect(x - 6, y - 6, barWidth + 12, barHeight + 12);
+  ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+  ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
+  const ratio = clamp(player.health / player.maxHealth, 0, 1);
+  const gradient = ctx.createLinearGradient(x, y, x + barWidth, y);
+  gradient.addColorStop(0, '#fca5a5');
+  gradient.addColorStop(0.5, '#ef4444');
+  gradient.addColorStop(1, '#b91c1c');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x, y, Math.max(0, barWidth * ratio), barHeight);
+  ctx.strokeStyle = 'rgba(248, 250, 252, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, barWidth, barHeight);
+  ctx.fillStyle = '#f9fafb';
+  ctx.font = 'bold 12px "Cormorant Garamond", serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`Health ${Math.round(player.health)}/${player.maxHealth}`, x + 4, y + barHeight / 2);
+  if (player.dead) {
+    ctx.font = 'bold 18px "Cormorant Garamond", serif';
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+    ctx.fillText('You have fallen!', x, y + barHeight + 24);
+  }
+  ctx.restore();
+}
+
+function drawDwarfTestScene(ctx, spriteDimensions) {
+  drawDwarfTestBackground(ctx);
+  drawDwarfTestEnemies(ctx);
+  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestHud(ctx);
+}
 
 function getDwarfTestWorldConfig(worldKey) {
   return dwarfTestWorlds[worldKey] || dwarfTestWorlds[dwarfTestDefaultWorldKey];
@@ -9576,6 +9967,20 @@ function applyDwarfTestScaleChange(newScale) {
     if (Number.isFinite(dwarfTestState.backgroundOffset)) {
       dwarfTestState.backgroundOffset *= nextDestTileSize / previousDestTileSize;
     }
+    const scaleFactor = nextDestTileSize / previousDestTileSize;
+    if (Array.isArray(dwarfTestState.enemies) && Number.isFinite(scaleFactor)) {
+      for (const enemy of dwarfTestState.enemies) {
+        if (!enemy?.position) {
+          continue;
+        }
+        if (Number.isFinite(enemy.position.x)) {
+          enemy.position.x *= scaleFactor;
+        }
+        if (Number.isFinite(enemy.position.y)) {
+          enemy.position.y *= scaleFactor;
+        }
+      }
+    }
   }
 
   dwarfTestState.tileScale = newScale;
@@ -9840,6 +10245,22 @@ const dwarfSpriteSheetPromises = Object.values(dwarfSpriteSheets).map((sheet) =>
     })
 );
 
+const orcSpriteSheetPromises = Object.values(orcSpriteSheets).map((sheet) =>
+  loadImage(sheet.path)
+    .then((img) => {
+      sheet.image = img;
+      const columns = Math.max(1, Math.floor(img.width / (sheet.tileSize || 1)));
+      const rows = Math.max(1, Math.floor(img.height / (sheet.tileSize || 1)));
+      sheet.columns = columns;
+      sheet.rows = rows;
+      return img;
+    })
+    .catch((error) => {
+      console.error(`Failed to load orc sprite sheet at ${sheet.path}`, error);
+      throw error;
+    })
+);
+
 const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitAssets).map((asset) =>
   loadImage(asset.path)
     .then((img) => {
@@ -9856,6 +10277,7 @@ const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitA
 const assetPromises = Promise.all([
   ...tileSheetPromises,
   ...dwarfSpriteSheetPromises,
+  ...orcSpriteSheetPromises,
   ...characterCreatorPortraitPromises,
   loadLandMask('titlescreen/Titlescreen image.png')
 ]);
@@ -11198,8 +11620,7 @@ function handleDwarfTestResize() {
     dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
   }
   updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
-  drawDwarfTestBackground(ctx);
-  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestScene(ctx, spriteDimensions);
 }
 
 function updateDwarfTestButtonState() {
@@ -11432,6 +11853,7 @@ function drawDwarfTestCharacter(ctx, spriteDimensions) {
   ctx.fill();
 
   const source = elements.dwarfBodyPortraitCanvas;
+  let drewPortrait = false;
   if (source && source.width > 0 && source.height > 0) {
     ctx.save();
     ctx.imageSmoothingEnabled = true;
@@ -11443,20 +11865,48 @@ function drawDwarfTestCharacter(ctx, spriteDimensions) {
       spriteDimensions.height
     );
     ctx.restore();
-    return;
+    drewPortrait = true;
   }
 
-  ctx.fillStyle = '#d0b89a';
-  ctx.beginPath();
-  ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#5b473c';
-  ctx.fillRect(
-    baseX - spriteDimensions.width / 4,
-    baseY - spriteDimensions.height + spriteDimensions.height * 0.2,
-    spriteDimensions.width / 2,
-    spriteDimensions.height * 0.6
-  );
+  if (!drewPortrait) {
+    ctx.fillStyle = '#d0b89a';
+    ctx.beginPath();
+    ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5b473c';
+    ctx.fillRect(
+      baseX - spriteDimensions.width / 4,
+      baseY - spriteDimensions.height + spriteDimensions.height * 0.2,
+      spriteDimensions.width / 2,
+      spriteDimensions.height * 0.6
+    );
+  }
+
+  const player = dwarfTestState.player;
+  if (player?.hurtFlash > 0) {
+    const intensity = clamp(player.hurtFlash / 0.35, 0, 1);
+    ctx.fillStyle = `rgba(239, 68, 68, ${0.4 * intensity})`;
+    ctx.beginPath();
+    ctx.ellipse(
+      baseX,
+      baseY - spriteDimensions.height * 0.6,
+      spriteDimensions.width * 0.35,
+      spriteDimensions.height * 0.45,
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+  if (player?.dead) {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
+    ctx.fillRect(
+      baseX - spriteDimensions.width / 2,
+      baseY - spriteDimensions.height,
+      spriteDimensions.width,
+      spriteDimensions.height
+    );
+  }
 }
 
 function getDwarfTestDirectionVector() {
@@ -11499,8 +11949,13 @@ function updateDwarfTestFrame(timestamp) {
   dwarfTestState.lastFrameTime = timestamp;
   dwarfTestState.animationTime += delta;
 
+  if (dwarfTestState.player) {
+    dwarfTestState.player.damageCooldown = Math.max(0, (dwarfTestState.player.damageCooldown || 0) - delta);
+    dwarfTestState.player.hurtFlash = Math.max(0, (dwarfTestState.player.hurtFlash || 0) - delta);
+  }
+
   const direction = getDwarfTestDirectionVector();
-  const moveSpeed = 160;
+  const moveSpeed = dwarfTestState.player?.dead ? 0 : 160;
   const distance = moveSpeed * delta;
   if (direction.dx !== 0 || direction.dy !== 0) {
     dwarfTestState.position.x += direction.dx * distance;
@@ -11515,9 +11970,9 @@ function updateDwarfTestFrame(timestamp) {
   dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
   dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
 
+  updateOrcEnemies(delta, spriteDimensions, bounds);
   updateDwarfTestCamera(ctx, spriteDimensions);
-  drawDwarfTestBackground(ctx);
-  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestScene(ctx, spriteDimensions);
 
   dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
 }
@@ -11609,9 +12064,16 @@ function resetDwarfTestState() {
   dwarfTestState.backgroundOffset = 0;
   dwarfTestState.lastFrameTime = null;
   dwarfTestState.pressed.clear();
+  dwarfTestState.player = {
+    health: 100,
+    maxHealth: 100,
+    damageCooldown: 0,
+    hurtFlash: 0,
+    dead: false
+  };
+  spawnDwarfTestEnemies(dwarfTestState.map, destTileSize, walkable);
   updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
-  drawDwarfTestBackground(ctx);
-  drawDwarfTestCharacter(ctx, spriteDimensions);
+  drawDwarfTestScene(ctx, spriteDimensions);
 }
 
 function openDwarfTest(worldKey = dwarfTestDefaultWorldKey, options = {}) {
@@ -11673,6 +12135,9 @@ function closeDwarfTest(options = {}) {
   window.removeEventListener('keyup', handleDwarfTestKeyUp);
   dwarfTestState.lastFrameTime = null;
   dwarfTestState.animationTime = 0;
+  dwarfTestState.enemies = [];
+  dwarfTestState.player = null;
+  dwarfTestEnemyIdCounter = 0;
   if (elements.dwarfTestArea) {
     elements.dwarfTestArea.classList.add('hidden');
     elements.dwarfTestArea.classList.remove('fullscreen');

@@ -66,6 +66,99 @@ export const dwarfSpriteSheets = {
   }
 };
 
+export const orcSpriteSheets = {
+  orc1_idle: {
+    key: 'orc1_idle',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_idle_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_walk: {
+    key: 'orc1_walk',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_walk_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_attack: {
+    key: 'orc1_attack',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_attack_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_hurt: {
+    key: 'orc1_hurt',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_hurt_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc1_death: {
+    key: 'orc1_death',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc1/Without_shadow/orc1_death_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_idle: {
+    key: 'orc2_idle',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_idle_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_walk: {
+    key: 'orc2_walk',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_walk_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_attack: {
+    key: 'orc2_attack',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_attack_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_hurt: {
+    key: 'orc2_hurt',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_hurt_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc2_death: {
+    key: 'orc2_death',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc2/Without_shadow/orc2_death_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_idle: {
+    key: 'orc3_idle',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_idle_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_walk: {
+    key: 'orc3_walk',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_walk_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_attack: {
+    key: 'orc3_attack',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_attack_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_hurt: {
+    key: 'orc3_hurt',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_hurt_without_shadow.png',
+    tileSize: 16,
+    image: null
+  },
+  orc3_death: {
+    key: 'orc3_death',
+    path: 'tilesheet/Mobs/Orc/PNG/Orc3/Without_shadow/orc3_death_without_shadow.png',
+    tileSize: 16,
+    image: null
+  }
+};
+
 export const characterCreatorPortraitAssets = {
   maleBody: {
     key: 'maleBody',
