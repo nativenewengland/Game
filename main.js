@@ -12563,9 +12563,60 @@ const dwarfholdScreenConfig = {
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
 
+const structureDetailsTabIds = ['history', 'statistics'];
+
 const structureDetailsState = {
-  visible: false
+  visible: false,
+  activeTab: structureDetailsTabIds[0],
+  tabContent: {}
 };
+
+function normalizeStructureDetailsTabId(tabId) {
+  if (typeof tabId !== 'string') {
+    return structureDetailsTabIds[0];
+  }
+  const normalized = tabId.trim().toLowerCase();
+  return structureDetailsTabIds.includes(normalized) ? normalized : structureDetailsTabIds[0];
+}
+
+function getStructureDetailsStatisticsPlaceholder() {
+  return `
+    <div class="structure-details-column structure-details-column--primary">
+      <p class="structure-details-empty structure-details-empty--standalone">No statistical records are available for this settlement yet.</p>
+    </div>
+  `;
+}
+
+function setActiveStructureDetailsTab(tabId, options = {}) {
+  const { force = false, skipContent = false } = options;
+  const resolvedTabId = normalizeStructureDetailsTabId(tabId);
+  if (!force && structureDetailsState.activeTab === resolvedTabId && !skipContent) {
+    return;
+  }
+
+  structureDetailsState.activeTab = resolvedTabId;
+
+  if (Array.isArray(elements.structureDetailsTabs)) {
+    elements.structureDetailsTabs.forEach((tab) => {
+      if (!tab) {
+        return;
+      }
+      const tabIdValue = normalizeStructureDetailsTabId(tab.getAttribute('data-tab-id'));
+      const isActive = tabIdValue === resolvedTabId;
+      tab.classList.toggle('is-active', isActive);
+      if (isActive) {
+        tab.setAttribute('aria-current', 'page');
+      } else {
+        tab.setAttribute('aria-current', 'false');
+      }
+    });
+  }
+
+  if (!skipContent && elements.structureDetailsContent) {
+    const tabContent = structureDetailsState.tabContent?.[resolvedTabId] || '';
+    elements.structureDetailsContent.innerHTML = tabContent;
+  }
+}
 
 function gatherStructureDescriptorInfo(tile) {
   const descriptors = new Set();
@@ -17175,9 +17226,12 @@ function showStructureDetails(tile, context = {}) {
     }
   }
 
-  if (elements.structureDetailsContent) {
-    elements.structureDetailsContent.innerHTML = content.body;
-  }
+  structureDetailsState.tabContent = {
+    history: content.body,
+    statistics: getStructureDetailsStatisticsPlaceholder()
+  };
+
+  setActiveStructureDetailsTab('history', { force: true });
 
   playStructureAmbienceForTile(tile);
 
@@ -17199,6 +17253,8 @@ function hideStructureDetails(options = {}) {
   if (elements.structureDetailsContent) {
     elements.structureDetailsContent.innerHTML = '';
   }
+  structureDetailsState.tabContent = {};
+  setActiveStructureDetailsTab('history', { force: true, skipContent: true });
   structureDetailsState.visible = false;
 
   if (options.returnFocus && elements.canvasWrapper && typeof elements.canvasWrapper.focus === 'function') {
@@ -27820,6 +27876,7 @@ attachEvents(elements, {
   isDwarfTestActive,
   closeDwarfTest,
   structureDetailsState,
+  setActiveStructureDetailsTab,
   isOptionsVisible: () => optionsVisible,
   updateWorldInfoSeedDisplay,
   updateWorldInfoSizeDisplay,
