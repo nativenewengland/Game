@@ -1963,7 +1963,7 @@ button:hover:not(:disabled) {
 
 .customizer-sidebar__name .dwarf-name-nav {
   justify-content: flex-start;
-  gap: clamp(0.15rem, 0.6vw, 0.4rem);
+  gap: 0;
   width: 100%;
   position: relative;
   margin-left: clamp(-3rem, -8vw, -1.75rem);
@@ -1989,7 +1989,7 @@ button:hover:not(:disabled) {
   width: 100%;
   margin: 0;
   margin-left: 0;
-  margin-right: clamp(0.45rem, 1.5vw, 0.9rem);
+  margin-right: 0;
 }
 
 .customizer-sidebar__image {
@@ -2235,14 +2235,14 @@ button:hover:not(:disabled) {
 }
 
 .dwarf-nav-button--prev {
-  margin-right: clamp(0.35rem, 1.25vw, 0.85rem);
+  margin-right: 0;
 }
 
 .dwarf-name-nav {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: clamp(0.35rem, 1.2vw, 0.65rem);
+  gap: 0;
   width: 100%;
 }
 
