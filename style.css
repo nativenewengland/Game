@@ -1,7 +1,6 @@
 :root {
   color-scheme: dark;
   font-family: 'Cormorant Garamond', 'Uncial Antiqua', serif;
-  font-size: 98%;
   --accent: #f0c674;
   --accent-dark: #c49b3f;
   --bg: #08090f;
@@ -31,18 +30,6 @@ body {
   justify-content: center;
   overflow: hidden;
   cursor: var(--cursor-wand-default);
-}
-
-body,
-.screen,
-.embark-panel {
-  scrollbar-width: none;
-}
-
-body::-webkit-scrollbar,
-.screen::-webkit-scrollbar,
-.embark-panel::-webkit-scrollbar {
-  display: none;
 }
 
 a,
@@ -119,7 +106,7 @@ select,
 }
 
 #world-info {
-  --embark-scale: calc(0.612 * 0.98);
+  --embark-scale: 0.612;
 }
 
 #world-info .embark-panel {
@@ -141,7 +128,7 @@ select,
 #dwarf-customizer {
   justify-content: flex-start;
   align-items: flex-start;
-  --customizer-scale: calc(0.57 * 0.98);
+  --customizer-scale: 0.57;
 }
 
 #dwarf-customizer .embark-panel {
