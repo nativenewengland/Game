@@ -1927,6 +1927,7 @@ button:hover:not(:disabled) {
   gap: clamp(0.15rem, 0.6vw, 0.4rem);
   width: 100%;
   position: relative;
+  margin-left: clamp(-3rem, -8vw, -1.75rem);
 }
 
 .customizer-sidebar__name .dwarf-nav-button--prev {
@@ -3113,6 +3114,7 @@ button:hover:not(:disabled) {
   .customizer-sidebar__name .dwarf-name-nav {
     justify-content: flex-start;
     width: 100%;
+    margin-left: 0;
   }
 
   .customizer-sidebar__name .dwarf-nav-button--prev {
