@@ -1544,6 +1544,7 @@ button:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  position: relative;
 }
 
 .structure-details-history-chart__sparkline {
@@ -1551,6 +1552,52 @@ button:hover:not(:disabled) {
   height: auto;
   aspect-ratio: 16 / 7;
   display: block;
+}
+
+.structure-details-history-chart__grid line {
+  stroke: rgba(240, 198, 116, 0.12);
+  stroke-width: 1;
+}
+
+.structure-details-history-chart__axes line {
+  stroke: rgba(240, 198, 116, 0.4);
+  stroke-width: 1.2;
+}
+
+.structure-details-history-chart__y-axis-labels text,
+.structure-details-history-chart__x-axis-labels text,
+.structure-details-history-chart__axis-caption {
+  fill: rgba(255, 255, 255, 0.65);
+  font-family: var(--ui-font, 'IBM Plex Sans', system-ui, sans-serif);
+}
+
+.structure-details-history-chart__y-axis-labels text {
+  font-size: 0.6rem;
+  text-anchor: end;
+  dominant-baseline: middle;
+  fill: rgba(255, 255, 255, 0.52);
+}
+
+.structure-details-history-chart__x-axis-labels text {
+  font-size: 0.6rem;
+  text-anchor: middle;
+  dominant-baseline: hanging;
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.structure-details-history-chart__axis-caption {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: rgba(255, 255, 255, 0.48);
+}
+
+.structure-details-history-chart__axis-caption--y {
+  text-anchor: middle;
+}
+
+.structure-details-history-chart__axis-caption--x {
+  text-anchor: middle;
 }
 
 .structure-details-history-chart__area {
@@ -1564,6 +1611,75 @@ button:hover:not(:disabled) {
   stroke-width: 2.4;
   stroke-linejoin: round;
   stroke-linecap: round;
+}
+
+.structure-details-history-chart__marker {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.structure-details-history-chart__marker.is-active {
+  opacity: 1;
+}
+
+.structure-details-history-chart__marker-line {
+  stroke: rgba(240, 198, 116, 0.45);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 6;
+}
+
+.structure-details-history-chart__marker-dot {
+  fill: var(--accent);
+  stroke: rgba(12, 15, 25, 0.9);
+  stroke-width: 2;
+}
+
+.structure-details-history-chart__interaction-surface {
+  cursor: crosshair;
+  outline: none;
+}
+
+.structure-details-history-chart__interaction-surface:focus-visible {
+  stroke: rgba(240, 198, 116, 0.6);
+  stroke-width: 2;
+}
+
+.structure-details-history-chart__tooltip {
+  position: absolute;
+  min-width: 140px;
+  max-width: 220px;
+  padding: 0.55rem 0.7rem;
+  background: rgba(8, 10, 18, 0.92);
+  border-radius: 10px;
+  border: 1px solid rgba(240, 198, 116, 0.25);
+  box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  color: rgba(255, 255, 255, 0.9);
+  z-index: 2;
+}
+
+.structure-details-history-chart__tooltip.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.structure-details-history-chart__tooltip-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 0.25rem;
+}
+
+.structure-details-history-chart__tooltip-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .structure-details-history-chart__caption {
