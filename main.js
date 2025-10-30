@@ -15258,7 +15258,104 @@ function generateGenericSettlementHistory(context, rng) {
   return events;
 }
 
-function generateSettlementHistoryEntries(tile, details, context) {
+function generateDwarfholdPopulationTimeline(historyContext, rng) {
+  const holdTypes = new Set([
+    'dwarfhold',
+    'greatdwarfhold',
+    'hillhold',
+    'occupieddwarfhold',
+    'occupyddwarfhold',
+    'abandoneddwarfhold',
+    'ruineddwarfhold'
+  ]);
+  if (!historyContext || !holdTypes.has(historyContext.type)) {
+    return null;
+  }
+
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const finalPopulation = Number.isFinite(historyContext?.details?.population)
+    ? Math.max(0, Math.round(historyContext.details.population))
+    : null;
+  if (finalPopulation === null) {
+    return null;
+  }
+
+  const yearsSpan = Number.isFinite(historyContext?.foundedYearsAgo)
+    ? clamp(Math.round(historyContext.foundedYearsAgo), 40, 4200)
+    : 360;
+  const pointCount = clamp(Math.round(yearsSpan / 120) + 5, 6, 14);
+
+  const typeKey = historyContext.type;
+  const declineVariants = new Set(['occupieddwarfhold', 'occupyddwarfhold', 'abandoneddwarfhold', 'ruineddwarfhold']);
+  const isDeclineVariant = declineVariants.has(typeKey);
+
+  let peakPopulation;
+  if (isDeclineVariant) {
+    const baseline =
+      finalPopulation > 0
+        ? finalPopulation * (1.45 + randomFn() * 0.55)
+        : 900 + randomFn() * 3200;
+    peakPopulation = Math.round(Math.max(baseline, finalPopulation + 400 + randomFn() * 900));
+  } else {
+    const growthFactor = 1.08 + randomFn() * 0.35;
+    const additiveBoost = 180 + randomFn() * 900;
+    peakPopulation = Math.round(Math.max(finalPopulation, finalPopulation * growthFactor + additiveBoost));
+  }
+  if (finalPopulation > 0) {
+    const maxMultiplier = isDeclineVariant ? 2.8 : 1.9;
+    peakPopulation = Math.min(peakPopulation, Math.round(finalPopulation * maxMultiplier));
+  } else {
+    peakPopulation = Math.max(peakPopulation, 800);
+  }
+
+  const startPopulation = Math.max(40, Math.round(peakPopulation * (0.12 + randomFn() * 0.18)));
+  const declineStart = isDeclineVariant ? 0.55 + randomFn() * 0.12 : 0.82 + randomFn() * 0.08;
+
+  const timeline = [];
+  for (let index = 0; index < pointCount; index += 1) {
+    const progress = pointCount === 1 ? 1 : index / (pointCount - 1);
+    let targetValue;
+    if (isDeclineVariant && progress >= declineStart) {
+      const declineProgress = (progress - declineStart) / Math.max(1 - declineStart, 0.0001);
+      const easedDecline = Math.pow(clamp(declineProgress, 0, 1), 0.85);
+      targetValue = lerp(peakPopulation, finalPopulation, easedDecline);
+    } else {
+      const growthProgress = Math.min(progress / Math.max(declineStart, 0.0001), 1);
+      const easedGrowth = 1 - Math.pow(1 - growthProgress, 1.6);
+      const growthTarget = isDeclineVariant ? peakPopulation : finalPopulation;
+      targetValue = lerp(startPopulation, growthTarget, easedGrowth);
+    }
+    const noiseAmplitude = isDeclineVariant ? 0.12 : 0.08;
+    const jitter = targetValue * noiseAmplitude * (randomFn() - 0.5) * 2;
+    let value = Math.max(0, Math.round(targetValue + jitter));
+    if (index === 0) {
+      value = startPopulation;
+    } else if (index === pointCount - 1) {
+      value = finalPopulation;
+    } else if (!isDeclineVariant) {
+      const previous = timeline[index - 1]?.population || startPopulation;
+      value = Math.max(value, previous - Math.round(previous * 0.1));
+    } else if (progress < declineStart) {
+      const previous = timeline[index - 1]?.population || startPopulation;
+      value = Math.max(value, previous);
+    }
+
+    const yearsAgo = Math.round(yearsSpan - progress * yearsSpan);
+    const currentYear = Number.isFinite(historyContext?.currentYear) ? Math.round(historyContext.currentYear) : null;
+    const year = currentYear !== null ? Math.round(currentYear - yearsAgo) : null;
+
+    timeline.push({
+      population: value,
+      value,
+      yearsAgo,
+      year
+    });
+  }
+
+  return timeline;
+}
+
+function generateSettlementHistoryData(tile, details, context) {
   const historySeedParts = [
     details?.name,
     tile?.structureName,
@@ -15343,20 +15440,188 @@ function generateSettlementHistoryEntries(tile, details, context) {
       }
     });
 
-  return Array.from(uniqueMap.values()).sort((a, b) => {
+  const sortedEntries = Array.from(uniqueMap.values()).sort((a, b) => {
     const aValue = Number.isFinite(a.yearsAgo) ? a.yearsAgo : -Infinity;
     const bValue = Number.isFinite(b.yearsAgo) ? b.yearsAgo : -Infinity;
     return bValue - aValue;
   });
+
+  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, rng);
+
+  return {
+    entries: sortedEntries,
+    populationTimeline
+  };
+}
+
+function formatPopulationTimelineLabel(point) {
+  if (!point) {
+    return 'Recorded';
+  }
+  if (Number.isFinite(point.yearsAgo)) {
+    if (point.yearsAgo <= 0) {
+      if (Number.isFinite(point.year)) {
+        return `Current (${point.year.toLocaleString('en-US')})`;
+      }
+      return 'Current';
+    }
+    if (point.yearsAgo === 1) {
+      return '1 year ago';
+    }
+    return `${point.yearsAgo.toLocaleString('en-US')} years ago`;
+  }
+  if (Number.isFinite(point.year)) {
+    return `Year ${point.year.toLocaleString('en-US')}`;
+  }
+  return 'Recorded';
+}
+
+function buildPopulationHistoryChartMarkup(timeline, details, tile) {
+  if (!Array.isArray(timeline) || timeline.length < 2) {
+    return '';
+  }
+
+  const sanitizedPoints = timeline
+    .map((point) => ({
+      population: Number.isFinite(point?.population)
+        ? Math.max(0, Math.round(point.population))
+        : Number.isFinite(point?.value)
+        ? Math.max(0, Math.round(point.value))
+        : null,
+      year: Number.isFinite(point?.year) ? Math.round(point.year) : null,
+      yearsAgo: Number.isFinite(point?.yearsAgo) ? Math.max(0, Math.round(point.yearsAgo)) : null
+    }))
+    .filter((point) => point.population !== null);
+
+  if (sanitizedPoints.length < 2) {
+    return '';
+  }
+
+  const values = sanitizedPoints.map((point) => point.population);
+  if (values.every((value) => value === 0)) {
+    return '';
+  }
+
+  const maxValue = Math.max(...values, 1);
+  const chartWidth = 320;
+  const chartHeight = 140;
+
+  const positions = sanitizedPoints.map((point, index) => {
+    const x =
+      sanitizedPoints.length === 1
+        ? chartWidth
+        : (index / (sanitizedPoints.length - 1)) * chartWidth;
+    const y = chartHeight - (point.population / maxValue) * chartHeight;
+    return { x, y, data: point };
+  });
+
+  const lineCommands = positions
+    .map(({ x, y }, index) => `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(' ');
+  const areaPath = [
+    `M 0 ${chartHeight.toFixed(2)}`,
+    ...positions.map(({ x, y }) => `L ${x.toFixed(2)} ${y.toFixed(2)}`),
+    `L ${chartWidth.toFixed(2)} ${chartHeight.toFixed(2)}`,
+    'Z'
+  ].join(' ');
+
+  const startPoint = sanitizedPoints[0];
+  const endPoint = sanitizedPoints[sanitizedPoints.length - 1];
+  const peakValue = Math.max(...values);
+  const peakIndex = values.indexOf(peakValue);
+  const peakPoint = sanitizedPoints[Math.max(peakIndex, 0)];
+
+  const startLabel = formatPopulationTimelineLabel(startPoint);
+  const peakLabel = formatPopulationTimelineLabel(peakPoint);
+  const currentLabel = formatPopulationTimelineLabel(endPoint);
+
+  const startValueText = startPoint.population.toLocaleString('en-US');
+  const peakValueText = peakPoint.population.toLocaleString('en-US');
+  const currentValueText = endPoint.population.toLocaleString('en-US');
+
+  const descriptor = (details?.populationDescriptor || 'residents').trim() || 'residents';
+  const settlementName = details?.name || tile?.structureName || 'the settlement';
+  const chartIdSeed = `${settlementName}|${details?.type || 'hold'}|population-history`;
+  const chartIdSuffix = ((stringToSeed(chartIdSeed) + 0x4f1b) >>> 0).toString(36);
+  const titleId = `population-history-title-${chartIdSuffix}`;
+  const descId = `population-history-desc-${chartIdSuffix}`;
+
+  const summarySegments = [];
+  summarySegments.push(
+    `Population began near ${startValueText} ${descriptor}${startLabel ? ` (${startLabel})` : ''}.`
+  );
+  if (peakIndex > 0 && peakIndex < sanitizedPoints.length - 1 && peakPoint.population !== startPoint.population) {
+    summarySegments.push(
+      `It peaked at ${peakValueText} ${descriptor}${peakLabel ? ` (${peakLabel})` : ''}.`
+    );
+  }
+  summarySegments.push(
+    `${endPoint.population >= peakPoint.population ? 'It now stands at' : 'It has since fallen to'} ${currentValueText} ${descriptor}${currentLabel ? ` (${currentLabel})` : ''}.`
+  );
+  const summaryText = summarySegments.join(' ');
+
+  const peakLabelText =
+    peakIndex === sanitizedPoints.length - 1 && peakPoint.population === endPoint.population
+      ? 'Current peak'
+      : 'Peak';
+  const peakHeading = peakLabel ? `${peakLabelText} • ${peakLabel}` : peakLabelText;
+
+  return `
+    <section class="structure-details-history-chart">
+      <header class="structure-details-history-chart__header">
+        <h3 class="structure-details-history-chart__title structure-details-heading">Population Trend</h3>
+        <p class="structure-details-history-chart__current">${escapeHtml(currentValueText)} ${escapeHtml(descriptor)}</p>
+      </header>
+      <figure class="structure-details-history-chart__figure">
+        <svg
+          class="structure-details-history-chart__sparkline"
+          viewBox="0 0 ${chartWidth} ${chartHeight}"
+          role="img"
+          aria-labelledby="${titleId} ${descId}"
+        >
+          <title id="${titleId}">${escapeHtml(`Population trend for ${settlementName}`)}</title>
+          <desc id="${descId}">${escapeHtml(summaryText)}</desc>
+          <path class="structure-details-history-chart__area" d="${areaPath}"></path>
+          <path class="structure-details-history-chart__line" d="${lineCommands}"></path>
+        </svg>
+        <figcaption class="structure-details-history-chart__caption">
+          <dl class="structure-details-history-chart__stats">
+            <div class="structure-details-history-chart__stat">
+              <dt>${escapeHtml(startLabel)}</dt>
+              <dd>${escapeHtml(startValueText)}</dd>
+            </div>
+            <div class="structure-details-history-chart__stat">
+              <dt>${escapeHtml(peakHeading)}</dt>
+              <dd>${escapeHtml(peakValueText)}</dd>
+            </div>
+            <div class="structure-details-history-chart__stat">
+              <dt>${escapeHtml(currentLabel)}</dt>
+              <dd>${escapeHtml(currentValueText)}</dd>
+            </div>
+          </dl>
+        </figcaption>
+      </figure>
+    </section>
+  `;
 }
 
 function buildSettlementHistoryContent(tile, details, context = {}) {
-  const entries = generateSettlementHistoryEntries(tile, details, context);
-  if (!Array.isArray(entries) || entries.length === 0) {
+  const historyData = generateSettlementHistoryData(tile, details, context);
+  const entries = Array.isArray(historyData?.entries) ? historyData.entries : [];
+  const timelineMarkup = buildPopulationHistoryChartMarkup(historyData?.populationTimeline, details, tile);
+
+  const hasEntries = entries.length > 0;
+  if (!hasEntries && !timelineMarkup) {
     return getStructureDetailsPlaceholder('No chronicles have been preserved for this settlement yet.');
   }
 
-  const listItems = entries
+  const contentParts = [];
+  if (timelineMarkup) {
+    contentParts.push(timelineMarkup.trim());
+  }
+
+  if (hasEntries) {
+    const listItems = entries
     .map((entry) => {
       const yearsAgo = Number.isFinite(entry.yearsAgo) ? Math.max(1, Math.round(entry.yearsAgo)) : null;
       const labelText = entry.label
@@ -15375,11 +15640,21 @@ function buildSettlementHistoryContent(tile, details, context = {}) {
     })
     .join('');
 
-  return `
-    <div class="structure-details-column structure-details-column--primary">
+    contentParts.push(`
       <ol class="structure-details-history-list">
         ${listItems}
       </ol>
+    `.trim());
+  } else {
+    const message = 'No chronicles have been preserved for this settlement yet.';
+    contentParts.push(`
+      <p class="structure-details-empty structure-details-empty--standalone">${escapeHtml(message)}</p>
+    `.trim());
+  }
+
+  return `
+    <div class="structure-details-column structure-details-column--primary">
+      ${contentParts.join('\n')}
     </div>
   `;
 }
