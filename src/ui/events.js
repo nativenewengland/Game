@@ -65,6 +65,115 @@ export function attachEvents(elements, deps) {
   const baseDrawWorld = drawWorld;
 
   let regionLabelOverlay = null;
+  let worldInfoReturnTrigger = null;
+
+  const restoreWorldInfoTriggerFocus = () => {
+    if (worldInfoReturnTrigger && typeof worldInfoReturnTrigger.focus === 'function') {
+      worldInfoReturnTrigger.focus();
+    }
+    worldInfoReturnTrigger = null;
+  };
+
+  const prepareWorldInfoModal = () => {
+    if (!elements.worldInfoModal || !state) {
+      return;
+    }
+
+    if (!state.worldChronology) {
+      state.worldChronology = generateRandomChronology();
+    }
+
+    if (elements.worldMapSizeSelect && state.settings?.mapSize) {
+      elements.worldMapSizeSelect.value = state.settings.mapSize;
+    }
+
+    if (elements.worldInfoGenerationTypeSelect && state.settings?.worldGenerationType) {
+      elements.worldInfoGenerationTypeSelect.value = state.settings.worldGenerationType;
+    }
+
+    let seedString = state.settings?.seedString;
+    if (!seedString) {
+      seedString = ensureSeedString();
+      if (state.settings) {
+        state.settings.seedString = seedString;
+      }
+    }
+    if (elements.worldSeedInput) {
+      elements.worldSeedInput.value = seedString;
+    }
+    if (elements.seedInput) {
+      elements.seedInput.value = seedString;
+    }
+    updateWorldInfoSeedDisplay(seedString);
+
+    if (elements.worldNameInput) {
+      let worldName = typeof state.worldName === 'string' ? state.worldName.trim() : '';
+      if (!worldName) {
+        worldName = getRandomWorldName(state.worldName);
+        state.worldName = worldName;
+      }
+      elements.worldNameInput.value = worldName;
+    }
+
+    if (elements.worldYearInput && Number.isFinite(state.worldChronology?.year)) {
+      elements.worldYearInput.value = state.worldChronology.year.toString();
+    }
+
+    if (elements.worldAgeInput && Number.isFinite(state.worldChronology?.age)) {
+      elements.worldAgeInput.value = state.worldChronology.age.toString();
+    }
+
+    updateWorldInfoSizeDisplay();
+    updateWorldInfoGenerationTypeDisplay();
+    updateChronologyDisplay();
+  };
+
+  const focusWorldInfoInitialField = () => {
+    const focusCandidates = [
+      elements.worldNameInput,
+      elements.worldYearInput,
+      elements.worldMapSizeSelect,
+      elements.worldInfoModal?.querySelector('input, select, button, textarea')
+    ];
+
+    for (let index = 0; index < focusCandidates.length; index += 1) {
+      const candidate = focusCandidates[index];
+      if (candidate && typeof candidate.focus === 'function') {
+        candidate.focus();
+        break;
+      }
+    }
+  };
+
+  const openWorldInfoScreen = ({ trigger } = {}) => {
+    if (!elements.worldInfoModal) {
+      return;
+    }
+
+    worldInfoReturnTrigger = trigger || null;
+
+    if (isOptionsVisible()) {
+      closeOptionsScreen();
+    }
+
+    prepareWorldInfoModal();
+
+    if (elements.titleScreen) {
+      elements.titleScreen.classList.add('hidden');
+      if (elements.titleScreen.hasAttribute('aria-hidden')) {
+        elements.titleScreen.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    elements.worldInfoModal.classList.remove('hidden');
+    elements.worldInfoModal.setAttribute('aria-hidden', 'false');
+
+    if (elements.worldInfoModal instanceof HTMLElement) {
+      elements.worldInfoModal.scrollTop = 0;
+    }
+
+    focusWorldInfoInitialField();
+  };
 
   const getTileSize = () => {
     const explicitSize = Number.isFinite(deps?.drawSize) ? deps.drawSize : null;
@@ -426,6 +535,12 @@ export function attachEvents(elements, deps) {
       if (structureContextMenuState.visible) {
         hideStructureContextMenu();
       }
+    });
+  }
+
+  if (elements.startButton) {
+    elements.startButton.addEventListener('click', () => {
+      openWorldInfoScreen({ trigger: elements.startButton });
     });
   }
 
@@ -955,6 +1070,7 @@ export function attachEvents(elements, deps) {
         }
       }
       updateChronologyDisplay();
+      worldInfoReturnTrigger = null;
       openDwarfCustomizer();
     });
   }
@@ -962,6 +1078,7 @@ export function attachEvents(elements, deps) {
   if (elements.worldInfoCancel) {
     elements.worldInfoCancel.addEventListener('click', () => {
       closeWorldInfoModal({ returnFocus: true });
+      restoreWorldInfoTriggerFocus();
     });
   }
 
@@ -1187,6 +1304,7 @@ export function attachEvents(elements, deps) {
       }
       if (elements.worldInfoModal && !elements.worldInfoModal.classList.contains('hidden')) {
         closeWorldInfoModal({ returnFocus: true });
+        restoreWorldInfoTriggerFocus();
         return;
       }
       if (isOptionsVisible()) {
