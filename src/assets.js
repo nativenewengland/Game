@@ -42,14 +42,14 @@ export const tileSheets = {
 export const dwarfSpriteSheets = {
   body: {
     key: 'body',
-    path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_body.png',
-    tileSize: 32,
+    path: 'tilesheet/Mobs/character sprite/PNG/Unarmed/Parts/Unarmed_Idle2_body.png',
+    tileSize: 64,
     image: null
   },
-  eyes: {
-    key: 'eyes',
-    path: 'Dwarf.Fortress/data/vanilla/vanilla_creatures_graphics/graphics/images/dwarf_body_special.png',
-    tileSize: 32,
+  head: {
+    key: 'head',
+    path: 'tilesheet/Mobs/character sprite/PNG/Unarmed/Parts/Unarmed_Idle3_head.png',
+    tileSize: 64,
     image: null
   },
   hair: {
