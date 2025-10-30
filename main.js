@@ -3604,7 +3604,7 @@ function generateDwarfholdDetails(name, random, options = {}) {
   }
   const hallmark = pickRandomFrom(dwarfholdHallmarks, randomFn) ||
     'Renowned for stout walls and heartier spirits.';
-  const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 540));
+  const foundedYearsAgo = Math.max(30, Math.floor(80 + randomFn() * 3921));
   const prominentClanOption = randomFn() < 0.35 ? pickRandomFrom(dwarfOptions.clan, randomFn) : clanOption;
   const prominentClan = prominentClanOption?.label || clanName;
   const majorGuildCount = clamp(Math.floor(2 + randomFn() * 3), 1, dwarfGuildOptions.length);
