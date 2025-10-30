@@ -9844,23 +9844,44 @@ const dwarfBeardRows = {
 const dwarfBaseBodyTint = '#5b473c';
 
 const dwarfPortraitBaseFrames = {
-  male: { sheet: 'body', col: 4, row: 8, tint: dwarfBaseBodyTint, offsetY: 4 },
-  female: { sheet: 'body', col: 4, row: 9, tint: dwarfBaseBodyTint, offsetY: 4 }
+  male: {
+    sheet: 'body',
+    col: 0,
+    row: 0,
+    tint: dwarfBaseBodyTint,
+    offsetY: 4,
+    sourceTileSize: 64,
+    destTileSize: 64
+  },
+  female: {
+    sheet: 'body',
+    col: 0,
+    row: 1,
+    tint: dwarfBaseBodyTint,
+    offsetY: 4,
+    sourceTileSize: 64,
+    destTileSize: 64
+  }
 };
 
 const dwarfPortraitConfig = {
-  tileSize: 32,
-  scale: 4,
+  tileSize: 64,
+  scale: 2,
   baseFrame: dwarfPortraitBaseFrames.male,
   baseFrames: dwarfPortraitBaseFrames,
-  head: { sheet: 'eyes', row: 0, offsetY: 0 },
-  hairOffsetY: -2,
-  beardOffsetY: 2,
+  head: {
+    sheet: 'head',
+    rows: { male: 0, female: 1 },
+    row: 0,
+    offsetY: -1
+  },
+  hairOffsetY: -4,
+  beardOffsetY: 8,
   eyePositions: [
-    { x: 10.75, y: 8.75 },
-    { x: 15.75, y: 8.75 }
+    { x: 27.5, y: 30 },
+    { x: 33.5, y: 30 }
   ],
-  eyeSize: 2
+  eyeSize: 1
 };
 
 const bodyPanelPortraitScaleMultiplier = 1.6;
@@ -11071,6 +11092,9 @@ const dwarfSpriteSheetPromises = Object.values(dwarfSpriteSheets).map((sheet) =>
   loadImage(sheet.path)
     .then((img) => {
       sheet.image = img;
+      const tileSize = sheet.tileSize || img.width || 1;
+      sheet.columns = Math.max(1, Math.floor(img.width / tileSize));
+      sheet.rows = Math.max(1, Math.floor(img.height / tileSize));
       return img;
     })
     .catch((error) => {
@@ -13096,15 +13120,16 @@ function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
   if (!sheet?.image) {
     return;
   }
-  const { tileSize } = sheet;
-  const sx = frame.col * tileSize;
-  const sy = frame.row * tileSize;
-  const sw = tileSize;
-  const sh = tileSize;
+  const sourceTileSize = typeof frame.sourceTileSize === 'number' ? frame.sourceTileSize : sheet.tileSize;
+  const destTileSize = typeof frame.destTileSize === 'number' ? frame.destTileSize : sourceTileSize;
+  const sx = frame.col * sourceTileSize;
+  const sy = frame.row * sourceTileSize;
+  const sw = sourceTileSize;
+  const sh = sourceTileSize;
   const destX = baseX;
   const destY = baseY + Math.round((frame.offsetY || 0) * scale);
-  const destW = sw * scale;
-  const destH = sh * scale;
+  const destW = destTileSize * scale;
+  const destH = destTileSize * scale;
 
   const offscreen = document.createElement('canvas');
   offscreen.width = sw;
@@ -13126,18 +13151,28 @@ function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
   ctx.drawImage(offscreen, 0, 0, sw, sh, destX, destY, destW, destH);
 }
 
-function getHeadFrame(headValue) {
+function getHeadFrame(dwarf, headValue) {
   const headConfig = dwarfPortraitConfig.head;
   const resolvedValue = resolveHeadTypeValue(headValue);
   const headType = dwarfHeadTypes[resolvedValue];
   if (!headConfig || !headType) {
     return null;
   }
+  const sheet = headConfig.sheet;
+  const sheetConfig = dwarfSpriteSheets[sheet];
+  const sourceTileSize = typeof sheetConfig?.tileSize === 'number' ? sheetConfig.tileSize : dwarfPortraitConfig.tileSize;
+  const genderRow =
+    (headConfig.rows && Object.prototype.hasOwnProperty.call(headConfig.rows, dwarf?.gender)
+      ? headConfig.rows[dwarf?.gender]
+      : undefined);
+  const row = typeof genderRow === 'number' ? genderRow : headConfig.row || 0;
   return {
-    sheet: headConfig.sheet,
+    sheet,
     col: headType.column,
-    row: headConfig.row,
-    offsetY: headConfig.offsetY ?? 0
+    row,
+    offsetY: headConfig.offsetY ?? 0,
+    sourceTileSize,
+    destTileSize: dwarfPortraitConfig.tileSize
   };
 }
 
@@ -13155,7 +13190,8 @@ function getHairFrame(dwarf, hairOption, hairStyleValue) {
     col: mapping.column,
     row,
     tint: mapping.tint || null,
-    offsetY: styleConfig?.offsetY ?? dwarfPortraitConfig.hairOffsetY
+    offsetY: styleConfig?.offsetY ?? dwarfPortraitConfig.hairOffsetY,
+    destTileSize: dwarfPortraitConfig.tileSize
   };
 }
 
@@ -13178,7 +13214,8 @@ function getBeardFrame(dwarf, hairOption) {
     col: mapping.column,
     row,
     tint: mapping.tint || null,
-    offsetY: dwarfPortraitConfig.beardOffsetY
+    offsetY: dwarfPortraitConfig.beardOffsetY,
+    destTileSize: dwarfPortraitConfig.tileSize
   };
 }
 
@@ -13317,7 +13354,7 @@ function renderTilesheetPortrait(
   }
 
   if (head) {
-    const headFrame = getHeadFrame(headOption?.value ?? dwarf?.head);
+    const headFrame = getHeadFrame(dwarf, headOption?.value ?? dwarf?.head);
     if (headFrame) {
       const skinColor = skinOption?.color || '#c59b7d';
       drawTintedSprite(ctx, headFrame.sheet, headFrame, baseX, baseY, scale, skinColor);
