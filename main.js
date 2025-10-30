@@ -20073,16 +20073,20 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
     const tectonicStrength = 0.32 + rng() * 0.42 + maskSample * 0.35;
     const lobeCount = 2 + Math.floor(rng() * 7);
     const lobePhase = rng() * Math.PI * 2;
-    const lobeStrength = 0.14 + rng() * 0.24 + (clusterIntensity - 0.6) * 0.2;
+    const lobeStrength = 0.12 + rng() * 0.22 + (clusterIntensity - 0.6) * 0.18;
     const rippleCount = lobeCount * 2 + Math.floor(rng() * 5);
     const ripplePhase = rng() * Math.PI * 2;
-    const rippleStrength = 0.05 + rng() * 0.1 + (1 - clusterIntensity) * 0.05;
+    const rippleStrength = 0.045 + rng() * 0.085 + (1 - clusterIntensity) * 0.045;
     const ridgeStrength = 0.035 + rng() * 0.1 + maskSample * 0.08;
     const ridgePhase = rng() * Math.PI * 2;
     const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
     const fractureStrength = 0.04 + rng() * 0.12 + (1 - maskSample) * 0.06;
     const fracturePhase = rng() * Math.PI * 2;
     const fractureSeed = (islandSeed ^ 0xbb67ae85) >>> 0;
+    const radialNoiseSeed = (islandSeed ^ 0xc4ceb9fe) >>> 0;
+    const radialNoiseStrength = 0.07 + rng() * 0.09 + maskSample * 0.08;
+    const radialNoisePhase = rng() * Math.PI * 2;
+    const radialNoiseFrequency = 2.2 + rng() * 2.6;
 
     const influenceRadiusX = majorRadius * 1.7;
     const influenceRadiusY = minorRadius * 1.7;
@@ -20107,10 +20111,26 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
         const normalizedY = (y + 0.5) / height;
         const angle = Math.atan2(rotatedY, rotatedX);
         const edgeBlend = clamp(1 - Math.min(distance, 1.6) * 0.65, 0, 1);
-        const angularWarp =
+        const harmonicWarp =
           (Math.sin(angle * lobeCount + lobePhase) * lobeStrength +
             Math.sin(angle * rippleCount + ripplePhase) * rippleStrength) *
           edgeBlend;
+        const radialNoise =
+          (valueNoise(
+            (normalizedX + islandSeed * 0.000021) * (noiseScale * 0.55) +
+              Math.cos(angle + radialNoisePhase) * radialNoiseFrequency,
+            (normalizedY + islandSeed * 0.000021) * (noiseScale * 0.55) +
+              Math.sin(angle + radialNoisePhase) * radialNoiseFrequency,
+            radialNoiseSeed
+          ) -
+            0.5) *
+          radialNoiseStrength *
+          edgeBlend;
+        const angularWarp = clamp(
+          harmonicWarp + radialNoise,
+          -0.36,
+          0.24 + maskSample * 0.06
+        );
         const ridgeNoise =
           (valueNoise(
             (normalizedX + islandSeed * 0.00013) * 9.1 + Math.cos(angle + ridgePhase) * 3.1,
