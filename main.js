@@ -14889,7 +14889,7 @@ function generateTownFestivalName(rng) {
   return pickRandomFrom(settlementHistoryFestivalNames, randomFn) || 'Harvest Fair';
 }
 
-function generateDwarfName(rng, options = {}) {
+function generateLoreDwarfName(rng, options = {}) {
   const randomFn = typeof rng === 'function' ? rng : Math.random;
   const pool = [];
   if (Array.isArray(dwarfNamePools?.male)) {
@@ -15023,7 +15023,7 @@ function generateDwarvenSettlementHistory(context, rng, options = {}) {
     events.push(
       createHistoryEntry(
         horizon,
-        `${context.name} was founded by ${generateDwarfName(rng, { clan: clanName })} of Clan ${clanName}.`
+        `${context.name} was founded by ${generateLoreDwarfName(rng, { clan: clanName })} of Clan ${clanName}.`
       )
     );
   }
@@ -15042,7 +15042,7 @@ function generateDwarvenSettlementHistory(context, rng, options = {}) {
     (ctx) => `the ${clanName} Clan rose to become the largest clan in the hold.`,
     (ctx, randomFn) => `stonewrights completed the ${pickRandomFrom(dwarvenGreatWorks, randomFn) || 'Deepgate Bastion'}.`,
     (ctx, randomFn) =>
-      `Thane ${generateDwarfName(randomFn, { clan: clanName })} fell in battle; ${generateDwarfName(randomFn, {
+      `Thane ${generateLoreDwarfName(randomFn, { clan: clanName })} fell in battle; ${generateLoreDwarfName(randomFn, {
         clan: clanName
       })} took up the mantle of ${context.rulerTitle || 'Thane'}.`,
     (ctx, randomFn) => {
