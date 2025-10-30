@@ -6766,6 +6766,22 @@ function spawnAmbientStructures({
   const makeCoordKey = (x, y) => `${x},${y}`;
   const cropTilesPlacedByGenerator = new Set();
 
+  if (farmCropOverlayKey) {
+    for (let y = 0; y < mapHeight; y += 1) {
+      const row = tiles[y];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        const tile = row[x];
+        if (!tile || tile.overlay !== farmCropOverlayKey) {
+          continue;
+        }
+        cropTilesPlacedByGenerator.add(makeCoordKey(x, y));
+      }
+    }
+  }
+
   const isTileEligibleForCropSwapDestination = (tile) =>
     Boolean(tile) && isTileEligibleForFarmBase(tile, { allowMissingGrassKey: !grassTileKey }) && !tile.overlay;
 
