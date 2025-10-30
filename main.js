@@ -12,7 +12,6 @@ const elements = {
   optionsScreen: document.getElementById('options-screen'),
   closeOptions: document.getElementById('close-options'),
   optionsForm: document.getElementById('options-form'),
-  worldCanvas: document.getElementById('world-canvas'),
   mapSizeSelect: document.getElementById('map-size'),
   worldGenerationTypeSelect: document.getElementById('world-generation-type'),
   seedInput: document.getElementById('world-seed'),
@@ -202,55 +201,6 @@ function generateSeed() {
     seed += chars[Math.floor(Math.random() * chars.length)];
   }
   return seed;
-}
-
-let worldMapImagePromise = null;
-
-function loadWorldMapImage() {
-  if (!worldMapImagePromise) {
-    worldMapImagePromise = new Promise((resolve, reject) => {
-      const image = new Image();
-      image.src = 'tilesheet/Overworld.png';
-      image.addEventListener('load', () => resolve(image), { once: true });
-      image.addEventListener(
-        'error',
-        () => {
-          reject(new Error('Failed to load world map image.'));
-        },
-        { once: true }
-      );
-    });
-  }
-  return worldMapImagePromise;
-}
-
-async function drawWorldMap() {
-  const canvas = elements.worldCanvas;
-  if (!canvas || typeof canvas.getContext !== 'function') {
-    return;
-  }
-  const context = canvas.getContext('2d');
-  if (!context) {
-    return;
-  }
-  context.imageSmoothingEnabled = false;
-  context.imageSmoothingQuality = 'low';
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  try {
-    const image = await loadWorldMapImage();
-    const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
-    const drawWidth = image.width * scale;
-    const drawHeight = image.height * scale;
-    const offsetX = (canvas.width - drawWidth) / 2;
-    const offsetY = (canvas.height - drawHeight) / 2;
-    context.drawImage(image, 0, 0, image.width, image.height, offsetX, offsetY, drawWidth, drawHeight);
-  } catch (error) {
-    context.fillStyle = '#111827';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#f59e0b';
-    context.font = '48px "Cormorant Garamond", serif';
-    context.fillText('Map failed to load', 80, Math.min(canvas.height - 40, 140));
-  }
 }
 
 function formatFrequency(value) {
@@ -670,7 +620,6 @@ function showGameScreen() {
   setHidden(elements.dwarfCustomizer, true);
   setHidden(elements.gameContainer, false);
   updateSeedDisplay();
-  void drawWorldMap();
   state.gameStarted = true;
 }
 
@@ -1081,9 +1030,6 @@ function initialise() {
   updateWorldInfoSummary();
   updateOptionsFormFromState();
   updateSeedDisplay();
-  loadWorldMapImage().catch(() => {
-    // The map will show a fallback message if the image fails to load.
-  });
   updateDwarfSlotLabel();
   updateTraitSliderMaximums();
   updateTraitSliderOutputs();
