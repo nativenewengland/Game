@@ -66,26 +66,9 @@ export function attachEvents(elements, deps) {
 
   let regionLabelOverlay = null;
 
-  const getTileSize = () => {
-    const explicitSize = Number.isFinite(deps?.drawSize) ? deps.drawSize : null;
-    if (explicitSize) {
-      return explicitSize;
-    }
-    if (elements?.canvas && elements.canvas.width && state?.currentWorld) {
-      const dimensions = getWorldDimensions(state.currentWorld);
-      if (dimensions && dimensions.width) {
-        return elements.canvas.width / dimensions.width;
-      }
-    }
-    return 32;
-  };
-
   const ensureRegionLabelOverlay = () => {
     if (!elements.canvasWrapper) {
       regionLabelOverlay = null;
-      if (elements) {
-        elements.regionNameOverlay = null;
-      }
       return null;
     }
 
@@ -103,12 +86,6 @@ export function attachEvents(elements, deps) {
       } else {
         elements.canvasWrapper.appendChild(regionLabelOverlay);
       }
-      if (elements) {
-        elements.regionNameOverlay = regionLabelOverlay;
-        if (elements.canvas && elements.canvas.style.transform) {
-          regionLabelOverlay.style.transform = elements.canvas.style.transform;
-        }
-      }
     }
 
     return regionLabelOverlay;
@@ -120,8 +97,6 @@ export function attachEvents(elements, deps) {
     }
     regionLabelOverlay.innerHTML = '';
     regionLabelOverlay.classList.remove('region-name-overlay--visible');
-    regionLabelOverlay.style.width = '';
-    regionLabelOverlay.style.height = '';
   };
 
   const getWorldDimensions = (world) => {
@@ -281,28 +256,17 @@ export function attachEvents(elements, deps) {
     regions.sort((a, b) => b.count - a.count);
 
     overlay.innerHTML = '';
-    const tileSize = getTileSize();
-    const pixelWidth = dimensions.width * tileSize;
-    const pixelHeight = dimensions.height * tileSize;
-
-    overlay.style.width = `${pixelWidth}px`;
-    overlay.style.height = `${pixelHeight}px`;
     const fragment = document.createDocumentFragment();
+    const clampPercent = (value) => Math.max(0, Math.min(100, value));
 
     regions.forEach((region) => {
+      const leftPercent = clampPercent((region.centerX / dimensions.width) * 100);
+      const topPercent = clampPercent((region.centerY / dimensions.height) * 100);
       const label = document.createElement('div');
       label.className = 'region-name-label';
       label.textContent = region.name;
-      const pixelLeft = region.centerX * tileSize;
-      const pixelTop = region.centerY * tileSize;
-      label.style.left = `${pixelLeft}px`;
-      label.style.top = `${pixelTop}px`;
-
-      const span = Math.max(region.spanX, region.spanY);
-      if (Number.isFinite(span) && span > 0) {
-        const estimatedSize = Math.min(Math.max(span * tileSize * 0.22, 16), 72);
-        label.style.fontSize = `${estimatedSize}px`;
-      }
+      label.style.left = `${leftPercent}%`;
+      label.style.top = `${topPercent}%`;
       fragment.appendChild(label);
     });
 
