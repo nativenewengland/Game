@@ -61,6 +61,243 @@ export function attachEvents(elements, deps) {
     clearMapEditorStructure
   } = deps;
 
+  const baseRefreshOverlayToggleButtons = refreshOverlayToggleButtons;
+  const baseDrawWorld = drawWorld;
+
+  let regionLabelOverlay = null;
+
+  const ensureRegionLabelOverlay = () => {
+    if (!elements.canvasWrapper) {
+      regionLabelOverlay = null;
+      return null;
+    }
+
+    if (regionLabelOverlay && regionLabelOverlay.parentElement !== elements.canvasWrapper) {
+      regionLabelOverlay = null;
+    }
+
+    if (!regionLabelOverlay) {
+      regionLabelOverlay = document.createElement('div');
+      regionLabelOverlay.id = 'region-name-overlay';
+      regionLabelOverlay.className = 'region-name-overlay';
+      regionLabelOverlay.setAttribute('aria-hidden', 'true');
+      if (elements.mapTooltip && elements.canvasWrapper.contains(elements.mapTooltip)) {
+        elements.canvasWrapper.insertBefore(regionLabelOverlay, elements.mapTooltip);
+      } else {
+        elements.canvasWrapper.appendChild(regionLabelOverlay);
+      }
+    }
+
+    return regionLabelOverlay;
+  };
+
+  const clearRegionLabelOverlay = () => {
+    if (!regionLabelOverlay) {
+      return;
+    }
+    regionLabelOverlay.innerHTML = '';
+    regionLabelOverlay.classList.remove('region-name-overlay--visible');
+  };
+
+  const getWorldDimensions = (world) => {
+    if (!world) {
+      return null;
+    }
+    const width = Number.isFinite(world.width) ? world.width : null;
+    const height = Number.isFinite(world.height) ? world.height : null;
+    if (width && height) {
+      return { width, height };
+    }
+
+    const tiles = Array.isArray(world.tiles) ? world.tiles : null;
+    if (!tiles || tiles.length === 0) {
+      return null;
+    }
+
+    let inferredWidth = 0;
+    for (let i = 0; i < tiles.length; i += 1) {
+      const row = tiles[i];
+      if (Array.isArray(row) && row.length > inferredWidth) {
+        inferredWidth = row.length;
+      }
+    }
+
+    if (!inferredWidth) {
+      return null;
+    }
+
+    return { width: inferredWidth, height: tiles.length };
+  };
+
+  const getRegionNameFromTile = (tile) => {
+    if (!tile) {
+      return '';
+    }
+
+    const candidateFields = [
+      'areaName',
+      'regionName',
+      'regionLabel',
+      'namedRegion',
+      'namedArea',
+      'areaDisplayName'
+    ];
+
+    for (let i = 0; i < candidateFields.length; i += 1) {
+      const field = candidateFields[i];
+      const value = tile[field];
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+          return trimmed;
+        }
+      }
+    }
+
+    return '';
+  };
+
+  const collectRegionNameAreas = (world) => {
+    const tiles = Array.isArray(world?.tiles) ? world.tiles : null;
+    if (!tiles || tiles.length === 0) {
+      return [];
+    }
+
+    const regionMap = new Map();
+
+    for (let y = 0; y < tiles.length; y += 1) {
+      const row = tiles[y];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let x = 0; x < row.length; x += 1) {
+        const tile = row[x];
+        const name = getRegionNameFromTile(tile);
+        if (!name) {
+          continue;
+        }
+
+        const key = name.toLowerCase();
+        let region = regionMap.get(key);
+        if (!region) {
+          region = {
+            key,
+            name,
+            minX: x,
+            maxX: x,
+            minY: y,
+            maxY: y,
+            count: 0
+          };
+          regionMap.set(key, region);
+        } else {
+          if (name.length > region.name.length) {
+            region.name = name;
+          }
+          if (x < region.minX) {
+            region.minX = x;
+          }
+          if (x > region.maxX) {
+            region.maxX = x;
+          }
+          if (y < region.minY) {
+            region.minY = y;
+          }
+          if (y > region.maxY) {
+            region.maxY = y;
+          }
+        }
+
+        region.count += 1;
+      }
+    }
+
+    const regions = [];
+    regionMap.forEach((region) => {
+      if (region.count <= 0) {
+        return;
+      }
+      const spanX = region.maxX - region.minX + 1;
+      const spanY = region.maxY - region.minY + 1;
+      region.centerX = region.minX + spanX / 2;
+      region.centerY = region.minY + spanY / 2;
+      region.spanX = spanX;
+      region.spanY = spanY;
+      regions.push(region);
+    });
+
+    return regions;
+  };
+
+  const renderRegionNameLabels = () => {
+    const overlay = ensureRegionLabelOverlay();
+    if (!overlay) {
+      return;
+    }
+
+    if (!state || !state.ui || !state.currentWorld || !state.ui.showRegionNames) {
+      clearRegionLabelOverlay();
+      return;
+    }
+
+    const world = state.currentWorld;
+    const dimensions = getWorldDimensions(world);
+    if (!dimensions || !dimensions.width || !dimensions.height) {
+      clearRegionLabelOverlay();
+      return;
+    }
+
+    const regions = collectRegionNameAreas(world);
+    if (!Array.isArray(regions) || regions.length === 0) {
+      clearRegionLabelOverlay();
+      return;
+    }
+
+    regions.sort((a, b) => b.count - a.count);
+
+    overlay.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    const clampPercent = (value) => Math.max(0, Math.min(100, value));
+
+    regions.forEach((region) => {
+      const leftPercent = clampPercent((region.centerX / dimensions.width) * 100);
+      const topPercent = clampPercent((region.centerY / dimensions.height) * 100);
+      const label = document.createElement('div');
+      label.className = 'region-name-label';
+      label.textContent = region.name;
+      label.style.left = `${leftPercent}%`;
+      label.style.top = `${topPercent}%`;
+      fragment.appendChild(label);
+    });
+
+    overlay.appendChild(fragment);
+    overlay.classList.add('region-name-overlay--visible');
+  };
+
+  const updateRegionNameToggleButton = () => {
+    if (!elements.regionNameToggle) {
+      return;
+    }
+    const showRegionNames = Boolean(state?.ui?.showRegionNames);
+    elements.regionNameToggle.setAttribute('aria-pressed', showRegionNames ? 'true' : 'false');
+    elements.regionNameToggle.textContent = showRegionNames ? 'Hide Region Names' : 'Show Region Names';
+  };
+
+  const refreshOverlayToggleButtonsWithRegionNames = () => {
+    baseRefreshOverlayToggleButtons();
+    updateRegionNameToggleButton();
+    renderRegionNameLabels();
+  };
+
+  const drawWorldWithRegionLabels = (...args) => {
+    baseDrawWorld(...args);
+    renderRegionNameLabels();
+  };
+
+  if (deps && typeof deps === 'object') {
+    deps.drawWorld = drawWorldWithRegionLabels;
+  }
+
   const dismissContextMenuOnPointerDown = (event) => {
     if (!structureContextMenuState.visible) {
       return;
@@ -226,7 +463,7 @@ export function attachEvents(elements, deps) {
       highlightState[type] = target.checked;
       refreshStructureHighlightControls();
       if (state.currentWorld) {
-        drawWorld(state.currentWorld, { preserveView: true });
+        drawWorldWithRegionLabels(state.currentWorld, { preserveView: true });
       }
     });
   }
@@ -467,9 +704,9 @@ export function attachEvents(elements, deps) {
   if (elements.politicalBordersToggle) {
     elements.politicalBordersToggle.addEventListener('click', () => {
       state.ui.showPoliticalBorders = !state.ui.showPoliticalBorders;
-      refreshOverlayToggleButtons();
+      refreshOverlayToggleButtonsWithRegionNames();
       if (state.currentWorld) {
-        drawWorld(state.currentWorld);
+        drawWorldWithRegionLabels(state.currentWorld);
       }
     });
   }
@@ -477,9 +714,9 @@ export function attachEvents(elements, deps) {
   if (elements.politicalInfluenceToggle) {
     elements.politicalInfluenceToggle.addEventListener('click', () => {
       state.ui.showPoliticalInfluence = !state.ui.showPoliticalInfluence;
-      refreshOverlayToggleButtons();
+      refreshOverlayToggleButtonsWithRegionNames();
       if (state.currentWorld) {
-        drawWorld(state.currentWorld);
+        drawWorldWithRegionLabels(state.currentWorld);
       }
     });
   }
@@ -487,9 +724,9 @@ export function attachEvents(elements, deps) {
   if (elements.elevationToggle) {
     elements.elevationToggle.addEventListener('click', () => {
       state.ui.showElevation = !state.ui.showElevation;
-      refreshOverlayToggleButtons();
+      refreshOverlayToggleButtonsWithRegionNames();
       if (state.currentWorld) {
-        drawWorld(state.currentWorld);
+        drawWorldWithRegionLabels(state.currentWorld);
       }
     });
   }
@@ -497,9 +734,9 @@ export function attachEvents(elements, deps) {
   if (elements.biomeToggle) {
     elements.biomeToggle.addEventListener('click', () => {
       state.ui.showBiomes = !state.ui.showBiomes;
-      refreshOverlayToggleButtons();
+      refreshOverlayToggleButtonsWithRegionNames();
       if (state.currentWorld) {
-        drawWorld(state.currentWorld);
+        drawWorldWithRegionLabels(state.currentWorld);
       }
     });
   }
@@ -507,9 +744,9 @@ export function attachEvents(elements, deps) {
   if (elements.temperatureToggle) {
     elements.temperatureToggle.addEventListener('click', () => {
       state.ui.showTemperature = !state.ui.showTemperature;
-      refreshOverlayToggleButtons();
+      refreshOverlayToggleButtonsWithRegionNames();
       if (state.currentWorld) {
-        drawWorld(state.currentWorld);
+        drawWorldWithRegionLabels(state.currentWorld);
       }
     });
   }
@@ -517,9 +754,22 @@ export function attachEvents(elements, deps) {
   if (elements.locationLabelToggle) {
     elements.locationLabelToggle.addEventListener('click', () => {
       state.ui.showLocationLabels = !state.ui.showLocationLabels;
-      refreshOverlayToggleButtons();
+      refreshOverlayToggleButtonsWithRegionNames();
       if (state.currentWorld) {
-        drawWorld(state.currentWorld);
+        drawWorldWithRegionLabels(state.currentWorld);
+      }
+    });
+  }
+
+  if (elements.regionNameToggle) {
+    elements.regionNameToggle.addEventListener('click', () => {
+      const currentState = Boolean(state.ui.showRegionNames);
+      state.ui.showRegionNames = !currentState;
+      refreshOverlayToggleButtonsWithRegionNames();
+      if (state.currentWorld) {
+        drawWorldWithRegionLabels(state.currentWorld);
+      } else {
+        renderRegionNameLabels();
       }
     });
   }
@@ -909,5 +1159,5 @@ export function attachEvents(elements, deps) {
     }
   });
 
-  refreshOverlayToggleButtons();
+  refreshOverlayToggleButtonsWithRegionNames();
 }
