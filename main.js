@@ -14692,6 +14692,18 @@ function resolveHistorySpan(foundedYearsAgo, rng, options = {}) {
   return Math.max(1, value);
 }
 
+function resolveHistoryEventCount(rng, options = {}) {
+  const min = Math.max(1, Math.floor(options.min ?? 20));
+  const max = Math.max(min, Math.floor(options.max ?? 80));
+  if (max === min) {
+    return min;
+  }
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const span = max - min + 1;
+  const offset = Math.floor(randomFn() * span);
+  return Math.max(min, Math.min(max, min + offset));
+}
+
 function randomBetween(min, max, rng) {
   const randomFn = typeof rng === 'function' ? rng : Math.random;
   const lower = Number.isFinite(min) ? min : 0;
@@ -14978,7 +14990,8 @@ function generateHumanSettlementHistory(context, rng) {
       createHistoryEntry(horizon, `${context.name} was founded${regionPhrase}.`)
     );
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) =>
       `the entire ${ctx.kindLower} militia was conscripted by ${generateRealmAuthorityName(randomFn)} to fight in the ${
@@ -15044,7 +15057,8 @@ function generateDwarvenSettlementHistory(context, rng, options = {}) {
     );
   }
 
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) =>
       `${pickRandomFrom(dwarvenAncientEnemies, randomFn) || 'an orc war-host'} lay siege to the gates, but the defenders held firm.`,
@@ -15073,17 +15087,23 @@ function generateDwarvenSettlementHistory(context, rng, options = {}) {
   events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
 
   if (options.variant === 'occupied') {
-    const recentYear = Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.22))) || Math.max(1, Math.round(horizon * 0.22));
+    const recentYear =
+      Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.22))) ||
+      Math.max(1, Math.round(horizon * 0.22));
     const occupier = pickRandomFrom(
       ['an orc warlord', 'a duergar tyrant', 'a dragon cult', 'hobgoblin legates'],
       rng
     );
     events.push(createHistoryEntry(recentYear, `${occupier || 'raiders'} seized the hold and drove the dwarves into exile.`));
   } else if (options.variant === 'ruined') {
-    const collapseYear = Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.18))) || Math.max(1, Math.round(horizon * 0.18));
+    const collapseYear =
+      Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.18))) ||
+      Math.max(1, Math.round(horizon * 0.18));
     events.push(createHistoryEntry(collapseYear, 'cataclysmic quakes shattered the underways and toppled the great halls.'));
   } else if (options.variant === 'abandoned') {
-    const sealYear = Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.25))) || Math.max(1, Math.round(horizon * 0.25));
+    const sealYear =
+      Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.25))) ||
+      Math.max(1, Math.round(horizon * 0.25));
     events.push(createHistoryEntry(sealYear, 'the last thane sealed the gates and led the clans to safer halls.'));
   }
 
@@ -15096,7 +15116,8 @@ function generateWoodElfSettlementHistory(context, rng) {
   if (horizon) {
     events.push(createHistoryEntry(horizon, `${context.name} took root beneath the elder trees.`));
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) => {
       const circle = pickRandomFrom(woodElfGroveCircleNames, randomFn) || 'Circle of the Silver Bough';
@@ -15128,7 +15149,8 @@ function generateLizardmenSettlementHistory(context, rng) {
   if (horizon) {
     events.push(createHistoryEntry(horizon, `${context.name} was raised as a sacred ${context.displayType.toLowerCase()}.`));
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) =>
       `the oracles proclaimed ${pickRandomFrom(lizardmenPortents, randomFn) || 'a blazing omen'}, reshaping temple rites.`,
@@ -15157,7 +15179,8 @@ function generateTowerSettlementHistory(context, rng) {
       )
     );
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) => pickRandomFrom(towerAlarmEvents, randomFn),
     (ctx, randomFn) => `the beacon-chain was repaired after lightning shattered the signal spire.`,
@@ -15179,7 +15202,8 @@ function generateEvilWizardSettlementHistory(context, rng) {
   if (horizon) {
     events.push(createHistoryEntry(horizon, `${context.name} rose when ${context.rulerTitle || 'Archwizard'} ${context.rulerName || 'Malachar'} claimed the spire.`));
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) => `${pickRandomFrom(wizardTowerCatastrophes, randomFn) || 'a summoning tore open a screaming rift'}`,
     (ctx, randomFn) => `${pickRandomFrom(wizardTowerExperiments, randomFn) || 'Midnight Ascension'} bound the tower to planar ley-lines.`,
@@ -15202,7 +15226,8 @@ function generateMineSettlementHistory(context, rng) {
   if (horizon) {
     events.push(createHistoryEntry(horizon, `${context.name} was sunk to tap the mountain riches.`));
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) => `${pickRandomFrom(mineIncidents, randomFn) || 'a cave-in sealed the lower galleries for a month'}.`,
     (ctx, randomFn) => `${pickRandomFrom(mineDiscoveries, randomFn) || 'a glittering vein of mithril ore'} was discovered.`,
@@ -15221,7 +15246,8 @@ function generateCaveSettlementHistory(context, rng) {
   if (horizon) {
     events.push(createHistoryEntry(horizon, `${context.name} warrens were carved by scheming goblins.`));
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) => `${ctx.prominentGroup || 'the clan'} ${pickRandomFrom(goblinSchemes, randomFn) || 'plotted under cover of drums'}.`,
     (ctx, randomFn) => `${pickRandomFrom(['trap-makers laced the tunnels with deadfalls', 'war drums thundered through the night', 'a new chieftain painted the cavern walls with trophies'], randomFn)}.`,
@@ -15240,7 +15266,8 @@ function generateGenericSettlementHistory(context, rng) {
   if (horizon) {
     events.push(createHistoryEntry(horizon, `${context.name} first appears in the oldest surviving chronicles.`));
   }
-  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const eventCount = resolveHistoryEventCount(rng);
+  const additionalYears = generateHistoryYearSet(horizon, eventCount, rng);
   const templateFns = [
     (ctx, randomFn) => `${pickRandomFrom(genericHistoryMoments, randomFn) || 'storm floods forced the folk to rebuild their bridges'}.`,
     (ctx, randomFn) => `a council of elders forged new laws to guide the ${ctx.kindLower}.`,
