@@ -1544,7 +1544,6 @@ button:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  position: relative;
 }
 
 .structure-details-history-chart__sparkline {
@@ -1552,38 +1551,6 @@ button:hover:not(:disabled) {
   height: auto;
   aspect-ratio: 16 / 7;
   display: block;
-}
-
-.structure-details-history-chart__axes {
-  font-size: 0.68rem;
-  fill: rgba(255, 255, 255, 0.72);
-}
-
-.structure-details-history-chart__axis-line {
-  stroke: rgba(255, 255, 255, 0.28);
-  stroke-width: 1.25;
-}
-
-.structure-details-history-chart__axis-tick line {
-  stroke: rgba(255, 255, 255, 0.32);
-  stroke-width: 1;
-}
-
-.structure-details-history-chart__axis-tick text {
-  fill: rgba(255, 255, 255, 0.78);
-  font-size: 0.65rem;
-  dominant-baseline: middle;
-  letter-spacing: 0.02em;
-}
-
-.structure-details-history-chart__axis-tick--x text {
-  dominant-baseline: hanging;
-}
-
-.structure-details-history-chart__grid-line {
-  stroke: rgba(255, 255, 255, 0.12);
-  stroke-width: 1;
-  stroke-dasharray: 4 4;
 }
 
 .structure-details-history-chart__axis-label {
@@ -1611,43 +1578,6 @@ button:hover:not(:disabled) {
   stroke-width: 2.4;
   stroke-linejoin: round;
   stroke-linecap: round;
-}
-
-.structure-details-history-chart__overlay {
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 120ms ease;
-}
-
-.structure-details-history-chart__overlay[data-visible='true'] {
-  opacity: 1;
-}
-
-.structure-details-history-chart__overlay-line {
-  stroke: rgba(255, 255, 255, 0.6);
-  stroke-width: 1.4;
-}
-
-.structure-details-history-chart__overlay-point {
-  fill: var(--accent);
-  stroke: rgba(12, 15, 25, 0.9);
-  stroke-width: 2;
-}
-
-.structure-details-history-chart__tooltip {
-  position: absolute;
-  pointer-events: none;
-  transform: translate(-50%, -115%);
-  background: rgba(12, 15, 25, 0.92);
-  border: 1px solid rgba(240, 198, 116, 0.45);
-  border-radius: 8px;
-  padding: 0.35rem 0.55rem;
-  font-size: 0.72rem;
-  line-height: 1.3;
-  color: rgba(255, 255, 255, 0.92);
-  white-space: pre-line;
-  box-shadow: 0 0.65rem 1.4rem rgba(0, 0, 0, 0.35);
-  z-index: 2;
 }
 
 .structure-details-history-chart__caption {
