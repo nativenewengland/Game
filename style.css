@@ -1480,6 +1480,44 @@ button:hover:not(:disabled) {
   max-width: 420px;
 }
 
+.structure-details-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.structure-details-history-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.structure-details-history-year {
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  min-width: 7.5rem;
+}
+
+.structure-details-history-description {
+  flex: 1;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .structure-details-history-item {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .structure-details-history-year {
+    min-width: auto;
+  }
+}
+
 .structure-details-list > div {
   background: rgba(12, 15, 25, 0.55);
   border-radius: 12px;

@@ -14274,6 +14274,197 @@ const structureDetailsState = {
   tabContent: {}
 };
 
+const settlementHistoryFractionBands = [
+  [0.78, 0.96],
+  [0.6, 0.78],
+  [0.42, 0.59],
+  [0.28, 0.41],
+  [0.12, 0.27],
+  [0.05, 0.11],
+  [0.02, 0.05]
+];
+
+const settlementHistoryDirections = ['western', 'eastern', 'northern', 'southern'];
+const settlementHistoryAuthorityTitles = [
+  'King',
+  'Queen',
+  'Duke',
+  'Duchess',
+  'Prince',
+  'Princess',
+  'Marshal',
+  'High Steward',
+  'Archduke',
+  'Lord Protector'
+];
+const settlementHistoryConflictNames = [
+  'Goblin Wars',
+  'Red Banner Rebellion',
+  'War of Falling Ash',
+  'Stormshroud Campaign',
+  'Skysunder Crusade',
+  'War of Seven Bells',
+  'Bronze Crown Conflict'
+];
+const settlementHistoryTownLandmarks = [
+  'Brass Lantern Tavern',
+  'Stonebridge Inn',
+  'Silver Anvil Foundry',
+  'Traveler\'s Resthall',
+  'Copper Cup Brewery',
+  'Singing Sails Guildhall',
+  'Old Millhouse Bakery'
+];
+const settlementHistoryGuardTitles = ['guard captain', 'sheriff', 'magistrate', 'constable', 'watchmarshal'];
+const settlementHistoryShrineDedications = [
+  'Saint Lyra',
+  'the Dawnmother',
+  'the Winter Father',
+  'the Lady of Lanterns',
+  'the Storm Herald',
+  'Saint Corvin',
+  'the Emberwatcher'
+];
+const settlementHistoryFestivalNames = [
+  'Festival of Sails',
+  'Amber Harvest Fair',
+  'Night of Lanterns',
+  'Seven Bells Jubilee',
+  'Riverblossom Revel',
+  'Moonrise Masquerade'
+];
+const settlementHistoryTradeGoods = [
+  'grain tithes from the riverlands',
+  'silver ingots from the hill mines',
+  'saffron caravans from the south',
+  'amberglass ferried from the coast',
+  'rare dyes bargained from distant bazaars',
+  'oak barrels packed with aged whiskey'
+];
+
+const dwarvenBrewNames = [
+  "Bralwra's Brew",
+  'Stonebeard Reserve',
+  'Deepdelver Stout',
+  'Molten Ember Ale',
+  'Rune-Etched Porter',
+  'Glittergold Mead'
+];
+const dwarvenAncientEnemies = [
+  'an orc war-host',
+  'a troll legion',
+  'a goblin horde',
+  'a duergar battalion',
+  'an army of ogres'
+];
+const dwarvenDragonNames = ['Smaug', 'Glaurag', 'Vythrak', 'Azroth', 'Skarlith', 'Thauriss'];
+const dwarvenGreatWorks = [
+  'Deepgate Bastion',
+  'Skyforge Lifts',
+  'Anvilspan Bridge',
+  'Underking Vaults',
+  'Rune-lit Aqueduct',
+  'Sunguard Bastion'
+];
+
+const woodElfEnemyPhrases = [
+  'ironwood poachers',
+  'blight-touched beasts',
+  'orc fire-raisers',
+  'necromancer cultists',
+  'ashen drakes'
+];
+const woodElfRitualNames = [
+  'Rite of the Whispered Glade',
+  'Dance of Falling Stars',
+  'Moonbloom Vigil',
+  'Song of the Silver Bough',
+  'Heartroot Concord'
+];
+const woodElfPhenomena = [
+  'a comet painted the canopy in emerald light',
+  'the Heartroot awoke and sang through the leaves',
+  'starlight fell as gentle rain upon the groves',
+  'faerie lights braided between every bough',
+  'the ancient ents marched in solemn procession'
+];
+
+const lizardmenPortents = [
+  'the eclipse of twin suns',
+  'a storm of burning glass',
+  'the rising of the obsidian tide',
+  'the awakening drums of Xol-Quan',
+  'a rain of jade scales'
+];
+const lizardmenCampaigns = [
+  'the War of Emerald Spears',
+  'the Sunblood Crusade',
+  'the Tide of Sacred Fire',
+  'the Reaping of Broken Fangs',
+  'the Sky-Serpent Pursuit'
+];
+
+const towerAlarmEvents = [
+  'a border alarm rallied every banner to the walls',
+  'wyvern riders were spotted and the beacons blazed all night',
+  'a tide of raiders tested the battlements before breaking',
+  'a rogue sorcerer assaulted the gate with conjured stormfire'
+];
+const towerVisitors = [
+  'envoys from the capital',
+  'a circle of battle mages',
+  'a company of griffon knights',
+  'a caravan of dwarven quartermasters'
+];
+
+const wizardTowerCatastrophes = [
+  'a summoning tore open a screaming rift',
+  'an experiment transmuted the east wing into crystal',
+  'binding runes failed and phantoms prowled the halls',
+  'a demonic pact backfired and scorched the courtyards'
+];
+const wizardTowerExperiments = [
+  'the Sevenfold Convergence',
+  'the Midnight Ascension',
+  'the Silent Hour Ritual',
+  'the Voidglass Synthesis',
+  'the Oathbinding of Shadows'
+];
+
+const mineIncidents = [
+  'a cave-in sealed the lower galleries for a month',
+  'slag fires raged for three days before being quenched',
+  'a vein collapse released pockets of choking gas',
+  'a swarm of tunnel horrors forced the miners to retreat'
+];
+const mineDiscoveries = [
+  'a glittering vein of mithril ore',
+  'ancient runic vaults packed with relics',
+  'crystal seams that hummed with latent magic',
+  'a buried river that now powers waterwheels'
+];
+
+const goblinSchemes = [
+  'cobbled together a barbed chariot train',
+  'stole temple bells and hung them as trophies',
+  'captured a dwarven envoy for ransom',
+  'mapped a secret tunnel into a rival hold'
+];
+const goblinRaids = [
+  'raided the river caravans',
+  'burned the frontier farms',
+  'ambushed a company of knights',
+  'looted a royal tithe train'
+];
+
+const genericHistoryMoments = [
+  'an uncanny aurora shimmered overhead for seven nights',
+  'a comet omen sent every sage into frantic study',
+  'a dragon shadow passed overhead, but the beast never descended',
+  'storm floods forced the folk to rebuild their bridges',
+  'wandering heroes left behind a trove of strange relics'
+];
+
 function normalizeStructureDetailsTabId(tabId) {
   if (typeof tabId !== 'string') {
     return structureDetailsTabIds[0];
@@ -14290,6 +14481,726 @@ function getStructureDetailsPlaceholder(message) {
   return `
     <div class="structure-details-column structure-details-column--primary">
       <p class="structure-details-empty structure-details-empty--standalone">${escapeHtml(resolvedMessage)}</p>
+    </div>
+  `;
+}
+
+function normalizeSettlementTypeForHistory(details, tile) {
+  const detailType = typeof details?.type === 'string' ? details.type.trim() : '';
+  if (detailType) {
+    return detailType.toLowerCase();
+  }
+  const structureValue = typeof tile?.structure === 'string' ? tile.structure.trim() : '';
+  if (structureValue) {
+    return structureValue.toLowerCase();
+  }
+  const displayType = typeof details?.displayType === 'string' ? details.displayType.trim() : '';
+  if (displayType) {
+    return displayType.replace(/\s+/g, '').toLowerCase();
+  }
+  return 'settlement';
+}
+
+function resolveHistorySpan(foundedYearsAgo, rng, options = {}) {
+  if (Number.isFinite(foundedYearsAgo) && foundedYearsAgo >= 1) {
+    return Math.max(1, Math.round(foundedYearsAgo));
+  }
+  const min = Math.max(1, Math.round(options.min ?? 40));
+  const max = Math.max(min, Math.round(options.max ?? min + 160));
+  const span = max - min;
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const value = min + Math.round(randomFn() * span);
+  return Math.max(1, value);
+}
+
+function randomBetween(min, max, rng) {
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const lower = Number.isFinite(min) ? min : 0;
+  const upper = Number.isFinite(max) ? max : lower;
+  if (upper <= lower) {
+    return lower;
+  }
+  return lower + (upper - lower) * randomFn();
+}
+
+function generateHistoryYearSet(horizon, count, rng) {
+  if (!Number.isFinite(horizon) || horizon <= 1 || !Number.isFinite(count) || count <= 0) {
+    return [];
+  }
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const usableHorizon = Math.max(2, Math.round(horizon));
+  const desiredCount = Math.max(0, Math.floor(count));
+  const used = new Set();
+  const results = [];
+
+  for (let i = 0; results.length < desiredCount && i < settlementHistoryFractionBands.length; i += 1) {
+    const band = settlementHistoryFractionBands[i];
+    if (!Array.isArray(band) || band.length === 0) {
+      continue;
+    }
+    const [bandStart, bandEnd] = band;
+    const minFraction = Math.min(bandStart ?? 0, bandEnd ?? 0.05);
+    const maxFraction = Math.max(bandStart ?? 0, bandEnd ?? 0.05);
+    const fraction = randomBetween(minFraction, maxFraction, randomFn);
+    let candidate = Math.round(usableHorizon * fraction);
+    if (candidate >= usableHorizon) {
+      candidate = Math.max(1, usableHorizon - (i + 1));
+    }
+    candidate = Math.max(1, candidate);
+    while (candidate >= 1 && (candidate >= usableHorizon || used.has(candidate))) {
+      candidate -= 1;
+    }
+    if (candidate >= 1 && !used.has(candidate)) {
+      used.add(candidate);
+      results.push(candidate);
+    }
+  }
+
+  let fallback = usableHorizon - 1;
+  while (results.length < desiredCount && fallback >= 1) {
+    if (!used.has(fallback)) {
+      used.add(fallback);
+      results.push(fallback);
+    }
+    fallback -= 1;
+  }
+
+  return results.sort((a, b) => b - a);
+}
+
+function createHistoryEntry(yearsAgo, description, label = null) {
+  if (!description || typeof description !== 'string') {
+    return null;
+  }
+  const trimmedDescription = description.trim();
+  if (!trimmedDescription) {
+    return null;
+  }
+  const resolvedYearsAgo = Number.isFinite(yearsAgo) ? Math.max(1, Math.round(yearsAgo)) : null;
+  const resolvedLabel = typeof label === 'string' && label.trim().length > 0 ? label.trim() : null;
+  return { yearsAgo: resolvedYearsAgo, description: trimmedDescription, label: resolvedLabel };
+}
+
+function pickLabelFromOptions(options, rng) {
+  if (!Array.isArray(options) || options.length === 0) {
+    return null;
+  }
+  const choice = pickRandomFrom(options, rng);
+  if (typeof choice === 'string') {
+    return choice;
+  }
+  if (choice && typeof choice.label === 'string') {
+    return choice.label;
+  }
+  return null;
+}
+
+function selectHistoryTemplates(templateFns, count, rng) {
+  if (!Array.isArray(templateFns) || templateFns.length === 0 || count <= 0) {
+    return [];
+  }
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const pool = templateFns.slice();
+  const selections = [];
+  for (let i = 0; i < count; i += 1) {
+    if (pool.length === 0) {
+      pool.push(...templateFns);
+    }
+    if (pool.length === 0) {
+      break;
+    }
+    const index = Math.floor(randomFn() * pool.length);
+    const clampedIndex = Math.max(0, Math.min(pool.length - 1, index));
+    const [template] = pool.splice(clampedIndex, 1);
+    if (typeof template === 'function') {
+      selections.push(template);
+    }
+  }
+  return selections;
+}
+
+function createSettlementHistoryContext(tile, details, context, rng) {
+  const nameCandidate = typeof details?.name === 'string' && details.name.trim().length > 0 ? details.name.trim() : null;
+  const displayCandidate =
+    typeof details?.displayType === 'string' && details.displayType.trim().length > 0
+      ? details.displayType.trim()
+      : formatStructureDetailLabel(details?.type);
+  const settlementName = nameCandidate || tile?.structureName || 'Settlement';
+  const displayType = displayCandidate || 'Settlement';
+  const kindLower = displayType.toLowerCase();
+  const normalizedType = normalizeSettlementTypeForHistory(details, tile);
+  const prominentClan =
+    typeof details?.prominentClan === 'string' && details.prominentClan.trim().length > 0
+      ? details.prominentClan.trim()
+      : null;
+  const prominentGroup =
+    typeof details?.prominentGroup === 'string' && details.prominentGroup.trim().length > 0
+      ? details.prominentGroup.trim()
+      : prominentClan;
+  const rulerTitle =
+    typeof details?.ruler?.title === 'string' && details.ruler.title.trim().length > 0
+      ? details.ruler.title.trim()
+      : typeof details?.ruler?.label === 'string' && details.ruler.label.trim().length > 0
+      ? details.ruler.label.trim()
+      : null;
+  const rulerName =
+    typeof details?.ruler?.name === 'string' && details.ruler.name.trim().length > 0
+      ? details.ruler.name.trim()
+      : null;
+  const regionName = typeof tile?.areaName === 'string' && tile.areaName.trim().length > 0 ? tile.areaName.trim() : null;
+  const chronologyYear = Number.isFinite(state?.worldChronology?.year)
+    ? Math.round(state.worldChronology.year)
+    : null;
+  const foundedYearsAgo = Number.isFinite(details?.foundedYearsAgo)
+    ? Math.max(1, Math.round(details.foundedYearsAgo))
+    : null;
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+
+  return {
+    name: settlementName,
+    displayType,
+    kindLower,
+    type: normalizedType,
+    classification: details?.classification || null,
+    prominentClan,
+    prominentGroup,
+    hallmark: details?.hallmark || null,
+    rulerTitle,
+    rulerName,
+    regionName,
+    currentYear: chronologyYear,
+    foundedYearsAgo,
+    details,
+    tile,
+    context,
+    rng: randomFn
+  };
+}
+
+function generateTownPersonName(rng) {
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const pool = [];
+  if (Array.isArray(townFirstNamePools?.male)) {
+    pool.push(...townFirstNamePools.male);
+  }
+  if (Array.isArray(townFirstNamePools?.female)) {
+    pool.push(...townFirstNamePools.female);
+  }
+  if (Array.isArray(townFirstNamePools?.neutral)) {
+    pool.push(...townFirstNamePools.neutral);
+  }
+  const first = pickRandomFrom(pool, randomFn) || 'Aldric';
+  const last = pickRandomFrom(townProminentFamilyNames, randomFn) || 'Ambermere';
+  if (randomFn() < 0.35) {
+    return `Old ${first}`;
+  }
+  return `${first} ${last}`;
+}
+
+function generateRealmAuthorityName(rng) {
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const title = pickRandomFrom(settlementHistoryAuthorityTitles, randomFn) || 'King';
+  const pool = [];
+  if (Array.isArray(townFirstNamePools?.male)) {
+    pool.push(...townFirstNamePools.male);
+  }
+  if (Array.isArray(townFirstNamePools?.female)) {
+    pool.push(...townFirstNamePools.female);
+  }
+  if (Array.isArray(townFirstNamePools?.neutral)) {
+    pool.push(...townFirstNamePools.neutral);
+  }
+  const first = pickRandomFrom(pool, randomFn) || 'Garran';
+  const last = pickRandomFrom(townProminentFamilyNames, randomFn) || 'Stormholt';
+  return `${title} ${first} ${last}`;
+}
+
+function generateTownLandmarkName(rng) {
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const name = pickRandomFrom(settlementHistoryTownLandmarks, randomFn) || 'Brass Lantern Tavern';
+  return `the ${name}`;
+}
+
+function generateTownFestivalName(rng) {
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  return pickRandomFrom(settlementHistoryFestivalNames, randomFn) || 'Harvest Fair';
+}
+
+function generateDwarfName(rng, options = {}) {
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const pool = [];
+  if (Array.isArray(dwarfNamePools?.male)) {
+    pool.push(...dwarfNamePools.male);
+  }
+  if (Array.isArray(dwarfNamePools?.female)) {
+    pool.push(...dwarfNamePools.female);
+  }
+  const first = pickRandomFrom(pool, randomFn) || 'Urist';
+  const clanName =
+    options?.clan && typeof options.clan === 'string'
+      ? options.clan
+      : pickLabelFromOptions(dwarfClanOptions, randomFn) || 'Stonebeard';
+  if (options?.singleName) {
+    return first;
+  }
+  return `${first} ${clanName}`;
+}
+
+function generateDragonName(rng) {
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  return pickRandomFrom(dwarvenDragonNames, randomFn) || 'Smaug';
+}
+
+function generateHistoryFromTemplates(years, templateFns, context, rng) {
+  if (!Array.isArray(years) || years.length === 0 || !Array.isArray(templateFns) || templateFns.length === 0) {
+    return [];
+  }
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const events = [];
+  const available = templateFns.slice();
+  years.forEach((year) => {
+    let description = null;
+    let attempts = 0;
+    while (!description && attempts < templateFns.length * 2) {
+      if (available.length === 0) {
+        available.push(...templateFns);
+      }
+      if (available.length === 0) {
+        break;
+      }
+      const index = Math.floor(randomFn() * available.length);
+      const clampedIndex = Math.max(0, Math.min(available.length - 1, index));
+      const [template] = available.splice(clampedIndex, 1);
+      attempts += 1;
+      if (typeof template !== 'function') {
+        continue;
+      }
+      const result = template(context, randomFn);
+      if (typeof result === 'string' && result.trim().length > 0) {
+        description = result.trim();
+      }
+    }
+    if (description) {
+      const entry = createHistoryEntry(year, description);
+      if (entry) {
+        events.push(entry);
+      }
+    }
+  });
+  return events;
+}
+
+function generateHumanSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 40, max: 420 });
+  const events = [];
+  if (horizon) {
+    const regionPhrase = context.regionName ? ` near ${context.regionName}` : '';
+    events.push(
+      createHistoryEntry(horizon, `${context.name} was founded${regionPhrase}.`)
+    );
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) =>
+      `the entire ${ctx.kindLower} militia was conscripted by ${generateRealmAuthorityName(randomFn)} to fight in the ${
+        pickRandomFrom(settlementHistoryConflictNames, randomFn) || 'Goblin Wars'
+      }.`,
+    (ctx) => `a major famine left nearly half the ${ctx.kindLower} dead or gone.`,
+    (ctx, randomFn) =>
+      `${generateTownPersonName(randomFn)} opened ${generateTownLandmarkName(randomFn)}, and it still welcomes travelers today.`,
+    (ctx, randomFn) =>
+      `townsfolk dragged a corrupt ${pickRandomFrom(settlementHistoryGuardTitles, randomFn) || 'guard captain'} from office and reclaimed the watch.`,
+    (ctx, randomFn) => {
+      const threatFn = pickRandomFrom(
+        [
+          () =>
+            `orc raiders burned the ${pickRandomFrom(settlementHistoryDirections, randomFn) || 'western'} quarter before the watch rallied.`,
+          () => `goblin warbands pillaged the granaries until the townsfolk drove them into the river.`,
+          () => `a cabal of cultists set fire to the market square before being unmasked.`,
+          () => `bandit companies seized the road tolls until militia rode them down.`,
+          () => `a flight of wyverns scorched the rooftops before archers brought them down.`
+        ],
+        randomFn
+      );
+      return threatFn ? threatFn() : null;
+    },
+    (ctx, randomFn) => {
+      const goods = pickRandomFrom(settlementHistoryTradeGoods, randomFn);
+      return goods ? `merchants brokered a charter guaranteeing ${goods}.` : null;
+    },
+    (ctx, randomFn) =>
+      `the ${generateTownFestivalName(randomFn)} was first celebrated with bonfires on the green.`,
+    (ctx, randomFn) => {
+      const shrine = pickRandomFrom(settlementHistoryShrineDedications, randomFn);
+      return shrine ? `a shrine to ${shrine} was dedicated, drawing pilgrims from afar.` : null;
+    },
+    (ctx, randomFn) => {
+      if (!ctx.prominentGroup) {
+        return null;
+      }
+      return `${ctx.prominentGroup} seized control of the guild council for a generation.`;
+    },
+    (ctx, randomFn) => {
+      const guild = pickRandomFrom(townGuildOptions, randomFn);
+      const guildLabel = typeof guild === 'string' ? guild : guild?.label;
+      return guildLabel ? `the ${guildLabel} received its royal charter.` : null;
+    }
+  ];
+
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateDwarvenSettlementHistory(context, rng, options = {}) {
+  const fallbackRange = options?.fallbackRange || { min: 180, max: 680 };
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, fallbackRange);
+  const clanName = context.prominentClan || pickLabelFromOptions(dwarfClanOptions, rng) || 'Stonebeard';
+  const events = [];
+  if (horizon) {
+    events.push(
+      createHistoryEntry(
+        horizon,
+        `${context.name} was founded by ${generateDwarfName(rng, { clan: clanName })} of Clan ${clanName}.`
+      )
+    );
+  }
+
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) =>
+      `${pickRandomFrom(dwarvenAncientEnemies, randomFn) || 'an orc war-host'} lay siege to the gates, but the defenders held firm.`,
+    (ctx, randomFn) =>
+      `the dragon ${generateDragonName(randomFn)} scorched the upper terraces before being driven into the deeps.`,
+    (ctx, randomFn) => `${pickRandomFrom(dwarvenBrewNames, randomFn) || "Bralwra's Brew"} was first brewed in the hold's brass halls.`,
+    (ctx, randomFn) => {
+      const guildLabel = pickLabelFromOptions(dwarfGuildOptions, randomFn);
+      return guildLabel ? `the ${guildLabel} forged a new charter beneath the basalt vaults.` : null;
+    },
+    (ctx) => `the ${clanName} Clan rose to become the largest clan in the hold.`,
+    (ctx, randomFn) => `stonewrights completed the ${pickRandomFrom(dwarvenGreatWorks, randomFn) || 'Deepgate Bastion'}.`,
+    (ctx, randomFn) =>
+      `Thane ${generateDwarfName(randomFn, { clan: clanName })} fell in battle; ${generateDwarfName(randomFn, {
+        clan: clanName
+      })} took up the mantle of ${context.rulerTitle || 'Thane'}.`,
+    (ctx, randomFn) => {
+      const trove = pickRandomFrom(
+        ['glimmering mithril', 'forgotten rune-stones', 'ancestral relics', 'sealed horrors now entombed'],
+        randomFn
+      );
+      return trove ? `miners breached an ancient vault filled with ${trove}.` : null;
+    }
+  ];
+
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+
+  if (options.variant === 'occupied') {
+    const recentYear = Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.22))) || Math.max(1, Math.round(horizon * 0.22));
+    const occupier = pickRandomFrom(
+      ['an orc warlord', 'a duergar tyrant', 'a dragon cult', 'hobgoblin legates'],
+      rng
+    );
+    events.push(createHistoryEntry(recentYear, `${occupier || 'raiders'} seized the hold and drove the dwarves into exile.`));
+  } else if (options.variant === 'ruined') {
+    const collapseYear = Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.18))) || Math.max(1, Math.round(horizon * 0.18));
+    events.push(createHistoryEntry(collapseYear, 'cataclysmic quakes shattered the underways and toppled the great halls.'));
+  } else if (options.variant === 'abandoned') {
+    const sealYear = Math.min(...additionalYears, Math.max(1, Math.round(horizon * 0.25))) || Math.max(1, Math.round(horizon * 0.25));
+    events.push(createHistoryEntry(sealYear, 'the last thane sealed the gates and led the clans to safer halls.'));
+  }
+
+  return events;
+}
+
+function generateWoodElfSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 140, max: 520 });
+  const events = [];
+  if (horizon) {
+    events.push(createHistoryEntry(horizon, `${context.name} took root beneath the elder trees.`));
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) => {
+      const circle = pickRandomFrom(woodElfGroveCircleNames, randomFn) || 'Circle of the Silver Bough';
+      return `the ${circle} sealed a rift to the Feywild.`;
+    },
+    (ctx, randomFn) =>
+      `wardens drove back ${pickRandomFrom(woodElfEnemyPhrases, randomFn) || 'ironwood poachers'} from the sacred trees.`,
+    (ctx, randomFn) => `${pickRandomFrom(woodElfRitualNames, randomFn) || 'Moonbloom Vigil'} was first danced beneath the luminous canopy.`,
+    (ctx, randomFn) => `${pickRandomFrom(woodElfPhenomena, randomFn) || 'starlight fell through every leaf'}.`,
+    (ctx, randomFn) => {
+      const visitor = pickRandomFrom(['dwarven emissaries', 'human archdruids', 'griffon riders', 'arcane sages'], randomFn);
+      return visitor ? `${visitor} were welcomed into the grove for counsel.` : null;
+    },
+    (ctx, randomFn) => {
+      if (!ctx.prominentGroup) {
+        return null;
+      }
+      return `the ${ctx.prominentGroup} renewed their oath to guard the Heartroot.`;
+    }
+  ];
+
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateLizardmenSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 160, max: 520 });
+  const events = [];
+  if (horizon) {
+    events.push(createHistoryEntry(horizon, `${context.name} was raised as a sacred ${context.displayType.toLowerCase()}.`));
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) =>
+      `the oracles proclaimed ${pickRandomFrom(lizardmenPortents, randomFn) || 'a blazing omen'}, reshaping temple rites.`,
+    (ctx, randomFn) =>
+      `scale-priests led ${pickRandomFrom(lizardmenCampaigns, randomFn) || 'the Sunblood Crusade'}, sending legions into the jungles.`,
+    (ctx, randomFn) => `${pickRandomFrom(['pyramid terraces', 'sunken ziggurats', 'obsidian causeways'], randomFn) || 'obsidian terraces'} were carved to honor the gods.`,
+    (ctx, randomFn) => `${pickRandomFrom(['saurus cohorts', 'razorback cavalry', 'skink skirmishers'], randomFn) || 'saurus cohorts'} swore fealty to the ruling temple.`,
+    (ctx, randomFn) => {
+      const orderName = ctx.prominentGroup || pickRandomFrom(lizardmenCityOrders, randomFn);
+      return orderName ? `the ${orderName} warded the vaults against serpent cultists.` : null;
+    }
+  ];
+
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateTowerSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 28, max: 260 });
+  const events = [];
+  if (horizon) {
+    events.push(
+      createHistoryEntry(
+        horizon,
+        `${context.name} was established under ${context.rulerTitle || 'Castellan'} ${context.rulerName || 'Aldren Stonewatch'}.`
+      )
+    );
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) => pickRandomFrom(towerAlarmEvents, randomFn),
+    (ctx, randomFn) => `the beacon-chain was repaired after lightning shattered the signal spire.`,
+    (ctx, randomFn) => `${pickRandomFrom(towerVisitors, randomFn) || 'envoys from the capital'} inspected the defenses.`,
+    (ctx, randomFn) => `${pickRandomFrom(['engineers raised new ballistae', 'alchemists fortified the battlements', 'masons rebuilt the curtain wall'], randomFn)}.`,
+    (ctx, randomFn) => {
+      const order = ctx.prominentGroup || pickRandomFrom(towerOrderNames, randomFn);
+      return order ? `the ${order} swore a new oath of vigilance.` : null;
+    }
+  ];
+
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateEvilWizardSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 40, max: 260 });
+  const events = [];
+  if (horizon) {
+    events.push(createHistoryEntry(horizon, `${context.name} rose when ${context.rulerTitle || 'Archwizard'} ${context.rulerName || 'Malachar'} claimed the spire.`));
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) => `${pickRandomFrom(wizardTowerCatastrophes, randomFn) || 'a summoning tore open a screaming rift'}`,
+    (ctx, randomFn) => `${pickRandomFrom(wizardTowerExperiments, randomFn) || 'Midnight Ascension'} bound the tower to planar ley-lines.`,
+    (ctx, randomFn) => `${pickRandomFrom(['a legion of constructs', 'a host of chained wraiths', 'a cabal of cursed apprentices'], randomFn) || 'a legion of constructs'} marched from the gates.`,
+    (ctx, randomFn) => `${pickRandomFrom(['rebellious apprentices', 'paladins of the Dawn', 'an order of witch hunters'], randomFn) || 'paladins'} besieged the tower and were repelled.`,
+    (ctx, randomFn) => {
+      if (!ctx.prominentGroup) {
+        return null;
+      }
+      return `${ctx.prominentGroup} completed a grand ritual atop the obsidian dais.`;
+    }
+  ];
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateMineSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 24, max: 90 });
+  const events = [];
+  if (horizon) {
+    events.push(createHistoryEntry(horizon, `${context.name} was sunk to tap the mountain riches.`));
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) => `${pickRandomFrom(mineIncidents, randomFn) || 'a cave-in sealed the lower galleries for a month'}.`,
+    (ctx, randomFn) => `${pickRandomFrom(mineDiscoveries, randomFn) || 'a glittering vein of mithril ore'} was discovered.`,
+    (ctx, randomFn) => `the Miners Guild struck for fair shares and won new charter terms.`,
+    (ctx, randomFn) => `${pickRandomFrom(['steam drills were installed along the deep shafts', 'ore caravans began nightly departures', 'new lifts were carved into the heartrock'], randomFn)}.`,
+    (ctx, randomFn) => `engineers diverted an underground river to power the smelters.`,
+    (ctx, randomFn) => `${pickRandomFrom(['tunnel sentries fought off a delver beast', 'kobold saboteurs were caught with stolen ore', 'the overseer ordered triple shifts to meet royal quotas'], randomFn)}.`
+  ];
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateCaveSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 30, max: 140 });
+  const events = [];
+  if (horizon) {
+    events.push(createHistoryEntry(horizon, `${context.name} warrens were carved by scheming goblins.`));
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) => `${ctx.prominentGroup || 'the clan'} ${pickRandomFrom(goblinSchemes, randomFn) || 'plotted under cover of drums'}.`,
+    (ctx, randomFn) => `${pickRandomFrom(['trap-makers laced the tunnels with deadfalls', 'war drums thundered through the night', 'a new chieftain painted the cavern walls with trophies'], randomFn)}.`,
+    (ctx, randomFn) => `${pickRandomFrom(goblinRaids, randomFn) || 'raided the river caravans'} before melting back into the caves.`,
+    (ctx, randomFn) => `shamans bargained with underdark spirits for cruel blessings.`,
+    (ctx, randomFn) => `skulkers tunneled toward a dwarven vault before collapsing the passage.`,
+    (ctx, randomFn) => `${pickRandomFrom(['wolf riders', 'beast tamers', 'hobgoblin allies'], randomFn) || 'wolf riders'} swore themselves to the chieftain.`
+  ];
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateGenericSettlementHistory(context, rng) {
+  const horizon = resolveHistorySpan(context.foundedYearsAgo, rng, { min: 40, max: 360 });
+  const events = [];
+  if (horizon) {
+    events.push(createHistoryEntry(horizon, `${context.name} first appears in the oldest surviving chronicles.`));
+  }
+  const additionalYears = generateHistoryYearSet(horizon, 5, rng);
+  const templateFns = [
+    (ctx, randomFn) => `${pickRandomFrom(genericHistoryMoments, randomFn) || 'storm floods forced the folk to rebuild their bridges'}.`,
+    (ctx, randomFn) => `a council of elders forged new laws to guide the ${ctx.kindLower}.`,
+    (ctx, randomFn) => `travelers from distant realms brought tales and rare curiosities.`,
+    (ctx, randomFn) => `${pickRandomFrom(['mysterious lights danced above the hills', 'a wandering saint blessed the wellspring', 'the harvest overflowed and filled every granary'], randomFn)}.`,
+    (ctx, randomFn) => `craftsfolk raised a hall that became the heart of the community.`,
+    (ctx, randomFn) => {
+      if (!ctx.prominentGroup) {
+        return null;
+      }
+      return `${ctx.prominentGroup} guided the settlement through a time of unrest.`;
+    }
+  ];
+  events.push(...generateHistoryFromTemplates(additionalYears, templateFns, context, rng));
+  return events;
+}
+
+function generateSettlementHistoryEntries(tile, details, context) {
+  const historySeedParts = [
+    details?.name,
+    tile?.structureName,
+    details?.type,
+    details?.classification,
+    tile?.structure,
+    Number.isFinite(context?.tileX) ? `x${context.tileX}` : null,
+    Number.isFinite(context?.tileY) ? `y${context.tileY}` : null,
+    Number.isFinite(state?.worldChronology?.year) ? `y${state.worldChronology.year}` : null
+  ]
+    .map((value) => (value != null ? String(value).trim() : ''))
+    .filter((value) => value.length > 0);
+  const seedString = historySeedParts.length > 0 ? historySeedParts.join('|') : 'default-settlement-history';
+  const historySeed = (stringToSeed(seedString) + 0x3ad71521) >>> 0;
+  const rng = mulberry32(historySeed || 1);
+  const historyContext = createSettlementHistoryContext(tile, details, context, rng);
+  const typeKey = historyContext.type;
+
+  let events = [];
+  switch (typeKey) {
+    case 'city':
+    case 'town':
+    case 'village':
+    case 'hamlet':
+      events = generateHumanSettlementHistory(historyContext, rng);
+      break;
+    case 'dwarfhold':
+    case 'greatdwarfhold':
+    case 'hillhold':
+      events = generateDwarvenSettlementHistory(historyContext, rng);
+      break;
+    case 'occupyddwarfhold':
+    case 'occupieddwarfhold':
+      events = generateDwarvenSettlementHistory(historyContext, rng, { variant: 'occupied' });
+      break;
+    case 'abandoneddwarfhold':
+      events = generateDwarvenSettlementHistory(historyContext, rng, { variant: 'abandoned' });
+      break;
+    case 'ruineddwarfhold':
+      events = generateDwarvenSettlementHistory(historyContext, rng, { variant: 'ruined', fallbackRange: { min: 160, max: 540 } });
+      break;
+    case 'woodelfgrove':
+      events = generateWoodElfSettlementHistory(historyContext, rng);
+      break;
+    case 'lizardmencity':
+      events = generateLizardmenSettlementHistory(historyContext, rng);
+      break;
+    case 'tower':
+      events = generateTowerSettlementHistory(historyContext, rng);
+      break;
+    case 'evilwizardtower':
+      events = generateEvilWizardSettlementHistory(historyContext, rng);
+      break;
+    case 'mine':
+      events = generateMineSettlementHistory(historyContext, rng);
+      break;
+    case 'cave':
+      events = generateCaveSettlementHistory(historyContext, rng);
+      break;
+    default:
+      events = generateGenericSettlementHistory(historyContext, rng);
+      break;
+  }
+
+  const uniqueMap = new Map();
+  events
+    .filter((event) => event && typeof event.description === 'string')
+    .forEach((event) => {
+      const yearsAgo = Number.isFinite(event.yearsAgo) ? Math.max(1, Math.round(event.yearsAgo)) : null;
+      const description = event.description.trim();
+      if (!description) {
+        return;
+      }
+      const label = typeof event.label === 'string' && event.label.trim().length > 0 ? event.label.trim() : null;
+      const key = `${yearsAgo ?? 'present'}|${description.toLowerCase()}`;
+      if (!uniqueMap.has(key)) {
+        const eventYear =
+          Number.isFinite(historyContext.currentYear) && Number.isFinite(yearsAgo)
+            ? historyContext.currentYear - yearsAgo
+            : null;
+        uniqueMap.set(key, { yearsAgo, description, label, eventYear });
+      }
+    });
+
+  return Array.from(uniqueMap.values()).sort((a, b) => {
+    const aValue = Number.isFinite(a.yearsAgo) ? a.yearsAgo : -Infinity;
+    const bValue = Number.isFinite(b.yearsAgo) ? b.yearsAgo : -Infinity;
+    return bValue - aValue;
+  });
+}
+
+function buildSettlementHistoryContent(tile, details, context = {}) {
+  const entries = generateSettlementHistoryEntries(tile, details, context);
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return getStructureDetailsPlaceholder('No chronicles have been preserved for this settlement yet.');
+  }
+
+  const listItems = entries
+    .map((entry) => {
+      const yearsAgo = Number.isFinite(entry.yearsAgo) ? Math.max(1, Math.round(entry.yearsAgo)) : null;
+      const labelText = entry.label
+        ? entry.label
+        : yearsAgo !== null
+        ? `${yearsAgo.toLocaleString('en-US')} years ago`
+        : 'In recent years';
+      const eventYear = Number.isFinite(entry.eventYear) ? Math.round(entry.eventYear) : null;
+      const labelAttributes = eventYear !== null ? ` title="Year ${eventYear.toLocaleString('en-US')}"` : '';
+      return `
+        <li class="structure-details-history-item">
+          <span class="structure-details-history-year"${labelAttributes}>${escapeHtml(labelText)}</span>
+          <span class="structure-details-history-description">${escapeHtml(entry.description)}</span>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <div class="structure-details-column structure-details-column--primary">
+      <ol class="structure-details-history-list">
+        ${listItems}
+      </ol>
     </div>
   `;
 }
@@ -18883,6 +19794,8 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
 
   let body;
 
+  const historyContent = buildSettlementHistoryContent(tile, details, context);
+
   if (hasSectionContent) {
     columnSections[2].push(settlementArtwork);
 
@@ -18922,7 +19835,8 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   return {
     title: resolvedName,
     subtitle,
-    body
+    body,
+    history: historyContent
   };
 }
 
@@ -18958,7 +19872,9 @@ function showStructureDetails(tile, context = {}) {
 
   structureDetailsState.tabContent = {
     main: content.main || content.body,
-    history: '<div class="structure-details-column structure-details-column--primary" aria-hidden="true"></div>',
+    history:
+      content.history ||
+      getStructureDetailsPlaceholder('No chronicles have been preserved for this settlement yet.'),
     features:
       content.features ||
       getStructureDetailsPlaceholder('No notable features have been recorded for this settlement yet.'),
