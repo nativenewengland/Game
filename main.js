@@ -1,3 +1,103 @@
+export function generateCropsNearFarm({
+  tiles,
+  mapWidth,
+  mapHeight,
+  centerX,
+  centerY,
+  farmCropOverlayKey,
+  farmCropSeed = 0,
+  isTileEligibleForFarmCrops,
+  hashCoords,
+  registerCropPlacement,
+  radius = 3,
+  maxCropsPerFarm = 3
+} = {}) {
+  if (!farmCropOverlayKey) {
+    return 0;
+  }
+  if (!Array.isArray(tiles) || tiles.length === 0) {
+    return 0;
+  }
+
+  const height = Number.isFinite(mapHeight) ? mapHeight : tiles.length;
+  const width = Number.isFinite(mapWidth) ? mapWidth : tiles[0]?.length || 0;
+  if (!Number.isFinite(centerX) || !Number.isFinite(centerY) || width <= 0 || height <= 0) {
+    return 0;
+  }
+
+  const effectiveRadius = Math.max(0, Math.floor(radius));
+  if (effectiveRadius === 0) {
+    return 0;
+  }
+
+  const eligibilityFn = typeof isTileEligibleForFarmCrops === 'function'
+    ? isTileEligibleForFarmCrops
+    : (tile) => Boolean(tile) && !tile.structure && !tile.river;
+  const hashFn = typeof hashCoords === 'function'
+    ? hashCoords
+    : (x, y, seed) => {
+        const n = Math.sin((x * 374761393 + y * 668265263 + seed) | 0) * 43758.5453;
+        return n - Math.floor(n);
+      };
+
+  const seed = (farmCropSeed + Math.imul(centerX, 0x27d4eb2d) + Math.imul(centerY, 0x9e3779b9)) >>> 0;
+  let cropsPlaced = 0;
+
+  for (let dy = -effectiveRadius; dy <= effectiveRadius; dy += 1) {
+    const ny = centerY + dy;
+    if (ny < 0 || ny >= height) {
+      continue;
+    }
+    const row = tiles[ny];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+
+    for (let dx = -effectiveRadius; dx <= effectiveRadius; dx += 1) {
+      const nx = centerX + dx;
+      if (nx < 0 || nx >= width || (dx === 0 && dy === 0)) {
+        continue;
+      }
+
+      const neighborTile = row[nx];
+      if (!eligibilityFn(neighborTile)) {
+        continue;
+      }
+
+      const distance = Math.max(Math.abs(dx), Math.abs(dy));
+      if (distance > effectiveRadius) {
+        continue;
+      }
+
+      let chance = 0;
+      if (distance <= 1) {
+        chance = 0.65;
+      } else if (distance === 2) {
+        chance = 0.4;
+      } else if (distance === 3) {
+        chance = 0.22;
+      }
+      if (chance <= 0) {
+        continue;
+      }
+
+      const roll = hashFn(nx, ny, seed);
+      if (roll < chance) {
+        neighborTile.overlay = farmCropOverlayKey;
+        if (typeof registerCropPlacement === 'function') {
+          registerCropPlacement(nx, ny);
+        }
+        cropsPlaced += 1;
+        if (cropsPlaced >= maxCropsPerFarm) {
+          return cropsPlaced;
+        }
+      }
+    }
+  }
+
+  return cropsPlaced;
+}
+
 function generateNiceAxisTicks(minValue, maxValue, desiredCount = 5) {
   const resolvedMin = Number.isFinite(minValue) ? minValue : 0;
   const resolvedMax = Number.isFinite(maxValue) ? Math.max(maxValue, resolvedMin) : resolvedMin;
