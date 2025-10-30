@@ -1508,6 +1508,98 @@ button:hover:not(:disabled) {
   line-height: 1.45;
 }
 
+.structure-details-history-chart {
+  margin-bottom: 1.25rem;
+  background: rgba(12, 15, 25, 0.65);
+  border: 1px solid rgba(240, 198, 116, 0.18);
+  border-radius: 16px;
+  padding: 1.15rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 1.1rem 2.4rem rgba(0, 0, 0, 0.28);
+}
+
+.structure-details-history-chart__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.structure-details-history-chart__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.structure-details-history-chart__current {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.structure-details-history-chart__figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.structure-details-history-chart__sparkline {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 7;
+  display: block;
+}
+
+.structure-details-history-chart__area {
+  fill: rgba(240, 198, 116, 0.24);
+  stroke: none;
+}
+
+.structure-details-history-chart__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.structure-details-history-chart__caption {
+  margin: 0;
+}
+
+.structure-details-history-chart__stats {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.structure-details-history-chart__stat {
+  background: rgba(8, 10, 18, 0.7);
+  border-radius: 12px;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.structure-details-history-chart__stat dt {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.structure-details-history-chart__stat dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
 @media (max-width: 720px) {
   .structure-details-history-item {
     flex-direction: column;
@@ -1516,6 +1608,20 @@ button:hover:not(:disabled) {
 
   .structure-details-history-year {
     min-width: auto;
+  }
+
+  .structure-details-history-chart {
+    padding: 1rem;
+  }
+
+  .structure-details-history-chart__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .structure-details-history-chart__stats {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
