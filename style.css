@@ -1553,6 +1553,20 @@ button:hover:not(:disabled) {
   display: block;
 }
 
+.structure-details-history-chart__axis-label {
+  font-size: 0.7rem;
+  fill: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.04em;
+}
+
+.structure-details-history-chart__axis-label--x {
+  dominant-baseline: hanging;
+}
+
+.structure-details-history-chart__axis-label--y {
+  dominant-baseline: middle;
+}
+
 .structure-details-history-chart__area {
   fill: rgba(240, 198, 116, 0.24);
   stroke: none;
