@@ -14266,7 +14266,7 @@ const dwarfholdScreenConfig = {
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
 
-const structureDetailsTabIds = ['history', 'main', 'features', 'economy'];
+const structureDetailsTabIds = ['main', 'history', 'features', 'economy'];
 
 const structureDetailsState = {
   visible: false,
@@ -18957,8 +18957,8 @@ function showStructureDetails(tile, context = {}) {
   }
 
   structureDetailsState.tabContent = {
-    history: content.history || content.body,
     main: content.main || content.body,
+    history: '<div class="structure-details-column structure-details-column--primary" aria-hidden="true"></div>',
     features:
       content.features ||
       getStructureDetailsPlaceholder('No notable features have been recorded for this settlement yet.'),
@@ -18967,7 +18967,7 @@ function showStructureDetails(tile, context = {}) {
       getStructureDetailsPlaceholder('No economic records are available for this settlement yet.')
   };
 
-  setActiveStructureDetailsTab('history', { force: true });
+  setActiveStructureDetailsTab('main', { force: true });
 
   playStructureAmbienceForTile(tile);
 
@@ -18990,7 +18990,7 @@ function hideStructureDetails(options = {}) {
     elements.structureDetailsContent.innerHTML = '';
   }
   structureDetailsState.tabContent = {};
-  setActiveStructureDetailsTab('history', { force: true, skipContent: true });
+  setActiveStructureDetailsTab('main', { force: true, skipContent: true });
   structureDetailsState.visible = false;
 
   if (options.returnFocus && elements.canvasWrapper && typeof elements.canvasWrapper.focus === 'function') {
