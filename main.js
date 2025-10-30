@@ -6745,6 +6745,7 @@ function spawnAmbientStructures({
   const farmRelocationTargetSeed = (numericSeed + 0x0b6d0f1d) >>> 0;
   const farmRelocationAltSeed = (numericSeed + 0x8f2a5c4b) >>> 0;
   const farmCropSwapSeed = (numericSeed + 0x2bd7a4dd) >>> 0;
+  const farmCropDeclusterSeed = (numericSeed + 0x4e8f9ab7) >>> 0;
   const huntingSeed = (numericSeed + 0x41c6ce57) >>> 0;
 
   const farmStructureKeys = [];
@@ -6869,6 +6870,33 @@ function spawnAmbientStructures({
     registerCropPlacement(destination.x, destination.y);
   };
 
+  const countTrackedCropsWithinRadius = (centerX, centerY, radius = 1) => {
+    if (radius <= 0 || cropTilesPlacedByGenerator.size === 0) {
+      return cropTilesPlacedByGenerator.has(makeCoordKey(centerX, centerY)) ? 1 : 0;
+    }
+    let count = 0;
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const ny = centerY + dy;
+      if (ny < 0 || ny >= mapHeight) {
+        continue;
+      }
+      const row = tiles[ny];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const nx = centerX + dx;
+        if (nx < 0 || nx >= mapWidth) {
+          continue;
+        }
+        if (cropTilesPlacedByGenerator.has(makeCoordKey(nx, ny)) && row[nx]?.overlay === farmCropOverlayKey) {
+          count += 1;
+        }
+      }
+    }
+    return count;
+  };
+
   let cropRelocationCounter = 0;
   const relocateCropsNear = (centerX, centerY) => {
     if (!farmCropOverlayKey || cropTilesPlacedByGenerator.size === 0) {
@@ -6903,6 +6931,102 @@ function spawnAmbientStructures({
       }
     }
     cropRelocationCounter += movedHere;
+  };
+
+  const runCropDeclusteringPass = () => {
+    if (!farmCropOverlayKey || cropTilesPlacedByGenerator.size === 0) {
+      return;
+    }
+
+    const relocationBudget = Math.max(0, Math.floor(cropTilesPlacedByGenerator.size * 0.2));
+    if (relocationBudget === 0) {
+      return;
+    }
+
+    const processed = new Set();
+    let relocationsPerformed = 0;
+
+    const scheduleRelocationIfCrowded = (centerX, centerY) => {
+      if (relocationsPerformed >= relocationBudget) {
+        return;
+      }
+      const candidates = [];
+      for (let dy = -1; dy <= 1; dy += 1) {
+        const ny = centerY + dy;
+        if (ny < 0 || ny >= mapHeight) {
+          continue;
+        }
+        const row = tiles[ny];
+        if (!Array.isArray(row)) {
+          continue;
+        }
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const nx = centerX + dx;
+          if (nx < 0 || nx >= mapWidth || (dx === 0 && dy === 0)) {
+            continue;
+          }
+          const tile = row[nx];
+          if (!tile || tile.overlay !== farmCropOverlayKey) {
+            continue;
+          }
+          const key = makeCoordKey(nx, ny);
+          if (!cropTilesPlacedByGenerator.has(key) || processed.has(key)) {
+            continue;
+          }
+          const density = countTrackedCropsWithinRadius(nx, ny, 1);
+          candidates.push({ x: nx, y: ny, key, density });
+        }
+      }
+
+      const maxImmediateNeighbors = 4;
+      if (candidates.length <= maxImmediateNeighbors) {
+        return;
+      }
+
+      candidates.sort((a, b) => {
+        if (b.density !== a.density) {
+          return b.density - a.density;
+        }
+        const aRoll = hashCoords(a.x, a.y, farmCropDeclusterSeed);
+        const bRoll = hashCoords(b.x, b.y, farmCropDeclusterSeed);
+        if (aRoll === bRoll) {
+          return 0;
+        }
+        return aRoll < bRoll ? -1 : 1;
+      });
+
+      const relocationsNeeded = Math.min(candidates.length - maxImmediateNeighbors, relocationBudget - relocationsPerformed);
+      for (let i = 0; i < relocationsNeeded; i += 1) {
+        const candidate = candidates[i];
+        processed.add(candidate.key);
+        relocateCropOverlayFromTile(candidate.x, candidate.y, cropRelocationCounter);
+        cropRelocationCounter += 1;
+        relocationsPerformed += 1;
+        if (relocationsPerformed >= relocationBudget) {
+          break;
+        }
+      }
+    };
+
+    for (let y = 0; y < mapHeight; y += 1) {
+      if (relocationsPerformed >= relocationBudget) {
+        break;
+      }
+      const row = tiles[y];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      for (let x = 0; x < mapWidth; x += 1) {
+        if (relocationsPerformed >= relocationBudget) {
+          break;
+        }
+        const tile = row[x];
+        if (!tile || !farmStructureKeySet.has(tile.structure)) {
+          continue;
+        }
+        scheduleRelocationIfCrowded(x, y);
+      }
+    }
   };
 
   const createRelocationRng = (x, y, seed) => {
@@ -7284,6 +7408,8 @@ function spawnAmbientStructures({
       }
     }
   }
+
+  runCropDeclusteringPass();
 
   return placements;
 }
