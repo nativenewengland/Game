@@ -106,7 +106,7 @@ select,
 }
 
 #world-info {
-  --embark-scale: 0.59976;
+  --embark-scale: 0.612;
 }
 
 #world-info .embark-panel {
@@ -123,11 +123,6 @@ select,
     calc(2.5vw * var(--embark-scale)),
     calc(2.25rem * var(--embark-scale))
   );
-  scrollbar-width: none;
-}
-
-#world-info .embark-panel::-webkit-scrollbar {
-  display: none;
 }
 
 #dwarf-customizer {
@@ -3686,36 +3681,6 @@ button:hover:not(:disabled) {
     );
   mix-blend-mode: multiply;
   opacity: 0.7;
-}
-
-.region-name-overlay {
-  position: absolute;
-  inset: 0;
-  display: none;
-  pointer-events: none;
-  z-index: 1;
-  font-family: 'Uncial Antiqua', 'Cormorant Garamond', serif;
-  color: rgba(248, 244, 232, 0.9);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.region-name-overlay--visible {
-  display: block;
-}
-
-.region-name-label {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
-  border: 1px solid rgba(239, 222, 174, 0.35);
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.65), rgba(12, 16, 26, 0.55));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-  font-size: clamp(0.55rem, 0.7vw, 0.95rem);
-  color: inherit;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .local-map-panel {

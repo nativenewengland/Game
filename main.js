@@ -1,100 +1,185 @@
-import { elements } from './src/ui/elements.js';
-
-function setVisibility(element, shouldShow) {
-  if (!element) {
-    return;
-  }
-
-  const method = shouldShow ? 'remove' : 'add';
-  element.classList[method]('hidden');
-  element.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-}
-
-function setLoadingProgress(percent, statusText) {
-  const clamped = Math.max(0, Math.min(100, Math.round(percent)));
-
-  if (elements.loadingProgressBar) {
-    elements.loadingProgressBar.setAttribute('aria-valuenow', String(clamped));
-  }
-
-  if (elements.loadingProgressFill) {
-    elements.loadingProgressFill.style.width = `${clamped}%`;
-  }
-
-  if (elements.loadingStatus && typeof statusText === 'string') {
-    elements.loadingStatus.textContent = statusText;
-  }
-}
-
-function focusElement(element) {
-  if (!element) {
-    return;
-  }
-
-  if (typeof element.focus === 'function') {
-    element.focus();
-  }
-}
-
-function finishLoading() {
-  setVisibility(elements.loadingScreen, false);
-  setVisibility(elements.gameContainer, true);
-  focusElement(elements.gameContainer);
-}
-
-function simulateLoadingSequence(onComplete) {
-  const steps = [
-    { progress: 20, message: 'Surveying mountains and valleys…' },
-    { progress: 45, message: 'Settling clan disputes…' },
-    { progress: 70, message: 'Stocking the expedition caravan…' },
-    { progress: 100, message: 'Finalising your embark site…' }
-  ];
-
-  let currentStep = 0;
-
-  const advance = () => {
-    const step = steps[currentStep];
-    if (!step) {
-      if (typeof onComplete === 'function') {
-        onComplete();
-      }
+  const mergeTouchingWoodElfTerritories = () => {
+    if (!Array.isArray(factions) || factions.length === 0) {
       return;
     }
 
-    setLoadingProgress(step.progress, step.message);
-    currentStep += 1;
-    window.setTimeout(advance, 600);
+    const woodElfFactionIds = new Set();
+    factions.forEach((faction) => {
+      if (!faction || faction.id === null || faction.id === undefined) {
+        return;
+      }
+      const capitalType =
+        typeof faction?.capital?.type === 'string' ? faction.capital.type.trim().toLowerCase() : '';
+      if (capitalType === 'woodelfgrove') {
+        woodElfFactionIds.add(faction.id);
+      }
+    });
+
+    if (woodElfFactionIds.size < 2) {
+      return;
+    }
+
+    const parents = new Map();
+    woodElfFactionIds.forEach((id) => {
+      parents.set(id, id);
+    });
+
+    const findRoot = (id) => {
+      let parent = parents.get(id);
+      if (parent === undefined) {
+        parents.set(id, id);
+        return id;
+      }
+      if (parent === id) {
+        return id;
+      }
+      const root = findRoot(parent);
+      parents.set(id, root);
+      return root;
+    };
+
+    const unionRoots = (a, b) => {
+      if (a === b) {
+        return findRoot(a);
+      }
+      const rootA = findRoot(a);
+      const rootB = findRoot(b);
+      if (rootA === rootB) {
+        return rootA;
+      }
+      const newRoot = rootA < rootB ? rootA : rootB;
+      const otherRoot = newRoot === rootA ? rootB : rootA;
+      parents.set(otherRoot, newRoot);
+      return newRoot;
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      const row = tiles[y];
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < width; x += 1) {
+        const tile = row[x];
+        if (!tile) {
+          continue;
+        }
+        const factionId = tile.factionId;
+        if (!woodElfFactionIds.has(factionId)) {
+          continue;
+        }
+        for (let i = 0; i < surroundingNeighborOffsets.length; i += 1) {
+          const [ox, oy] = surroundingNeighborOffsets[i];
+          const nx = x + ox;
+          const ny = y + oy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+            continue;
+          }
+          const neighborRow = tiles[ny];
+          const neighborTile = neighborRow ? neighborRow[nx] : null;
+          if (!neighborTile) {
+            continue;
+          }
+          const neighborFactionId = neighborTile.factionId;
+          if (!woodElfFactionIds.has(neighborFactionId) || neighborFactionId === factionId) {
+            continue;
+          }
+          unionRoots(factionId, neighborFactionId);
+        }
+      }
+    }
+
+    const groups = new Map();
+    woodElfFactionIds.forEach((id) => {
+      const root = findRoot(id);
+      if (!groups.has(root)) {
+        groups.set(root, []);
+      }
+      groups.get(root).push(id);
+    });
+
+    const reassignmentMap = new Map();
+    const removedIds = new Set();
+
+    groups.forEach((members) => {
+      if (!Array.isArray(members) || members.length <= 1) {
+        return;
+      }
+
+      let primaryFaction = null;
+      members.forEach((memberId) => {
+        const faction = factionById.get(memberId);
+        if (!faction) {
+          return;
+        }
+        if (!primaryFaction) {
+          primaryFaction = faction;
+          return;
+        }
+        const primaryTerritory = Number.isFinite(primaryFaction.territory) ? primaryFaction.territory : 0;
+        const factionTerritory = Number.isFinite(faction.territory) ? faction.territory : 0;
+        if (factionTerritory > primaryTerritory) {
+          primaryFaction = faction;
+        } else if (factionTerritory === primaryTerritory && faction.id < primaryFaction.id) {
+          primaryFaction = faction;
+        }
+      });
+
+      if (!primaryFaction) {
+        return;
+      }
+
+      members.forEach((memberId) => {
+        if (memberId === primaryFaction.id) {
+          return;
+        }
+        reassignmentMap.set(memberId, primaryFaction.id);
+        removedIds.add(memberId);
+      });
+    });
+
+    if (reassignmentMap.size === 0) {
+      return;
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      const row = tiles[y];
+      if (!row) {
+        continue;
+      }
+      for (let x = 0; x < width; x += 1) {
+        const tile = row[x];
+        if (!tile) {
+          continue;
+        }
+        const factionId = tile.factionId;
+        if (factionId === null || factionId === undefined) {
+          continue;
+        }
+        const replacementId = reassignmentMap.get(factionId);
+        if (replacementId === undefined) {
+          continue;
+        }
+        tile.factionId = replacementId;
+      }
+    }
+
+    if (removedIds.size === 0) {
+      return;
+    }
+
+    for (let i = factions.length - 1; i >= 0; i -= 1) {
+      const faction = factions[i];
+      if (!faction) {
+        continue;
+      }
+      if (removedIds.has(faction.id)) {
+        factions.splice(i, 1);
+      }
+    }
+
+    removedIds.forEach((id) => {
+      factionById.delete(id);
+    });
   };
 
-  setLoadingProgress(5, 'Consulting the Mountainhome…');
-  window.setTimeout(advance, 400);
-}
-
-function handleStartClick(event) {
-  event.preventDefault();
-
-  if (!elements.startButton || elements.startButton.disabled) {
-    return;
-  }
-
-  elements.startButton.disabled = true;
-  elements.startButton.setAttribute('aria-disabled', 'true');
-
-  setVisibility(elements.titleScreen, false);
-  setVisibility(elements.loadingScreen, true);
-  focusElement(elements.loadingPanel);
-
-  simulateLoadingSequence(() => {
-    finishLoading();
-  });
-}
-
-function initialise() {
-  if (!elements.startButton) {
-    return;
-  }
-
-  elements.startButton.addEventListener('click', handleStartClick);
-}
-
-initialise();
+  mergeTouchingWoodElfTerritories();
