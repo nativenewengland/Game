@@ -19951,6 +19951,272 @@ function createArchipelagoMask() {
   });
 }
 
+function createArchipelagoIslandDefinition({
+  rng,
+  width,
+  height,
+  minRadius,
+  maxRadius,
+  islandSeed,
+  centerNormX,
+  centerNormY,
+  orientation,
+  clusterIntensity,
+  maskSample,
+  radiusBaseRange,
+  sizeScale
+}) {
+  const centerX = centerNormX * width;
+  const centerY = centerNormY * height;
+
+  const radiusBaseMin = Math.max(
+    3,
+    Math.floor(
+      radiusBaseRange && Number.isFinite(radiusBaseRange.min)
+        ? radiusBaseRange.min
+        : minRadius
+    )
+  );
+  const radiusBaseMax = Math.max(
+    radiusBaseMin,
+    Math.floor(
+      radiusBaseRange && Number.isFinite(radiusBaseRange.max)
+        ? radiusBaseRange.max
+        : maxRadius
+    )
+  );
+  const radiusBase =
+    radiusBaseMax <= radiusBaseMin
+      ? radiusBaseMin
+      : Math.floor(rng() * (radiusBaseMax - radiusBaseMin + 1)) + radiusBaseMin;
+
+  const effectiveSizeScale = sizeScale !== undefined ? sizeScale : 1;
+  const sizeMultiplier = Math.max(0.1, (0.7 + maskSample * 0.9) * effectiveSizeScale);
+  const radius = Math.max(3, Math.floor(radiusBase * sizeMultiplier));
+  const aspect = 0.55 + rng() * 1.15;
+  let majorRadius = Math.max(radius, 3);
+  let minorRadius = Math.max(majorRadius * aspect, 3);
+  if (rng() < 0.5) {
+    const swap = majorRadius;
+    majorRadius = minorRadius;
+    minorRadius = swap;
+  }
+
+  const cosRotation = Math.cos(orientation);
+  const sinRotation = Math.sin(orientation);
+  const falloffPower = 1.15 + rng() * 1.5 - clusterIntensity * 0.35;
+  const shelfStrength = 0.28 + rng() * 0.32 + maskSample * 0.25;
+  const peakHeight = 0.52 + rng() * 0.42 + maskSample * 0.35;
+  const coastlineRoughness = 0.24 + rng() * 0.26 + (1 - clusterIntensity) * 0.18;
+  const turbulenceStrength = 0.26 + rng() * 0.34 + maskSample * 0.2;
+  const noiseScale = 3.8 + rng() * 5.8;
+  const tectonicStrength = 0.32 + rng() * 0.42 + maskSample * 0.35;
+  const lobeCount = 2 + Math.floor(rng() * 7);
+  const lobePhase = rng() * Math.PI * 2;
+  const lobeStrength = 0.12 + rng() * 0.22 + (clusterIntensity - 0.6) * 0.18;
+  const rippleCount = lobeCount * 2 + Math.floor(rng() * 5);
+  const ripplePhase = rng() * Math.PI * 2;
+  const rippleStrength = 0.045 + rng() * 0.085 + (1 - clusterIntensity) * 0.045;
+  const ridgeStrength = 0.035 + rng() * 0.1 + maskSample * 0.08;
+  const ridgePhase = rng() * Math.PI * 2;
+  const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
+  const fractureStrength = 0.04 + rng() * 0.12 + (1 - maskSample) * 0.06;
+  const fracturePhase = rng() * Math.PI * 2;
+  const fractureSeed = (islandSeed ^ 0xbb67ae85) >>> 0;
+  const radialNoiseSeed = (islandSeed ^ 0xc4ceb9fe) >>> 0;
+  const radialNoiseStrength = 0.07 + rng() * 0.09 + maskSample * 0.08;
+  const radialNoisePhase = rng() * Math.PI * 2;
+  const radialNoiseFrequency = 2.2 + rng() * 2.6;
+
+  const influenceRadiusX = majorRadius * 1.7;
+  const influenceRadiusY = minorRadius * 1.7;
+  const approxRadius = Math.max(majorRadius / width, minorRadius / height);
+
+  return {
+    centerX,
+    centerY,
+    centerNormX,
+    centerNormY,
+    majorRadius,
+    minorRadius,
+    cosRotation,
+    sinRotation,
+    falloffPower,
+    shelfStrength,
+    peakHeight,
+    coastlineRoughness,
+    turbulenceStrength,
+    noiseScale,
+    tectonicStrength,
+    lobeCount,
+    lobePhase,
+    lobeStrength,
+    rippleCount,
+    ripplePhase,
+    rippleStrength,
+    ridgeStrength,
+    ridgePhase,
+    ridgeSeed,
+    fractureStrength,
+    fracturePhase,
+    fractureSeed,
+    radialNoiseSeed,
+    radialNoiseStrength,
+    radialNoisePhase,
+    radialNoiseFrequency,
+    influenceRadiusX,
+    influenceRadiusY,
+    islandSeed,
+    maskSample,
+    approxRadius,
+    clusterIntensity
+  };
+}
+
+function applyArchipelagoIslandDefinition(island, width, height, heights, tectonics) {
+  const {
+    centerX,
+    centerY,
+    majorRadius,
+    minorRadius,
+    cosRotation,
+    sinRotation,
+    influenceRadiusX,
+    influenceRadiusY,
+    falloffPower,
+    shelfStrength,
+    peakHeight,
+    coastlineRoughness,
+    turbulenceStrength,
+    noiseScale,
+    tectonicStrength,
+    lobeCount,
+    lobePhase,
+    lobeStrength,
+    rippleCount,
+    ripplePhase,
+    rippleStrength,
+    ridgeStrength,
+    ridgePhase,
+    ridgeSeed,
+    fractureStrength,
+    fracturePhase,
+    fractureSeed,
+    radialNoiseSeed,
+    radialNoiseStrength,
+    radialNoisePhase,
+    radialNoiseFrequency,
+    islandSeed,
+    maskSample
+  } = island;
+
+  const minX = Math.max(0, Math.floor(centerX - influenceRadiusX));
+  const maxX = Math.min(width - 1, Math.ceil(centerX + influenceRadiusX));
+  const minY = Math.max(0, Math.floor(centerY - influenceRadiusY));
+  const maxY = Math.min(height - 1, Math.ceil(centerY + influenceRadiusY));
+
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) {
+      const offsetX = (x + 0.5 - centerX) / majorRadius;
+      const offsetY = (y + 0.5 - centerY) / minorRadius;
+      const rotatedX = offsetX * cosRotation - offsetY * sinRotation;
+      const rotatedY = offsetX * sinRotation + offsetY * cosRotation;
+      const distance = Math.sqrt(rotatedX * rotatedX + rotatedY * rotatedY);
+      if (distance > 1.9) {
+        continue;
+      }
+
+      const normalizedX = (x + 0.5) / width;
+      const normalizedY = (y + 0.5) / height;
+      const angle = Math.atan2(rotatedY, rotatedX);
+      const edgeBlend = clamp(1 - Math.min(distance, 1.6) * 0.65, 0, 1);
+      const harmonicWarp =
+        (Math.sin(angle * lobeCount + lobePhase) * lobeStrength +
+          Math.sin(angle * rippleCount + ripplePhase) * rippleStrength) *
+        edgeBlend;
+      const radialNoise =
+        (valueNoise(
+          (normalizedX + islandSeed * 0.000021) * (noiseScale * 0.55) +
+            Math.cos(angle + radialNoisePhase) * radialNoiseFrequency,
+          (normalizedY + islandSeed * 0.000021) * (noiseScale * 0.55) +
+            Math.sin(angle + radialNoisePhase) * radialNoiseFrequency,
+          radialNoiseSeed
+        ) -
+          0.5) *
+        radialNoiseStrength *
+        edgeBlend;
+      const angularWarp = clamp(
+        harmonicWarp + radialNoise,
+        -0.36,
+        0.24 + maskSample * 0.06
+      );
+      const ridgeNoise =
+        (valueNoise(
+          (normalizedX + islandSeed * 0.00013) * 9.1 + Math.cos(angle + ridgePhase) * 3.1,
+          (normalizedY + islandSeed * 0.00013) * 9.1 + Math.sin(angle + ridgePhase) * 3.1,
+          ridgeSeed
+        ) -
+          0.5) *
+        ridgeStrength *
+        edgeBlend;
+      const fractureNoise =
+        (valueNoise(
+          (normalizedX + islandSeed * 0.000091) * 13.2 +
+            Math.cos(angle * 0.65 + fracturePhase) * 4.5,
+          (normalizedY + islandSeed * 0.000091) * 13.2 +
+            Math.sin(angle * 0.65 + fracturePhase) * 4.5,
+          fractureSeed
+        ) -
+          0.5) *
+        fractureStrength *
+        edgeBlend;
+      const warpedDistance = distance - angularWarp - ridgeNoise - fractureNoise;
+      if (warpedDistance > 1.6) {
+        continue;
+      }
+
+      const coastlineNoise =
+        valueNoise(
+          (normalizedX + islandSeed * 0.0000153) * noiseScale,
+          (normalizedY + islandSeed * 0.0000271) * noiseScale,
+          islandSeed
+        ) - 0.5;
+      const coastalWarp = coastlineNoise * coastlineRoughness;
+      const adjustedDistance = warpedDistance - coastalWarp;
+      if (adjustedDistance > 1.2) {
+        continue;
+      }
+
+      const influence = clamp(1 - adjustedDistance, 0, 1);
+      if (influence <= 0) {
+        continue;
+      }
+
+      const shaped = Math.pow(influence, falloffPower);
+      const beach = clamp((influence - 0.35) / 0.65, 0, 1) * shelfStrength;
+      const turbulence =
+        (valueNoise(
+          (normalizedX + islandSeed * 0.000042) * (noiseScale * 0.7),
+          (normalizedY + islandSeed * 0.000058) * (noiseScale * 0.7),
+          islandSeed ^ 0x85ebca6b
+        ) -
+          0.5) *
+        turbulenceStrength;
+      const heightContribution = shaped * peakHeight + beach + turbulence;
+      const idx = y * width + x;
+
+      if (heightContribution > heights[idx]) {
+        heights[idx] = heightContribution;
+      }
+
+      const tectonicContribution = shaped * tectonicStrength;
+      if (tectonicContribution > tectonics[idx]) {
+        tectonics[idx] = tectonicContribution;
+      }
+    }
+  }
+}
+
 function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
   const total = width * height;
   const heights = new Float32Array(total);
@@ -20022,6 +20288,8 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
     return clusters[index];
   };
 
+  const generatedIslands = [];
+
   for (let i = 0; i < islandCount; i += 1) {
     const islandSeed = (baseSeed + i * 0x9e3779b9) >>> 0;
     const cluster = pickCluster();
@@ -20047,155 +20315,122 @@ function generateArchipelagoIslandFields(width, height, rng, seedNumber) {
       clusterIntensity = cluster.intensity;
     }
 
-    const centerX = centerNormX * width;
-    const centerY = centerNormY * height;
     const maskSample = clamp(sampleMask(centerNormX, centerNormY), 0, 1);
-    const radiusBase = Math.floor(rng() * (maxRadius - minRadius + 1)) + minRadius;
-    const sizeMultiplier = 0.7 + maskSample * 0.9;
-    const radius = Math.max(3, Math.floor(radiusBase * sizeMultiplier));
-    const aspect = 0.55 + rng() * 1.15;
-    let majorRadius = Math.max(radius, 3);
-    let minorRadius = Math.max(majorRadius * aspect, 3);
-    if (rng() < 0.5) {
-      const swap = majorRadius;
-      majorRadius = minorRadius;
-      minorRadius = swap;
+    const island = createArchipelagoIslandDefinition({
+      rng,
+      width,
+      height,
+      minRadius,
+      maxRadius,
+      islandSeed,
+      centerNormX,
+      centerNormY,
+      orientation,
+      clusterIntensity,
+      maskSample
+    });
+
+    applyArchipelagoIslandDefinition(island, width, height, heights, tectonics);
+    generatedIslands.push(island);
+  }
+
+  const fillerTarget = Math.min(Math.floor(generatedIslands.length * 0.35), 45);
+  let fillerAttempts = fillerTarget * 6;
+  const fillerIslands = [];
+
+  while (fillerIslands.length < fillerTarget && fillerAttempts > 0 && generatedIslands.length > 1) {
+    fillerAttempts -= 1;
+    const islandA = generatedIslands[Math.floor(rng() * generatedIslands.length)];
+    let islandB = islandA;
+    for (let retry = 0; retry < 4 && islandB === islandA; retry += 1) {
+      islandB = generatedIslands[Math.floor(rng() * generatedIslands.length)];
+    }
+    if (islandB === islandA) {
+      continue;
     }
 
-    const cosRotation = Math.cos(orientation);
-    const sinRotation = Math.sin(orientation);
-    const falloffPower = 1.15 + rng() * 1.5 - clusterIntensity * 0.35;
-    const shelfStrength = 0.28 + rng() * 0.32 + maskSample * 0.25;
-    const peakHeight = 0.52 + rng() * 0.42 + maskSample * 0.35;
-    const coastlineRoughness = 0.24 + rng() * 0.26 + (1 - clusterIntensity) * 0.18;
-    const turbulenceStrength = 0.26 + rng() * 0.34 + maskSample * 0.2;
-    const noiseScale = 3.8 + rng() * 5.8;
-    const tectonicStrength = 0.32 + rng() * 0.42 + maskSample * 0.35;
-    const lobeCount = 2 + Math.floor(rng() * 7);
-    const lobePhase = rng() * Math.PI * 2;
-    const lobeStrength = 0.12 + rng() * 0.22 + (clusterIntensity - 0.6) * 0.18;
-    const rippleCount = lobeCount * 2 + Math.floor(rng() * 5);
-    const ripplePhase = rng() * Math.PI * 2;
-    const rippleStrength = 0.045 + rng() * 0.085 + (1 - clusterIntensity) * 0.045;
-    const ridgeStrength = 0.035 + rng() * 0.1 + maskSample * 0.08;
-    const ridgePhase = rng() * Math.PI * 2;
-    const ridgeSeed = (islandSeed ^ 0x27d4eb2f) >>> 0;
-    const fractureStrength = 0.04 + rng() * 0.12 + (1 - maskSample) * 0.06;
-    const fracturePhase = rng() * Math.PI * 2;
-    const fractureSeed = (islandSeed ^ 0xbb67ae85) >>> 0;
-    const radialNoiseSeed = (islandSeed ^ 0xc4ceb9fe) >>> 0;
-    const radialNoiseStrength = 0.07 + rng() * 0.09 + maskSample * 0.08;
-    const radialNoisePhase = rng() * Math.PI * 2;
-    const radialNoiseFrequency = 2.2 + rng() * 2.6;
+    const vectorX = islandB.centerNormX - islandA.centerNormX;
+    const vectorY = islandB.centerNormY - islandA.centerNormY;
+    const distance = Math.hypot(vectorX, vectorY);
+    if (!Number.isFinite(distance) || distance < 0.08 || distance > 0.62) {
+      continue;
+    }
 
-    const influenceRadiusX = majorRadius * 1.7;
-    const influenceRadiusY = minorRadius * 1.7;
+    const midpointX = islandA.centerNormX + vectorX * 0.5;
+    const midpointY = islandA.centerNormY + vectorY * 0.5;
+    const perpendicularAngle = Math.atan2(vectorY, vectorX) + Math.PI * 0.5;
+    const perpendicularOffset = (rng() - 0.5) * distance * 0.45;
+    const centerNormX = clamp(midpointX + Math.cos(perpendicularAngle) * perpendicularOffset, 0.05, 0.95);
+    const centerNormY = clamp(midpointY + Math.sin(perpendicularAngle) * perpendicularOffset, 0.05, 0.95);
+    const maskSample = clamp(sampleMask(centerNormX, centerNormY), 0, 1);
+    if (maskSample < 0.28 || maskSample > 0.74) {
+      continue;
+    }
 
-    const minX = Math.max(0, Math.floor(centerX - influenceRadiusX));
-    const maxX = Math.min(width - 1, Math.ceil(centerX + influenceRadiusX));
-    const minY = Math.max(0, Math.floor(centerY - influenceRadiusY));
-    const maxY = Math.min(height - 1, Math.ceil(centerY + influenceRadiusY));
+    const sampleX = clamp(Math.floor(centerNormX * width), 0, width - 1);
+    const sampleY = clamp(Math.floor(centerNormY * height), 0, height - 1);
+    const sampleIdx = sampleY * width + sampleX;
+    if (heights[sampleIdx] > 0.32) {
+      continue;
+    }
 
-    for (let y = minY; y <= maxY; y += 1) {
-      for (let x = minX; x <= maxX; x += 1) {
-        const offsetX = (x + 0.5 - centerX) / majorRadius;
-        const offsetY = (y + 0.5 - centerY) / minorRadius;
-        const rotatedX = offsetX * cosRotation - offsetY * sinRotation;
-        const rotatedY = offsetX * sinRotation + offsetY * cosRotation;
-        const distance = Math.sqrt(rotatedX * rotatedX + rotatedY * rotatedY);
-        if (distance > 1.9) {
-          continue;
-        }
+    const fillerSeed = (baseSeed + (islandCount + fillerIslands.length + 1) * 0x9e3779b9) >>> 0;
+    const distanceScale = clamp(distance / 0.55, 0, 1);
+    const radiusBaseMin = Math.max(3, Math.floor(minRadius * 0.45));
+    const radiusBaseMax = Math.max(
+      radiusBaseMin,
+      Math.min(
+        Math.floor(maxRadius * 0.65),
+        Math.floor(minDimension * (0.06 + distanceScale * 0.08))
+      )
+    );
+    if (radiusBaseMax < radiusBaseMin) {
+      continue;
+    }
 
-        const normalizedX = (x + 0.5) / width;
-        const normalizedY = (y + 0.5) / height;
-        const angle = Math.atan2(rotatedY, rotatedX);
-        const edgeBlend = clamp(1 - Math.min(distance, 1.6) * 0.65, 0, 1);
-        const harmonicWarp =
-          (Math.sin(angle * lobeCount + lobePhase) * lobeStrength +
-            Math.sin(angle * rippleCount + ripplePhase) * rippleStrength) *
-          edgeBlend;
-        const radialNoise =
-          (valueNoise(
-            (normalizedX + islandSeed * 0.000021) * (noiseScale * 0.55) +
-              Math.cos(angle + radialNoisePhase) * radialNoiseFrequency,
-            (normalizedY + islandSeed * 0.000021) * (noiseScale * 0.55) +
-              Math.sin(angle + radialNoisePhase) * radialNoiseFrequency,
-            radialNoiseSeed
-          ) -
-            0.5) *
-          radialNoiseStrength *
-          edgeBlend;
-        const angularWarp = clamp(
-          harmonicWarp + radialNoise,
-          -0.36,
-          0.24 + maskSample * 0.06
-        );
-        const ridgeNoise =
-          (valueNoise(
-            (normalizedX + islandSeed * 0.00013) * 9.1 + Math.cos(angle + ridgePhase) * 3.1,
-            (normalizedY + islandSeed * 0.00013) * 9.1 + Math.sin(angle + ridgePhase) * 3.1,
-            ridgeSeed
-          ) -
-            0.5) *
-          ridgeStrength *
-          edgeBlend;
-        const fractureNoise =
-          (valueNoise(
-            (normalizedX + islandSeed * 0.000091) * 13.2 +
-              Math.cos(angle * 0.65 + fracturePhase) * 4.5,
-            (normalizedY + islandSeed * 0.000091) * 13.2 +
-              Math.sin(angle * 0.65 + fracturePhase) * 4.5,
-            fractureSeed
-          ) -
-            0.5) *
-          fractureStrength *
-          edgeBlend;
-        const warpedDistance = distance - angularWarp - ridgeNoise - fractureNoise;
-        if (warpedDistance > 1.6) {
-          continue;
-        }
+    const fillerClusterIntensity = clamp(
+      (islandA.clusterIntensity + islandB.clusterIntensity) * 0.5 + (rng() - 0.5) * 0.12,
+      0.45,
+      0.92
+    );
 
-        const coastlineNoise =
-          valueNoise(
-            (normalizedX + islandSeed * 0.0000153) * noiseScale,
-            (normalizedY + islandSeed * 0.0000271) * noiseScale,
-            islandSeed
-          ) - 0.5;
-        const coastalWarp = coastlineNoise * coastlineRoughness;
-        const adjustedDistance = warpedDistance - coastalWarp;
-        if (adjustedDistance > 1.2) {
-          continue;
-        }
+    const fillerIsland = createArchipelagoIslandDefinition({
+      rng,
+      width,
+      height,
+      minRadius,
+      maxRadius,
+      islandSeed: fillerSeed,
+      centerNormX,
+      centerNormY,
+      orientation: rng() * Math.PI * 2,
+      clusterIntensity: fillerClusterIntensity,
+      maskSample,
+      radiusBaseRange: { min: radiusBaseMin, max: radiusBaseMax },
+      sizeScale: 0.55 + rng() * 0.35
+    });
 
-        const influence = clamp(1 - adjustedDistance, 0, 1);
-        if (influence <= 0) {
-          continue;
-        }
-
-        const shaped = Math.pow(influence, falloffPower);
-        const beach = clamp((influence - 0.35) / 0.65, 0, 1) * shelfStrength;
-        const turbulence =
-          (valueNoise(
-            (normalizedX + islandSeed * 0.000042) * (noiseScale * 0.7),
-            (normalizedY + islandSeed * 0.000058) * (noiseScale * 0.7),
-            islandSeed ^ 0x85ebca6b
-          ) -
-            0.5) *
-          turbulenceStrength;
-        const heightContribution = shaped * peakHeight + beach + turbulence;
-        const idx = y * width + x;
-
-        if (heightContribution > heights[idx]) {
-          heights[idx] = heightContribution;
-        }
-
-        const tectonicContribution = shaped * tectonicStrength;
-        if (tectonicContribution > tectonics[idx]) {
-          tectonics[idx] = tectonicContribution;
-        }
+    const approxRadius = fillerIsland.approxRadius;
+    let tooClose = false;
+    for (let existingIndex = 0; existingIndex < generatedIslands.length; existingIndex += 1) {
+      const other = generatedIslands[existingIndex];
+      const dx = centerNormX - other.centerNormX;
+      const dy = centerNormY - other.centerNormY;
+      const separation = Math.hypot(dx, dy);
+      const limit = other.approxRadius + approxRadius + 0.035;
+      if (separation < limit) {
+        tooClose = true;
+        break;
       }
     }
+
+    if (tooClose) {
+      continue;
+    }
+
+    applyArchipelagoIslandDefinition(fillerIsland, width, height, heights, tectonics);
+    generatedIslands.push(fillerIsland);
+    fillerIslands.push(fillerIsland);
   }
 
   const margin = Math.max(4, Math.floor(Math.min(width, height) * 0.05));
