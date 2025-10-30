@@ -106,7 +106,7 @@ select,
 }
 
 #world-info {
-  --embark-scale: 0.59976;
+  --embark-scale: 0.612;
 }
 
 #world-info .embark-panel {
@@ -123,11 +123,6 @@ select,
     calc(2.5vw * var(--embark-scale)),
     calc(2.25rem * var(--embark-scale))
   );
-  scrollbar-width: none;
-}
-
-#world-info .embark-panel::-webkit-scrollbar {
-  display: none;
 }
 
 #dwarf-customizer {
