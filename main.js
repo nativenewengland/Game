@@ -204,606 +204,27 @@ function generateSeed() {
   return seed;
 }
 
-const mapSizeDimensions = {
-  mini: { width: 120, height: 90 },
-  small: { width: 160, height: 120 },
-  normal: { width: 200, height: 150 },
-  large: { width: 260, height: 195 },
-  'extra-large': { width: 320, height: 240 }
-};
+let worldMapImagePromise = null;
 
-const settlementPalette = {
-  human: '#f97316',
-  dwarf: '#c08457',
-  woodElf: '#22c55e',
-  lizardmen: '#0ea5e9'
-};
-
-function getMapDimensions(sizeKey) {
-  return mapSizeDimensions[sizeKey] ?? mapSizeDimensions.normal;
-}
-
-function hashSeedString(seedString) {
-  const value = typeof seedString === 'string' && seedString.trim() ? seedString.trim() : 'DWARFHOLD';
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-    hash >>>= 0;
-  }
-  return hash >>> 0;
-}
-
-function createSeededRng(seedValue) {
-  let state = seedValue >>> 0;
-  if (state === 0) {
-    state = 0x6d2b79f5;
-  }
-  return () => {
-    state += 0x6d2b79f5;
-    let result = Math.imul(state ^ (state >>> 15), 1 | state);
-    result ^= result + Math.imul(result ^ (result >>> 7), 61 | result);
-    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function pseudoRandom2D(seed, x, y) {
-  let value = Math.imul(x + 0x6d2b79f5, 0x27d4eb2d);
-  value ^= Math.imul(y + 0x9e3779b9, 0x165667b1);
-  value ^= seed;
-  value = Math.imul(value ^ (value >>> 15), 0x85ebca6b);
-  return ((value ^ (value >>> 13)) >>> 0) / 4294967295;
-}
-
-function getSeedInfluence(seed, x, y) {
-  if (!seed || !Number.isFinite(seed.radius) || seed.radius <= 0) {
-    return 0;
-  }
-  const dx = (x - seed.x) / seed.radius;
-  const dy = (y - seed.y) / seed.radius;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  if (distance >= 1) {
-    return 0;
-  }
-  const strength = typeof seed.strength === 'number' ? seed.strength : 1;
-  return (1 - distance) * strength;
-}
-
-function createWorldSeeds(worldGenerationType, width, height, rng) {
-  const landSeeds = [];
-  const seaSeeds = [];
-  const longSide = Math.max(width, height);
-  const baseRadius = longSide * 0.4;
-  let landBias = -0.24;
-
-  const pushSeed = (collection, config) => {
-    const radius = Math.max(longSide * 0.08, config.radius ?? baseRadius);
-    collection.push({
-      x: clamp(config.x, 0, width - 1),
-      y: clamp(config.y, 0, height - 1),
-      radius,
-      strength: config.strength ?? 1
-    });
-  };
-
-  switch (worldGenerationType) {
-    case 'major_continent': {
-      landBias = -0.16;
-      pushSeed(landSeeds, {
-        x: width * (0.48 + (rng() - 0.5) * 0.08),
-        y: height * (0.52 + (rng() - 0.5) * 0.12),
-        radius: baseRadius * 1.45,
-        strength: 1.1
-      });
-      pushSeed(landSeeds, {
-        x: width * (0.68 + (rng() - 0.5) * 0.12),
-        y: height * (0.35 + (rng() - 0.5) * 0.14),
-        radius: baseRadius,
-        strength: 0.9
-      });
-      pushSeed(seaSeeds, {
-        x: width * (0.22 + rng() * 0.18),
-        y: height * (0.68 + rng() * 0.1),
-        radius: baseRadius * 0.7,
-        strength: 0.65
-      });
-      break;
-    }
-    case 'twin_continents': {
-      landBias = -0.2;
-      pushSeed(landSeeds, {
-        x: width * (0.32 + (rng() - 0.5) * 0.08),
-        y: height * (0.48 + (rng() - 0.5) * 0.16),
-        radius: baseRadius * 1.15,
-        strength: 1.05
-      });
-      pushSeed(landSeeds, {
-        x: width * (0.7 + (rng() - 0.5) * 0.08),
-        y: height * (0.52 + (rng() - 0.5) * 0.16),
-        radius: baseRadius * 1.15,
-        strength: 1.05
-      });
-      pushSeed(seaSeeds, {
-        x: width * (0.5 + (rng() - 0.5) * 0.06),
-        y: height * 0.5,
-        radius: baseRadius * 0.85,
-        strength: 0.95
-      });
-      break;
-    }
-    case 'inland_sea': {
-      landBias = -0.08;
-      const ringOffsets = [0.18, 0.82];
-      ringOffsets.forEach((offsetX) => {
-        ringOffsets.forEach((offsetY) => {
-          pushSeed(landSeeds, {
-            x: width * offsetX + (rng() - 0.5) * width * 0.08,
-            y: height * offsetY + (rng() - 0.5) * height * 0.08,
-            radius: baseRadius * 1.1,
-            strength: 0.95
-          });
-        });
-      });
-      pushSeed(landSeeds, {
-        x: width * 0.5,
-        y: height * 0.5,
-        radius: baseRadius * 1.25,
-        strength: 0.6
-      });
-      pushSeed(seaSeeds, {
-        x: width * (0.48 + (rng() - 0.5) * 0.05),
-        y: height * (0.5 + (rng() - 0.5) * 0.05),
-        radius: baseRadius * 1.3,
-        strength: 1.05
-      });
-      break;
-    }
-    case 'archipelago': {
-      landBias = -0.32;
-      const islandCount = 8 + Math.floor(rng() * 4);
-      for (let index = 0; index < islandCount; index += 1) {
-        pushSeed(landSeeds, {
-          x: width * (0.1 + rng() * 0.8),
-          y: height * (0.1 + rng() * 0.8),
-          radius: baseRadius * (0.35 + rng() * 0.25),
-          strength: 1.25
-        });
-      }
-      pushSeed(seaSeeds, {
-        x: width * 0.5,
-        y: height * 0.5,
-        radius: baseRadius * 0.9,
-        strength: 0.4
-      });
-      break;
-    }
-    default: {
-      const continentCount = 3 + Math.floor(rng() * 2);
-      for (let index = 0; index < continentCount; index += 1) {
-        pushSeed(landSeeds, {
-          x: width * (0.2 + rng() * 0.6),
-          y: height * (0.2 + rng() * 0.6),
-          radius: baseRadius * (0.85 + rng() * 0.35),
-          strength: 1
-        });
-      }
-      pushSeed(seaSeeds, {
-        x: width * (0.18 + rng() * 0.2),
-        y: height * (0.75 + rng() * 0.15),
-        radius: baseRadius * 0.6,
-        strength: 0.6
-      });
-      pushSeed(seaSeeds, {
-        x: width * (0.72 + rng() * 0.18),
-        y: height * (0.22 + rng() * 0.16),
-        radius: baseRadius * 0.55,
-        strength: 0.5
-      });
-    }
-  }
-
-  if (landSeeds.length === 0) {
-    pushSeed(landSeeds, {
-      x: width / 2,
-      y: height / 2,
-      radius: baseRadius,
-      strength: 1
+function loadWorldMapImage() {
+  if (!worldMapImagePromise) {
+    worldMapImagePromise = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.src = 'tilesheet/Overworld.png';
+      image.addEventListener('load', () => resolve(image), { once: true });
+      image.addEventListener(
+        'error',
+        () => {
+          reject(new Error('Failed to load world map image.'));
+        },
+        { once: true }
+      );
     });
   }
-
-  return { landSeeds, seaSeeds, landBias };
+  return worldMapImagePromise;
 }
 
-function addMountains(world, settings, rng, seed) {
-  const { width, height, tiles } = world;
-  const longSide = Math.max(width, height);
-  const baseRadius = longSide * 0.18;
-  const mountainCount = clamp(
-    Math.round((settings.mountainFrequency / 100) * (longSide / 3)),
-    3,
-    Math.max(6, longSide)
-  );
-  const seeds = [];
-  for (let index = 0; index < mountainCount; index += 1) {
-    seeds.push({
-      x: rng() * width,
-      y: rng() * height,
-      radius: baseRadius * (0.7 + rng() * 0.8),
-      strength: 0.9 + rng() * 0.7
-    });
-  }
-  const noiseSeed = seed ^ 0x51b97c1;
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      if (tile.terrain !== 'land') {
-        tile.elevation = 'ocean';
-        tile.elevationScore = tile.height ?? -1;
-        continue;
-      }
-      let influence = 0;
-      for (let index = 0; index < seeds.length; index += 1) {
-        influence = Math.max(influence, getSeedInfluence(seeds[index], x, y));
-      }
-      const noise = (pseudoRandom2D(noiseSeed, x, y) - 0.5) * 0.5;
-      const altitude = tile.height + influence * 1.25 + noise;
-      tile.elevationScore = altitude;
-      if (altitude > 1.15) {
-        tile.elevation = 'mountain';
-      } else if (altitude > 0.75) {
-        tile.elevation = 'hill';
-      } else {
-        tile.elevation = 'plain';
-      }
-    }
-  }
-}
-
-function addForests(world, settings, rng, seed) {
-  const { width, height, tiles } = world;
-  const longSide = Math.max(width, height);
-  const baseRadius = longSide * 0.16;
-  const forestCount = clamp(
-    Math.round((settings.forestFrequency / 100) * (longSide / 2)),
-    2,
-    Math.max(6, longSide)
-  );
-  const seeds = [];
-  for (let index = 0; index < forestCount; index += 1) {
-    seeds.push({
-      x: rng() * width,
-      y: rng() * height,
-      radius: baseRadius * (0.8 + rng() * 0.9),
-      strength: 0.85 + rng() * 0.8
-    });
-  }
-  const noiseSeed = seed ^ 0x7f4a7c5;
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      if (tile.terrain !== 'land' || tile.elevation === 'mountain') {
-        tile.biome = tile.terrain === 'land' ? 'plain' : 'ocean';
-        continue;
-      }
-      let influence = 0;
-      for (let index = 0; index < seeds.length; index += 1) {
-        influence = Math.max(influence, getSeedInfluence(seeds[index], x, y));
-      }
-      const moistureNoise = (pseudoRandom2D(noiseSeed, x, y) - 0.5) * 0.6;
-      const fertility = clamp(0.5 - Math.abs(tile.height - 0.25), -0.5, 0.5);
-      const density = influence * 0.8 + fertility * 0.6 + moistureNoise;
-      if (density > 0.65) {
-        tile.biome = 'denseForest';
-      } else if (density > 0.45) {
-        tile.biome = 'sparseForest';
-      } else {
-        tile.biome = 'plain';
-      }
-    }
-  }
-}
-
-function getCardinalNeighbors(x, y, width, height) {
-  const neighbors = [];
-  if (x > 0) {
-    neighbors.push({ x: x - 1, y });
-  }
-  if (y > 0) {
-    neighbors.push({ x, y: y - 1 });
-  }
-  if (x < width - 1) {
-    neighbors.push({ x: x + 1, y });
-  }
-  if (y < height - 1) {
-    neighbors.push({ x, y: y + 1 });
-  }
-  return neighbors;
-}
-
-function carveRiver(world, sourceTile, seed) {
-  if (!sourceTile) {
-    return;
-  }
-  const { width, height, tiles } = world;
-  let { x, y } = sourceTile;
-  const visited = new Set();
-  const noiseSeed = seed ^ 0x5bf03635;
-  const maxSteps = width + height;
-  for (let step = 0; step < maxSteps; step += 1) {
-    const key = y * width + x;
-    if (visited.has(key)) {
-      break;
-    }
-    visited.add(key);
-    const tile = tiles[y][x];
-    tile.river = true;
-    const neighbors = getCardinalNeighbors(x, y, width, height);
-    let best = null;
-    for (let index = 0; index < neighbors.length; index += 1) {
-      const coord = neighbors[index];
-      const neighbor = tiles[coord.y][coord.x];
-      if (neighbor.terrain === 'water') {
-        neighbor.river = true;
-        return;
-      }
-      const slope = (tile.elevationScore ?? tile.height ?? 0) - (neighbor.elevationScore ?? neighbor.height ?? 0);
-      const randomness = (pseudoRandom2D(noiseSeed, coord.x, coord.y) - 0.5) * 0.3;
-      const distanceToEdge =
-        Math.min(coord.x, coord.y, width - 1 - coord.x, height - 1 - coord.y) / Math.max(width, height);
-      const preference = slope * 0.7 + (1 - distanceToEdge) * 0.3 + randomness - (neighbor.river ? 0.4 : 0);
-      if (!best || preference > best.score) {
-        best = { ...coord, score: preference };
-      }
-    }
-    if (!best) {
-      return;
-    }
-    x = best.x;
-    y = best.y;
-  }
-}
-
-function addRivers(world, settings, rng, seed) {
-  const { width, height, tiles } = world;
-  const candidates = [];
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      if (tile.terrain === 'land' && (tile.elevation === 'mountain' || tile.elevation === 'hill')) {
-        candidates.push(tile);
-      }
-    }
-  }
-  if (candidates.length === 0) {
-    return;
-  }
-  const riverCount = clamp(Math.round((settings.riverFrequency / 100) * 5), 0, 12);
-  const usedSources = new Set();
-  for (let index = 0; index < riverCount && candidates.length > 0; index += 1) {
-    const pick = Math.floor(rng() * candidates.length);
-    const source = candidates.splice(pick, 1)[0];
-    const key = source.y * width + source.x;
-    if (usedSources.has(key)) {
-      continue;
-    }
-    usedSources.add(key);
-    carveRiver(world, source, seed ^ (index * 0x9e3779b9));
-  }
-}
-
-function addSettlements(world, settings, rng) {
-  const { width, height, tiles } = world;
-  const landTiles = [];
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      if (tile.terrain === 'land' && tile.elevation !== 'mountain' && !tile.river) {
-        landTiles.push(tile);
-      }
-    }
-  }
-  if (landTiles.length === 0) {
-    return;
-  }
-  const baseTileCount = landTiles.length;
-  const configs = [
-    { key: 'human', frequency: settings.humanSettlementFrequency },
-    { key: 'dwarf', frequency: settings.dwarfSettlementFrequency },
-    { key: 'woodElf', frequency: settings.woodElfSettlementFrequency },
-    { key: 'lizardmen', frequency: settings.lizardmenSettlementFrequency }
-  ];
-  configs.forEach((config) => {
-    const desired = Math.max(0, Math.round((config.frequency / 100) * (baseTileCount / 24)));
-    for (let count = 0; count < desired && landTiles.length > 0; count += 1) {
-      const pick = Math.floor(rng() * landTiles.length);
-      const tile = landTiles.splice(pick, 1)[0];
-      tile.settlement = config.key;
-    }
-  });
-}
-
-function applyCoastlines(world) {
-  const { width, height, tiles } = world;
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      let isCoast = false;
-      let isShore = false;
-      for (let ny = Math.max(0, y - 1); ny <= Math.min(height - 1, y + 1); ny += 1) {
-        for (let nx = Math.max(0, x - 1); nx <= Math.min(width - 1, x + 1); nx += 1) {
-          if (nx === x && ny === y) {
-            continue;
-          }
-          const neighbor = tiles[ny][nx];
-          if (tile.terrain === 'land' && neighbor.terrain === 'water') {
-            isCoast = true;
-          }
-          if (tile.terrain === 'water' && neighbor.terrain === 'land') {
-            isShore = true;
-          }
-        }
-      }
-      tile.coast = isCoast;
-      tile.shore = isShore;
-    }
-  }
-}
-
-function generateWorldData(settings) {
-  const dimensions = getMapDimensions(settings.mapSize);
-  const { width, height } = dimensions;
-  const seedHash = hashSeedString(settings.seed);
-  const rng = createSeededRng(seedHash || 1);
-  const { landSeeds, seaSeeds, landBias } = createWorldSeeds(
-    settings.worldGenerationType,
-    width,
-    height,
-    rng
-  );
-  const noiseSeed = seedHash ^ 0x9e3779b9;
-  const tiles = [];
-  for (let y = 0; y < height; y += 1) {
-    const row = [];
-    for (let x = 0; x < width; x += 1) {
-      let score = landBias;
-      let landInfluence = 0;
-      for (let index = 0; index < landSeeds.length; index += 1) {
-        landInfluence = Math.max(landInfluence, getSeedInfluence(landSeeds[index], x, y));
-      }
-      score += landInfluence;
-      for (let index = 0; index < seaSeeds.length; index += 1) {
-        const influence = getSeedInfluence(seaSeeds[index], x, y);
-        if (influence > 0) {
-          score -= influence;
-        }
-      }
-      const noise = (pseudoRandom2D(noiseSeed, x, y) - 0.5) * 0.6;
-      score += noise;
-      const isLand = score > 0;
-      row.push({
-        x,
-        y,
-        height: score,
-        terrain: isLand ? 'land' : 'water',
-        elevation: isLand ? 'plain' : 'ocean',
-        elevationScore: isLand ? score : score - 0.5,
-        biome: isLand ? 'plain' : 'ocean',
-        river: false,
-        settlement: null,
-        coast: false,
-        shore: false
-      });
-    }
-    tiles.push(row);
-  }
-  const world = { width, height, tiles };
-  addMountains(world, settings, rng, seedHash);
-  addForests(world, settings, rng, seedHash);
-  addRivers(world, settings, rng, seedHash);
-  addSettlements(world, settings, rng);
-  applyCoastlines(world);
-  return world;
-}
-
-function renderWorldToCanvas(context, canvas, world) {
-  if (!world) {
-    return;
-  }
-  const { width, height, tiles } = world;
-  if (!width || !height || !Array.isArray(tiles)) {
-    return;
-  }
-  context.imageSmoothingEnabled = false;
-  context.imageSmoothingQuality = 'low';
-  context.fillStyle = '#020617';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  const tileSize = Math.max(2, Math.floor(Math.min(canvas.width / width, canvas.height / height)));
-  const drawWidth = tileSize * width;
-  const drawHeight = tileSize * height;
-  const offsetX = Math.floor((canvas.width - drawWidth) / 2);
-  const offsetY = Math.floor((canvas.height - drawHeight) / 2);
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      const px = offsetX + x * tileSize;
-      const py = offsetY + y * tileSize;
-      if (tile.terrain === 'water') {
-        const depth = clamp(Math.abs(tile.height), 0, 1);
-        let color = '#082f49';
-        if (tile.shore) {
-          color = '#1d4ed8';
-        } else if (depth < 0.25) {
-          color = '#0ea5e9';
-        } else if (depth < 0.5) {
-          color = '#2563eb';
-        }
-        context.fillStyle = color;
-        context.fillRect(px, py, tileSize, tileSize);
-      } else {
-        let color = '#facc15';
-        if (tile.elevation === 'mountain') {
-          color = '#9ca3af';
-        } else if (tile.elevation === 'hill') {
-          color = '#d97706';
-        }
-        if (tile.biome === 'denseForest') {
-          color = '#14532d';
-        } else if (tile.biome === 'sparseForest') {
-          color = '#1f6f37';
-        }
-        context.fillStyle = color;
-        context.fillRect(px, py, tileSize, tileSize);
-        if (tile.coast) {
-          context.fillStyle = 'rgba(254, 243, 199, 0.35)';
-          context.fillRect(px, py, tileSize, tileSize);
-        }
-      }
-    }
-  }
-
-  const riverWidth = Math.max(1, Math.round(tileSize / 3));
-  context.fillStyle = '#38bdf8';
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      if (!tile.river) {
-        continue;
-      }
-      const px = offsetX + x * tileSize;
-      const py = offsetY + y * tileSize;
-      const rx = px + Math.floor((tileSize - riverWidth) / 2);
-      context.fillRect(rx, py, riverWidth, tileSize);
-    }
-  }
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const tile = tiles[y][x];
-      if (!tile.settlement) {
-        continue;
-      }
-      const px = offsetX + x * tileSize;
-      const py = offsetY + y * tileSize;
-      const color = settlementPalette[tile.settlement] ?? '#fbbf24';
-      const radius = Math.max(2, Math.floor(tileSize / 3));
-      context.beginPath();
-      context.fillStyle = color;
-      context.arc(px + tileSize / 2, py + tileSize / 2, radius, 0, Math.PI * 2);
-      context.fill();
-      context.lineWidth = Math.max(1, Math.floor(radius / 2));
-      context.strokeStyle = 'rgba(15, 23, 42, 0.8)';
-      context.stroke();
-    }
-  }
-
-  context.lineWidth = Math.max(2, Math.floor(tileSize / 4));
-  context.strokeStyle = 'rgba(15, 23, 42, 0.85)';
-  context.strokeRect(offsetX - 1, offsetY - 1, drawWidth + 2, drawHeight + 2);
-}
-
-function drawWorldMap() {
+async function drawWorldMap() {
   const canvas = elements.worldCanvas;
   if (!canvas || typeof canvas.getContext !== 'function') {
     return;
@@ -812,20 +233,24 @@ function drawWorldMap() {
   if (!context) {
     return;
   }
-  const world = generateWorldData({
-    mapSize: state.mapSize,
-    worldGenerationType: state.worldGenerationType,
-    seed: state.seed,
-    forestFrequency: state.forestFrequency,
-    mountainFrequency: state.mountainFrequency,
-    riverFrequency: state.riverFrequency,
-    humanSettlementFrequency: state.humanSettlementFrequency,
-    dwarfSettlementFrequency: state.dwarfSettlementFrequency,
-    woodElfSettlementFrequency: state.woodElfSettlementFrequency,
-    lizardmenSettlementFrequency: state.lizardmenSettlementFrequency
-  });
-  state.currentWorld = world;
-  renderWorldToCanvas(context, canvas, world);
+  context.imageSmoothingEnabled = false;
+  context.imageSmoothingQuality = 'low';
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  try {
+    const image = await loadWorldMapImage();
+    const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+    const drawWidth = image.width * scale;
+    const drawHeight = image.height * scale;
+    const offsetX = (canvas.width - drawWidth) / 2;
+    const offsetY = (canvas.height - drawHeight) / 2;
+    context.drawImage(image, 0, 0, image.width, image.height, offsetX, offsetY, drawWidth, drawHeight);
+  } catch (error) {
+    context.fillStyle = '#111827';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#f59e0b';
+    context.font = '48px "Cormorant Garamond", serif';
+    context.fillText('Map failed to load', 80, Math.min(canvas.height - 40, 140));
+  }
 }
 
 function formatFrequency(value) {
@@ -878,7 +303,6 @@ const state = {
   worldAge: 6,
   worldName: worldNamePool[0],
   lastOptionsTrigger: null,
-  currentWorld: null,
   dwarf: {
     gender: 'female',
     currentIndex: 0,
@@ -1030,7 +454,6 @@ function applyOptionsForm(form) {
   updateWorldInfoFormFromState();
   updateSeedDisplay();
   updateFrequencyDisplays();
-  drawWorldMap();
 }
 
 function enterWorldInfo() {
@@ -1247,7 +670,7 @@ function showGameScreen() {
   setHidden(elements.dwarfCustomizer, true);
   setHidden(elements.gameContainer, false);
   updateSeedDisplay();
-  drawWorldMap();
+  void drawWorldMap();
   state.gameStarted = true;
 }
 
@@ -1658,7 +1081,9 @@ function initialise() {
   updateWorldInfoSummary();
   updateOptionsFormFromState();
   updateSeedDisplay();
-  drawWorldMap();
+  loadWorldMapImage().catch(() => {
+    // The map will show a fallback message if the image fails to load.
+  });
   updateDwarfSlotLabel();
   updateTraitSliderMaximums();
   updateTraitSliderOutputs();
