@@ -473,7 +473,7 @@ function leaveWorldInfo() {
 
 function updateDwarfSlotLabel() {
   if (elements.dwarfSlotLabel) {
-    elements.dwarfSlotLabel.textContent = 'Founder';
+    elements.dwarfSlotLabel.textContent = '';
   }
 }
 
