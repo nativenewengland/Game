@@ -51,6 +51,7 @@ export const elements = {
   biomeToggle: document.getElementById('toggle-biomes'),
   temperatureToggle: document.getElementById('toggle-temperature'),
   locationLabelToggle: document.getElementById('toggle-location-labels'),
+  regionNameToggle: document.getElementById('toggle-region-names'),
   structureHighlightToggle: document.getElementById('toggle-structure-highlights'),
   structureHighlightMenu: document.getElementById('structure-highlight-menu'),
   mapEditorToggle: document.getElementById('toggle-map-editor'),
