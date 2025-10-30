@@ -1,2 +1,0 @@
-world-info-visible True
-title-screen-classes screen hidden
