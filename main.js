@@ -1,20 +1,8 @@
-function getSeedStringFromInputs() {
-  if (elements.seedInput && typeof elements.seedInput.value === 'string') {
-    return elements.seedInput.value.trim();
-  }
-  return (state.settings.seedString || '').trim();
-}
-
-function syncSeedInputs(seedValue) {
+  const rawSeedValue = elements.seedInput ? elements.seedInput.value : state.settings.seedString;
+  const seedString = (rawSeedValue || '').trim();
   if (elements.seedInput) {
-    elements.seedInput.value = seedValue;
+    elements.seedInput.value = world.seedString;
   }
-  if (elements.worldSeedInput) {
-    elements.worldSeedInput.value = seedValue;
+  if (elements.seedInput) {
+    elements.seedInput.value = randomSeed;
   }
-}
-
-  const seedString = getSeedStringFromInputs();
-  syncSeedInputs(world.seedString);
-  syncSeedInputs(randomSeed);
-  syncSeedInputs(state.settings.seedString);
