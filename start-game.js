@@ -1,5 +1,3 @@
-import { getRandomWorldName } from './src/utils/world-name.js';
-
 const startButton = document.getElementById('start-button');
 const titleScreen = document.getElementById('title-screen');
 const worldInfo = document.getElementById('world-info');
@@ -81,14 +79,11 @@ function showWorldInfo() {
   if (!worldInfo || !titleScreen) {
     return;
   }
-  if (worldNameInput) {
-    const existingName = worldNameInput.value.trim();
-    if (!existingName) {
-      worldNameInput.value = getRandomWorldName();
-    }
-  }
   setHidden(titleScreen, true);
   setHidden(worldInfo, false);
+  if (worldNameInput && !worldNameInput.value.trim()) {
+    worldNameInput.value = 'New Dwarfhold';
+  }
   if (worldYearInput && !worldYearInput.value) {
     worldYearInput.value = '1250';
   }
