@@ -39,28 +39,6 @@ const STRUCTURE_HIGHLIGHT_OPTIONS = [
   { key: 'naturalWonders', label: 'Natural wonders' }
 ];
 
-const TILE_SHEET_OFFSETS = {
-  base: { x: 0, y: 1 }
-};
-
-const WORLD_TILE_SPRITES = {
-  terrain: {
-    grass: { sheet: 'base', column: 2, row: 4 },
-    forest: { sheet: 'base', column: 0, row: 1 },
-    mountain: { sheet: 'base', column: 3, row: 2 },
-    river: { sheet: 'base', column: 4, row: 1 },
-    desert: { sheet: 'base', column: 12, row: 2 }
-  },
-  biome: {
-    Highlands: { sheet: 'base', column: 3, row: 2 },
-    Forest: { sheet: 'base', column: 1, row: 1 },
-    Meadow: { sheet: 'base', column: 2, row: 4 },
-    Taiga: { sheet: 'base', column: 13, row: 0 },
-    Riverlands: { sheet: 'base', column: 4, row: 1 },
-    'Scorched Plains': { sheet: 'base', column: 12, row: 2 }
-  }
-};
-
 const MUSIC_TRACKS = [
   { title: 'Strike the Earth!', file: 'sound/tracks/strike_the_earth!/STE_Full.ogg' },
   { title: 'Another Year', file: 'sound/tracks/another_year/AY_Full.ogg' },
@@ -562,43 +540,6 @@ function getCanvasContext(canvas) {
   return context;
 }
 
-function resolveTileSprite(entry) {
-  if (!entry) {
-    return null;
-  }
-  const sheetKey = entry.sheet || 'base';
-  const sheet = tileSheets[sheetKey];
-  if (!sheet) {
-    return null;
-  }
-  const tileSize = sheet.tileSize || 32;
-  const offset = TILE_SHEET_OFFSETS[sheetKey] || { x: 0, y: 0 };
-  const column = entry.column ?? 0;
-  const row = entry.row ?? 0;
-  const sx = entry.x ?? offset.x + column * tileSize;
-  const sy = entry.y ?? offset.y + row * tileSize;
-  const sw = entry.width ?? tileSize;
-  const sh = entry.height ?? tileSize;
-  return {
-    image: sheet.image || null,
-    sx,
-    sy,
-    sw,
-    sh
-  };
-}
-
-function getWorldTileSprite(tile) {
-  if (!tile) {
-    return null;
-  }
-  const { terrain, biome } = tile;
-  const spriteEntry = (state.ui.showBiomes && WORLD_TILE_SPRITES.biome[biome])
-    || WORLD_TILE_SPRITES.terrain[terrain]
-    || WORLD_TILE_SPRITES.biome[biome];
-  return resolveTileSprite(spriteEntry);
-}
-
 function drawWorld(world, { preserveView = false } = {}) {
   const canvas = elements.canvas;
   const ctx = getCanvasContext(canvas);
@@ -662,30 +603,8 @@ function drawWorld(world, { preserveView = false } = {}) {
         baseColor = biomeColors[tile.biome] || baseColor;
       }
 
-      const sprite = getWorldTileSprite(tile);
-      const hasSprite = Boolean(sprite?.image);
-      if (hasSprite) {
-        ctx.drawImage(
-          sprite.image,
-          sprite.sx,
-          sprite.sy,
-          sprite.sw,
-          sprite.sh,
-          px,
-          py,
-          tileWidth + 1,
-          tileHeight + 1
-        );
-      }
-
-      const needsOverlay = !hasSprite || state.ui.showElevation || state.ui.showTemperature || state.ui.showBiomes;
-      if (needsOverlay) {
-        ctx.save();
-        ctx.globalAlpha = hasSprite ? 0.6 : 1;
-        ctx.fillStyle = baseColor;
-        ctx.fillRect(px, py, tileWidth + 1, tileHeight + 1);
-        ctx.restore();
-      }
+      ctx.fillStyle = baseColor;
+      ctx.fillRect(px, py, tileWidth + 1, tileHeight + 1);
 
       if (tile.structure && highlightState[tile.structureCategory] !== false) {
         ctx.save();
