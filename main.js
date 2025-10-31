@@ -648,31 +648,8 @@ function drawWorld(world, { preserveView = false } = {}) {
           overlayColor = '#e879f9';
         }
         ctx.fillStyle = overlayColor;
-        const rectX = px + tileWidth * 0.2;
-        const rectY = py + tileHeight * 0.2;
-        const rectWidth = tileWidth * 0.6;
-        const rectHeight = tileHeight * 0.6;
-        const radius = Math.min(2, Math.min(rectWidth, rectHeight) / 2);
         ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') {
-          ctx.roundRect(rectX, rectY, rectWidth, rectHeight, radius);
-        } else {
-          ctx.moveTo(rectX + radius, rectY);
-          ctx.lineTo(rectX + rectWidth - radius, rectY);
-          ctx.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + radius);
-          ctx.lineTo(rectX + rectWidth, rectY + rectHeight - radius);
-          ctx.quadraticCurveTo(
-            rectX + rectWidth,
-            rectY + rectHeight,
-            rectX + rectWidth - radius,
-            rectY + rectHeight
-          );
-          ctx.lineTo(rectX + radius, rectY + rectHeight);
-          ctx.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - radius);
-          ctx.lineTo(rectX, rectY + radius);
-          ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
-          ctx.closePath();
-        }
+        ctx.roundRect(px + tileWidth * 0.2, py + tileHeight * 0.2, tileWidth * 0.6, tileHeight * 0.6, 2);
         ctx.fill();
         ctx.restore();
       }
