@@ -702,6 +702,8 @@ const worldNames = [
   'Umbryss',
   'Eclipthar',
   'Skibiti Toliterium'
+  'Syx'
+  'Quidd'
 ];
 
 const realmNameAdjectives = [
