@@ -8,9 +8,6 @@ import {
   characterCreatorPortraitAssets
 } from './src/assets.js';
 import { generateDwarfholdMap } from './src/local/dwarfhold-map.js';
-import { clamp } from './src/utils/math.js';
-import { createRng, hashString, pick, randomInt } from './src/utils/random.js';
-import { getRandomWorldName } from './src/utils/world-name.js';
 
 const elements = getElements();
 
@@ -75,13 +72,15 @@ const DWARF_PROFESSIONS = ['Miner', 'Smith', 'Brewer', 'Carpenter', 'Hunter', 'S
 
 const DWARF_NAME_PREFIXES = ['Dur', 'Kil', 'Thra', 'Bel', 'Gar', 'Nor', 'Rok', 'Brom'];
 const DWARF_NAME_SUFFIXES = ['in', 'or', 'ain', 'ik', 'drim', 'dil', 'grin', 'rak'];
+const WORLD_NAME_PREFIXES = ['Stone', 'Iron', 'Deep', 'Rune', 'Hammer', 'Anvil', 'Frost', 'Ember'];
+const WORLD_NAME_SUFFIXES = ['home', 'reach', 'delve', 'spire', 'hall', 'keep', 'hold', 'forge'];
 const WORLD_AGE_DESCRIPTORS = ['Age of Stone', 'Era of Embers', 'Century of Thunder', 'Age of Kings'];
 
 const defaultWorldChronology = { year: 1250, age: 5 };
 
 const state = {
   currentWorld: null,
-  worldName: getRandomWorldName(),
+  worldName: 'New Dwarfhold',
   worldChronology: { ...defaultWorldChronology },
   settings: { ...DEFAULT_WORLD_SETTINGS },
   loading: { total: 0, loaded: 0 },
@@ -147,6 +146,47 @@ const dwarfTraitOptions = {
   hairStyle: ['Braided', 'Long', 'Short', 'Shaved', 'Wild'],
   beard: ['Trimmed', 'Braided', 'Forked', 'Ringed', 'Wild']
 };
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function hashString(value) {
+  const input = typeof value === 'string' ? value : JSON.stringify(value);
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+    hash >>>= 0;
+  }
+  return hash >>> 0;
+}
+
+function createRng(seed) {
+  let stateValue = seed >>> 0;
+  return () => {
+    stateValue += 0x6d2b79f5;
+    let result = Math.imul(stateValue ^ (stateValue >>> 15), 1 | stateValue);
+    result ^= result + Math.imul(result ^ (result >>> 7), 61 | result);
+    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randomInt(rng, min, max) {
+  if (max <= min) {
+    return min;
+  }
+  const range = max - min + 1;
+  return min + Math.floor(rng() * range);
+}
+
+function pick(array, rng) {
+  if (!Array.isArray(array) || array.length === 0) {
+    return null;
+  }
+  const index = clamp(Math.floor(rng() * array.length), 0, array.length - 1);
+  return array[index];
+}
 
 function createOptionalAudio(src) {
   if (typeof Audio === 'undefined') {
@@ -224,6 +264,17 @@ function ensureSeedString(seed) {
   }
   updateWorldInfoSeedDisplay(generated);
   return generated;
+}
+
+function generateWorldName(rng) {
+  const prefix = pick(WORLD_NAME_PREFIXES, rng) || 'Stone';
+  const suffix = pick(WORLD_NAME_SUFFIXES, rng) || 'hold';
+  return `${prefix}${suffix}`;
+}
+
+function getRandomWorldName(currentName = '') {
+  const rng = createRng(hashString(`${currentName}:${Date.now()}`));
+  return generateWorldName(rng);
 }
 
 function getSanitisedChronologyFromInputs() {
@@ -1224,9 +1275,6 @@ function closeWorldInfoModal({ returnFocus = false } = {}) {
 function openWorldInfoModal() {
   setHidden(elements.titleScreen, true);
   setHidden(elements.worldInfoModal, false);
-  if (elements.worldNameInput && !elements.worldNameInput.value?.trim()) {
-    elements.worldNameInput.value = state.worldName;
-  }
   focusElement(elements.worldInfoModal);
 }
 
