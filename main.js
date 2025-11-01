@@ -21418,16 +21418,24 @@ function setupMapInteractions() {
     const resolved = resolveTileAtPointer(event);
     if (resolved && resolved.tile) {
       const { tile, tileX, tileY } = resolved;
-      const details = tile.structureDetails || null;
+      const enrichedTile = resolveTileForContextMenu(tile, tileX, tileY) || tile;
+      const details = enrichedTile?.structureDetails || null;
       const detailType = typeof details?.type === 'string' ? details.type : null;
       const isSettlement =
         (details && details.isSettlement === true) ||
         (detailType ? settlementDetailTypes.has(detailType) : false);
+          const resolvedName =
+        (typeof enrichedTile?.structureName === 'string' && enrichedTile.structureName) ||
+        (typeof details?.name === 'string' ? details.name : null);
 
-      if (isSettlement && tile.structureName) {
+      if (isSettlement && resolvedName) {
+        const tileWithName =
+          enrichedTile && enrichedTile.structureName === resolvedName
+            ? enrichedTile
+            : { ...enrichedTile, structureName: resolvedName };
         hideStructureContextMenu();
         hideLocalView({ suppressRedraw: true });
-        showStructureDetails(tile, { tileX, tileY });
+        showStructureDetails(tileWithName, { tileX, tileY });
         return;
       }
     }
