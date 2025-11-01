@@ -15444,6 +15444,7 @@ function applyPopulationHistoryShocks(timeline, events, rng, options = {}) {
 }
 
 function generateDwarfholdPopulationTimeline(historyContext, events, rng) {
+  
   const holdTypes = new Set([
     'dwarfhold',
     'greatdwarfhold',
@@ -15634,7 +15635,15 @@ function generateSettlementHistoryData(tile, details, context) {
     return bValue - aValue;
   });
 
-  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, events, rng);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
 
   return {
     entries: sortedEntries,
