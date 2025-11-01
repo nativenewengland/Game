@@ -72,7 +72,7 @@ select,
   content: "";
   position: absolute;
   inset: -6%;
-  background: url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+  background: url('titlescreen/normal/Titlescreen image.png') center/cover no-repeat;
   filter: blur(8px) saturate(110%);
   transform: scale(1.08);
   animation: panDown 28s linear infinite;
@@ -309,7 +309,7 @@ select,
   border-radius: 20px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+  background: url('titlescreen/normal/Titlescreen image.png') center/cover no-repeat;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1rem 2.5rem rgba(0, 0, 0, 0.45);
 }
 
@@ -473,7 +473,7 @@ select,
       radial-gradient(circle at 24% 18%, rgba(36, 32, 44, 0.4), transparent 58%),
       radial-gradient(circle at 78% 24%, rgba(54, 36, 22, 0.32), transparent 62%),
       linear-gradient(172deg, rgba(6, 8, 16, 0.96), rgba(8, 9, 15, 0.98)),
-      url("titlescreen/Titlescreen image.png") center/cover no-repeat;
+      url("titlescreen/normal/Titlescreen image.png") center/cover no-repeat;
   filter: saturate(70%);
   transform: none;
 }
@@ -570,7 +570,7 @@ select,
   content: "";
   position: absolute;
   inset: -6%;
-  background: url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+  background: url('titlescreen/normal/Titlescreen image.png') center/cover no-repeat;
   filter: blur(10px) saturate(115%);
   transform: scale(1.08);
   animation: panDown 28s linear infinite;
@@ -3735,7 +3735,7 @@ button:hover:not(:disabled) {
   content: "";
   position: absolute;
   inset: -6%;
-  background: url('titlescreen/Titlescreen image.png') center/cover no-repeat;
+  background: url('titlescreen/normal/Titlescreen image.png') center/cover no-repeat;
   filter: blur(10px) saturate(115%);
   opacity: 0.7;
   transform: scale(1.08);
