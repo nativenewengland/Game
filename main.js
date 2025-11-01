@@ -30527,7 +30527,7 @@ function createWorld(seedString) {
 
     if (hasVolcanoTile) {
       const volcanoDistanceField = computeEuclideanDistanceField(volcanoMask, width, height);
-      const volcanoFalloff = 5.2;
+      const volcanoStoneConversionFalloff = 6.4;
       for (let y = 0; y < height; y += 1) {
         for (let x = 0; x < width; x += 1) {
           const idx = y * width + x;
@@ -30542,7 +30542,11 @@ function createWorld(seedString) {
             continue;
           }
           const distanceToVolcano = Math.sqrt(volcanoDistanceField[idx]);
-          const proximity = clamp(1 - distanceToVolcano / volcanoFalloff, 0, 1);
+          const proximity = clamp(
+            1 - distanceToVolcano / volcanoStoneConversionFalloff,
+            0,
+            1
+          );
           tile.volcanoProximity = proximity;
           if (proximity >= volcanoStoneConversionThreshold) {
             maybeConvertBaseToStoneNearVolcano(tile, x, y, proximity);
