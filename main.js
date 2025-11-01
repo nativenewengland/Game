@@ -1,1 +1,1 @@
-  loadLandMask('titlescreen/normal/Titlescreen image.png')
+import './start-game.js';

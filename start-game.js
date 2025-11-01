@@ -14,6 +14,10 @@ const worldNameInput = document.getElementById('world-name-input');
 const dwarfNameInput = document.getElementById('dwarf-name-input');
 const worldYearInput = document.getElementById('world-year-input');
 const worldAgeInput = document.getElementById('world-age-input');
+const optionsButton = document.getElementById('title-options-button');
+const inGameOptionsButton = document.getElementById('in-game-options');
+const optionsScreen = document.getElementById('options-screen');
+const closeOptionsButton = document.getElementById('close-options');
 
 const FOCUSABLE_SELECTOR = [
   '[autofocus]','button','input','select','textarea','[tabindex]:not([tabindex="-1"])'
@@ -54,11 +58,18 @@ function focusElement(element) {
   });
 }
 
+function isHidden(element) {
+  return !element || element.classList.contains('hidden');
+}
+
 function wait(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
+
+let optionsOrigin = null;
+let lastFocusedElement = null;
 
 async function transitionToGame() {
   if (!gameContainer) {
@@ -73,6 +84,41 @@ async function transitionToGame() {
   }
   setHidden(gameContainer, false);
   focusElement(canvasWrapper || gameContainer);
+}
+
+function openOptionsScreen(origin = 'title') {
+  if (!optionsScreen) {
+    return;
+  }
+  optionsOrigin = origin;
+  lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (origin === 'title' && titleScreen && !isHidden(titleScreen)) {
+    setHidden(titleScreen, true);
+  }
+  setHidden(optionsScreen, false);
+  focusFirstChild(optionsScreen);
+}
+
+function closeOptionsScreen() {
+  if (!optionsScreen) {
+    return;
+  }
+  const origin = optionsOrigin;
+  optionsOrigin = null;
+  setHidden(optionsScreen, true);
+  if (origin === 'title' && titleScreen) {
+    setHidden(titleScreen, false);
+    focusElement(optionsButton || startButton);
+    lastFocusedElement = null;
+    return;
+  }
+  const focusTarget =
+    (lastFocusedElement && document.contains(lastFocusedElement) && lastFocusedElement) ||
+    inGameOptionsButton ||
+    startButton ||
+    null;
+  focusElement(focusTarget);
+  lastFocusedElement = null;
 }
 
 function showWorldInfo() {
@@ -160,6 +206,48 @@ if (dwarfCustomizerForm) {
     event.preventDefault();
     setHidden(dwarfCustomizer, true);
     await transitionToGame();
+  });
+}
+
+if (optionsButton && optionsScreen) {
+  optionsButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (!isHidden(optionsScreen)) {
+      return;
+    }
+    openOptionsScreen('title');
+  });
+}
+
+if (inGameOptionsButton && optionsScreen) {
+  inGameOptionsButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (!isHidden(optionsScreen)) {
+      return;
+    }
+    openOptionsScreen('game');
+  });
+}
+
+if (closeOptionsButton && optionsScreen) {
+  closeOptionsButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (isHidden(optionsScreen)) {
+      return;
+    }
+    closeOptionsScreen();
+  });
+}
+
+if (optionsScreen) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' && event.key !== 'Esc') {
+      return;
+    }
+    if (isHidden(optionsScreen)) {
+      return;
+    }
+    closeOptionsScreen();
   });
 }
 
