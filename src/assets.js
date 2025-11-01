@@ -715,7 +715,7 @@ export const baseTileCoords = {
   LIZARDMEN_CITY: { row: 2, col: 11 },
   SAINT_SHRINE: { row: 1, col: 11 },
   MONASTERY: { row: 2, col: 2 },
-  ORC_CAMP: { row: 1, col: 16 },
+  ORC_CAMP: { row: 3, col: 11 },
   GNOLL_CAMP: { row: 5, col: 1 },
   TROLL_CAMP: { row: 5, col: 1 },
   OGRE_CAMP: { row: 5, col: 1 },
