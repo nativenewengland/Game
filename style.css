@@ -473,7 +473,7 @@ select,
       radial-gradient(circle at 24% 18%, rgba(36, 32, 44, 0.4), transparent 58%),
       radial-gradient(circle at 78% 24%, rgba(54, 36, 22, 0.32), transparent 62%),
       linear-gradient(172deg, rgba(6, 8, 16, 0.96), rgba(8, 9, 15, 0.98)),
-      url("titlescreen/normal/Titlescreen image.png") center/cover no-repeat;
+      url("titlescreen/title.gif") center/cover no-repeat;
   filter: saturate(70%);
   transform: none;
 }
