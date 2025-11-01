@@ -16471,6 +16471,100 @@ const structureContextMenuState = {
   tileY: null
 };
 
+const dwarfholdStructureKeys = new Set([
+  'DWARFHOLD',
+  'GREAT_DWARFHOLD',
+  'ABANDONED_DWARFHOLD',
+  'DARK_DWARFHOLD',
+  'DARKDWARFHOLD',
+  'HILLHOLD'
+]);
+
+function isDwarfholdStructureTile(tile) {
+  if (!tile) {
+    return false;
+  }
+  if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+    return true;
+  }
+  const rawType = tile.structureDetails?.type;
+  if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+    return true;
+  }
+  if (typeof tile.structureName === 'string') {
+    const upperName = tile.structureName.toUpperCase();
+    for (const key of dwarfholdStructureKeys) {
+      if (upperName.includes(key)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function enrichTileWithDwarfholdDetails(tile, tileX, tileY, world = state.currentWorld) {
+  if (!tile) {
+    return null;
+  }
+
+  const existingDetails = tile.structureDetails;
+  if (existingDetails && Object.keys(existingDetails).length > 0) {
+    if (tile.structureName || !existingDetails.name) {
+      return tile;
+    }
+    return { ...tile, structureName: existingDetails.name };
+  }
+
+  if (!isDwarfholdStructureTile(tile)) {
+    return tile;
+  }
+
+  const resolvedWorld = world;
+  if (!resolvedWorld || !Array.isArray(resolvedWorld.dwarfholds)) {
+    return tile;
+  }
+  if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
+    return tile;
+  }
+
+  const match = resolvedWorld.dwarfholds.find((hold) => hold && hold.x === tileX && hold.y === tileY);
+  if (!match) {
+    return tile;
+  }
+
+  const { x: holdX, y: holdY, ...details } = match;
+  const mergedDetails = { ...(tile.structureDetails || {}), ...details };
+  const resolvedName = mergedDetails.name || tile.structureName || tile.areaName;
+
+  const enrichedTile = { ...tile, structureDetails: mergedDetails };
+  if (resolvedName) {
+    enrichedTile.structureName = resolvedName;
+  }
+
+  return enrichedTile;
+}
+
+function resolveTileForContextMenu(tile, tileX, tileY) {
+  const world = state.currentWorld;
+  const tiles = world && Array.isArray(world.tiles) ? world.tiles : null;
+  const height = tiles ? tiles.length : 0;
+  const width = height > 0 && Array.isArray(tiles[0]) ? tiles[0].length : 0;
+
+  let resolvedTile = tile || null;
+  if (tiles && width > 0 && Number.isInteger(tileX) && Number.isInteger(tileY)) {
+    const worldTile = getWorldTileAt(tiles, width, height, tileX, tileY);
+    if (worldTile) {
+      resolvedTile = worldTile;
+    }
+  }
+
+  if (!resolvedTile) {
+    return null;
+  }
+
+  return enrichTileWithDwarfholdDetails(resolvedTile, tileX, tileY, world);
+}
+
 function computeViewScales(wrapperWidth, wrapperHeight, worldWidth, worldHeight) {
   if (!worldWidth || !worldHeight || !wrapperWidth || !wrapperHeight) {
     return { contain: 1, cover: 1 };
@@ -16550,11 +16644,15 @@ function showStructureContextMenu(resolved) {
     return;
   }
 
-  structureContextMenuState.tile = tile || null;
-  structureContextMenuState.tileX = Number.isFinite(tileX) ? tileX : null;
-  structureContextMenuState.tileY = Number.isFinite(tileY) ? tileY : null;
+  const resolvedTileX = Number.isFinite(tileX) ? tileX : null;
+  const resolvedTileY = Number.isFinite(tileY) ? tileY : null;
+  const resolvedTile = resolveTileForContextMenu(tile, resolvedTileX, resolvedTileY) || tile || null;
 
-  updateStructureContextMenuActions(tile);
+  structureContextMenuState.tile = resolvedTile;
+  structureContextMenuState.tileX = resolvedTileX;
+  structureContextMenuState.tileY = resolvedTileY;
+
+  updateStructureContextMenuActions(resolvedTile);
 
   const menu = elements.structureContextMenu;
   const margin = 16;
