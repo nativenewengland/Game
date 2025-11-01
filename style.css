@@ -1544,6 +1544,7 @@ button:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  position: relative;
 }
 
 .structure-details-history-chart__sparkline {
@@ -1551,6 +1552,7 @@ button:hover:not(:disabled) {
   height: auto;
   aspect-ratio: 16 / 7;
   display: block;
+  overflow: visible;
 }
 
 .structure-details-history-chart__axis-label {
@@ -1567,6 +1569,23 @@ button:hover:not(:disabled) {
   dominant-baseline: middle;
 }
 
+.structure-details-history-chart__grid-line {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+}
+
+.structure-details-history-chart__grid-line--horizontal {
+  stroke-dasharray: 4 6;
+}
+
+.structure-details-history-chart__grid-line--vertical {
+  stroke-dasharray: 2 6;
+}
+
+.structure-details-history-chart__axis {
+  pointer-events: none;
+}
+
 .structure-details-history-chart__area {
   fill: rgba(240, 198, 116, 0.24);
   stroke: none;
@@ -1578,6 +1597,58 @@ button:hover:not(:disabled) {
   stroke-width: 2.4;
   stroke-linejoin: round;
   stroke-linecap: round;
+}
+
+.structure-details-history-chart__cursor-line,
+.structure-details-history-chart__marker {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.structure-details-history-chart__cursor-line {
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1.2;
+}
+
+.structure-details-history-chart__marker {
+  fill: var(--accent);
+  stroke: rgba(12, 12, 16, 0.65);
+  stroke-width: 1;
+}
+
+.structure-details-history-chart__sparkline.is-active .structure-details-history-chart__cursor-line,
+.structure-details-history-chart__sparkline.is-active .structure-details-history-chart__marker {
+  opacity: 1;
+}
+
+.structure-details-history-chart__interaction-layer {
+  pointer-events: all;
+  cursor: crosshair;
+}
+
+.structure-details-history-chart__tooltip {
+  position: absolute;
+  transform: translate(-50%, -120%);
+  background: rgba(18, 18, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-high, #fff);
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.structure-details-history-chart__tooltip[aria-hidden='false'] {
+  opacity: 1;
 }
 
 .structure-details-history-chart__caption {
