@@ -367,3 +367,160 @@ function enhancePopulationHistoryCharts(rootElement) {
     if (resolvedTabId === 'history') {
       enhancePopulationHistoryCharts(elements.structureDetailsContent);
     }
+  const safeTarget = Math.max(1, targetTickCount);
+  const roughStep = maxValue / safeTarget;
+  } else {
+  const yScaleMax = yTicks.length > 0 ? yTicks[yTicks.length - 1] : maxValue;
+      return `<text class="structure-details-history-chart__axis-label structure-details-history-chart__axis-label--y" x="4" y="${labelY.toFixed(2)}" text-anchor="start" aria-hidden="true">${escapeHtml(tick.toLocaleString('en-US'))}</text>`;
+          return `<text class="structure-details-history-chart__axis-label structure-details-history-chart__axis-label--x" x="${labelX.toFixed(2)}" y="${(chartHeight - 2).toFixed(2)}" text-anchor="middle" aria-hidden="true">${escapeHtml(tick.toLocaleString('en-US'))}</text>`;
+  const descriptorLabel = descriptor;
+  const chartPoints = positions.map((point) => ({
+    x: Number(point.x.toFixed(2)),
+    y: Number(point.y.toFixed(2)),
+    population: point.data.population,
+    yearsAgo: point.data.yearsAgo,
+    label: formatPopulationTimelineLabel(point.data)
+  }));
+  const chartPointsData = escapeHtml(JSON.stringify(chartPoints));
+
+      <figure
+        class="structure-details-history-chart__figure"
+        data-chart-points="${chartPointsData}"
+        data-chart-width="${chartWidth}"
+        data-chart-height="${chartHeight}"
+        data-chart-descriptor="${escapeHtml(descriptorLabel)}"
+        data-chart-has-years="${hasYearsData ? 'true' : 'false'}"
+        data-chart-max-years="${hasYearsData ? maxYearsAgo : ''}"
+      >
+          <g class="structure-details-history-chart__axis-labels" aria-hidden="true">
+            ${yTickLabels}${xTickLabels}
+          <line
+            class="structure-details-history-chart__cursor"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="${chartHeight.toFixed(2)}"
+            aria-hidden="true"
+          ></line>
+          <circle
+            class="structure-details-history-chart__marker"
+            cx="0"
+            cy="0"
+            r="4"
+            aria-hidden="true"
+          ></circle>
+            width="${chartWidth.toFixed(2)}"
+            height="${chartHeight.toFixed(2)}"
+            tabindex="0"
+            aria-label="${escapeHtml(`Explore population data for ${settlementName}`)}"
+        <div class="structure-details-history-chart__tooltip" role="status" aria-hidden="true" hidden></div>
+function enhancePopulationHistoryCharts(root) {
+  if (!root || typeof root.querySelectorAll !== 'function') {
+  const figures = root.querySelectorAll('.structure-details-history-chart__figure[data-chart-points]');
+  figures.forEach((figure) => {
+    const pointsAttribute = figure.getAttribute('data-chart-points');
+    if (!pointsAttribute) {
+    let points;
+      points = JSON.parse(pointsAttribute);
+    if (!Array.isArray(points) || points.length === 0) {
+    const svg = figure.querySelector('.structure-details-history-chart__sparkline');
+    const interactionLayer = svg?.querySelector('.structure-details-history-chart__interaction-layer');
+    const marker = svg?.querySelector('.structure-details-history-chart__marker');
+    const cursorLine = svg?.querySelector('.structure-details-history-chart__cursor');
+    const tooltip = figure.querySelector('.structure-details-history-chart__tooltip');
+    if (!svg || !interactionLayer || !marker || !cursorLine || !tooltip) {
+    const chartWidth = Number.parseFloat(figure.getAttribute('data-chart-width')) || 0;
+    const chartHeight = Number.parseFloat(figure.getAttribute('data-chart-height')) || 0;
+    const descriptor = figure.getAttribute('data-chart-descriptor') || '';
+    let activeIndex = points.length - 1;
+      tooltip.hidden = true;
+      tooltip.setAttribute('aria-hidden', 'true');
+    };
+
+    const showPoint = (index, pointer) => {
+      if (!Number.isFinite(chartWidth) || chartWidth <= 0 || !Number.isFinite(chartHeight) || chartHeight <= 0) {
+        return;
+
+      const safeIndex = clamp(Number.isFinite(index) ? index : activeIndex, 0, points.length - 1);
+      activeIndex = safeIndex;
+      const point = points[safeIndex];
+      if (!point) {
+        return;
+      }
+
+      const pointX = Number.isFinite(point.x) ? point.x : 0;
+      const pointY = Number.isFinite(point.y) ? point.y : 0;
+
+      marker.setAttribute('cx', pointX.toFixed(2));
+      marker.setAttribute('cy', pointY.toFixed(2));
+      cursorLine.setAttribute('x1', pointX.toFixed(2));
+      cursorLine.setAttribute('x2', pointX.toFixed(2));
+      cursorLine.setAttribute('y1', '0');
+      cursorLine.setAttribute('y2', chartHeight.toFixed(2));
+      svg.classList.add('is-active');
+
+      const figureRect = figure.getBoundingClientRect();
+      if (!figureRect || figureRect.width === 0 || figureRect.height === 0) {
+        return;
+      }
+
+      let tooltipX;
+      let tooltipY;
+      if (pointer && Number.isFinite(pointer.clientX) && Number.isFinite(pointer.clientY)) {
+        tooltipX = clamp(pointer.clientX - figureRect.left, 12, Math.max(12, figureRect.width - 12));
+        tooltipY = clamp(pointer.clientY - figureRect.top, 16, Math.max(16, figureRect.height - 16));
+      } else {
+        tooltipX = clamp((pointX / chartWidth) * figureRect.width, 12, Math.max(12, figureRect.width - 12));
+        tooltipY = clamp((pointY / chartHeight) * figureRect.height, 16, Math.max(16, figureRect.height - 16));
+      }
+
+      const populationText = Number.isFinite(point.population)
+        ? point.population.toLocaleString('en-US')
+        : '—';
+      const timeLabel = typeof point.label === 'string' ? point.label : '';
+      const descriptorText = descriptor ? ` ${descriptor}` : '';
+      tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` • ${timeLabel}` : ''}`;
+      tooltip.hidden = false;
+      tooltip.setAttribute('aria-hidden', 'false');
+      tooltip.style.left = `${tooltipX}px`;
+      tooltip.style.top = `${tooltipY}px`;
+    const updateFromPointer = (clientX, clientY) => {
+
+      const localX = clamp(clientX - rect.left, 0, rect.width);
+
+      let nearestIndex = 0;
+      let minDistance = Math.abs((points[0]?.x || 0) - scaledX);
+        const distance = Math.abs((candidate?.x || 0) - scaledX);
+          nearestIndex = index;
+      showPoint(nearestIndex, { clientX, clientY });
+    const scheduleHide = (delay = 800) => {
+      clearHideTimeout();
+      updateFromPointer(event.clientX, event.clientY);
+      clearHideTimeout();
+      updateFromPointer(event.clientX, event.clientY);
+      clearHideTimeout();
+          // Ignore capture errors.
+      updateFromPointer(event.clientX, event.clientY);
+          // Ignore release errors.
+      scheduleHide(400);
+    const handleFocus = () => {
+      clearHideTimeout();
+      showPoint(activeIndex);
+    };
+
+    const handleBlur = () => {
+      hideTooltip();
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        const delta = event.key === 'ArrowLeft' ? -1 : 1;
+        const nextIndex = clamp(activeIndex + delta, 0, points.length - 1);
+        showPoint(nextIndex);
+      }
+    };
+
+    interactionLayer.addEventListener('focus', handleFocus);
+    interactionLayer.addEventListener('blur', handleBlur);
+    interactionLayer.addEventListener('keydown', handleKeyDown);
