@@ -642,6 +642,7 @@ const worldNames = [
   'Hyboria',
   'Avalon',
   'Tyria',
+  'Tarnadam',
   'Rokugan',
   'Glorantha',
   'Ivalice',
