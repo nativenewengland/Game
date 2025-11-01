@@ -15609,6 +15609,8 @@ function generateSettlementHistoryData(tile, details, context) {
       break;
   }
 
+  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, events, rng);
+
   const uniqueMap = new Map();
   events
     .filter((event) => event && typeof event.description === 'string')
@@ -15634,16 +15636,6 @@ function generateSettlementHistoryData(tile, details, context) {
     const bValue = Number.isFinite(b.yearsAgo) ? b.yearsAgo : -Infinity;
     return bValue - aValue;
   });
-
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
 
   return {
     entries: sortedEntries,
