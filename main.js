@@ -15524,6 +15524,46 @@ function formatPopulationTimelineLabel(point) {
   return 'Recorded';
 }
 
+function createNiceTickStep(maxValue, targetTickCount = 5) {
+  if (!Number.isFinite(maxValue) || maxValue <= 0) {
+    return 1;
+  }
+  const safeTarget = Math.max(1, targetTickCount);
+  const roughStep = maxValue / safeTarget;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const residual = roughStep / magnitude;
+  if (residual >= 5) {
+    return 5 * magnitude;
+  }
+  if (residual >= 2) {
+    return 2 * magnitude;
+  }
+  return magnitude;
+}
+
+function generateAxisTicks(maxValue, targetTickCount = 5, options = {}) {
+  const { includeZero = true } = options;
+  if (!Number.isFinite(maxValue) || maxValue <= 0) {
+    return includeZero ? [0] : [];
+  }
+  const step = Math.max(createNiceTickStep(maxValue, targetTickCount), 1);
+  const tickTotal = Math.max(1, Math.floor(maxValue / step));
+  const ticks = [];
+  if (includeZero) {
+    ticks.push(0);
+  }
+  for (let index = 1; index <= tickTotal; index += 1) {
+    ticks.push(step * index);
+  }
+  const lastTick = ticks[ticks.length - 1];
+  if (!Number.isFinite(lastTick) || Math.abs(lastTick - maxValue) > step * 0.25) {
+    ticks.push(maxValue);
+  } else {
+    ticks[ticks.length - 1] = Math.max(lastTick, maxValue);
+  }
+  return Array.from(new Set(ticks)).sort((a, b) => a - b);
+}
+
 function buildPopulationHistoryChartMarkup(timeline, details, tile) {
   if (!Array.isArray(timeline) || timeline.length < 2) {
     return '';
@@ -15554,12 +15594,24 @@ function buildPopulationHistoryChartMarkup(timeline, details, tile) {
   const chartWidth = 320;
   const chartHeight = 140;
 
+   const maxYearsAgo = sanitizedPoints.reduce(
+    (accumulator, point) =>
+      Number.isFinite(point.yearsAgo) ? Math.max(accumulator, point.yearsAgo) : accumulator,
+    0
+  );
+  const hasYearsData = maxYearsAgo > 0;
+
+  const yTicks = generateAxisTicks(maxValue, 4);
+  const yScaleMax = yTicks.length > 0 ? yTicks[yTicks.length - 1] : maxValue;
+  const xTicks = hasYearsData ? generateAxisTicks(maxYearsAgo, 6) : [];
+  
   const positions = sanitizedPoints.map((point, index) => {
-    const x =
-      sanitizedPoints.length === 1
-        ? chartWidth
-        : (index / (sanitizedPoints.length - 1)) * chartWidth;
-    const y = chartHeight - (point.population / maxValue) * chartHeight;
+    const x = hasYearsData && Number.isFinite(point.yearsAgo)
+      ? chartWidth - (point.yearsAgo / Math.max(maxYearsAgo, 1)) * chartWidth
+      : sanitizedPoints.length === 1
+      ? chartWidth
+      : (index / (sanitizedPoints.length - 1)) * chartWidth;
+    const y = chartHeight - (point.population / Math.max(yScaleMax, 1)) * chartHeight;
     return { x, y, data: point };
   });
 
@@ -15573,12 +15625,46 @@ function buildPopulationHistoryChartMarkup(timeline, details, tile) {
     'Z'
   ].join(' ');
 
+ const horizontalGridLines = yTicks
+    .map((tick) => {
+      const y = chartHeight - (tick / Math.max(yScaleMax, 1)) * chartHeight;
+      return `<line class="structure-details-history-chart__grid-line structure-details-history-chart__grid-line--horizontal" x1="0" y1="${y.toFixed(2)}" x2="${chartWidth.toFixed(2)}" y2="${y.toFixed(2)}" aria-hidden="true"></line>`;
+    })
+    .join('');
+
+const verticalGridLines = hasYearsData
+    ? xTicks
+        .map((tick) => {
+          const x = chartWidth - (tick / Math.max(maxYearsAgo, 1)) * chartWidth;
+          return `<line class="structure-details-history-chart__grid-line structure-details-history-chart__grid-line--vertical" x1="${x.toFixed(2)}" y1="0" x2="${x.toFixed(2)}" y2="${chartHeight.toFixed(2)}" aria-hidden="true"></line>`;
+        })
+        .join('')
+    : '';
+
+  const yTickLabels = yTicks
+    .map((tick) => {
+      const y = chartHeight - (tick / Math.max(yScaleMax, 1)) * chartHeight;
+      const labelY = Math.min(Math.max(y, 6), chartHeight - 6);
+      return `<text class="structure-details-history-chart__axis-label structure-details-history-chart__axis-label--y" x="4" y="${labelY.toFixed(2)}" text-anchor="start" aria-hidden="true">${escapeHtml(tick.toLocaleString('en-US'))}</text>`;
+    })
+    .join('');
+
+  const xTickLabels = hasYearsData
+    ? xTicks
+        .map((tick) => {
+          const x = chartWidth - (tick / Math.max(maxYearsAgo, 1)) * chartWidth;
+          const labelX = Math.min(Math.max(x, 12), chartWidth - 12);
+          return `<text class="structure-details-history-chart__axis-label structure-details-history-chart__axis-label--x" x="${labelX.toFixed(2)}" y="${(chartHeight - 2).toFixed(2)}" text-anchor="middle" aria-hidden="true">${escapeHtml(tick.toLocaleString('en-US'))}</text>`;
+        })
+        .join('')
+    : '';
+
   const startPoint = sanitizedPoints[0];
   const endPoint = sanitizedPoints[sanitizedPoints.length - 1];
   const peakValue = Math.max(...values);
   const peakIndex = values.indexOf(peakValue);
   const peakPoint = sanitizedPoints[Math.max(peakIndex, 0)];
-
+  const descriptorLabel = descriptor;
   const startLabel = formatPopulationTimelineLabel(startPoint);
   const peakLabel = formatPopulationTimelineLabel(peakPoint);
   const currentLabel = formatPopulationTimelineLabel(endPoint);
@@ -15593,7 +15679,16 @@ function buildPopulationHistoryChartMarkup(timeline, details, tile) {
   const chartIdSuffix = ((stringToSeed(chartIdSeed) + 0x4f1b) >>> 0).toString(36);
   const titleId = `population-history-title-${chartIdSuffix}`;
   const descId = `population-history-desc-${chartIdSuffix}`;
-
+  
+  const chartPoints = positions.map((point) => ({
+    x: Number(point.x.toFixed(2)),
+    y: Number(point.y.toFixed(2)),
+    population: point.data.population,
+    yearsAgo: point.data.yearsAgo,
+    label: formatPopulationTimelineLabel(point.data)
+  }));
+  const chartPointsData = escapeHtml(JSON.stringify(chartPoints));
+  
   const summarySegments = [];
   summarySegments.push(
     `Population began near ${startValueText} ${descriptor}${startLabel ? ` (${startLabel})` : ''}.`
@@ -15620,7 +15715,15 @@ function buildPopulationHistoryChartMarkup(timeline, details, tile) {
         <h3 class="structure-details-history-chart__title structure-details-heading">Population Trend</h3>
         <p class="structure-details-history-chart__current">${escapeHtml(currentValueText)} ${escapeHtml(descriptor)}</p>
       </header>
-      <figure class="structure-details-history-chart__figure">
+      <figure
+        class="structure-details-history-chart__figure"
+        data-chart-points="${chartPointsData}"
+        data-chart-width="${chartWidth}"
+        data-chart-height="${chartHeight}"
+        data-chart-descriptor="${escapeHtml(descriptorLabel)}"
+        data-chart-has-years="${hasYearsData ? 'true' : 'false'}"
+        data-chart-max-years="${hasYearsData ? maxYearsAgo : ''}"
+      >
         <svg
           class="structure-details-history-chart__sparkline"
           viewBox="0 0 ${chartWidth} ${chartHeight}"
@@ -15629,24 +15732,41 @@ function buildPopulationHistoryChartMarkup(timeline, details, tile) {
         >
           <title id="${titleId}">${escapeHtml(`Population trend for ${settlementName}`)}</title>
           <desc id="${descId}">${escapeHtml(summaryText)}</desc>
-          <text
-            class="structure-details-history-chart__axis-label structure-details-history-chart__axis-label--y"
-            x="12"
-            y="${(chartHeight / 2).toFixed(2)}"
-            text-anchor="middle"
-            transform="rotate(-90 12 ${(chartHeight / 2).toFixed(2)})"
-            aria-hidden="true"
-          >Population</text>
-          <text
-            class="structure-details-history-chart__axis-label structure-details-history-chart__axis-label--x"
-            x="${(chartWidth / 2).toFixed(2)}"
-            y="${(chartHeight - 6).toFixed(2)}"
-            text-anchor="middle"
-            aria-hidden="true"
-          >Years Ago</text>
+          <g class="structure-details-history-chart__grid" aria-hidden="true">
+            ${horizontalGridLines}${verticalGridLines}
+          </g>
+          <g class="structure-details-history-chart__axis-labels" aria-hidden="true">
+            ${yTickLabels}${xTickLabels}
+          </g>
           <path class="structure-details-history-chart__area" d="${areaPath}"></path>
           <path class="structure-details-history-chart__line" d="${lineCommands}"></path>
+          <line
+            class="structure-details-history-chart__cursor"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="${chartHeight.toFixed(2)}"
+            aria-hidden="true"
+          ></line>
+          <circle
+            class="structure-details-history-chart__marker"
+            cx="0"
+            cy="0"
+            r="4"
+            aria-hidden="true"
+          ></circle>
+          <rect
+            class="structure-details-history-chart__interaction-layer"
+            x="0"
+            y="0"
+            width="${chartWidth.toFixed(2)}"
+            height="${chartHeight.toFixed(2)}"
+            fill="transparent"
+            tabindex="0"
+            aria-label="${escapeHtml(`Explore population data for ${settlementName}`)}"
+          ></rect>
         </svg>
+        <div class="structure-details-history-chart__tooltip" role="status" aria-hidden="true" hidden></div>
         <figcaption class="structure-details-history-chart__caption">
           <dl class="structure-details-history-chart__stats">
             <div class="structure-details-history-chart__stat">
@@ -15666,6 +15786,216 @@ function buildPopulationHistoryChartMarkup(timeline, details, tile) {
       </figure>
     </section>
   `;
+}
+
+function enhancePopulationHistoryCharts(root) {
+  if (!root || typeof root.querySelectorAll !== 'function') {
+    return;
+  }
+
+  const figures = root.querySelectorAll('.structure-details-history-chart__figure[data-chart-points]');
+  figures.forEach((figure) => {
+    const pointsAttribute = figure.getAttribute('data-chart-points');
+    if (!pointsAttribute) {
+      return;
+    }
+
+    let points;
+    try {
+      points = JSON.parse(pointsAttribute);
+    } catch (error) {
+      return;
+    }
+
+    if (!Array.isArray(points) || points.length === 0) {
+      return;
+    }
+
+    const svg = figure.querySelector('.structure-details-history-chart__sparkline');
+    const interactionLayer = svg?.querySelector('.structure-details-history-chart__interaction-layer');
+    const marker = svg?.querySelector('.structure-details-history-chart__marker');
+    const cursorLine = svg?.querySelector('.structure-details-history-chart__cursor');
+    const tooltip = figure.querySelector('.structure-details-history-chart__tooltip');
+    if (!svg || !interactionLayer || !marker || !cursorLine || !tooltip) {
+      return;
+    }
+
+    const chartWidth = Number.parseFloat(figure.getAttribute('data-chart-width')) || 0;
+    const chartHeight = Number.parseFloat(figure.getAttribute('data-chart-height')) || 0;
+    const descriptor = figure.getAttribute('data-chart-descriptor') || '';
+
+    let activeIndex = points.length - 1;
+    let hideTimeoutId = null;
+
+    const clearHideTimeout = () => {
+      if (hideTimeoutId !== null) {
+        clearTimeout(hideTimeoutId);
+        hideTimeoutId = null;
+      }
+    };
+
+    const hideTooltip = () => {
+      clearHideTimeout();
+      svg.classList.remove('is-active');
+      tooltip.hidden = true;
+      tooltip.setAttribute('aria-hidden', 'true');
+    };
+
+    const showPoint = (index, pointer) => {
+      if (!Number.isFinite(chartWidth) || chartWidth <= 0 || !Number.isFinite(chartHeight) || chartHeight <= 0) {
+        return;
+      }
+
+      const safeIndex = clamp(Number.isFinite(index) ? index : activeIndex, 0, points.length - 1);
+      activeIndex = safeIndex;
+      const point = points[safeIndex];
+      if (!point) {
+        return;
+      }
+
+      const pointX = Number.isFinite(point.x) ? point.x : 0;
+      const pointY = Number.isFinite(point.y) ? point.y : 0;
+
+      marker.setAttribute('cx', pointX.toFixed(2));
+      marker.setAttribute('cy', pointY.toFixed(2));
+      cursorLine.setAttribute('x1', pointX.toFixed(2));
+      cursorLine.setAttribute('x2', pointX.toFixed(2));
+      cursorLine.setAttribute('y1', '0');
+      cursorLine.setAttribute('y2', chartHeight.toFixed(2));
+      svg.classList.add('is-active');
+
+      const figureRect = figure.getBoundingClientRect();
+      if (!figureRect || figureRect.width === 0 || figureRect.height === 0) {
+        return;
+      }
+
+      let tooltipX;
+      let tooltipY;
+      if (pointer && Number.isFinite(pointer.clientX) && Number.isFinite(pointer.clientY)) {
+        tooltipX = clamp(pointer.clientX - figureRect.left, 12, Math.max(12, figureRect.width - 12));
+        tooltipY = clamp(pointer.clientY - figureRect.top, 16, Math.max(16, figureRect.height - 16));
+      } else {
+        tooltipX = clamp((pointX / chartWidth) * figureRect.width, 12, Math.max(12, figureRect.width - 12));
+        tooltipY = clamp((pointY / chartHeight) * figureRect.height, 16, Math.max(16, figureRect.height - 16));
+      }
+
+      const populationText = Number.isFinite(point.population)
+        ? point.population.toLocaleString('en-US')
+        : '—';
+      const timeLabel = typeof point.label === 'string' ? point.label : '';
+      const descriptorText = descriptor ? ` ${descriptor}` : '';
+      tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` • ${timeLabel}` : ''}`;
+      tooltip.hidden = false;
+      tooltip.setAttribute('aria-hidden', 'false');
+      tooltip.style.left = `${tooltipX}px`;
+      tooltip.style.top = `${tooltipY}px`;
+    };
+
+    const updateFromPointer = (clientX, clientY) => {
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
+        return;
+      }
+
+      const rect = svg.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0) {
+        return;
+      }
+
+      const localX = clamp(clientX - rect.left, 0, rect.width);
+      const scaledX = (localX / rect.width) * chartWidth;
+
+      let nearestIndex = 0;
+      let minDistance = Math.abs((points[0]?.x || 0) - scaledX);
+      for (let index = 1; index < points.length; index += 1) {
+        const candidate = points[index];
+        const distance = Math.abs((candidate?.x || 0) - scaledX);
+        if (distance < minDistance) {
+          nearestIndex = index;
+          minDistance = distance;
+        }
+      }
+
+      showPoint(nearestIndex, { clientX, clientY });
+    };
+
+    const scheduleHide = (delay = 800) => {
+      clearHideTimeout();
+      hideTimeoutId = setTimeout(() => {
+        hideTooltip();
+      }, delay);
+    };
+
+    const handlePointerEnter = (event) => {
+      clearHideTimeout();
+      updateFromPointer(event.clientX, event.clientY);
+    };
+
+    const handlePointerMove = (event) => {
+      clearHideTimeout();
+      updateFromPointer(event.clientX, event.clientY);
+    };
+
+    const handlePointerDown = (event) => {
+      clearHideTimeout();
+      if (typeof interactionLayer.setPointerCapture === 'function') {
+        try {
+          interactionLayer.setPointerCapture(event.pointerId);
+        } catch (error) {
+          // Ignore capture errors.
+        }
+      }
+      updateFromPointer(event.clientX, event.clientY);
+    };
+
+    const handlePointerUp = (event) => {
+      if (typeof interactionLayer.releasePointerCapture === 'function') {
+        try {
+          interactionLayer.releasePointerCapture(event.pointerId);
+        } catch (error) {
+          // Ignore release errors.
+        }
+      }
+      if (event.pointerType && event.pointerType !== 'mouse') {
+        scheduleHide(1200);
+      }
+    };
+
+    const handlePointerLeave = () => {
+      scheduleHide(400);
+    };
+
+    const handlePointerCancel = () => {
+      hideTooltip();
+    };
+
+    const handleFocus = () => {
+      clearHideTimeout();
+      showPoint(activeIndex);
+    };
+
+    const handleBlur = () => {
+      hideTooltip();
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        const delta = event.key === 'ArrowLeft' ? -1 : 1;
+        const nextIndex = clamp(activeIndex + delta, 0, points.length - 1);
+        showPoint(nextIndex);
+      }
+    };
+
+    interactionLayer.addEventListener('pointerenter', handlePointerEnter);
+    interactionLayer.addEventListener('pointermove', handlePointerMove);
+    interactionLayer.addEventListener('pointerdown', handlePointerDown);
+    interactionLayer.addEventListener('pointerup', handlePointerUp);
+    interactionLayer.addEventListener('pointerleave', handlePointerLeave);
+    interactionLayer.addEventListener('pointercancel', handlePointerCancel);
+    interactionLayer.addEventListener('focus', handleFocus);
+    interactionLayer.addEventListener('blur', handleBlur);
+    interactionLayer.addEventListener('keydown', handleKeyDown);
+  });
 }
 
 function buildSettlementHistoryContent(tile, details, context = {}) {
@@ -15750,6 +16080,9 @@ function setActiveStructureDetailsTab(tabId, options = {}) {
   if (!skipContent && elements.structureDetailsContent) {
     const tabContent = structureDetailsState.tabContent?.[resolvedTabId] || '';
     elements.structureDetailsContent.innerHTML = tabContent;
+    if (resolvedTabId === 'history') {
+      enhancePopulationHistoryCharts(elements.structureDetailsContent);
+    }
   }
 }
 
