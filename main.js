@@ -124,7 +124,6 @@ function applyPopulationHistoryShocks(timeline, events, rng, options = {}) {
       };
       adjustedTimeline.splice(insertIndex, 0, newPoint);
     }
-
   });
 
   return adjustedTimeline.sort((a, b) => {
@@ -135,8 +134,110 @@ function applyPopulationHistoryShocks(timeline, events, rng, options = {}) {
 }
 
 function generateDwarfholdPopulationTimeline(historyContext, events, rng) {
+  const holdTypes = new Set([
+    'dwarfhold',
+    'greatdwarfhold',
+    'hillhold',
+    'occupieddwarfhold',
+    'occupyddwarfhold',
+    'abandoneddwarfhold',
+    'ruineddwarfhold'
+  ]);
+  if (!historyContext || !holdTypes.has(historyContext.type)) {
+    return null;
+  }
+
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const finalPopulation = Number.isFinite(historyContext?.details?.population)
+    ? Math.max(0, Math.round(historyContext.details.population))
+    : null;
+  if (finalPopulation === null) {
+    return null;
+  }
+
+  const yearsSpan = Number.isFinite(historyContext?.foundedYearsAgo)
+    ? clamp(Math.round(historyContext.foundedYearsAgo), 40, 4200)
+    : 360;
+  const pointCount = clamp(Math.round(yearsSpan / 120) + 5, 6, 14);
+
+  const typeKey = historyContext.type;
+  const declineVariants = new Set(['occupieddwarfhold', 'occupyddwarfhold', 'abandoneddwarfhold', 'ruineddwarfhold']);
+  const isDeclineVariant = declineVariants.has(typeKey);
+
+  let peakPopulation;
+  if (isDeclineVariant) {
+    const baseline =
+      finalPopulation > 0
+        ? finalPopulation * (1.45 + randomFn() * 0.55)
+        : 900 + randomFn() * 3200;
+    peakPopulation = Math.round(Math.max(baseline, finalPopulation + 400 + randomFn() * 900));
+  } else {
+    const growthFactor = 1.08 + randomFn() * 0.35;
+    const additiveBoost = 180 + randomFn() * 900;
+    peakPopulation = Math.round(Math.max(finalPopulation, finalPopulation * growthFactor + additiveBoost));
+  }
+  if (finalPopulation > 0) {
+    const maxMultiplier = isDeclineVariant ? 2.8 : 1.9;
+    peakPopulation = Math.min(peakPopulation, Math.round(finalPopulation * maxMultiplier));
+  } else {
+    peakPopulation = Math.max(peakPopulation, 800);
+  }
+
+  const startPopulation = Math.max(40, Math.round(peakPopulation * (0.12 + randomFn() * 0.18)));
+  const declineStart = isDeclineVariant ? 0.55 + randomFn() * 0.12 : 0.82 + randomFn() * 0.08;
+
+  const timeline = [];
+  const currentYear = Number.isFinite(historyContext?.currentYear) ? Math.round(historyContext.currentYear) : null;
+
+  for (let index = 0; index < pointCount; index += 1) {
+    const progress = pointCount === 1 ? 1 : index / (pointCount - 1);
+    let targetValue;
+    if (isDeclineVariant && progress >= declineStart) {
+      const declineProgress = (progress - declineStart) / Math.max(1 - declineStart, 0.0001);
+      const easedDecline = Math.pow(clamp(declineProgress, 0, 1), 0.85);
+      targetValue = lerp(peakPopulation, finalPopulation, easedDecline);
+    } else {
+      const growthProgress = Math.min(progress / Math.max(declineStart, 0.0001), 1);
+      const easedGrowth = 1 - Math.pow(1 - growthProgress, 1.6);
+      const growthTarget = isDeclineVariant ? peakPopulation : finalPopulation;
+      targetValue = lerp(startPopulation, growthTarget, easedGrowth);
+    }
+    const noiseAmplitude = isDeclineVariant ? 0.12 : 0.08;
+    const jitter = targetValue * noiseAmplitude * (randomFn() - 0.5) * 2;
+    let value = Math.max(0, Math.round(targetValue + jitter));
+    if (index === 0) {
+      value = startPopulation;
+    } else if (index === pointCount - 1) {
+      value = finalPopulation;
+    } else if (!isDeclineVariant) {
+      const previous = timeline[index - 1]?.population || startPopulation;
+      value = Math.max(value, previous - Math.round(previous * 0.1));
+    } else if (progress < declineStart) {
+      const previous = timeline[index - 1]?.population || startPopulation;
+      value = Math.max(value, previous);
+    }
+
+    const yearsAgo = Math.round(yearsSpan - progress * yearsSpan);
+    const year = currentYear !== null ? Math.round(currentYear - yearsAgo) : null;
+
+    timeline.push({
+      population: value,
+      value,
+      yearsAgo,
+      year
+    });
+  }
+
   return applyPopulationHistoryShocks(timeline, events, randomFn, {
     currentYear,
     finalPopulation
   });
-  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, events, rng);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
