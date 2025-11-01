@@ -7139,11 +7139,11 @@ function spawnAmbientStructures({
 
         let chance = 0;
         if (distance <= 1) {
-          chance = 0.65;
+          chance = 0.15;
         } else if (distance === 2) {
-          chance = 0.4;
+          chance = 0.1;
         } else if (distance === 3) {
-          chance = 0.22;
+          chance = 0.05;
         }
         if (chance <= 0) {
           continue;
