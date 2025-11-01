@@ -701,8 +701,8 @@ const worldNames = [
   'Zephyra',
   'Umbryss',
   'Eclipthar',
-  'Skibiti Toliterium'
-  'Syx'
+  'Skibiti Toliterium',
+  'Syx',
   'Quidd'
 ];
 
