@@ -15663,6 +15663,7 @@ const verticalGridLines = hasYearsData
   const endPoint = sanitizedPoints[sanitizedPoints.length - 1];
   const peakValue = Math.max(...values);
   const peakIndex = values.indexOf(peakValue);
+  const descriptor = (details?.populationDescriptor || 'residents').trim() || 'residents';
   const peakPoint = sanitizedPoints[Math.max(peakIndex, 0)];
   const descriptorLabel = descriptor;
   const startLabel = formatPopulationTimelineLabel(startPoint);
@@ -15673,7 +15674,6 @@ const verticalGridLines = hasYearsData
   const peakValueText = peakPoint.population.toLocaleString('en-US');
   const currentValueText = endPoint.population.toLocaleString('en-US');
 
-  const descriptor = (details?.populationDescriptor || 'residents').trim() || 'residents';
   const settlementName = details?.name || tile?.structureName || 'the settlement';
   const chartIdSeed = `${settlementName}|${details?.type || 'hold'}|population-history`;
   const chartIdSuffix = ((stringToSeed(chartIdSeed) + 0x4f1b) >>> 0).toString(36);
