@@ -3452,6 +3452,7 @@ button:hover:not(:disabled) {
 }
 
 #game-container {
+  --game-ui-scale: 0.6;
   position: relative;
   display: block;
   width: 100vw;
@@ -3483,6 +3484,8 @@ button:hover:not(:disabled) {
   flex-wrap: wrap;
   z-index: 2;
   pointer-events: auto;
+  transform: scale(var(--game-ui-scale, 1));
+  transform-origin: top left;
 }
 
 .game-ui .controls {
