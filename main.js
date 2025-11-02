@@ -21419,6 +21419,7 @@ function setupMapInteractions() {
     if (resolved && resolved.tile) {
       const { tile, tileX, tileY } = resolved;
       const enrichedTile = resolveTileForContextMenu(tile, tileX, tileY) || tile;
+      const enrichedTile = resolveTileForContextMenu(tile, tileX, tileY) || tile;
       const details = enrichedTile?.structureDetails || null;
       const detailType = typeof details?.type === 'string' ? details.type : null;
       const isSettlement =
