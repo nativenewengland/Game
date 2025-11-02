@@ -16523,30 +16523,44 @@ const structureContextMenuState = {
   tileY: null
 };
 
-const dwarfholdStructureKeys = new Set([
-  'DWARFHOLD',
-  'GREAT_DWARFHOLD',
-  'ABANDONED_DWARFHOLD',
-  'DARK_DWARFHOLD',
-  'DARKDWARFHOLD',
-  'HILLHOLD'
-]);
+const normalizeDwarfholdKey = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+};
+
+const dwarfholdStructureKeys = new Set(
+  [
+    'DWARFHOLD',
+    'GREAT_DWARFHOLD',
+    'GREATDWARFHOLD',
+    'ABANDONED_DWARFHOLD',
+    'DARK_DWARFHOLD',
+    'DARKDWARFHOLD',
+    'HILLHOLD'
+  ].map((key) => normalizeDwarfholdKey(key))
+);
 
 function isDwarfholdStructureTile(tile) {
   if (!tile) {
     return false;
   }
-  if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+  const normalizedStructureKey = normalizeDwarfholdKey(tile.structure);
+  if (normalizedStructureKey && dwarfholdStructureKeys.has(normalizedStructureKey)) {
     return true;
   }
   const rawType = tile.structureDetails?.type;
-  if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+  const normalizedStructureType = normalizeDwarfholdKey(rawType);
+  if (normalizedStructureType && dwarfholdStructureKeys.has(normalizedStructureType)) {
     return true;
   }
   if (typeof tile.structureName === 'string') {
-    const upperName = tile.structureName.toUpperCase();
+    const normalizedName = normalizeDwarfholdKey(tile.structureName);
     for (const key of dwarfholdStructureKeys) {
-      if (upperName.includes(key)) {
+      if (normalizedName.includes(key)) {
         return true;
       }
     }
