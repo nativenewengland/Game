@@ -16674,7 +16674,9 @@ function updateStructureContextMenuActions(tile) {
     return;
   }
 
-  const hasStructureDetails = Boolean(tile && tile.structureName);
+  const hasStructureDetails = Boolean(
+    tile && (tile.structureName || (tile.structureDetails && tile.structureDetails.name))
+  );
   if (hasStructureDetails) {
     moreInfoButton.disabled = false;
     moreInfoButton.setAttribute('aria-disabled', 'false');
