@@ -106,13 +106,13 @@ select,
 }
 
 #world-info {
-  --embark-scale: 0.612;
+  --embark-scale: 0.545;
 }
 
 #world-info .embark-panel {
   max-width: min(calc(960px * var(--embark-scale)), 88vw);
   max-height: min(calc(860px * var(--embark-scale)), 92vh);
-  overflow-y: auto;
+  overflow: hidden;
   gap: clamp(
     calc(1.25rem * var(--embark-scale)),
     calc(2vw * var(--embark-scale)),
