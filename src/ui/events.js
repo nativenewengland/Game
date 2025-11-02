@@ -1,3 +1,10 @@
+import {
+  state,
+  ensureStructureHighlightState,
+  applyMapSizePresetToState
+} from '../state/index.js';
+import { defaultForestFrequency, defaultMountainFrequency, getMapSizePreset } from '../world/config.js';
+
 export function attachEvents(elements, deps) {
   const {
     structureContextMenuState,
@@ -12,15 +19,11 @@ export function attachEvents(elements, deps) {
     adjustLocalMapZoom,
     resetLocalMapZoom,
     closeDwarfholdInterior,
-    state,
     refreshOverlayToggleButtons,
     refreshStructureHighlightControls,
-    ensureStructureHighlightState,
     drawWorld,
     updateFrequencyDisplay,
     sanitizeFrequencyValue,
-    defaultForestFrequency,
-    defaultMountainFrequency,
     ensureSeedString,
     getRandomWorldName,
     getSanitisedChronologyFromInputs,
@@ -28,8 +31,6 @@ export function attachEvents(elements, deps) {
     updateChronologyDisplay,
     openDwarfCustomizer,
     closeWorldInfoModal,
-    applyMapSizePresetToState,
-    getMapSizePreset,
     handleRegenerate,
     changeActiveDwarf,
     randomiseActiveDwarf,
