@@ -11196,10 +11196,64 @@ const assetPromises = Promise.all([
 
 let startRequestedBeforeReady = false;
 
-if (elements.startButton) {
-  elements.startButton.disabled = true;
-  elements.startButton.textContent = 'Loading tiles…';
+function getStartButtonElement() {
+  const button = elements.startButton;
+  if (button && typeof button.addEventListener === 'function') {
+    return button;
+  }
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const resolved = document.getElementById('start-button');
+  if (resolved && typeof resolved.addEventListener === 'function') {
+    elements.startButton = resolved;
+    return resolved;
+  }
+  return null;
 }
+
+function updateStartButtonState() {
+  const button = getStartButtonElement();
+  if (!button) {
+    return;
+  }
+  if (state.ready) {
+    button.disabled = false;
+    button.textContent = 'Start Game';
+    return;
+  }
+  button.disabled = true;
+  button.textContent = startRequestedBeforeReady ? 'Finishing loading…' : 'Loading tiles…';
+}
+
+function handleStartButtonClick(event) {
+  if (!state.ready) {
+    startRequestedBeforeReady = true;
+    updateStartButtonState();
+    return;
+  }
+  handleStartButtonRequest(event);
+}
+
+function attachStartButtonListener() {
+  const button = getStartButtonElement();
+  if (!button || button.dataset.startHandlerAttached === 'true') {
+    return;
+  }
+  button.addEventListener('click', handleStartButtonClick);
+  button.dataset.startHandlerAttached = 'true';
+}
+
+function initialiseStartButton() {
+  updateStartButtonState();
+  attachStartButtonListener();
+}
+
+if (typeof document !== 'undefined' && document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialiseStartButton, { once: true });
+}
+
+initialiseStartButton();
 
 assetPromises
   .catch((error) => {
@@ -11207,10 +11261,8 @@ assetPromises
   })
   .finally(() => {
     state.ready = true;
-    if (elements.startButton) {
-      elements.startButton.disabled = false;
-      elements.startButton.textContent = 'Start Game';
-    }
+    updateStartButtonState();
+    attachStartButtonListener();
     if (startRequestedBeforeReady) {
       startRequestedBeforeReady = false;
       handleStartButtonRequest();
@@ -21418,7 +21470,6 @@ function setupMapInteractions() {
     const resolved = resolveTileAtPointer(event);
     if (resolved && resolved.tile) {
       const { tile, tileX, tileY } = resolved;
-      const enrichedTile = resolveTileForContextMenu(tile, tileX, tileY) || tile;
       const enrichedTile = resolveTileForContextMenu(tile, tileX, tileY) || tile;
       const details = enrichedTile?.structureDetails || null;
       const detailType = typeof details?.type === 'string' ? details.type : null;
@@ -32854,17 +32905,8 @@ function syncInputsWithSettings() {
     });
   }
 
-  if (elements.startButton) {
-    elements.startButton.addEventListener('click', () => {
-      if (!state.ready) {
-        startRequestedBeforeReady = true;
-        elements.startButton.disabled = true;
-        elements.startButton.textContent = 'Finishing loading…';
-        return;
-      }
-      handleStartButtonRequest();
-    });
-  }
+  updateStartButtonState();
+  attachStartButtonListener();
 
   if (elements.worldInfoForm) {
     elements.worldInfoForm.addEventListener('submit', (event) => {
