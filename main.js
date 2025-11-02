@@ -15307,7 +15307,144 @@ function generateGenericSettlementHistory(context, rng) {
   return events;
 }
 
-function generateDwarfholdPopulationTimeline(historyContext, rng) {
+function identifyPopulationShockEvents(events) {
+  if (!Array.isArray(events) || events.length === 0) {
+    return [];
+  }
+
+  return events
+    .map((event) => {
+      if (!event || typeof event.description !== 'string') {
+        return null;
+      }
+
+      const normalizedDescription = event.description.toLowerCase();
+      const includesSiege = normalizedDescription.includes('siege');
+      const includesDragon = normalizedDescription.includes('dragon');
+      const includesOnslaught = normalizedDescription.includes('onslaught');
+      if (!includesSiege && !includesDragon && !includesOnslaught) {
+        return null;
+      }
+
+      const yearsAgo = Number.isFinite(event.yearsAgo) ? Math.max(1, Math.round(event.yearsAgo)) : null;
+      if (yearsAgo === null) {
+        return null;
+      }
+
+      const severity = includesDragon || includesOnslaught ? 'dragon' : 'siege';
+      return {
+        yearsAgo,
+        severity,
+        description: event.description
+      };
+    })
+    .filter((entry) => entry !== null)
+    .sort((a, b) => b.yearsAgo - a.yearsAgo);
+}
+
+function applyPopulationHistoryShocks(timeline, events, rng, options = {}) {
+  if (!Array.isArray(timeline) || timeline.length === 0) {
+    return timeline;
+  }
+
+  const shockEvents = identifyPopulationShockEvents(events);
+  if (shockEvents.length === 0) {
+    return timeline;
+  }
+
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const currentYear = Number.isFinite(options?.currentYear) ? Math.round(options.currentYear) : null;
+  const finalPopulation = Number.isFinite(options?.finalPopulation)
+    ? Math.max(0, Math.round(options.finalPopulation))
+    : null;
+
+  const adjustedTimeline = timeline.slice();
+
+  shockEvents.forEach((event) => {
+    const yearsAgo = event.yearsAgo;
+    let insertIndex = adjustedTimeline.findIndex((point) =>
+      Number.isFinite(point?.yearsAgo) && point.yearsAgo <= yearsAgo
+    );
+    if (insertIndex === -1) {
+      insertIndex = adjustedTimeline.length;
+    }
+
+    const olderIndex = Math.max(0, insertIndex - 1);
+    const olderPoint = adjustedTimeline[olderIndex];
+    const newerPoint = adjustedTimeline[insertIndex] || adjustedTimeline[adjustedTimeline.length - 1];
+
+    const olderYears = Number.isFinite(olderPoint?.yearsAgo) ? olderPoint.yearsAgo : yearsAgo;
+    const newerYears = Number.isFinite(newerPoint?.yearsAgo) ? newerPoint.yearsAgo : yearsAgo;
+    const olderPopulation = Number.isFinite(olderPoint?.population)
+      ? olderPoint.population
+      : Number.isFinite(newerPoint?.population)
+      ? newerPoint.population
+      : Number.isFinite(finalPopulation)
+      ? finalPopulation
+      : 0;
+    const newerPopulation = Number.isFinite(newerPoint?.population)
+      ? newerPoint.population
+      : Number.isFinite(olderPoint?.population)
+      ? olderPoint.population
+      : Number.isFinite(finalPopulation)
+      ? finalPopulation
+      : 0;
+
+    let baselinePopulation = newerPopulation;
+    if (Number.isFinite(olderYears) && Number.isFinite(newerYears) && olderYears !== newerYears) {
+      if (olderYears > newerYears) {
+        const span = Math.max(olderYears - newerYears, 1);
+        const position = clamp((yearsAgo - newerYears) / span, 0, 1);
+        baselinePopulation = Math.round(lerp(newerPopulation, olderPopulation, position));
+      } else {
+        const span = Math.max(newerYears - olderYears, 1);
+        const position = clamp((yearsAgo - olderYears) / span, 0, 1);
+        baselinePopulation = Math.round(lerp(olderPopulation, newerPopulation, position));
+      }
+    } else if (Number.isFinite(olderPopulation)) {
+      baselinePopulation = Math.round(olderPopulation);
+    }
+
+    const severityRange = event.severity === 'dragon' ? { min: 260, max: 620 } : { min: 160, max: 480 };
+    const dropMagnitude = severityRange.min + randomFn() * (severityRange.max - severityRange.min);
+    const safeDrop = Math.min(baselinePopulation, Math.round(dropMagnitude));
+    const dipPopulation = Math.max(0, baselinePopulation - safeDrop);
+
+    const eventYear = currentYear !== null ? Math.round(currentYear - yearsAgo) : null;
+    const existingIndex = adjustedTimeline.findIndex(
+      (point) => Number.isFinite(point?.yearsAgo) && point.yearsAgo === yearsAgo
+    );
+
+    if (existingIndex !== -1) {
+      const updatedPoint = {
+        ...adjustedTimeline[existingIndex],
+        population: dipPopulation,
+        value: dipPopulation,
+        year: eventYear
+      };
+      adjustedTimeline.splice(existingIndex, 1, updatedPoint);
+      insertIndex = existingIndex;
+    } else {
+      const newPoint = {
+        population: dipPopulation,
+        value: dipPopulation,
+        yearsAgo,
+        year: eventYear
+      };
+      adjustedTimeline.splice(insertIndex, 0, newPoint);
+    }
+
+  });
+
+  return adjustedTimeline.sort((a, b) => {
+    const aYears = Number.isFinite(a?.yearsAgo) ? a.yearsAgo : 0;
+    const bYears = Number.isFinite(b?.yearsAgo) ? b.yearsAgo : 0;
+    return bYears - aYears;
+  });
+}
+
+function generateDwarfholdPopulationTimeline(historyContext, events, rng) {
+  
   const holdTypes = new Set([
     'dwarfhold',
     'greatdwarfhold',
@@ -15401,7 +15538,10 @@ function generateDwarfholdPopulationTimeline(historyContext, rng) {
     });
   }
 
-  return timeline;
+  return applyPopulationHistoryShocks(timeline, events, randomFn, {
+    currentYear,
+    finalPopulation
+  });
 }
 
 function generateSettlementHistoryData(tile, details, context) {
@@ -15469,6 +15609,8 @@ function generateSettlementHistoryData(tile, details, context) {
       break;
   }
 
+  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, events, rng);
+
   const uniqueMap = new Map();
   events
     .filter((event) => event && typeof event.description === 'string')
@@ -15494,8 +15636,6 @@ function generateSettlementHistoryData(tile, details, context) {
     const bValue = Number.isFinite(b.yearsAgo) ? b.yearsAgo : -Infinity;
     return bValue - aValue;
   });
-
-  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, rng);
 
   return {
     entries: sortedEntries,
@@ -16331,6 +16471,100 @@ const structureContextMenuState = {
   tileY: null
 };
 
+const dwarfholdStructureKeys = new Set([
+  'DWARFHOLD',
+  'GREAT_DWARFHOLD',
+  'ABANDONED_DWARFHOLD',
+  'DARK_DWARFHOLD',
+  'DARKDWARFHOLD',
+  'HILLHOLD'
+]);
+
+function isDwarfholdStructureTile(tile) {
+  if (!tile) {
+    return false;
+  }
+  if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+    return true;
+  }
+  const rawType = tile.structureDetails?.type;
+  if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+    return true;
+  }
+  if (typeof tile.structureName === 'string') {
+    const upperName = tile.structureName.toUpperCase();
+    for (const key of dwarfholdStructureKeys) {
+      if (upperName.includes(key)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function enrichTileWithDwarfholdDetails(tile, tileX, tileY, world = state.currentWorld) {
+  if (!tile) {
+    return null;
+  }
+
+  const existingDetails = tile.structureDetails;
+  if (existingDetails && Object.keys(existingDetails).length > 0) {
+    if (tile.structureName || !existingDetails.name) {
+      return tile;
+    }
+    return { ...tile, structureName: existingDetails.name };
+  }
+
+  if (!isDwarfholdStructureTile(tile)) {
+    return tile;
+  }
+
+  const resolvedWorld = world;
+  if (!resolvedWorld || !Array.isArray(resolvedWorld.dwarfholds)) {
+    return tile;
+  }
+  if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
+    return tile;
+  }
+
+  const match = resolvedWorld.dwarfholds.find((hold) => hold && hold.x === tileX && hold.y === tileY);
+  if (!match) {
+    return tile;
+  }
+
+  const { x: holdX, y: holdY, ...details } = match;
+  const mergedDetails = { ...(tile.structureDetails || {}), ...details };
+  const resolvedName = mergedDetails.name || tile.structureName || tile.areaName;
+
+  const enrichedTile = { ...tile, structureDetails: mergedDetails };
+  if (resolvedName) {
+    enrichedTile.structureName = resolvedName;
+  }
+
+  return enrichedTile;
+}
+
+function resolveTileForContextMenu(tile, tileX, tileY) {
+  const world = state.currentWorld;
+  const tiles = world && Array.isArray(world.tiles) ? world.tiles : null;
+  const height = tiles ? tiles.length : 0;
+  const width = height > 0 && Array.isArray(tiles[0]) ? tiles[0].length : 0;
+
+  let resolvedTile = tile || null;
+  if (tiles && width > 0 && Number.isInteger(tileX) && Number.isInteger(tileY)) {
+    const worldTile = getWorldTileAt(tiles, width, height, tileX, tileY);
+    if (worldTile) {
+      resolvedTile = worldTile;
+    }
+  }
+
+  if (!resolvedTile) {
+    return null;
+  }
+
+  return enrichTileWithDwarfholdDetails(resolvedTile, tileX, tileY, world);
+}
+
 function computeViewScales(wrapperWidth, wrapperHeight, worldWidth, worldHeight) {
   if (!worldWidth || !worldHeight || !wrapperWidth || !wrapperHeight) {
     return { contain: 1, cover: 1 };
@@ -16410,11 +16644,15 @@ function showStructureContextMenu(resolved) {
     return;
   }
 
-  structureContextMenuState.tile = tile || null;
-  structureContextMenuState.tileX = Number.isFinite(tileX) ? tileX : null;
-  structureContextMenuState.tileY = Number.isFinite(tileY) ? tileY : null;
+  const resolvedTileX = Number.isFinite(tileX) ? tileX : null;
+  const resolvedTileY = Number.isFinite(tileY) ? tileY : null;
+  const resolvedTile = resolveTileForContextMenu(tile, resolvedTileX, resolvedTileY) || tile || null;
 
-  updateStructureContextMenuActions(tile);
+  structureContextMenuState.tile = resolvedTile;
+  structureContextMenuState.tileX = resolvedTileX;
+  structureContextMenuState.tileY = resolvedTileY;
+
+  updateStructureContextMenuActions(resolvedTile);
 
   const menu = elements.structureContextMenu;
   const margin = 16;
@@ -21180,16 +21418,24 @@ function setupMapInteractions() {
     const resolved = resolveTileAtPointer(event);
     if (resolved && resolved.tile) {
       const { tile, tileX, tileY } = resolved;
-      const details = tile.structureDetails || null;
+      const enrichedTile = resolveTileForContextMenu(tile, tileX, tileY) || tile;
+      const details = enrichedTile?.structureDetails || null;
       const detailType = typeof details?.type === 'string' ? details.type : null;
       const isSettlement =
         (details && details.isSettlement === true) ||
         (detailType ? settlementDetailTypes.has(detailType) : false);
+          const resolvedName =
+        (typeof enrichedTile?.structureName === 'string' && enrichedTile.structureName) ||
+        (typeof details?.name === 'string' ? details.name : null);
 
-      if (isSettlement && tile.structureName) {
+      if (isSettlement && resolvedName) {
+        const tileWithName =
+          enrichedTile && enrichedTile.structureName === resolvedName
+            ? enrichedTile
+            : { ...enrichedTile, structureName: resolvedName };
         hideStructureContextMenu();
         hideLocalView({ suppressRedraw: true });
-        showStructureDetails(tile, { tileX, tileY });
+        showStructureDetails(tileWithName, { tileX, tileY });
         return;
       }
     }
