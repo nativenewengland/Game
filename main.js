@@ -1,3 +1,4 @@
+import {
   registerCustomStructure,
   customStructureDrawers,
   mapEditorBrushConfig,
@@ -250,7 +251,6 @@ async function loadDwarfholdGenerator() {
   return cachedDwarfholdGeneratorPromise;
 }
 const drawSize = 32;
-const defaultWorldGenerationType = 'normal';
 const defaultLoadingStatusMessage = 'Calculating terrain layers…';
 const icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
 ) {
