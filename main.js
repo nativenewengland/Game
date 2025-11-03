@@ -7784,7 +7784,8 @@ function applyCulturalInfluence({
     { key: 'firbolg', label: 'Firbolg', biomes: ['forest', 'grassland'] },
     { key: 'aarakocra', label: 'Aarakocra', biomes: ['mountain', 'grassland'] },
     { key: 'braxat', label: 'Braxat', biomes: ['desert', 'badlands', 'jungle'] },
-    { key: 'hadozee', label: 'Hadozee', biomes: ['ocean', 'jungle'] }
+    { key: 'hadozee', label: 'Hadozee', biomes: ['ocean', 'jungle'] },
+    { key: 'quillboar', label: 'Quillboar', biomes: ['badlands', 'desert', 'grassland'] }
   ];
 
   const defaultMinorFolkThreshold = 0.0011;
