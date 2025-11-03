@@ -3452,7 +3452,7 @@ button:hover:not(:disabled) {
 }
 
 #game-container {
-  --game-ui-scale: 0.6;
+  --game-ui-scale: 1;
   position: relative;
   display: block;
   width: 100vw;
@@ -3470,8 +3470,8 @@ button:hover:not(:disabled) {
 .game-ui {
   position: absolute;
   top: clamp(0.75rem, 2vw, 1.25rem);
-  left: clamp(0.75rem, 2vw, 1.25rem);
-  right: clamp(0.75rem, 2vw, 1.25rem);
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
