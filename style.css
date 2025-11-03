@@ -1561,6 +1561,12 @@ button:hover:not(:disabled) {
 
 }
 
+@supports not (aspect-ratio: 1 / 1) {
+  .structure-details-history-chart__sparkline {
+    height: 140px;
+  }
+}
+
 .structure-details-history-chart__axis-label {
   font-size: 0.7rem;
   fill: rgba(255, 255, 255, 0.72);
