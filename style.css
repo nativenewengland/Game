@@ -999,7 +999,7 @@ button {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: clamp(115px, calc(20vw * 0.672), 155px);
+  width: clamp(80px, calc(15vw * 0.672), 120px);
   max-width: 100%;
   aspect-ratio: 150 / 136;
   padding: 0;
@@ -3291,7 +3291,7 @@ button:hover:not(:disabled) {
 
 .gender-toggle-button img {
   display: block;
-  width: 96px;
+  width: 64px;
   height: auto;
   max-width: 100%;
   border-radius: 14px;
