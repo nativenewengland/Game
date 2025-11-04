@@ -15604,6 +15604,69 @@ function generateDwarfholdPopulationTimeline(historyContext, events, rng) {
   });
 }
 
+function generateVillagePopulationTimeline(historyContext, events, rng) {
+  const villageTypes = new Set(['village', 'hamlet']);
+  if (!historyContext || !villageTypes.has(historyContext.type)) {
+    return null;
+  }
+
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const finalPopulation = Number.isFinite(historyContext?.details?.population)
+    ? Math.max(0, Math.round(historyContext.details.population))
+    : null;
+  if (finalPopulation === null) {
+    return null;
+  }
+
+  const yearsSpan = Number.isFinite(historyContext?.foundedYearsAgo)
+    ? clamp(Math.round(historyContext.foundedYearsAgo), 20, 1000)
+    : 200;
+  const pointCount = clamp(Math.round(yearsSpan / 50) + 4, 5, 12);
+
+  const growthFactor = 1.1 + randomFn() * 0.5;
+  const additiveBoost = 20 + randomFn() * 150;
+  let peakPopulation = Math.round(Math.max(finalPopulation, finalPopulation * growthFactor + additiveBoost));
+  if (finalPopulation > 0) {
+    const maxMultiplier = 2.5;
+    peakPopulation = Math.min(peakPopulation, Math.round(finalPopulation * maxMultiplier));
+  } else {
+    peakPopulation = Math.max(peakPopulation, 100);
+  }
+
+  const startPopulation = Math.max(5, Math.round(peakPopulation * (0.1 + randomFn() * 0.15)));
+
+  const timeline = [];
+  for (let index = 0; index < pointCount; index += 1) {
+    const progress = pointCount === 1 ? 1 : index / (pointCount - 1);
+    const easedGrowth = 1 - Math.pow(1 - progress, 1.5);
+    const targetValue = lerp(startPopulation, finalPopulation, easedGrowth);
+    const noiseAmplitude = 0.1;
+    const jitter = targetValue * noiseAmplitude * (randomFn() - 0.5) * 2;
+    let value = Math.max(0, Math.round(targetValue + jitter));
+    if (index === 0) {
+      value = startPopulation;
+    } else if (index === pointCount - 1) {
+      value = finalPopulation;
+    }
+
+    const yearsAgo = Math.round(yearsSpan - progress * yearsSpan);
+    const currentYear = Number.isFinite(historyContext?.currentYear) ? Math.round(historyContext.currentYear) : null;
+    const year = currentYear !== null ? Math.round(currentYear - yearsAgo) : null;
+
+    timeline.push({
+      population: value,
+      value,
+      yearsAgo,
+      year
+    });
+  }
+
+  return applyPopulationHistoryShocks(timeline, events, randomFn, {
+    currentYear,
+    finalPopulation
+  });
+}
+
 function generateSettlementHistoryData(tile, details, context) {
   const historySeedParts = [
     details?.name,
