@@ -844,7 +844,8 @@ const dwarfholdCuratedNames = [
   'Kharûm Tor',
   "Thulgar's Deep",
   'Brumkeldûm',
-  'Dûrmar Hollow'
+  'Dûrmar Hollow',
+  'the Great Halls of Thorbardin'
 ];
 
 const dwarfholdNamePrefixes = [
