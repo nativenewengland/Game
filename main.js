@@ -49,52 +49,27 @@ const defaultLoadingStatusMessage = 'Calculating terrain layers…';
 const icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
 
 function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundRadius = size * 0.46;
-  ctx.fillStyle = '#6a8c3a';
-  ctx.beginPath();
-  ctx.arc(size * 0.5, size * 0.58, groundRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  const hutWidth = size * 0.26;
-  const hutHeight = size * 0.2;
-
-  ctx.fillStyle = '#d2b48c';
-  ctx.fillRect(size * 0.18, size * 0.42, hutWidth, hutHeight);
-  ctx.fillRect(size * 0.56, size * 0.48, hutWidth, hutHeight);
-
-  ctx.fillStyle = '#8b5a2b';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.18, size * 0.42);
-  ctx.lineTo(size * 0.31, size * 0.3);
-  ctx.lineTo(size * 0.44, size * 0.42);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(size * 0.56, size * 0.48);
-  ctx.lineTo(size * 0.69, size * 0.36);
-  ctx.lineTo(size * 0.82, size * 0.48);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#c8c79b';
-  ctx.beginPath();
-  ctx.arc(size * 0.45, size * 0.66, size * 0.08, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = '#3f2d16';
-  ctx.lineWidth = Math.max(1, size * 0.03);
-  ctx.beginPath();
-  ctx.moveTo(size * 0.3, size * 0.52);
-  ctx.lineTo(size * 0.3, size * 0.62);
-  ctx.moveTo(size * 0.68, size * 0.56);
-  ctx.lineTo(size * 0.68, size * 0.66);
-  ctx.stroke();
-
-  ctx.restore();
+  const tile = {
+    sheet: 'custom',
+    sx: 0,
+    sy: 0,
+    size: 16
+  };
+  const sheet = state.tileSheets[tile.sheet];
+  if (!sheet || !sheet.image) {
+    return;
+  }
+  ctx.drawImage(
+    sheet.image,
+    tile.sx,
+    tile.sy,
+    tile.size,
+    tile.size,
+    pixelX,
+    pixelY,
+    size,
+    size
+  );
 }
 
 function drawCastleStructure(ctx, { pixelX, pixelY, size }) {

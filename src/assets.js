@@ -36,6 +36,12 @@ export const tileSheets = {
     path: 'tilesheet/Tiled_files/Water_coasts_animation.png',
     tileSize: 16,
     image: null
+  },
+  custom: {
+    key: 'custom',
+    path: 'tilesheet/tiles.png',
+    tileSize: 16,
+    image: null
   }
 };
 
