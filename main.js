@@ -9454,7 +9454,12 @@ const dwarfClanOptions = [
   { value: 'oakenshield', label: 'Oakenshield' },
   { value: 'frosthammer', label: 'Frosthammer' },
   { value: 'berylbraid', label: 'Berylbraid' },
-  { value: 'silverhollow', label: 'Silverhollow' }
+  { value: 'silverhollow', label: 'Silverhollow' },
+  { value: 'brazenaxe', label: 'Brazenaxe' },
+  { value: 'stormhammer', label: 'Stormhammer' },
+  { value: 'deeprock', label: 'Deeprock' },
+  { value: 'goldvein', label: 'Goldvein' },
+  { value: 'runesmith', label: 'Runesmith' }
 ];
 
 const dwarfGuildOptions = [
