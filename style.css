@@ -412,7 +412,7 @@ select,
 /* Reduce font sizing specifically for the Options screen so labels and descriptions fit */
 #options-screen {
   /* scale down base font for options content */
-  --options-scale: 0.88;
+  --options-scale: 0.75;
   font-size: calc(1rem * var(--options-scale));
   line-height: 1.2;
 }
@@ -423,7 +423,7 @@ select,
 }
 
 #options-screen .options-grid {
-  gap: clamp(0.6rem, 1.6vw, 1rem);
+  gap: clamp(0.8rem, 1.8vw, 1.2rem);
 }
 
 #options-screen .options-card {
