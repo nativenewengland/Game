@@ -9447,6 +9447,21 @@ const defaultHairStyleValue = 'straight_shoulder';
 
 const dwarfClanOptions = [
   { value: 'stonebeard', label: 'Stonebeard' },
+  { value: 'barrelbrow', label: 'Barrelbrow' },
+  { value: 'oathhammer', label: 'Oathhammer' },
+  { value: 'stormshield', label: 'Stormshield' },
+  { value: 'granitebrow', label: 'Granitebrow' },
+  { value: 'emberstone', label: 'Emberstone' },
+  { value: 'blackdelve', label: 'Blackdelve' },
+  { value: 'hearthhammer', label: 'Hearthhammer' },
+  { value: 'mithrilbeard', label: 'Mithrilbeard' },
+  { value: 'shieldbreaker', label: 'Shieldbreaker' },
+  { value: 'deepcrag', label: 'Deepcrag' },
+  { value: 'duskhollow', label: 'Duskhollow' },
+  { value: 'hammerdeep', label: 'Hammerdeep' },
+  { value: 'deepmantle', label: 'Deepmantle' },
+  { value: 'ashmantle', label: 'Ashmantle' },
+  { value: 'shadowhearth', label: 'Shadowhearth' },
   { value: 'angrund', label: 'Angrund — royal clan of Karak Eight Peaks' },
   { value: 'angrulok', label: 'Angrulok — royal clan of Karak Kadrin' },
   { value: 'badrikk', label: 'Badrikk — Karak Azul; metalsmiths' },
@@ -9643,6 +9658,7 @@ const dwarfClanOptions = [
 
 const dwarfGuildOptions = [
   { value: 'miners-guild', label: 'Miners Guild' },
+  { value: 'coopers-guild', label: 'Coopers Guild' },
   { value: 'merchants-guild', label: 'Merchants Guild' },
   { value: 'commerce-guild', label: 'Commerce Guild' },
   { value: 'armourers-weaponsmiths-guild', label: 'Armourers and Weaponsmiths Guild' },
