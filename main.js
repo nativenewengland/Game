@@ -11339,6 +11339,7 @@ function closeOptionsScreen({ restoreScreen = true, returnFocus = true } = {}) {
   if (restoreScreen) {
     if (previousSource === 'title' && elements.titleScreen) {
       elements.titleScreen.classList.remove('hidden');
+      state.settings.seedString = '';
     }
     if (previousSource === 'game' && elements.gameContainer) {
       elements.gameContainer.classList.remove('hidden');
@@ -14487,6 +14488,7 @@ function closeWorldInfoModal(options = {}) {
     elements.gameContainer.classList.contains('hidden')
   ) {
     elements.titleScreen.classList.remove('hidden');
+    state.settings.seedString = '';
   }
   if (returnFocus && elements.startButton) {
     elements.startButton.focus();
