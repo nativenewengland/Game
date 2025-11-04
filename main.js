@@ -9475,7 +9475,10 @@ const dwarfClanOptions = [
   { value: 'kazak_uruk', label: 'Kazak Uruk' },
   { value: 'orcsplitter', label: 'Orcsplitter' },
   { value: 'rockcrawler', label: 'Rockcrawler' },
-  { value: 'shattered_stone', label: 'Shattered Stone' }
+  { value: 'shattered_stone', label: 'Shattered Stone' },
+  { value: 'bronzebeard', label: 'Bronzebeard' },
+  { value: 'stormpike', label: 'Stormpike' },
+  { value: 'stonefist', label: 'Stonefist' }
 ];
 
 const dwarfGuildOptions = [
