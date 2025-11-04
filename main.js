@@ -15732,7 +15732,27 @@ function generateSettlementHistoryData(tile, details, context) {
       break;
   }
 
-  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, events, rng);
+    const populationTimeline = (() => {
+    const holdTypes = new Set([
+      'dwarfhold',
+      'greatdwarfhold',
+      'hillhold',
+      'occupieddwarfhold',
+      'occupyddwarfhold',
+      'abandoneddwarfhold',
+      'ruineddwarfhold'
+    ]);
+    if (holdTypes.has(typeKey)) {
+      return generateDwarfholdPopulationTimeline(historyContext, events, rng);
+    }
+
+    const villageTypes = new Set(['village', 'hamlet']);
+    if (villageTypes.has(typeKey)) {
+      return generateVillagePopulationTimeline(historyContext, events, rng);
+    }
+
+    return null;
+  })();
 
   const uniqueMap = new Map();
   events
