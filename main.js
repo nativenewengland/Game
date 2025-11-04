@@ -9534,7 +9534,30 @@ const dwarfClanOptions = [
   { value: 'stoneshoulder', label: 'Stoneshoulder' },
   { value: 'stouthammer', label: 'Clan Stouthammer' },
   { value: 'sunblight', label: 'Sunblight' },
-  { value: 'undurr', label: 'Clan Undurr' }
+  { value: 'undurr', label: 'Clan Undurr' },
+  { value: 'grimlock_maccloud_thundermore_enogtorad_drummond_tolorr', label: 'Grimlock MacCloud Thundermore Enogtorad Drummond Tolorr' },
+  { value: 'clan_vanderholl', label: 'Clan Vanderholl' },
+  { value: 'clan_stonefist', label: 'Clan Stonefist' },
+  { value: 'clan_aringeld', label: 'Clan Aringeld' },
+  { value: 'clan_firecask', label: 'Clan Firecask', description: 'Brewers and distillers.' },
+  { value: 'clan_gelderon', label: 'Clan Gelderon' },
+  { value: 'clan_grimmark', label: 'Clan Grimmark' },
+  { value: 'clan_molgrade', label: 'Clan Molgrade' },
+  { value: 'clan_runebinder', label: 'Clan Runebinder' },
+  { value: 'orridus_ironheart', label: 'Orridus Ironheart' },
+  { value: 'clan_shalefoot', label: 'Clan Shalefoot' },
+  { value: 'clan_silverhair', label: 'Clan Silverhair' },
+  { value: 'copperlung_stonescar', label: 'Copperlung Stonescar' },
+  { value: 'clan_stouthammer', label: 'Clan Stouthammer' },
+  { value: 'clan_flintbristle', label: 'Clan Flintbristle' },
+  { value: 'clan_spire_crag', label: 'Clan Spire-Crag' },
+  { value: 'clan_stonehollow', label: 'Clan Stonehollow' },
+  { value: 'clan_silverpick', label: 'Clan Silverpick' },
+  { value: 'clan_ironheart', label: 'Clan Ironheart' },
+  { value: 'clan_weoughld', label: 'Clan Weoughld' },
+  { value: 'clan_llyrnillach', label: 'Clan Llyrnillach' },
+  { value: 'clan_highhelm', label: 'Clan Highhelm' },
+  { value: 'clan_tolorr', label: 'Clan Tolorr' }
 ];
 
 const dwarfGuildOptions = [
