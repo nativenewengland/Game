@@ -457,7 +457,7 @@ export function generateDwarfholdMap(options = {}) {
 
 
 
-  let stairsY = reservoirStartY - 2;
+  let stairsY = gardenStartY + gardenHeight + 2;
   if (!Number.isFinite(stairsY) || stairsY <= hallEndY + 1) {
     stairsY = clamp(hallEndY + 2, hallEndY + 2, height - 3);
   }
