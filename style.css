@@ -1008,11 +1008,14 @@ button {
   border: none;
   border-radius: 0;
   background: transparent;
-  /* remove decorative frame so the dice icon is not visually cropped by the base image */
-  background-image: none;
+  /* use the decorative randombase frame but ensure it is not cropped by parent styles */
+  background-image: url('tilesheet/randombase.png');
   background-repeat: no-repeat;
   background-position: center;
-  background-size: contain;
+  /* slightly oversize the background so it isn't clipped at tight container bounds */
+  background-size: 110% auto;
+  /* make sure the parent isn't clipping child visuals */
+  overflow: visible;
   image-rendering: pixelated;
   box-shadow: 0 0.85rem 1.6rem rgba(0, 0, 0, 0.45);
   transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
