@@ -7777,7 +7777,15 @@ function applyCulturalInfluence({
     { key: 'half_orcs', label: 'Half-Orcs', biomes: ['grassland', 'badlands', 'desert'] },
     { key: 'half_elves', label: 'Half-Elves', biomes: ['forest', 'grassland'] },
     { key: 'dryad', label: 'Dryad', biomes: ['forest', 'marsh', 'lake'] },
-    { key: 'leshy', label: 'Leshy', biomes: ['forest', 'tundra', 'marsh'] }
+    { key: 'leshy', label: 'Leshy', biomes: ['forest', 'marsh'] },
+    { key: 'satyr', label: 'Satyr', biomes: ['forest', 'grassland'] },
+    { key: 'hobgoblin', label: 'Hobgoblin', biomes: ['badlands', 'mountain', 'grassland'] },
+    { key: 'locathah', label: 'Locathah', biomes: ['ocean', 'lake', 'marsh'] },
+    { key: 'firbolg', label: 'Firbolg', biomes: ['forest', 'grassland'] },
+    { key: 'aarakocra', label: 'Aarakocra', biomes: ['mountain', 'grassland'] },
+    { key: 'braxat', label: 'Braxat', biomes: ['desert', 'badlands', 'jungle'] },
+    { key: 'hadozee', label: 'Hadozee', biomes: ['ocean', 'jungle'] },
+    { key: 'quillboar', label: 'Quillboar', biomes: ['badlands', 'desert', 'grassland'] }
   ];
 
   const defaultMinorFolkThreshold = 0.0011;
@@ -16523,30 +16531,44 @@ const structureContextMenuState = {
   tileY: null
 };
 
-const dwarfholdStructureKeys = new Set([
-  'DWARFHOLD',
-  'GREAT_DWARFHOLD',
-  'ABANDONED_DWARFHOLD',
-  'DARK_DWARFHOLD',
-  'DARKDWARFHOLD',
-  'HILLHOLD'
-]);
+const normalizeDwarfholdKey = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+};
+
+const dwarfholdStructureKeys = new Set(
+  [
+    'DWARFHOLD',
+    'GREAT_DWARFHOLD',
+    'GREATDWARFHOLD',
+    'ABANDONED_DWARFHOLD',
+    'DARK_DWARFHOLD',
+    'DARKDWARFHOLD',
+    'HILLHOLD'
+  ].map((key) => normalizeDwarfholdKey(key))
+);
 
 function isDwarfholdStructureTile(tile) {
   if (!tile) {
     return false;
   }
-  if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+  const normalizedStructureKey = normalizeDwarfholdKey(tile.structure);
+  if (normalizedStructureKey && dwarfholdStructureKeys.has(normalizedStructureKey)) {
     return true;
   }
   const rawType = tile.structureDetails?.type;
-  if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+  const normalizedStructureType = normalizeDwarfholdKey(rawType);
+  if (normalizedStructureType && dwarfholdStructureKeys.has(normalizedStructureType)) {
     return true;
   }
   if (typeof tile.structureName === 'string') {
-    const upperName = tile.structureName.toUpperCase();
+    const normalizedName = normalizeDwarfholdKey(tile.structureName);
     for (const key of dwarfholdStructureKeys) {
-      if (upperName.includes(key)) {
+      if (normalizedName.includes(key)) {
         return true;
       }
     }
@@ -16674,7 +16696,9 @@ function updateStructureContextMenuActions(tile) {
     return;
   }
 
-  const hasStructureDetails = Boolean(tile && tile.structureName);
+  const hasStructureDetails = Boolean(
+    tile && (tile.structureName || (tile.structureDetails && tile.structureDetails.name))
+  );
   if (hasStructureDetails) {
     moreInfoButton.disabled = false;
     moreInfoButton.setAttribute('aria-disabled', 'false');

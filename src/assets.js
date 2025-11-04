@@ -681,7 +681,7 @@ export const baseTileCoords = {
   ABANDONED_DWARFHOLD: { row: 2, col: 8 },
   GREAT_DWARFHOLD: { row: 0, col: 6 },
   DARK_DWARFHOLD: { row: 0, col: 17 },
-  HILLHOLD: { row: 2, col: 10 },
+  HILLHOLD: { row: 4, col: 7 },
   CAVE: { row: 1, col: 5 },
   TOWER: { row: 1, col: 6 },
   EVIL_WIZARDS_TOWER: { row: 3, col: 3 },

@@ -298,29 +298,42 @@ export function attachEvents(elements, deps) {
     });
   }
 
-  const dwarfholdStructureKeys = new Set([
-    'DWARFHOLD',
-    'GREAT_DWARFHOLD',
-    'ABANDONED_DWARFHOLD',
-    'DARK_DWARFHOLD',
-    'DARKDWARFHOLD',
-    'HILLHOLD'
-  ]);
+  const normalizeDwarfholdKey = (value) => {
+    if (typeof value !== 'string') {
+      return '';
+    }
+    return value
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+  };
+  const dwarfholdStructureKeys = new Set(
+    [
+      'DWARFHOLD',
+      'GREAT_DWARFHOLD',
+      'GREATDWARFHOLD',
+      'ABANDONED_DWARFHOLD',
+      'DARK_DWARFHOLD',
+      'DARKDWARFHOLD',
+      'HILLHOLD'
+    ].map((key) => normalizeDwarfholdKey(key))
+  );
   const isDwarfholdStructureTile = (tile) => {
     if (!tile) {
       return false;
     }
-    if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+    const normalizedStructureKey = normalizeDwarfholdKey(tile.structure);
+    if (normalizedStructureKey && dwarfholdStructureKeys.has(normalizedStructureKey)) {
       return true;
     }
     const rawType = tile.structureDetails?.type;
-    if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+    const normalizedStructureType = normalizeDwarfholdKey(rawType);
+    if (normalizedStructureType && dwarfholdStructureKeys.has(normalizedStructureType)) {
       return true;
     }
     if (typeof tile.structureName === 'string') {
-      const upperName = tile.structureName.toUpperCase();
+      const normalizedName = normalizeDwarfholdKey(tile.structureName);
       for (const key of dwarfholdStructureKeys) {
-        if (upperName.includes(key)) {
+        if (normalizedName.includes(key)) {
           return true;
         }
       }
@@ -383,7 +396,25 @@ export function attachEvents(elements, deps) {
     if (!baseTile) {
       return null;
     }
-    return enrichWithDwarfholdDetails(baseTile, tileX, tileY);
+
+    const enrichedTile = enrichWithDwarfholdDetails(baseTile, tileX, tileY);
+    if (enrichedTile && typeof enrichedTile.structureName === 'string' && enrichedTile.structureName) {
+      return enrichedTile;
+    }
+
+    if (enrichedTile && enrichedTile.structureDetails && typeof enrichedTile.structureDetails.name === 'string') {
+      return { ...enrichedTile, structureName: enrichedTile.structureDetails.name };
+    }
+
+    if (tile && typeof tile.structureName === 'string' && tile.structureName) {
+      return tile;
+    }
+
+    if (tile && tile.structureDetails && typeof tile.structureDetails.name === 'string') {
+      return { ...tile, structureName: tile.structureDetails.name };
+    }
+
+    return enrichedTile || tile || null;
   };
 
   if (elements.structureContextMenuBegin) {
@@ -407,8 +438,23 @@ export function attachEvents(elements, deps) {
       const { tile, tileX, tileY } = structureContextMenuState;
       const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
       hideStructureContextMenu();
-      if (resolvedTile && resolvedTile.structureName) {
-        showStructureDetails(resolvedTile, { tileX, tileY });
+      if (!resolvedTile) {
+        return;
+      }
+
+      const resolvedName =
+        typeof resolvedTile.structureName === 'string' && resolvedTile.structureName
+          ? resolvedTile.structureName
+          : resolvedTile.structureDetails && typeof resolvedTile.structureDetails.name === 'string'
+          ? resolvedTile.structureDetails.name
+          : null;
+
+      if (resolvedName) {
+        const finalTile =
+          resolvedName === resolvedTile.structureName
+            ? resolvedTile
+            : { ...resolvedTile, structureName: resolvedName };
+        showStructureDetails(finalTile, { tileX, tileY });
       }
     });
   }
