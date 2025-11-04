@@ -24,6 +24,35 @@ import { clamp } from './src/utils/math.js';
 import { elements, getMusicToggleElements, getMusicVolumeInputs, getMusicNowPlayingDisplays } from './src/ui/elements.js';
 import { attachEvents } from './src/ui/events.js';
 
+function populateClanSelectFromOptions(options) {
+  try {
+    const select = document.getElementById('dwarf-clan-select');
+    if (!select || !Array.isArray(options)) return;
+
+    const previous = select.value || null;
+    while (select.firstChild) select.removeChild(select.firstChild);
+
+    options.forEach((opt) => {
+      if (!opt || typeof opt.value !== 'string' || typeof opt.label !== 'string') return;
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      if (opt.description && typeof opt.description === 'string') {
+        o.title = opt.description;
+      }
+      select.appendChild(o);
+    });
+
+    if (previous && options.some((o) => o && o.value === previous)) {
+      select.value = previous;
+    } else if (options.length > 0) {
+      select.value = options[0].value;
+    }
+  } catch (_err) {
+    // ignore
+  }
+}
+
 let cachedDwarfholdGeneratorPromise = null;
 
 async function loadDwarfholdGenerator() {
@@ -338,6 +367,16 @@ registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
   drawAmbientMoonwellStructure(ctx, drawOptions)
 );
+
+// Populate the clan select from the JS option list once DOM is ready
+if (typeof window !== 'undefined') {
+  const initClanSelect = () => populateClanSelectFromOptions(typeof dwarfClanOptions !== 'undefined' ? dwarfClanOptions : []);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClanSelect, { once: true });
+  } else {
+    initClanSelect();
+  }
+}
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   const fallbackTower = tileLookup.get('TOWER');
   if (fallbackTower) {

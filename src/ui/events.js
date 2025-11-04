@@ -417,6 +417,57 @@ export function attachEvents(elements, deps) {
     return enrichedTile || tile || null;
   };
 
+  // Handle double-click on world canvas to open structure details for dwarfholds and similar
+  if (elements.canvas) {
+    elements.canvas.addEventListener('dblclick', (event) => {
+      try {
+        if (!state.currentWorld || !state.currentWorld.tileSize) {
+          return;
+        }
+        const rect = elements.canvas.getBoundingClientRect();
+        const cssX = event.clientX - rect.left;
+        const cssY = event.clientY - rect.top;
+        const tileSize = state.currentWorld.tileSize;
+        // Account for CSS scaling of the canvas (devicePixelRatio and layout scaling)
+        const scaleX = elements.canvas.width / rect.width;
+        const scaleY = elements.canvas.height / rect.height;
+        const pixelX = Math.floor(cssX * scaleX);
+        const pixelY = Math.floor(cssY * scaleY);
+        const tileX = Math.max(0, Math.min(state.currentWorld.width - 1, Math.floor(pixelX / tileSize)));
+        const tileY = Math.max(0, Math.min(state.currentWorld.height - 1, Math.floor(pixelY / tileSize)));
+        const tile = getWorldTileAt(tileX, tileY);
+        const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
+        if (!resolvedTile) {
+          return;
+        }
+        // Open settlement details for dwarfholds/hillholds etc.; otherwise show general details if name is available
+        if (isDwarfholdStructureTile(resolvedTile)) {
+          showStructureDetails(resolvedTile, { tileX, tileY });
+          event.stopPropagation();
+          event.preventDefault();
+          return;
+        }
+        const resolvedName =
+          typeof resolvedTile.structureName === 'string' && resolvedTile.structureName
+            ? resolvedTile.structureName
+            : resolvedTile.structureDetails && typeof resolvedTile.structureDetails.name === 'string'
+            ? resolvedTile.structureDetails.name
+            : null;
+        if (resolvedName) {
+          const finalTile =
+            resolvedName === resolvedTile.structureName
+              ? resolvedTile
+              : { ...resolvedTile, structureName: resolvedName };
+          showStructureDetails(finalTile, { tileX, tileY });
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      } catch (_err) {
+        // ignore
+      }
+    });
+  }
+
   if (elements.structureContextMenuBegin) {
     elements.structureContextMenuBegin.addEventListener('click', () => {
       const { tile, tileX, tileY } = structureContextMenuState;
