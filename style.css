@@ -898,7 +898,7 @@ h3,
 button {
   cursor: var(--cursor-wand-pointer);
   font-size: 0.75rem;
-  padding: 0.9rem 2.4rem;
+  padding: 0.675rem 1.8rem;
   border: 1px solid var(--button-border);
   background: var(--button-bg);
   color: inherit;
