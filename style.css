@@ -3244,11 +3244,11 @@ button:hover:not(:disabled) {
 }
 
 .customizer-fields .field-group--gender {
-  grid-column: 1 / -1;
+  grid-column: 1 / span 1;
   align-items: flex-start;
   text-align: left;
   gap: 0.6rem;
-  margin-top: clamp(2.2rem, 7.8vw, 5.5rem);
+  margin-top: clamp(0.2rem, 1.8vw, 0.5rem);
 }
 
 .field-group--hair-colour .hair-colour-controls {
