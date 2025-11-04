@@ -1008,7 +1008,8 @@ button {
   border: none;
   border-radius: 0;
   background: transparent;
-  background-image: url('tilesheet/randombase.png');
+  /* remove decorative frame so the dice icon is not visually cropped by the base image */
+  background-image: none;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -1047,6 +1048,10 @@ button {
   background-size: contain;
   image-rendering: pixelated;
   transition: transform 140ms ease, filter 140ms ease;
+
+  /* ensure the dice isn't clipped by any parent rounding/overflow */
+  border-radius: 0;
+  overflow: visible;
 }
 
 .gender-toggle-randomise:hover .randomise-button__dice {
