@@ -9459,7 +9459,23 @@ const dwarfClanOptions = [
   { value: 'stormhammer', label: 'Stormhammer' },
   { value: 'deeprock', label: 'Deeprock' },
   { value: 'goldvein', label: 'Goldvein' },
-  { value: 'runesmith', label: 'Runesmith' }
+  { value: 'runesmith', label: 'Runesmith' },
+  { value: 'aleswiller', label: 'Aleswiller' },
+  { value: 'argent_hand', label: 'Argent Hand' },
+  { value: 'axebreaker', label: 'Axebreaker' },
+  { value: 'blackfire', label: 'Blackfire' },
+  { value: 'bloodstone', label: 'Bloodstone' },
+  { value: 'boulderscorch', label: 'Boulderscorch' },
+  { value: 'duergar', label: 'Duergar' },
+  { value: 'fiania', label: 'Fiania' },
+  { value: 'goldenforge', label: 'Goldenforge' },
+  { value: 'gordemuncher', label: 'Gordemuncher' },
+  { value: 'hammerhead', label: 'Hammerhead' },
+  { value: 'ironson', label: 'Ironson' },
+  { value: 'kazak_uruk', label: 'Kazak Uruk' },
+  { value: 'orcsplitter', label: 'Orcsplitter' },
+  { value: 'rockcrawler', label: 'Rockcrawler' },
+  { value: 'shattered_stone', label: 'Shattered Stone' }
 ];
 
 const dwarfGuildOptions = [
