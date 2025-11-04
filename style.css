@@ -3307,9 +3307,16 @@ button:hover:not(:disabled) {
 }
 
 .gender-toggle-button:focus-visible {
-  outline: 2px solid rgba(240, 198, 116, 0.85);
-  outline-offset: 4px;
+  /* remove default outline to avoid a circular ring mismatch
+     we'll show a focused state on the image itself so keyboard users still see a ring */
+  outline: none;
   border-radius: 16px;
+}
+
+/* Visible, shaped focus ring that follows the image's rounded rect shape */
+.gender-toggle-button:focus-visible img {
+  box-shadow: 0 0 0 4px rgba(240, 198, 116, 0.85);
+  border-radius: 14px;
 }
 
 @media (max-width: 720px) {
