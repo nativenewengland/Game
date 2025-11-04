@@ -409,6 +409,46 @@ select,
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1.5rem 3.5rem rgba(0, 0, 0, 0.55);
 }
 
+/* Reduce font sizing specifically for the Options screen so labels and descriptions fit */
+#options-screen {
+  /* scale down base font for options content */
+  --options-scale: 0.88;
+  font-size: calc(1rem * var(--options-scale));
+  line-height: 1.2;
+}
+
+#options-screen .options-panel {
+  padding: clamp(1rem, 2.2vw, 1.6rem);
+  max-width: min(920px, 94vw);
+}
+
+#options-screen .options-grid {
+  gap: clamp(0.6rem, 1.6vw, 1rem);
+}
+
+#options-screen .options-card {
+  padding: clamp(0.6rem, 1.6vw, 1rem);
+  gap: 0.6rem;
+}
+
+#options-screen .options-card__description,
+#options-screen label,
+#options-screen .options-eyebrow,
+#options-screen .options-card h3 {
+  font-size: calc(0.95rem * var(--options-scale));
+}
+
+/* Slightly tighten controls spacing */
+#options-screen .world-generation-sliders label {
+  margin-bottom: 0.35rem;
+}
+
+/* Make range inputs a bit smaller so layout compresses vertically */
+#options-screen input[type="range"] {
+  height: 1.2rem;
+}
+
+
 .loading-eyebrow {
   margin: 0;
   font-size: 0.85rem;
