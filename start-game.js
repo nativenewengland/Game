@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded', () => {
 const startButton = document.getElementById('start-button');
 const titleScreen = document.getElementById('title-screen');
 const worldInfo = document.getElementById('world-info');
@@ -251,4 +252,4 @@ if (optionsScreen) {
   });
 }
 
-export {};
+});
