@@ -203,10 +203,11 @@ if (dwarfBackButton) {
 }
 
 if (dwarfCustomizerForm) {
-  dwarfCustomizerForm.addEventListener('submit', async (event) => {
+  dwarfCustomizerForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    setHidden(dwarfCustomizer, true);
-    await transitionToGame();
+    if (typeof window.beginGame === 'function') {
+      window.beginGame();
+    }
   });
 }
 
