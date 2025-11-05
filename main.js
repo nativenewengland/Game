@@ -368,15 +368,7 @@ registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
   drawAmbientMoonwellStructure(ctx, drawOptions)
 );
 
-// Populate the clan select from the JS option list once DOM is ready
-if (typeof window !== 'undefined') {
-  const initClanSelect = () => populateClanSelectFromOptions(typeof dwarfClanOptions !== 'undefined' ? dwarfClanOptions : []);
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initClanSelect, { once: true });
-  } else {
-    initClanSelect();
-  }
-}
+
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   const fallbackTower = tileLookup.get('TOWER');
   if (fallbackTower) {
@@ -11407,6 +11399,8 @@ const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitA
     })
 );
 
+console.log('assetPromises started');
+console.log('assetPromises started');
 const assetPromises = Promise.all([
   ...tileSheetPromises,
   ...dwarfSpriteSheetPromises,
@@ -11449,6 +11443,7 @@ function updateStartButtonState() {
 }
 
 function handleStartButtonClick(event) {
+  console.log('Start button clicked');
   if (!state.ready) {
     startRequestedBeforeReady = true;
     updateStartButtonState();
@@ -11479,9 +11474,11 @@ initialiseStartButton();
 
 assetPromises
   .catch((error) => {
+    console.log('assetPromises failed');
     console.error('One or more assets failed to load.', error);
   })
   .finally(() => {
+    console.log('assetPromises finished');
     state.ready = true;
     updateStartButtonState();
     attachStartButtonListener();
@@ -11498,6 +11495,7 @@ let optionsContext = {
 };
 
 function handleStartButtonRequest() {
+  console.log('Start button request');
   if (optionsVisible) {
     closeOptionsScreen({ restoreScreen: false, returnFocus: false });
   }
