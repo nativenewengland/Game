@@ -9741,7 +9741,7 @@ const dwarfProfessionOptions = [
   { value: 'scholar', label: 'Lore Scholar' },
   { value: 'ranger', label: 'Ranger Captain' },
   { value: 'carpenter', label: 'Master Carpenter' },
-  { value: 'jewelcrafter', label: 'Gemcutter' },
+  { value: 'gemcutter', label: 'Gemcutter' },
   { value: 'banker', label: 'Banker' }
 ];
 
