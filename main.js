@@ -32963,8 +32963,6 @@ function beginGame() {
     });
 }
 
-window.beginGame = beginGame;
-
 async function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
   ensureLandMaskForProfile(state.settings.worldGenerationType);
