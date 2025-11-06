@@ -366,40 +366,27 @@ const characterCreatorSkinBaseNormalised = {
   b: characterCreatorSkinBaseRgb.b / characterCreatorSkinBaseColorSum
 };
 
-function isCharacterCreatorSkinPixel(r, g, b, a) {
-  if (a < 16) {
-    return false;
-  }
-  const sum = r + g + b;
-  if (sum === 0) {
-    return false;
-  }
-  const brightnessRatio = sum / characterCreatorSkinBaseColorSum;
-  if (brightnessRatio < 0.28 || brightnessRatio > 1.95) {
-    return false;
-  }
-  const normalisedR = r / sum;
-  const normalisedG = g / sum;
-  const normalisedB = b / sum;
-  const diffR = Math.abs(normalisedR - characterCreatorSkinBaseNormalised.r);
-  const diffG = Math.abs(normalisedG - characterCreatorSkinBaseNormalised.g);
-  const diffB = Math.abs(normalisedB - characterCreatorSkinBaseNormalised.b);
-  return diffR + diffG + diffB <= 0.22;
-}
-
-function analyseCharacterCreatorSkinAsset(assetKey) {
-  if (characterCreatorSkinTintCache.has(assetKey)) {
-    return characterCreatorSkinTintCache.get(assetKey);
+function analyseCharacterCreatorAsset(
+  assetKey,
+  cache,
+  hasPropertyKey,
+  pixelCheckFn,
+  pixelModificationFn,
+  multiplierCalculationFn,
+  fallbackHasPropertyKey
+) {
+  if (cache.has(assetKey)) {
+    return cache.get(assetKey);
   }
   const asset = characterCreatorPortraitAssets[assetKey];
   const image = asset?.image;
   if (!image || !image.width || !image.height) {
     const fallback = {
-      hasSkin: false,
+      [fallbackHasPropertyKey]: false,
       baseCanvas: null,
       tinted: new Map()
     };
-    characterCreatorSkinTintCache.set(assetKey, fallback);
+    cache.set(assetKey, fallback);
     return fallback;
   }
   const width = image.width;
@@ -410,11 +397,11 @@ function analyseCharacterCreatorSkinAsset(assetKey) {
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     const fallback = {
-      hasSkin: false,
+      [fallbackHasPropertyKey]: false,
       baseCanvas: null,
       tinted: new Map()
     };
-    characterCreatorSkinTintCache.set(assetKey, fallback);
+    cache.set(assetKey, fallback);
     return fallback;
   }
   ctx.imageSmoothingEnabled = false;
@@ -427,33 +414,29 @@ function analyseCharacterCreatorSkinAsset(assetKey) {
   const multiplierR = new Float32Array(pixelCount);
   const multiplierG = new Float32Array(pixelCount);
   const multiplierB = new Float32Array(pixelCount);
-  let hasSkin = false;
+  let hasProperty = false;
   for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
     const a = data[i + 3];
-    if (a < 16) {
-      continue;
-    }
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-    if (isCharacterCreatorSkinPixel(r, g, b, a)) {
+
+    if (pixelCheckFn(r, g, b, a)) {
       mask[p] = 1;
       alpha[p] = a;
-      const safeR = characterCreatorSkinBaseRgb.r || 1;
-      const safeG = characterCreatorSkinBaseRgb.g || 1;
-      const safeB = characterCreatorSkinBaseRgb.b || 1;
-      multiplierR[p] = clamp(r / safeR, 0.15, 2.4);
-      multiplierG[p] = clamp(g / safeG, 0.15, 2.4);
-      multiplierB[p] = clamp(b / safeB, 0.15, 2.4);
-      data[i + 3] = 0;
-      hasSkin = true;
+      const multipliers = multiplierCalculationFn(r, g, b);
+      multiplierR[p] = multipliers.r;
+      multiplierG[p] = multipliers.g;
+      multiplierB[p] = multipliers.b;
+      pixelModificationFn(data, i);
+      hasProperty = true;
     }
   }
-  if (hasSkin) {
+  if (hasProperty) {
     ctx.putImageData(imageData, 0, 0);
   }
   const analysis = {
-    hasSkin,
+    [hasPropertyKey]: hasProperty,
     baseCanvas: canvas,
     mask,
     alpha,
@@ -462,13 +445,59 @@ function analyseCharacterCreatorSkinAsset(assetKey) {
     multiplierB,
     tinted: new Map()
   };
-  characterCreatorSkinTintCache.set(assetKey, analysis);
+  cache.set(assetKey, analysis);
   return analysis;
 }
 
-function createCharacterCreatorSkinTintCanvas(analysis, colorHex) {
+
+
+function analyseCharacterCreatorSkinAsset(assetKey) {
+  const pixelCheckFn = (r, g, b, a) => {
+    if (a < 16) return false;
+    const sum = r + g + b;
+    if (sum === 0) return false;
+    const brightnessRatio = sum / characterCreatorSkinBaseColorSum;
+    if (brightnessRatio < 0.28 || brightnessRatio > 1.95) return false;
+    const normalisedR = r / sum;
+    const normalisedG = g / sum;
+    const normalisedB = b / sum;
+    const diffR = Math.abs(normalisedR - characterCreatorSkinBaseNormalised.r);
+    const diffG = Math.abs(normalisedG - characterCreatorSkinBaseNormalised.g);
+    const diffB = Math.abs(normalisedB - characterCreatorSkinBaseNormalised.b);
+    return diffR + diffG + diffB <= 0.22;
+  };
+
+  const pixelModificationFn = (data, i) => {
+    data[i + 3] = 0;
+  };
+
+  const multiplierCalculationFn = (r, g, b) => {
+    const safeR = characterCreatorSkinBaseRgb.r || 1;
+    const safeG = characterCreatorSkinBaseRgb.g || 1;
+    const safeB = characterCreatorSkinBaseRgb.b || 1;
+    return {
+      r: clamp(r / safeR, 0.15, 2.4),
+      g: clamp(g / safeG, 0.15, 2.4),
+      b: clamp(b / safeB, 0.15, 2.4),
+    };
+  };
+
+  return analyseCharacterCreatorAsset(
+    assetKey,
+    characterCreatorSkinTintCache,
+    'hasSkin',
+    pixelCheckFn,
+    pixelModificationFn,
+    multiplierCalculationFn,
+    'hasSkin'
+  );
+}
+
+
+
+function createCharacterCreatorTintCanvas(analysis, colorHex) {
   const { baseCanvas, mask, alpha, multiplierR, multiplierG, multiplierB } = analysis;
-  if (!baseCanvas || !mask || !multiplierR || !multiplierG || !multiplierB) {
+  if (!baseCanvas || !mask || !alpha || !multiplierR || !multiplierG || !multiplierB) {
     return null;
   }
   const tint = hexToRgb(colorHex);
@@ -508,7 +537,7 @@ export function getCharacterCreatorSkinTintLayers(assetKey, tintColor) {
   const colourKey = normaliseHexColor(tintColor || characterCreatorDefaultSkinColor);
   let tintedCanvas = analysis.tinted.get(colourKey);
   if (!tintedCanvas) {
-    tintedCanvas = createCharacterCreatorSkinTintCanvas(analysis, colourKey);
+    tintedCanvas = createCharacterCreatorTintCanvas(analysis, colourKey);
     if (tintedCanvas) {
       analysis.tinted.set(colourKey, tintedCanvas);
     }
@@ -523,118 +552,39 @@ export function getCharacterCreatorSkinTintLayers(assetKey, tintColor) {
 }
 
 function analyseCharacterCreatorHairAsset(assetKey) {
-  if (characterCreatorHairTintCache.has(assetKey)) {
-    return characterCreatorHairTintCache.get(assetKey);
-  }
-  const asset = characterCreatorPortraitAssets[assetKey];
-  const image = asset?.image;
-  if (!image || !image.width || !image.height) {
-    const fallback = {
-      hasHair: false,
-      baseCanvas: null,
-      tinted: new Map()
-    };
-    characterCreatorHairTintCache.set(assetKey, fallback);
-    return fallback;
-  }
-  const width = image.width;
-  const height = image.height;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    const fallback = {
-      hasHair: false,
-      baseCanvas: null,
-      tinted: new Map()
-    };
-    characterCreatorHairTintCache.set(assetKey, fallback);
-    return fallback;
-  }
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(image, 0, 0, width, height);
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const { data } = imageData;
-  const pixelCount = width * height;
-  const mask = new Uint8Array(pixelCount);
-  const alpha = new Uint8Array(pixelCount);
-  const multiplierR = new Float32Array(pixelCount);
-  const multiplierG = new Float32Array(pixelCount);
-  const multiplierB = new Float32Array(pixelCount);
-  let hasHair = false;
-  for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
-    const a = data[i + 3];
-    if (a < 8) {
-      continue;
-    }
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    if (r + g + b <= 0) {
-      continue;
-    }
-    mask[p] = 1;
-    alpha[p] = a;
-    multiplierR[p] = clamp(r / 255, 0.05, 1.2);
-    multiplierG[p] = clamp(g / 255, 0.05, 1.2);
-    multiplierB[p] = clamp(b / 255, 0.05, 1.2);
+  const pixelCheckFn = (r, g, b, a) => {
+    if (a < 8) return false;
+    if (r + g + b <= 0) return false;
+    return true;
+  };
+
+  const pixelModificationFn = (data, i) => {
     data[i] = 0;
     data[i + 1] = 0;
     data[i + 2] = 0;
     data[i + 3] = 0;
-    hasHair = true;
-  }
-  if (hasHair) {
-    ctx.putImageData(imageData, 0, 0);
-  }
-  const analysis = {
-    hasHair,
-    baseCanvas: canvas,
-    mask,
-    alpha,
-    multiplierR,
-    multiplierG,
-    multiplierB,
-    tinted: new Map()
   };
-  characterCreatorHairTintCache.set(assetKey, analysis);
-  return analysis;
+
+  const multiplierCalculationFn = (r, g, b) => {
+    return {
+      r: clamp(r / 255, 0.05, 1.2),
+      g: clamp(g / 255, 0.05, 1.2),
+      b: clamp(b / 255, 0.05, 1.2),
+    };
+  };
+
+  return analyseCharacterCreatorAsset(
+    assetKey,
+    characterCreatorHairTintCache,
+    'hasHair',
+    pixelCheckFn,
+    pixelModificationFn,
+    multiplierCalculationFn,
+    'hasHair'
+  );
 }
 
-function createCharacterCreatorHairTintCanvas(analysis, colorHex) {
-  const { baseCanvas, mask, alpha, multiplierR, multiplierG, multiplierB } = analysis;
-  if (!baseCanvas || !mask || !alpha || !multiplierR || !multiplierG || !multiplierB) {
-    return null;
-  }
-  const tint = hexToRgb(colorHex);
-  const width = baseCanvas.width;
-  const height = baseCanvas.height;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return null;
-  }
-  const imageData = ctx.createImageData(width, height);
-  const { data } = imageData;
-  for (let i = 0, p = 0; p < mask.length; i += 4, p += 1) {
-    if (!mask[p]) {
-      continue;
-    }
-    const alphaValue = alpha[p];
-    if (alphaValue <= 0) {
-      continue;
-    }
-    data[i] = clamp(Math.round(tint.r * multiplierR[p]), 0, 255);
-    data[i + 1] = clamp(Math.round(tint.g * multiplierG[p]), 0, 255);
-    data[i + 2] = clamp(Math.round(tint.b * multiplierB[p]), 0, 255);
-    data[i + 3] = alphaValue;
-  }
-  ctx.putImageData(imageData, 0, 0);
-  return canvas;
-}
+
 
 export function getCharacterCreatorHairTintLayers(assetKey, tintColor) {
   if (!assetKey) {
@@ -647,7 +597,7 @@ export function getCharacterCreatorHairTintLayers(assetKey, tintColor) {
   const colourKey = normaliseHexColor(tintColor || characterCreatorDefaultHairColor);
   let tintedCanvas = analysis.tinted.get(colourKey);
   if (!tintedCanvas) {
-    tintedCanvas = createCharacterCreatorHairTintCanvas(analysis, colourKey);
+    tintedCanvas = createCharacterCreatorTintCanvas(analysis, colourKey);
     if (tintedCanvas) {
       analysis.tinted.set(colourKey, tintedCanvas);
     }
