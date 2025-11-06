@@ -965,6 +965,60 @@ const dwarfholdNameRegions = [
   'the Brass Line'
 ];
 
+const dwarfholdNameRegions = [
+  'the North',
+  'the Deep',
+  'the First Kings',
+  'the Ancients',
+  'Stonehome',
+  'Stormpeak',
+  'Ember Range',
+  'Thunderholt',
+  'the Underway',
+  'Skyforge',
+  'the Iron Sea',
+  'Grimspire',
+  'Highstone',
+  'Runecrest',
+  'the Brass Line'
+];
+
+function generateAdditionalDwarfClanNames(count, randomFn) {
+  const names = new Set();
+  while (names.size < count) {
+    const styleRoll = randomFn();
+    let name = '';
+
+    if (styleRoll < 0.3) { // Prefix + Suffix
+      const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn);
+      const suffix = pickRandomFrom(dwarfholdNameSuffixes, randomFn);
+      if (prefix && suffix) {
+        name = `${prefix}${suffix.charAt(0).toUpperCase() + suffix.slice(1)}`;
+      }
+    } else if (styleRoll < 0.6) { // Prefix + Descriptor
+      const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn);
+      const descriptor = pickRandomFrom(dwarfholdNameDescriptors, randomFn);
+      if (prefix && descriptor) {
+        name = `${prefix} ${descriptor}`;
+      }
+    } else { // Descriptor + Suffix
+      const descriptor = pickRandomFrom(dwarfholdNameDescriptors, randomFn);
+      const suffix = pickRandomFrom(dwarfholdNameSuffixes, randomFn);
+      if (descriptor && suffix) {
+        name = `${descriptor} ${suffix}`;
+      }
+    }
+
+    if (name) {
+      names.add(name);
+    }
+  }
+  return Array.from(names).map(name => ({
+    value: name.toLowerCase().replace(/[^a-z0-9]+/g, ''),
+    label: name
+  }));
+}
+
 const dwarfholdRulerTitles = {
   female: [
     'High Thane',
@@ -9685,6 +9739,51 @@ const dwarfClanOptions = [
   { value: 'clan_llyrnillach', label: 'Clan Llyrnillach' },
   { value: 'clan_highhelm', label: 'Clan Highhelm' },
   { value: 'clan_tolorr', label: 'Clan Tolorr' }
+].concat(generateAdditionalDwarfClanNames(50, Math.random));
+
+const dwarfGuildOptions = [
+  { value: 'miners-guild', label: 'Miners Guild' },
+  { value: 'coopers-guild', label: 'Coopers Guild' },
+  { value: 'merchants-guild', label: 'Merchants Guild' },
+  { value: 'commerce-guild', label: 'Commerce Guild' },
+  { value: 'armourers-weaponsmiths-guild', label: 'Armourers and Weaponsmiths Guild' },
+  { value: 'artisans-guild', label: 'Artisans Guild' },
+  { value: 'bakers-guild', label: 'Bakers Guild' },
+  { value: 'brewers-guild', label: 'Brewers Guild' },
+  { value: 'carpenters-guild', label: 'Carpenters Guild' },
+  { value: 'construction-guild', label: 'Construction Guild' },
+  { value: 'corpsebinders-guild', label: 'Corpsebinders Guild' },
+  { value: 'distiller-guild', label: 'Distiller Guild' },
+  { value: 'dyers-guild', label: 'Dyers Guild' },
+  { value: 'engineers-guild', label: 'Engineers Guild' },
+  { value: 'farmers-herders-guild', label: 'Farmers and Herders Guild' },
+  { value: 'gemcutters-guild', label: 'Gemcutters Guild' },
+  { value: 'goldsmiths-guild', label: 'Goldsmiths Guild' },
+  { value: 'guild-of-alchemists', label: 'Guild of Alchemists' },
+  { value: 'jewelsmiths-guild', label: 'Jewelsmiths Guild' },
+  { value: 'leatherworkers-guild', label: 'Leatherworkers Guild' },
+  { value: 'metalsmiths-guild', label: 'Metalsmiths Guild' },
+  { value: 'powdermakers-guild', label: 'Powdermakers Guild' },
+  { value: 'saltworkers-guild', label: 'Saltworkers Guild' },
+  { value: 'stonemasons-guild', label: 'Stonemasons Guild' },
+  { value: 'runescribes-guild', label: 'Runescribes Guild' },
+  { value: 'runesmiths', label: 'Runesmiths' },
+  { value: 'warriors-guild', label: 'Warriors Guild' },
+  { value: 'toolmakers-guild', label: "Toolmakers' Guild" },
+  { value: 'soapmakers-guild', label: 'Soapmakers Guild' },
+  { value: 'candlelighters-guild', label: 'Candlelighters Guild' },
+  { value: 'lamplighters-guild', label: 'Lamplighters Guild' },
+  { value: 'butchers-guild', label: 'Butchers Guild' },
+  { value: 'ropemakers-guild', label: 'Ropemakers Guild' },
+  { value: 'cartwrights-wheelwrights-guild', label: 'Cartwrights & Wheelwrights Guild' },
+  { value: 'glassblowers-guild', label: 'Glassblowers Guild' },
+  { value: 'millers-guild', label: 'Millers Guild' },
+  { value: 'cobblers-guild', label: 'Cobblers Guild' },
+  { value: 'cartographers-guild', label: 'Cartographers Guild' },
+  { value: 'explorers-guild', label: 'Explorers Guild' },
+  { value: 'lorekeepers-guild', label: 'Lorekeepers Guild' },
+  { value: 'tunnel-wardens-guild', label: 'Tunnel Wardens Guild' },
+  { value: 'smelters-guild', label: 'Smelters Guild' }
 ];
 
 const dwarfGuildOptions = [
@@ -9732,6 +9831,175 @@ const dwarfGuildOptions = [
   { value: 'smelters-guild', label: 'Smelters Guild' }
 ];
 
+function generateProfessionsFromGuilds(guildOptions) {
+  const professions = [];
+  const seenValues = new Set(dwarfProfessionOptions.map(p => p.value)); // Track existing profession values
+
+  guildOptions.forEach(guild => {
+    let label = guild.label;
+    let value = guild.value;
+
+    // Remove "Guild" or "Guild of" and "s" from the end
+    label = label.replace(/ Guild( of)?/i, '').replace(/s$/, '');
+    value = value.replace(/-guild(of-)?/i, '').replace(/s$/, '');
+
+    // Special cases or common transformations
+    if (label.includes('Armourer') && label.includes('Weaponsmith')) {
+      label = 'Armourer & Weaponsmith';
+      value = 'armourer-weaponsmith';
+    } else if (label.includes('Farmer') && label.includes('Herder')) {
+      label = 'Farmer & Herder';
+      value = 'farmer-herder';
+    } else if (label.includes('Cartwright') && label.includes('Wheelwright')) {
+      label = 'Cartwright & Wheelwright';
+      value = 'cartwright-wheelwright';
+    } else if (label === 'Alchemist') {
+      label = 'Alchemist';
+      value = 'alchemist';
+    } else if (label === 'Runescribe') {
+      label = 'Runescribe';
+      value = 'runescribe';
+    } else if (label === 'Runesmith') {
+      label = 'Runesmith';
+      value = 'runesmith';
+    } else if (label === 'Warrior') {
+      label = 'Warrior';
+      value = 'warrior';
+    } else if (label === 'Toolmaker') {
+      label = 'Toolmaker';
+      value = 'toolmaker';
+    } else if (label === 'Lorekeeper') {
+      label = 'Lorekeeper';
+      value = 'lorekeeper';
+    } else if (label === 'Tunnel Warden') {
+      label = 'Tunnel Warden';
+      value = 'tunnel-warden';
+    } else if (label === 'Smelter') {
+      label = 'Smelter';
+      value = 'smelter';
+    } else if (label === 'Explorer') {
+      label = 'Explorer';
+      value = 'explorer';
+    } else if (label === 'Cartographer') {
+      label = 'Cartographer';
+      value = 'cartographer';
+    } else if (label === 'Cobbler') {
+      label = 'Cobbler';
+      value = 'cobbler';
+    } else if (label === 'Miller') {
+      label = 'Miller';
+      value = 'miller';
+    } else if (label === 'Glassblower') {
+      label = 'Glassblower';
+      value = 'glassblower';
+    } else if (label === 'Ropemaker') {
+      label = 'Ropemaker';
+      value = 'ropemaker';
+    } else if (label === 'Butcher') {
+      label = 'Butcher';
+      value = 'butcher';
+    } else if (label === 'Lamplighter') {
+      label = 'Lamplighter';
+      value = 'lamplighter';
+    } else if (label === 'Candlelighter') {
+      label = 'Candlelighter';
+      value = 'candlelighter';
+    } else if (label === 'Soapmaker') {
+      label = 'Soapmaker';
+      value = 'soapmaker';
+    } else if (label === 'Metalsmith') {
+      label = 'Metalsmith';
+      value = 'metalsmith';
+    } else if (label === 'Leatherworker') {
+      label = 'Leatherworker';
+      value = 'leatherworker';
+    } else if (label === 'Jewelsmith') {
+      label = 'Jewelsmith';
+      value = 'jewelsmith';
+    } else if (label === 'Goldsmith') {
+      label = 'Goldsmith';
+      value = 'goldsmith';
+    } else if (label === 'Gemcutter') {
+      label = 'Gemcutter';
+      value = 'gemcutter';
+    } else if (label === 'Engineer') {
+      label = 'Engineer';
+      value = 'engineer';
+    } else if (label === 'Dyer') {
+      label = 'Dyer';
+      value = 'dyer';
+    } else if (label === 'Distiller') {
+      label = 'Distiller';
+      value = 'distiller';
+    } else if (label === 'Corpsebinder') {
+      label = 'Corpsebinder';
+      value = 'corpsebinder';
+    } else if (label === 'Construction') {
+      label = 'Construction Worker'; // More specific
+      value = 'construction-worker';
+    } else if (label === 'Carpenter') {
+      label = 'Carpenter';
+      value = 'carpenter';
+    } else if (label === 'Brewer') {
+      label = 'Brewer';
+      value = 'brewer';
+    } else if (label === 'Baker') {
+      label = 'Baker';
+      value = 'baker';
+    } else if (label === 'Artisan') {
+      label = 'Artisan';
+      value = 'artisan';
+    } else if (label === 'Miner') {
+      label = 'Miner';
+      value = 'miner';
+    } else if (label === 'Cooper') {
+      label = 'Cooper';
+      value = 'cooper';
+    } else if (label === 'Merchant') {
+      label = 'Merchant';
+      value = 'merchant';
+    } else if (label === 'Commerce') {
+      label = 'Commerce Agent'; // More specific
+      value = 'commerce-agent';
+    } else if (label === 'Powdermaker') {
+      label = 'Powdermaker';
+      value = 'powdermaker';
+    } else if (label === 'Saltworker') {
+      label = 'Saltworker';
+      value = 'saltworker';
+    } else if (label === 'Stonemason') {
+      label = 'Stonemason';
+      value = 'stonemason';
+    }
+
+
+    // Add "Master" prefix for certain professions if not already present
+    if (['Mason', 'Smith', 'Carpenter', 'Brewer'].includes(label) && !label.startsWith('Master')) {
+      label = `Master ${label}`;
+    }
+    // Add "Chief" prefix for Engineer if not already present
+    if (label === 'Engineer' && !label.startsWith('Chief')) {
+      label = `Chief ${label}`;
+    }
+    // Add "Lore" prefix for Scholar if not already present
+    if (label === 'Scholar' && !label.startsWith('Lore')) {
+      label = `Lore ${label}`;
+    }
+    // Add "Captain" prefix for Ranger if not already present
+    if (label === 'Ranger' && !label.startsWith('Ranger')) {
+      label = `Ranger ${label}`;
+    }
+
+
+    if (!seenValues.has(value)) {
+      professions.push({ value, label });
+      seenValues.add(value);
+    }
+  });
+
+  return professions;
+}
+
 const dwarfProfessionOptions = [
   { value: 'miner', label: 'Miner' },
   { value: 'mason', label: 'Master Mason' },
@@ -9743,7 +10011,7 @@ const dwarfProfessionOptions = [
   { value: 'carpenter', label: 'Master Carpenter' },
   { value: 'gemcutter', label: 'Gemcutter' },
   { value: 'banker', label: 'Banker' }
-];
+].concat(generateProfessionsFromGuilds(dwarfGuildOptions));
 
 const dwarfHairStyles = {
   bald: {
