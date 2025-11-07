@@ -1,13 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
 const runningFromFile = typeof window !== 'undefined' && window.location?.protocol === 'file:';
-// If the module-based app has already initialised (and we're not in file mode), don't attach fallback handlers
-try {
-  const root = document.documentElement;
-  const alreadyInitialised = !runningFromFile && root && root.getAttribute('data-app-initialised') === 'true';
-  if (alreadyInitialised) {
-    return;
-  }
-} catch (_) {}
+const fileWarning = document.getElementById('file-warning');
+const fileWarningDismiss = document.getElementById('file-warning-dismiss');
+
+if (!runningFromFile) {
+  // Let the module-powered experience control the UI when served over HTTP/HTTPS.
+  return;
+}
 const startButton = document.getElementById('start-button');
 const titleScreen = document.getElementById('title-screen');
 const worldInfo = document.getElementById('world-info');
@@ -28,8 +27,6 @@ const optionsButton = document.getElementById('title-options-button');
 const inGameOptionsButton = document.getElementById('in-game-options');
 const optionsScreen = document.getElementById('options-screen');
 const closeOptionsButton = document.getElementById('close-options');
-const fileWarning = document.getElementById('file-warning');
-const fileWarningDismiss = document.getElementById('file-warning-dismiss');
 
 const FOCUSABLE_SELECTOR = [
   '[autofocus]','button','input','select','textarea','[tabindex]:not([tabindex="-1"])'
