@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-// If the module-based app has already initialised, don't attach fallback handlers
+const runningFromFile = typeof window !== 'undefined' && window.location?.protocol === 'file:';
+// If the module-based app has already initialised (and we're not in file mode), don't attach fallback handlers
 try {
   const root = document.documentElement;
-  if (root && root.getAttribute('data-app-initialised') === 'true') {
+  const alreadyInitialised = !runningFromFile && root && root.getAttribute('data-app-initialised') === 'true';
+  if (alreadyInitialised) {
     return;
   }
 } catch (_) {}
@@ -26,10 +28,32 @@ const optionsButton = document.getElementById('title-options-button');
 const inGameOptionsButton = document.getElementById('in-game-options');
 const optionsScreen = document.getElementById('options-screen');
 const closeOptionsButton = document.getElementById('close-options');
+const fileWarning = document.getElementById('file-warning');
+const fileWarningDismiss = document.getElementById('file-warning-dismiss');
 
 const FOCUSABLE_SELECTOR = [
   '[autofocus]','button','input','select','textarea','[tabindex]:not([tabindex="-1"])'
 ].join(',');
+
+function showFileWarning({ focusButton = true } = {}) {
+  if (!fileWarning) {
+    return;
+  }
+  setHidden(fileWarning, false);
+  if (focusButton && fileWarningDismiss) {
+    focusElement(fileWarningDismiss);
+  }
+}
+
+function hideFileWarning() {
+  if (!fileWarning) {
+    return;
+  }
+  setHidden(fileWarning, true);
+  if (startButton) {
+    focusElement(startButton);
+  }
+}
 
 function setHidden(element, hidden) {
   if (!element) {
@@ -184,6 +208,10 @@ if (titleScreen) {
 if (startButton && worldInfo) {
   startButton.addEventListener('click', (event) => {
     event.preventDefault();
+    if (runningFromFile) {
+      showFileWarning();
+      return;
+    }
     showWorldInfo();
   });
 }
@@ -198,6 +226,10 @@ if (worldInfoCancel) {
 if (worldInfoForm && dwarfCustomizer) {
   worldInfoForm.addEventListener('submit', (event) => {
     event.preventDefault();
+    if (runningFromFile) {
+      showFileWarning();
+      return;
+    }
     openDwarfCustomizer();
   });
 }
@@ -212,6 +244,10 @@ if (dwarfBackButton) {
 if (dwarfCustomizerForm) {
   dwarfCustomizerForm.addEventListener('submit', (event) => {
     event.preventDefault();
+    if (runningFromFile) {
+      showFileWarning();
+      return;
+    }
     if (typeof window.beginGame === 'function') {
       window.beginGame();
     }
@@ -221,6 +257,10 @@ if (dwarfCustomizerForm) {
 if (optionsButton && optionsScreen) {
   optionsButton.addEventListener('click', (event) => {
     event.preventDefault();
+    if (runningFromFile) {
+      showFileWarning();
+      return;
+    }
     if (!isHidden(optionsScreen)) {
       return;
     }
@@ -231,6 +271,10 @@ if (optionsButton && optionsScreen) {
 if (inGameOptionsButton && optionsScreen) {
   inGameOptionsButton.addEventListener('click', (event) => {
     event.preventDefault();
+    if (runningFromFile) {
+      showFileWarning();
+      return;
+    }
     if (!isHidden(optionsScreen)) {
       return;
     }
@@ -258,6 +302,17 @@ if (optionsScreen) {
     }
     closeOptionsScreen();
   });
+}
+
+if (fileWarningDismiss) {
+  fileWarningDismiss.addEventListener('click', (event) => {
+    event.preventDefault();
+    hideFileWarning();
+  });
+}
+
+if (runningFromFile) {
+  showFileWarning({ focusButton: false });
 }
 
 });

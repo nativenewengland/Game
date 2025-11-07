@@ -31,6 +31,32 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <div
+      id="file-warning"
+      class="file-warning hidden"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="file-warning-title"
+    >
+      <div class="file-warning__panel">
+        <p class="file-warning__eyebrow">Local file detected</p>
+        <h2 id="file-warning-title">Run Dwarfhold from a local server</h2>
+        <p>
+          Browsers block the game's module scripts when you open <code>index.html</code> directly from disk. Launch any
+          lightweight HTTP server in this folder, then visit it in your browser.
+        </p>
+        <div class="file-warning__steps" role="group" aria-label="Example commands">
+          <p>PowerShell (Python installed):</p>
+          <code>python -m http.server 5500</code>
+          <p>PowerShell (Node installed):</p>
+          <code>npx http-server -p 5500</code>
+          <p>Then open <strong>http://localhost:5500/</strong> in your browser.</p>
+        </div>
+        <p class="file-warning__note">Tip: VS Code's “Live Server” extension works too.</p>
+        <button type="button" id="file-warning-dismiss" class="primary">Got it</button>
+      </div>
+    </div>
+
     <div id="title-screen" class="screen">
       <div class="title-background" aria-hidden="true"></div>
       <div class="title-overlay">
