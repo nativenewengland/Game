@@ -455,22 +455,9 @@ export function generateDwarfholdMap(options = {}) {
     addFeatureNote('garden', features, featureSet, randomFn);
   }
 
-  const reservoirWidth = Math.max(6, gardenWidth - 2);
-  const reservoirHeight = clamp(3 + randomInt(randomFn, 0, 2), 3, Math.max(3, height - gardenStartY - gardenHeight - 3));
-  const reservoirStartX = hallStartX + Math.floor((hallWidth - reservoirWidth) / 2);
-  const reservoirStartY = clamp(gardenStartY + gardenHeight + 1, gardenStartY + gardenHeight + 1, height - reservoirHeight - 2);
-  if (reservoirStartY > gardenStartY && reservoirStartY + reservoirHeight < height - 1) {
-    fillRect(tiles, reservoirStartX, reservoirStartY, reservoirWidth, reservoirHeight, 'water', usedTypes);
-    addFeatureNote('water', features, featureSet, randomFn);
-    addMarker(markers, clamp(reservoirStartX + Math.floor(reservoirWidth / 2), 0, width - 1), clamp(reservoirStartY + Math.floor(reservoirHeight / 2), 0, height - 1), {
-      color: '#38bdf8',
-      stroke: '#0c4a6e',
-      radius: 0.36,
-      shadowColor: 'rgba(56, 189, 248, 0.35)'
-    });
-  }
 
-  let stairsY = reservoirStartY - 2;
+
+  let stairsY = gardenStartY + gardenHeight + 2;
   if (!Number.isFinite(stairsY) || stairsY <= hallEndY + 1) {
     stairsY = clamp(hallEndY + 2, hallEndY + 2, height - 3);
   }

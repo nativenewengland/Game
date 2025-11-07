@@ -24,6 +24,35 @@ import { clamp } from './src/utils/math.js';
 import { elements, getMusicToggleElements, getMusicVolumeInputs, getMusicNowPlayingDisplays } from './src/ui/elements.js';
 import { attachEvents } from './src/ui/events.js';
 
+function populateClanSelectFromOptions(options) {
+  try {
+    const select = document.getElementById('dwarf-clan-select');
+    if (!select || !Array.isArray(options)) return;
+
+    const previous = select.value || null;
+    while (select.firstChild) select.removeChild(select.firstChild);
+
+    options.forEach((opt) => {
+      if (!opt || typeof opt.value !== 'string' || typeof opt.label !== 'string') return;
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      if (opt.description && typeof opt.description === 'string') {
+        o.title = opt.description;
+      }
+      select.appendChild(o);
+    });
+
+    if (previous && options.some((o) => o && o.value === previous)) {
+      select.value = previous;
+    } else if (options.length > 0) {
+      select.value = options[0].value;
+    }
+  } catch (_err) {
+    // ignore
+  }
+}
+
 let cachedDwarfholdGeneratorPromise = null;
 
 async function loadDwarfholdGenerator() {
@@ -49,52 +78,27 @@ const defaultLoadingStatusMessage = 'Calculating terrain layers…';
 const icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
 
 function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const groundRadius = size * 0.46;
-  ctx.fillStyle = '#6a8c3a';
-  ctx.beginPath();
-  ctx.arc(size * 0.5, size * 0.58, groundRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  const hutWidth = size * 0.26;
-  const hutHeight = size * 0.2;
-
-  ctx.fillStyle = '#d2b48c';
-  ctx.fillRect(size * 0.18, size * 0.42, hutWidth, hutHeight);
-  ctx.fillRect(size * 0.56, size * 0.48, hutWidth, hutHeight);
-
-  ctx.fillStyle = '#8b5a2b';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.18, size * 0.42);
-  ctx.lineTo(size * 0.31, size * 0.3);
-  ctx.lineTo(size * 0.44, size * 0.42);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(size * 0.56, size * 0.48);
-  ctx.lineTo(size * 0.69, size * 0.36);
-  ctx.lineTo(size * 0.82, size * 0.48);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#c8c79b';
-  ctx.beginPath();
-  ctx.arc(size * 0.45, size * 0.66, size * 0.08, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = '#3f2d16';
-  ctx.lineWidth = Math.max(1, size * 0.03);
-  ctx.beginPath();
-  ctx.moveTo(size * 0.3, size * 0.52);
-  ctx.lineTo(size * 0.3, size * 0.62);
-  ctx.moveTo(size * 0.68, size * 0.56);
-  ctx.lineTo(size * 0.68, size * 0.66);
-  ctx.stroke();
-
-  ctx.restore();
+  const tile = {
+    sheet: 'custom',
+    sx: 0,
+    sy: 0,
+    size: 16
+  };
+  const sheet = state.tileSheets[tile.sheet];
+  if (!sheet || !sheet.image) {
+    return;
+  }
+  ctx.drawImage(
+    sheet.image,
+    tile.sx,
+    tile.sy,
+    tile.size,
+    tile.size,
+    pixelX,
+    pixelY,
+    size,
+    size
+  );
 }
 
 function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
@@ -363,6 +367,8 @@ registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
   drawAmbientMoonwellStructure(ctx, drawOptions)
 );
+
+
 if (!tileLookup.has('EVIL_WIZARDS_TOWER')) {
   const fallbackTower = tileLookup.get('TOWER');
   if (fallbackTower) {
@@ -869,7 +875,8 @@ const dwarfholdCuratedNames = [
   'Kharûm Tor',
   "Thulgar's Deep",
   'Brumkeldûm',
-  'Dûrmar Hollow'
+  'Dûrmar Hollow',
+  'the Great Halls of Thorbardin'
 ];
 
 const dwarfholdNamePrefixes = [
@@ -957,6 +964,60 @@ const dwarfholdNameRegions = [
   'Runecrest',
   'the Brass Line'
 ];
+
+const dwarfholdNameRegions = [
+  'the North',
+  'the Deep',
+  'the First Kings',
+  'the Ancients',
+  'Stonehome',
+  'Stormpeak',
+  'Ember Range',
+  'Thunderholt',
+  'the Underway',
+  'Skyforge',
+  'the Iron Sea',
+  'Grimspire',
+  'Highstone',
+  'Runecrest',
+  'the Brass Line'
+];
+
+function generateAdditionalDwarfClanNames(count, randomFn) {
+  const names = new Set();
+  while (names.size < count) {
+    const styleRoll = randomFn();
+    let name = '';
+
+    if (styleRoll < 0.3) { // Prefix + Suffix
+      const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn);
+      const suffix = pickRandomFrom(dwarfholdNameSuffixes, randomFn);
+      if (prefix && suffix) {
+        name = `${prefix}${suffix.charAt(0).toUpperCase() + suffix.slice(1)}`;
+      }
+    } else if (styleRoll < 0.6) { // Prefix + Descriptor
+      const prefix = pickRandomFrom(dwarfholdNamePrefixes, randomFn);
+      const descriptor = pickRandomFrom(dwarfholdNameDescriptors, randomFn);
+      if (prefix && descriptor) {
+        name = `${prefix} ${descriptor}`;
+      }
+    } else { // Descriptor + Suffix
+      const descriptor = pickRandomFrom(dwarfholdNameDescriptors, randomFn);
+      const suffix = pickRandomFrom(dwarfholdNameSuffixes, randomFn);
+      if (descriptor && suffix) {
+        name = `${descriptor} ${suffix}`;
+      }
+    }
+
+    if (name) {
+      names.add(name);
+    }
+  }
+  return Array.from(names).map(name => ({
+    value: name.toLowerCase().replace(/[^a-z0-9]+/g, ''),
+    label: name
+  }));
+}
 
 const dwarfholdRulerTitles = {
   female: [
@@ -7777,7 +7838,15 @@ function applyCulturalInfluence({
     { key: 'half_orcs', label: 'Half-Orcs', biomes: ['grassland', 'badlands', 'desert'] },
     { key: 'half_elves', label: 'Half-Elves', biomes: ['forest', 'grassland'] },
     { key: 'dryad', label: 'Dryad', biomes: ['forest', 'marsh', 'lake'] },
-    { key: 'leshy', label: 'Leshy', biomes: ['forest', 'tundra', 'marsh'] }
+    { key: 'leshy', label: 'Leshy', biomes: ['forest', 'marsh'] },
+    { key: 'satyr', label: 'Satyr', biomes: ['forest', 'grassland'] },
+    { key: 'hobgoblin', label: 'Hobgoblin', biomes: ['badlands', 'mountain', 'grassland'] },
+    { key: 'locathah', label: 'Locathah', biomes: ['ocean', 'lake', 'marsh'] },
+    { key: 'firbolg', label: 'Firbolg', biomes: ['forest', 'grassland'] },
+    { key: 'aarakocra', label: 'Aarakocra', biomes: ['mountain', 'grassland'] },
+    { key: 'braxat', label: 'Braxat', biomes: ['desert', 'badlands', 'jungle'] },
+    { key: 'hadozee', label: 'Hadozee', biomes: ['ocean', 'jungle'] },
+    { key: 'quillboar', label: 'Quillboar', biomes: ['badlands', 'desert', 'grassland'] }
   ];
 
   const defaultMinorFolkThreshold = 0.0011;
@@ -9463,6 +9532,96 @@ const defaultHairStyleValue = 'straight_shoulder';
 
 const dwarfClanOptions = [
   { value: 'stonebeard', label: 'Stonebeard' },
+  { value: 'barrelbrow', label: 'Barrelbrow' },
+  { value: 'oathhammer', label: 'Oathhammer' },
+  { value: 'stormshield', label: 'Stormshield' },
+  { value: 'granitebrow', label: 'Granitebrow' },
+  { value: 'emberstone', label: 'Emberstone' },
+  { value: 'blackdelve', label: 'Blackdelve' },
+  { value: 'hearthhammer', label: 'Hearthhammer' },
+  { value: 'mithrilbeard', label: 'Mithrilbeard' },
+  { value: 'shieldbreaker', label: 'Shieldbreaker' },
+  { value: 'deepcrag', label: 'Deepcrag' },
+  { value: 'duskhollow', label: 'Duskhollow' },
+  { value: 'hammerdeep', label: 'Hammerdeep' },
+  { value: 'deepmantle', label: 'Deepmantle' },
+  { value: 'ashmantle', label: 'Ashmantle' },
+  { value: 'shadowhearth', label: 'Shadowhearth' },
+  { value: 'angrund', label: 'Angrund — royal clan of Karak Eight Peaks' },
+  { value: 'angrulok', label: 'Angrulok — royal clan of Karak Kadrin' },
+  { value: 'badrikk', label: 'Badrikk — Karak Azul; metalsmiths' },
+  { value: 'barruk', label: 'Barruk — North of Karag Dron; miners' },
+  { value: 'burrdrik', label: 'Burrdrik — Karak Azul; metalsmiths' },
+  { value: 'bronzebeards', label: 'Bronzebeards — Karak Norn; cannon-makers' },
+  { value: 'bronzefist', label: 'Bronzefist — Karak Eight Peaks; lode wardens' },
+  { value: 'copperback', label: 'Copperback — Karak Eight Peaks; miners' },
+  { value: 'cragbrow_barak_varr_engineers', label: 'Cragbrow — Barak Varr; engineers' },
+  { value: 'cragbrow_karak_azul_miners', label: 'Cragbrow — Karak Azul; miners' },
+  { value: 'craghand', label: 'Craghand — Karak Eight Peaks; miners' },
+  { value: 'cragtooth', label: 'Cragtooth — Karak Azgaraz; ?' },
+  { value: 'donarkhun', label: 'Donarkhun — royal clan of Karak Azul' },
+  { value: 'dourback', label: 'Dourback — Karak Eight Peaks; brewers' },
+  { value: 'dragonback', label: 'Dragonback — Ekrund; clan of Josef Bugman' },
+  { value: 'drakebeard', label: 'Drakebeard — royal clan of Karak Kadrin' },
+  { value: 'drazhkarak', label: 'Drazhkarak — royal clan of Karak Hirn' },
+  { value: 'dunrakin', label: 'Dunrakin — Karak Azul; brewers' },
+  { value: 'firehand', label: 'Firehand — Karak Azul; metalsmiths' },
+  { value: 'firehelm', label: 'Firehelm — Karak Eight Peaks; miners' },
+  { value: 'flintbeard', label: 'Flintbeard — Karak Azgaraz; ?' },
+  { value: 'flinthand_karak_azul_engineers', label: 'Flinthand — Karak Azul; engineers' },
+  { value: 'flinthand_k8p_miners', label: 'Flinthand — Karak Eight Peaks; miners' },
+  { value: 'flintheart', label: 'Flintheart — Karak Eight Peaks; metalsmiths' },
+  { value: 'fooger', label: 'Fooger — Expatriate; merchants' },
+  { value: 'forgehand', label: 'Forgehand — Karak Azul; runesmiths' },
+  { value: 'grimhelm', label: 'Grimhelm — Karak Azgaraz; ?' },
+  { value: 'grimstone', label: 'Grimstone — Karak Eight Peaks; prospectors' },
+  { value: 'growlsh', label: "Growlsh — infamous drinkers; disgraced after failing to protect High King Alrik Deathdealer's daughter" },
+  { value: 'gunnarsson', label: 'Gunnarsson — unknown; possibly Barak Varr' },
+  { value: 'gunnisson_first', label: 'Gunnisson (First contingent) — Karaz-a-Karak; warriors' },
+  { value: 'gunnisson_second', label: 'Gunnisson (Second contingent) — destroyed attempting to reclaim Mount Silverspear' },
+  { value: 'gunnisson_third', label: 'Gunnisson (Third contingent) — Itinerant; Orc-hunters' },
+  { value: 'guttrik', label: 'Guttrik — Karak Eight Peaks; rope-makers' },
+  { value: 'halgakrin', label: 'Halgakrin — Karak Azul; carpenters' },
+  { value: 'hammerback', label: 'Hammerback — Karak Azgaraz; miners' },
+  { value: 'helhein', label: 'Helhein — Karak Eight Peaks; warriors' },
+  { value: 'irebeard', label: 'Irebeard — Karak Azgaraz; ?' },
+  { value: 'ironbeard', label: 'Ironbeard — Karag Durak' },
+  { value: 'ironarm', label: 'Ironarm — Karak Azgaraz; ?' },
+  { value: 'ironback', label: 'Ironback — Karak Eight Peaks; miners' },
+  { value: 'ironfinger', label: 'Ironfinger — Karak Azul; from Eight Peaks; metalsmiths' },
+  { value: 'ironfist_cities', label: 'Ironfist — Metallschlacke, Neiderwind, Altdorf, Ubersreik' },
+  { value: 'ironforge', label: 'Ironforge — Karak Azul; runesmiths' },
+  { value: 'ironhammer', label: 'Ironhammer — Karak Azul; metalsmiths' },
+  { value: 'ironpick', label: 'Ironpick — royal clan of Karak Norn' },
+  { value: 'ironspike', label: 'Ironspike — Karak Eight Peaks; carpenters' },
+  { value: 'izorgrung', label: 'Izorgrung — royal clan of Karak Izor' },
+  { value: 'kaznagar', label: 'Kaznagar — Karak Azul; jewelsmiths' },
+  { value: 'magrest', label: 'Magrest — Karak Kadrin; miners (possibly)' },
+  { value: 'norgrimlings', label: 'Norgrimlings — Karak Eight Peaks; miners' },
+  { value: 'oakbarrel', label: 'Oakbarrel — Neiderwind, Altdorf; brewers' },
+  { value: 'redbeard', label: 'Redbeard — Karak Azul; runesmiths' },
+  { value: 'silverscar', label: 'Silverscar — Karak Azgaraz; engineers' },
+  { value: 'skorrun', label: 'Skorrun — Karak Azgal; foreign imports merchants' },
+  { value: 'steelcrag', label: 'Steelcrag — Karak Azgaraz; ?' },
+  { value: 'sternbeard', label: 'Sternbeard — Karak Azul' },
+  { value: 'stoneback', label: 'Stoneback — Karak Eight Peaks; masons' },
+  { value: 'stonebeard_k8p_engineers', label: 'Stonebeard — Karak Eight Peaks; engineers' },
+  { value: 'stonebeater', label: 'Stonebeater — Karak Azul; masons' },
+  { value: 'stonebreakers', label: 'Stonebreakers — Zhufbar; masons and miners' },
+  { value: 'stonehammer_cities', label: 'Stonehammer — Neiderwind, Altdorf' },
+  { value: 'stonehand', label: 'Stonehand — Karak Azul; masons' },
+  { value: 'stoneheart', label: 'Stoneheart — Karak Azul; masons' },
+  { value: 'stoutgirth', label: 'Stoutgirth — Karak Azul; brewers' },
+  { value: 'stoutpeak', label: 'Stoutpeak — Karak Azul; carpenters' },
+  { value: 'svengeln', label: 'Svengeln — Karak Azul; prospectors' },
+  { value: 'threkkson', label: 'Threkkson — Karak Azul; lode wardens' },
+  { value: 'thundergun', label: 'Thundergun — Metallschlacke, Altdorf' },
+  { value: 'thunderheart', label: 'Thunderheart — Karak Azul; jewelsmiths' },
+  { value: 'thunderstone', label: 'Thunderstone — Karak Azgaraz; runesmiths' },
+  { value: 'ullek', label: 'Ullek (the Ullekssons) — Karaz-a-Karak; warriors' },
+  { value: 'varnskan', label: 'Varnskan — Karak Azul; miners' },
+  { value: 'vorgrund', label: 'Vorgrund — unknown; possibly Karak Kadrin' },
+  { value: 'yinlinsson', label: 'Yinlinsson — Karaz-a-Karak; brewers' },
   { value: 'ironfist', label: 'Ironfist' },
   { value: 'coppervein', label: 'Coppervein' },
   { value: 'graniteheart', label: 'Graniteheart' },
@@ -9471,11 +9630,120 @@ const dwarfClanOptions = [
   { value: 'oakenshield', label: 'Oakenshield' },
   { value: 'frosthammer', label: 'Frosthammer' },
   { value: 'berylbraid', label: 'Berylbraid' },
-  { value: 'silverhollow', label: 'Silverhollow' }
-];
+  { value: 'silverhollow', label: 'Silverhollow' },
+  { value: 'brazenaxe', label: 'Brazenaxe' },
+  { value: 'stormhammer', label: 'Stormhammer' },
+  { value: 'deeprock', label: 'Deeprock' },
+  { value: 'goldvein', label: 'Goldvein' },
+  { value: 'runesmith', label: 'Runesmith' },
+  { value: 'aleswiller', label: 'Aleswiller' },
+  { value: 'argent_hand', label: 'Argent Hand' },
+  { value: 'axebreaker', label: 'Axebreaker' },
+  { value: 'blackfire', label: 'Blackfire' },
+  { value: 'bloodstone', label: 'Bloodstone' },
+  { value: 'boulderscorch', label: 'Boulderscorch' },
+  { value: 'duergar', label: 'Duergar' },
+  { value: 'fiania', label: 'Fiania' },
+  { value: 'goldenforge', label: 'Goldenforge' },
+  { value: 'gordemuncher', label: 'Gordemuncher' },
+  { value: 'hammerhead', label: 'Hammerhead' },
+  { value: 'ironson', label: 'Ironson' },
+  { value: 'kazak_uruk', label: 'Kazak Uruk' },
+  { value: 'orcsplitter', label: 'Orcsplitter' },
+  { value: 'rockcrawler', label: 'Rockcrawler' },
+  { value: 'shattered_stone', label: 'Shattered Stone' },
+  { value: 'bronzebeard', label: 'Bronzebeard' },
+  { value: 'stormpike', label: 'Stormpike' },
+  { value: 'stonefist', label: 'Stonefist' },
+  { value: 'hylar', label: 'Hylar' },
+  { value: 'daergar', label: 'Daergar' },
+  { value: 'daewar', label: 'Daewar' },
+  { value: 'theiwar', label: 'Theiwar' },
+  { value: 'aghar', label: 'Aghar' },
+  { value: 'battlehammer', label: 'Clan Battlehammer' },
+  { value: 'bitterroot_clan', label: 'Bitterroot Clan' },
+  { value: 'black_axe', label: 'Clan Black Axe' },
+  { value: 'boldenbar', label: 'Clan Boldenbar' },
+  { value: 'bouldershoulder', label: 'Clan Bouldershoulder' },
+  { value: 'brawnanvil', label: 'Clan Brawnanvil' },
+  { value: 'brightblade', label: 'Clan Brightblade' },
+  { value: 'brighthelm', label: 'Clan Brighthelm' },
+  { value: 'broodhull_clan', label: 'Broodhull Clan' },
+  { value: 'bruenghor_clan', label: 'Bruenghor Clan' },
+  { value: 'bukbukken', label: 'Clan Bukbukken' },
+  { value: 'chistlesmith', label: 'Clan Chistlesmith' },
+  { value: 'eaglecleft', label: 'Clan Eaglecleft' },
+  { value: 'flameshade', label: 'Clan Flameshade' },
+  { value: 'muzgardt', label: 'Clan Muzgardt' },
+  { value: 'stoneshaft', label: 'Clan Stoneshaft' },
+  { value: 'ticklebeard', label: 'Clan Ticklebeard' },
+  { value: 'dankil', label: 'Clan Dankil' },
+  { value: 'daraz', label: 'Clan Daraz' },
+  { value: 'forgebar', label: 'Clan Forgebar' },
+  { value: 'gemcrypt', label: 'Clan Gemcrypt' },
+  { value: 'girdaur', label: 'Girdaur' },
+  { value: 'hammerhand', label: 'Clan Hammerhand' },
+  { value: 'hardhammer', label: 'Clan Hardhammer' },
+  { value: 'herlinga', label: 'Clan Herlinga' },
+  { value: 'hillborn', label: 'Clan Hillborn' },
+  { value: 'hillsafar', label: 'Clan Hillsafar' },
+  { value: 'horn', label: 'Clan Horn' },
+  { value: 'icehammer', label: 'Clan Icehammer' },
+  { value: 'ironeater', label: 'Clan Ironeater' },
+  { value: 'ironstar', label: 'Clan Ironstar' },
+  { value: 'licehair', label: 'Clan Licehair' },
+  { value: 'ludwakazar', label: 'Clan Ludwakazar' },
+  { value: 'madbeards', label: 'Madbeards' },
+  { value: 'mcknuckles', label: 'Clan McKnuckles' },
+  { value: 'mcruff', label: 'Clan McRuff' },
+  { value: 'melairkyn', label: 'Melairkyn' },
+  { value: 'orcsmasher', label: 'Clan Orcsmasher' },
+  { value: 'orothiar', label: 'Clan Orothiar' },
+  { value: 'pwent', label: 'Clan Pwent' },
+  { value: 'rockjaw_clan', label: 'Rockjaw clan' },
+  { value: 'rookoath', label: 'Clan Rookoath' },
+  { value: 'rustfire', label: 'Clan Rustfire' },
+  { value: 'sandbeards', label: 'Sandbeards' },
+  { value: 'shattershield', label: 'Shattershield' },
+  { value: 'stonebridge', label: 'Clan Stonebridge' },
+  { value: 'stonehand', label: 'Clan Stonehand' },
+  { value: 'stoneshoulder', label: 'Stoneshoulder' },
+  { value: 'stouthammer', label: 'Clan Stouthammer' },
+  { value: 'sunblight', label: 'Sunblight' },
+  { value: 'undurr', label: 'Clan Undurr' },
+  { value: 'grimlock', label: 'Grimlock' },
+  { value: 'maccloud', label: 'MacCloud' },
+  { value: 'thundermore', label: 'Thundermore' },
+  { value: 'enogtorad', label: 'Enogtorad' },
+  { value: 'drummond', label: 'Drummond' },
+  { value: 'tolorr', label: 'Tolorr' },
+  { value: 'clan_vanderholl', label: 'Clan Vanderholl' },
+  { value: 'clan_stonefist', label: 'Clan Stonefist' },
+  { value: 'clan_aringeld', label: 'Clan Aringeld' },
+  { value: 'clan_firecask', label: 'Clan Firecask', description: 'Brewers and distillers.' },
+  { value: 'clan_gelderon', label: 'Clan Gelderon' },
+  { value: 'clan_grimmark', label: 'Clan Grimmark' },
+  { value: 'clan_molgrade', label: 'Clan Molgrade', description: 'Smiths, traps, and locks.' },
+  { value: 'clan_runebinder', label: 'Clan Runebinder', description: 'Arcane magic, particularly runes.' },
+  { value: 'orridus_ironheart', label: 'Orridus Ironheart', description: 'Sages who focus on the dwarven pantheon.' },
+  { value: 'clan_shalefoot', label: 'Clan Shalefoot' },
+  { value: 'clan_silverhair', label: 'Clan Silverhair' },
+  { value: 'copperlung_stonescar', label: 'Copperlung Stonescar' },
+  { value: 'clan_stouthammer', label: 'Clan Stouthammer' },
+  { value: 'clan_flintbristle', label: 'Clan Flintbristle' },
+  { value: 'clan_spire_crag', label: 'Clan Spire-Crag' },
+  { value: 'clan_stonehollow', label: 'Clan Stonehollow' },
+  { value: 'clan_silverpick', label: 'Clan Silverpick' },
+  { value: 'clan_ironheart', label: 'Clan Ironheart' },
+  { value: 'clan_weoughld', label: 'Clan Weoughld' },
+  { value: 'clan_llyrnillach', label: 'Clan Llyrnillach' },
+  { value: 'clan_highhelm', label: 'Clan Highhelm' },
+  { value: 'clan_tolorr', label: 'Clan Tolorr' }
+].concat(generateAdditionalDwarfClanNames(50, Math.random));
 
 const dwarfGuildOptions = [
   { value: 'miners-guild', label: 'Miners Guild' },
+  { value: 'coopers-guild', label: 'Coopers Guild' },
   { value: 'merchants-guild', label: 'Merchants Guild' },
   { value: 'commerce-guild', label: 'Commerce Guild' },
   { value: 'armourers-weaponsmiths-guild', label: 'Armourers and Weaponsmiths Guild' },
@@ -9518,6 +9786,220 @@ const dwarfGuildOptions = [
   { value: 'smelters-guild', label: 'Smelters Guild' }
 ];
 
+const dwarfGuildOptions = [
+  { value: 'miners-guild', label: 'Miners Guild' },
+  { value: 'coopers-guild', label: 'Coopers Guild' },
+  { value: 'merchants-guild', label: 'Merchants Guild' },
+  { value: 'commerce-guild', label: 'Commerce Guild' },
+  { value: 'armourers-weaponsmiths-guild', label: 'Armourers and Weaponsmiths Guild' },
+  { value: 'artisans-guild', label: 'Artisans Guild' },
+  { value: 'bakers-guild', label: 'Bakers Guild' },
+  { value: 'brewers-guild', label: 'Brewers Guild' },
+  { value: 'carpenters-guild', label: 'Carpenters Guild' },
+  { value: 'construction-guild', label: 'Construction Guild' },
+  { value: 'corpsebinders-guild', label: 'Corpsebinders Guild' },
+  { value: 'distiller-guild', label: 'Distiller Guild' },
+  { value: 'dyers-guild', label: 'Dyers Guild' },
+  { value: 'engineers-guild', label: 'Engineers Guild' },
+  { value: 'farmers-herders-guild', label: 'Farmers and Herders Guild' },
+  { value: 'gemcutters-guild', label: 'Gemcutters Guild' },
+  { value: 'goldsmiths-guild', label: 'Goldsmiths Guild' },
+  { value: 'guild-of-alchemists', label: 'Guild of Alchemists' },
+  { value: 'jewelsmiths-guild', label: 'Jewelsmiths Guild' },
+  { value: 'leatherworkers-guild', label: 'Leatherworkers Guild' },
+  { value: 'metalsmiths-guild', label: 'Metalsmiths Guild' },
+  { value: 'powdermakers-guild', label: 'Powdermakers Guild' },
+  { value: 'saltworkers-guild', label: 'Saltworkers Guild' },
+  { value: 'stonemasons-guild', label: 'Stonemasons Guild' },
+  { value: 'runescribes-guild', label: 'Runescribes Guild' },
+  { value: 'runesmiths', label: 'Runesmiths' },
+  { value: 'warriors-guild', label: 'Warriors Guild' },
+  { value: 'toolmakers-guild', label: "Toolmakers' Guild" },
+  { value: 'soapmakers-guild', label: 'Soapmakers Guild' },
+  { value: 'candlelighters-guild', label: 'Candlelighters Guild' },
+  { value: 'lamplighters-guild', label: 'Lamplighters Guild' },
+  { value: 'butchers-guild', label: 'Butchers Guild' },
+  { value: 'ropemakers-guild', label: 'Ropemakers Guild' },
+  { value: 'cartwrights-wheelwrights-guild', label: 'Cartwrights & Wheelwrights Guild' },
+  { value: 'glassblowers-guild', label: 'Glassblowers Guild' },
+  { value: 'millers-guild', label: 'Millers Guild' },
+  { value: 'cobblers-guild', label: 'Cobblers Guild' },
+  { value: 'cartographers-guild', label: 'Cartographers Guild' },
+  { value: 'explorers-guild', label: 'Explorers Guild' },
+  { value: 'lorekeepers-guild', label: 'Lorekeepers Guild' },
+  { value: 'tunnel-wardens-guild', label: 'Tunnel Wardens Guild' },
+  { value: 'smelters-guild', label: 'Smelters Guild' }
+];
+
+function generateProfessionsFromGuilds(guildOptions) {
+  const professions = [];
+  const seenValues = new Set(dwarfProfessionOptions.map(p => p.value)); // Track existing profession values
+
+  guildOptions.forEach(guild => {
+    let label = guild.label;
+    let value = guild.value;
+
+    // Remove "Guild" or "Guild of" and "s" from the end
+    label = label.replace(/ Guild( of)?/i, '').replace(/s$/, '');
+    value = value.replace(/-guild(of-)?/i, '').replace(/s$/, '');
+
+    // Special cases or common transformations
+    if (label.includes('Armourer') && label.includes('Weaponsmith')) {
+      label = 'Armourer & Weaponsmith';
+      value = 'armourer-weaponsmith';
+    } else if (label.includes('Farmer') && label.includes('Herder')) {
+      label = 'Farmer & Herder';
+      value = 'farmer-herder';
+    } else if (label.includes('Cartwright') && label.includes('Wheelwright')) {
+      label = 'Cartwright & Wheelwright';
+      value = 'cartwright-wheelwright';
+    } else if (label === 'Alchemist') {
+      label = 'Alchemist';
+      value = 'alchemist';
+    } else if (label === 'Runescribe') {
+      label = 'Runescribe';
+      value = 'runescribe';
+    } else if (label === 'Runesmith') {
+      label = 'Runesmith';
+      value = 'runesmith';
+    } else if (label === 'Warrior') {
+      label = 'Warrior';
+      value = 'warrior';
+    } else if (label === 'Toolmaker') {
+      label = 'Toolmaker';
+      value = 'toolmaker';
+    } else if (label === 'Lorekeeper') {
+      label = 'Lorekeeper';
+      value = 'lorekeeper';
+    } else if (label === 'Tunnel Warden') {
+      label = 'Tunnel Warden';
+      value = 'tunnel-warden';
+    } else if (label === 'Smelter') {
+      label = 'Smelter';
+      value = 'smelter';
+    } else if (label === 'Explorer') {
+      label = 'Explorer';
+      value = 'explorer';
+    } else if (label === 'Cartographer') {
+      label = 'Cartographer';
+      value = 'cartographer';
+    } else if (label === 'Cobbler') {
+      label = 'Cobbler';
+      value = 'cobbler';
+    } else if (label === 'Miller') {
+      label = 'Miller';
+      value = 'miller';
+    } else if (label === 'Glassblower') {
+      label = 'Glassblower';
+      value = 'glassblower';
+    } else if (label === 'Ropemaker') {
+      label = 'Ropemaker';
+      value = 'ropemaker';
+    } else if (label === 'Butcher') {
+      label = 'Butcher';
+      value = 'butcher';
+    } else if (label === 'Lamplighter') {
+      label = 'Lamplighter';
+      value = 'lamplighter';
+    } else if (label === 'Candlelighter') {
+      label = 'Candlelighter';
+      value = 'candlelighter';
+    } else if (label === 'Soapmaker') {
+      label = 'Soapmaker';
+      value = 'soapmaker';
+    } else if (label === 'Metalsmith') {
+      label = 'Metalsmith';
+      value = 'metalsmith';
+    } else if (label === 'Leatherworker') {
+      label = 'Leatherworker';
+      value = 'leatherworker';
+    } else if (label === 'Jewelsmith') {
+      label = 'Jewelsmith';
+      value = 'jewelsmith';
+    } else if (label === 'Goldsmith') {
+      label = 'Goldsmith';
+      value = 'goldsmith';
+    } else if (label === 'Gemcutter') {
+      label = 'Gemcutter';
+      value = 'gemcutter';
+    } else if (label === 'Engineer') {
+      label = 'Engineer';
+      value = 'engineer';
+    } else if (label === 'Dyer') {
+      label = 'Dyer';
+      value = 'dyer';
+    } else if (label === 'Distiller') {
+      label = 'Distiller';
+      value = 'distiller';
+    } else if (label === 'Corpsebinder') {
+      label = 'Corpsebinder';
+      value = 'corpsebinder';
+    } else if (label === 'Construction') {
+      label = 'Construction Worker'; // More specific
+      value = 'construction-worker';
+    } else if (label === 'Carpenter') {
+      label = 'Carpenter';
+      value = 'carpenter';
+    } else if (label === 'Brewer') {
+      label = 'Brewer';
+      value = 'brewer';
+    } else if (label === 'Baker') {
+      label = 'Baker';
+      value = 'baker';
+    } else if (label === 'Artisan') {
+      label = 'Artisan';
+      value = 'artisan';
+    } else if (label === 'Miner') {
+      label = 'Miner';
+      value = 'miner';
+    } else if (label === 'Cooper') {
+      label = 'Cooper';
+      value = 'cooper';
+    } else if (label === 'Merchant') {
+      label = 'Merchant';
+      value = 'merchant';
+    } else if (label === 'Commerce') {
+      label = 'Commerce Agent'; // More specific
+      value = 'commerce-agent';
+    } else if (label === 'Powdermaker') {
+      label = 'Powdermaker';
+      value = 'powdermaker';
+    } else if (label === 'Saltworker') {
+      label = 'Saltworker';
+      value = 'saltworker';
+    } else if (label === 'Stonemason') {
+      label = 'Stonemason';
+      value = 'stonemason';
+    }
+
+
+    // Add "Master" prefix for certain professions if not already present
+    if (['Mason', 'Smith', 'Carpenter', 'Brewer'].includes(label) && !label.startsWith('Master')) {
+      label = `Master ${label}`;
+    }
+    // Add "Chief" prefix for Engineer if not already present
+    if (label === 'Engineer' && !label.startsWith('Chief')) {
+      label = `Chief ${label}`;
+    }
+    // Add "Lore" prefix for Scholar if not already present
+    if (label === 'Scholar' && !label.startsWith('Lore')) {
+      label = `Lore ${label}`;
+    }
+    // Add "Captain" prefix for Ranger if not already present
+    if (label === 'Ranger' && !label.startsWith('Ranger')) {
+      label = `Ranger ${label}`;
+    }
+
+
+    if (!seenValues.has(value)) {
+      professions.push({ value, label });
+      seenValues.add(value);
+    }
+  });
+
+  return professions;
+}
+
 const dwarfProfessionOptions = [
   { value: 'miner', label: 'Miner' },
   { value: 'mason', label: 'Master Mason' },
@@ -9527,9 +10009,9 @@ const dwarfProfessionOptions = [
   { value: 'scholar', label: 'Lore Scholar' },
   { value: 'ranger', label: 'Ranger Captain' },
   { value: 'carpenter', label: 'Master Carpenter' },
-  { value: 'jewelcrafter', label: 'Gemcutter' },
+  { value: 'gemcutter', label: 'Gemcutter' },
   { value: 'banker', label: 'Banker' }
-];
+].concat(generateProfessionsFromGuilds(dwarfGuildOptions));
 
 const dwarfHairStyles = {
   bald: {
@@ -11185,6 +11667,8 @@ const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitA
     })
 );
 
+console.log('assetPromises started');
+console.log('assetPromises started');
 const assetPromises = Promise.all([
   ...tileSheetPromises,
   ...dwarfSpriteSheetPromises,
@@ -11227,6 +11711,7 @@ function updateStartButtonState() {
 }
 
 function handleStartButtonClick(event) {
+  console.log('Start button clicked');
   if (!state.ready) {
     startRequestedBeforeReady = true;
     updateStartButtonState();
@@ -11257,9 +11742,11 @@ initialiseStartButton();
 
 assetPromises
   .catch((error) => {
+    console.log('assetPromises failed');
     console.error('One or more assets failed to load.', error);
   })
   .finally(() => {
+    console.log('assetPromises finished');
     state.ready = true;
     updateStartButtonState();
     attachStartButtonListener();
@@ -11276,6 +11763,7 @@ let optionsContext = {
 };
 
 function handleStartButtonRequest() {
+  console.log('Start button request');
   if (optionsVisible) {
     closeOptionsScreen({ restoreScreen: false, returnFocus: false });
   }
@@ -11331,6 +11819,7 @@ function closeOptionsScreen({ restoreScreen = true, returnFocus = true } = {}) {
   if (restoreScreen) {
     if (previousSource === 'title' && elements.titleScreen) {
       elements.titleScreen.classList.remove('hidden');
+      state.settings.seedString = '';
     }
     if (previousSource === 'game' && elements.gameContainer) {
       elements.gameContainer.classList.remove('hidden');
@@ -14479,6 +14968,7 @@ function closeWorldInfoModal(options = {}) {
     elements.gameContainer.classList.contains('hidden')
   ) {
     elements.titleScreen.classList.remove('hidden');
+    state.settings.seedString = '';
   }
   if (returnFocus && elements.startButton) {
     elements.startButton.focus();
@@ -15596,6 +16086,69 @@ function generateDwarfholdPopulationTimeline(historyContext, events, rng) {
   });
 }
 
+function generateVillagePopulationTimeline(historyContext, events, rng) {
+  const villageTypes = new Set(['village', 'hamlet']);
+  if (!historyContext || !villageTypes.has(historyContext.type)) {
+    return null;
+  }
+
+  const randomFn = typeof rng === 'function' ? rng : Math.random;
+  const finalPopulation = Number.isFinite(historyContext?.details?.population)
+    ? Math.max(0, Math.round(historyContext.details.population))
+    : null;
+  if (finalPopulation === null) {
+    return null;
+  }
+
+  const yearsSpan = Number.isFinite(historyContext?.foundedYearsAgo)
+    ? clamp(Math.round(historyContext.foundedYearsAgo), 20, 1000)
+    : 200;
+  const pointCount = clamp(Math.round(yearsSpan / 50) + 4, 5, 12);
+
+  const growthFactor = 1.1 + randomFn() * 0.5;
+  const additiveBoost = 20 + randomFn() * 150;
+  let peakPopulation = Math.round(Math.max(finalPopulation, finalPopulation * growthFactor + additiveBoost));
+  if (finalPopulation > 0) {
+    const maxMultiplier = 2.5;
+    peakPopulation = Math.min(peakPopulation, Math.round(finalPopulation * maxMultiplier));
+  } else {
+    peakPopulation = Math.max(peakPopulation, 100);
+  }
+
+  const startPopulation = Math.max(5, Math.round(peakPopulation * (0.1 + randomFn() * 0.15)));
+
+  const timeline = [];
+  for (let index = 0; index < pointCount; index += 1) {
+    const progress = pointCount === 1 ? 1 : index / (pointCount - 1);
+    const easedGrowth = 1 - Math.pow(1 - progress, 1.5);
+    const targetValue = lerp(startPopulation, finalPopulation, easedGrowth);
+    const noiseAmplitude = 0.1;
+    const jitter = targetValue * noiseAmplitude * (randomFn() - 0.5) * 2;
+    let value = Math.max(0, Math.round(targetValue + jitter));
+    if (index === 0) {
+      value = startPopulation;
+    } else if (index === pointCount - 1) {
+      value = finalPopulation;
+    }
+
+    const yearsAgo = Math.round(yearsSpan - progress * yearsSpan);
+    const currentYear = Number.isFinite(historyContext?.currentYear) ? Math.round(historyContext.currentYear) : null;
+    const year = currentYear !== null ? Math.round(currentYear - yearsAgo) : null;
+
+    timeline.push({
+      population: value,
+      value,
+      yearsAgo,
+      year
+    });
+  }
+
+  return applyPopulationHistoryShocks(timeline, events, randomFn, {
+    currentYear,
+    finalPopulation
+  });
+}
+
 function generateSettlementHistoryData(tile, details, context) {
   const historySeedParts = [
     details?.name,
@@ -15661,7 +16214,27 @@ function generateSettlementHistoryData(tile, details, context) {
       break;
   }
 
-  const populationTimeline = generateDwarfholdPopulationTimeline(historyContext, events, rng);
+    const populationTimeline = (() => {
+    const holdTypes = new Set([
+      'dwarfhold',
+      'greatdwarfhold',
+      'hillhold',
+      'occupieddwarfhold',
+      'occupyddwarfhold',
+      'abandoneddwarfhold',
+      'ruineddwarfhold'
+    ]);
+    if (holdTypes.has(typeKey)) {
+      return generateDwarfholdPopulationTimeline(historyContext, events, rng);
+    }
+
+    const villageTypes = new Set(['village', 'hamlet']);
+    if (villageTypes.has(typeKey)) {
+      return generateVillagePopulationTimeline(historyContext, events, rng);
+    }
+
+    return null;
+  })();
 
   const uniqueMap = new Map();
   events
@@ -16523,30 +17096,44 @@ const structureContextMenuState = {
   tileY: null
 };
 
-const dwarfholdStructureKeys = new Set([
-  'DWARFHOLD',
-  'GREAT_DWARFHOLD',
-  'ABANDONED_DWARFHOLD',
-  'DARK_DWARFHOLD',
-  'DARKDWARFHOLD',
-  'HILLHOLD'
-]);
+const normalizeDwarfholdKey = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+};
+
+const dwarfholdStructureKeys = new Set(
+  [
+    'DWARFHOLD',
+    'GREAT_DWARFHOLD',
+    'GREATDWARFHOLD',
+    'ABANDONED_DWARFHOLD',
+    'DARK_DWARFHOLD',
+    'DARKDWARFHOLD',
+    'HILLHOLD'
+  ].map((key) => normalizeDwarfholdKey(key))
+);
 
 function isDwarfholdStructureTile(tile) {
   if (!tile) {
     return false;
   }
-  if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+  const normalizedStructureKey = normalizeDwarfholdKey(tile.structure);
+  if (normalizedStructureKey && dwarfholdStructureKeys.has(normalizedStructureKey)) {
     return true;
   }
   const rawType = tile.structureDetails?.type;
-  if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+  const normalizedStructureType = normalizeDwarfholdKey(rawType);
+  if (normalizedStructureType && dwarfholdStructureKeys.has(normalizedStructureType)) {
     return true;
   }
   if (typeof tile.structureName === 'string') {
-    const upperName = tile.structureName.toUpperCase();
+    const normalizedName = normalizeDwarfholdKey(tile.structureName);
     for (const key of dwarfholdStructureKeys) {
-      if (upperName.includes(key)) {
+      if (normalizedName.includes(key)) {
         return true;
       }
     }
@@ -16674,7 +17261,9 @@ function updateStructureContextMenuActions(tile) {
     return;
   }
 
-  const hasStructureDetails = Boolean(tile && tile.structureName);
+  const hasStructureDetails = Boolean(
+    tile && (tile.structureName || (tile.structureDetails && tile.structureDetails.name))
+  );
   if (hasStructureDetails) {
     moreInfoButton.disabled = false;
     moreInfoButton.setAttribute('aria-disabled', 'false');

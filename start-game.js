@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded', () => {
 const startButton = document.getElementById('start-button');
 const titleScreen = document.getElementById('title-screen');
 const worldInfo = document.getElementById('world-info');
@@ -202,10 +203,11 @@ if (dwarfBackButton) {
 }
 
 if (dwarfCustomizerForm) {
-  dwarfCustomizerForm.addEventListener('submit', async (event) => {
+  dwarfCustomizerForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    setHidden(dwarfCustomizer, true);
-    await transitionToGame();
+    if (typeof window.beginGame === 'function') {
+      window.beginGame();
+    }
   });
 }
 
@@ -251,4 +253,4 @@ if (optionsScreen) {
   });
 }
 
-export {};
+});

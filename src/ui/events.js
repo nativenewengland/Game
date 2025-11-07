@@ -298,29 +298,42 @@ export function attachEvents(elements, deps) {
     });
   }
 
-  const dwarfholdStructureKeys = new Set([
-    'DWARFHOLD',
-    'GREAT_DWARFHOLD',
-    'ABANDONED_DWARFHOLD',
-    'DARK_DWARFHOLD',
-    'DARKDWARFHOLD',
-    'HILLHOLD'
-  ]);
+  const normalizeDwarfholdKey = (value) => {
+    if (typeof value !== 'string') {
+      return '';
+    }
+    return value
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+  };
+  const dwarfholdStructureKeys = new Set(
+    [
+      'DWARFHOLD',
+      'GREAT_DWARFHOLD',
+      'GREATDWARFHOLD',
+      'ABANDONED_DWARFHOLD',
+      'DARK_DWARFHOLD',
+      'DARKDWARFHOLD',
+      'HILLHOLD'
+    ].map((key) => normalizeDwarfholdKey(key))
+  );
   const isDwarfholdStructureTile = (tile) => {
     if (!tile) {
       return false;
     }
-    if (typeof tile.structure === 'string' && dwarfholdStructureKeys.has(tile.structure)) {
+    const normalizedStructureKey = normalizeDwarfholdKey(tile.structure);
+    if (normalizedStructureKey && dwarfholdStructureKeys.has(normalizedStructureKey)) {
       return true;
     }
     const rawType = tile.structureDetails?.type;
-    if (typeof rawType === 'string' && dwarfholdStructureKeys.has(rawType.toUpperCase())) {
+    const normalizedStructureType = normalizeDwarfholdKey(rawType);
+    if (normalizedStructureType && dwarfholdStructureKeys.has(normalizedStructureType)) {
       return true;
     }
     if (typeof tile.structureName === 'string') {
-      const upperName = tile.structureName.toUpperCase();
+      const normalizedName = normalizeDwarfholdKey(tile.structureName);
       for (const key of dwarfholdStructureKeys) {
-        if (upperName.includes(key)) {
+        if (normalizedName.includes(key)) {
           return true;
         }
       }
@@ -383,8 +396,77 @@ export function attachEvents(elements, deps) {
     if (!baseTile) {
       return null;
     }
-    return enrichWithDwarfholdDetails(baseTile, tileX, tileY);
+
+    const enrichedTile = enrichWithDwarfholdDetails(baseTile, tileX, tileY);
+    if (enrichedTile && typeof enrichedTile.structureName === 'string' && enrichedTile.structureName) {
+      return enrichedTile;
+    }
+
+    if (enrichedTile && enrichedTile.structureDetails && typeof enrichedTile.structureDetails.name === 'string') {
+      return { ...enrichedTile, structureName: enrichedTile.structureDetails.name };
+    }
+
+    if (tile && typeof tile.structureName === 'string' && tile.structureName) {
+      return tile;
+    }
+
+    if (tile && tile.structureDetails && typeof tile.structureDetails.name === 'string') {
+      return { ...tile, structureName: tile.structureDetails.name };
+    }
+
+    return enrichedTile || tile || null;
   };
+
+  // Handle double-click on world canvas to open structure details for dwarfholds and similar
+  if (elements.canvas) {
+    elements.canvas.addEventListener('dblclick', (event) => {
+      try {
+        if (!state.currentWorld || !state.currentWorld.tileSize) {
+          return;
+        }
+        const rect = elements.canvas.getBoundingClientRect();
+        const cssX = event.clientX - rect.left;
+        const cssY = event.clientY - rect.top;
+        const tileSize = state.currentWorld.tileSize;
+        // Account for CSS scaling of the canvas (devicePixelRatio and layout scaling)
+        const scaleX = elements.canvas.width / rect.width;
+        const scaleY = elements.canvas.height / rect.height;
+        const pixelX = Math.floor(cssX * scaleX);
+        const pixelY = Math.floor(cssY * scaleY);
+        const tileX = Math.max(0, Math.min(state.currentWorld.width - 1, Math.floor(pixelX / tileSize)));
+        const tileY = Math.max(0, Math.min(state.currentWorld.height - 1, Math.floor(pixelY / tileSize)));
+        const tile = getWorldTileAt(tileX, tileY);
+        const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
+        if (!resolvedTile) {
+          return;
+        }
+        // Open settlement details for dwarfholds/hillholds etc.; otherwise show general details if name is available
+        if (isDwarfholdStructureTile(resolvedTile)) {
+          showStructureDetails(resolvedTile, { tileX, tileY });
+          event.stopPropagation();
+          event.preventDefault();
+          return;
+        }
+        const resolvedName =
+          typeof resolvedTile.structureName === 'string' && resolvedTile.structureName
+            ? resolvedTile.structureName
+            : resolvedTile.structureDetails && typeof resolvedTile.structureDetails.name === 'string'
+            ? resolvedTile.structureDetails.name
+            : null;
+        if (resolvedName) {
+          const finalTile =
+            resolvedName === resolvedTile.structureName
+              ? resolvedTile
+              : { ...resolvedTile, structureName: resolvedName };
+          showStructureDetails(finalTile, { tileX, tileY });
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      } catch (_err) {
+        // ignore
+      }
+    });
+  }
 
   if (elements.structureContextMenuBegin) {
     elements.structureContextMenuBegin.addEventListener('click', () => {
@@ -407,8 +489,23 @@ export function attachEvents(elements, deps) {
       const { tile, tileX, tileY } = structureContextMenuState;
       const resolvedTile = resolveTileForDetails(tile, tileX, tileY);
       hideStructureContextMenu();
-      if (resolvedTile && resolvedTile.structureName) {
-        showStructureDetails(resolvedTile, { tileX, tileY });
+      if (!resolvedTile) {
+        return;
+      }
+
+      const resolvedName =
+        typeof resolvedTile.structureName === 'string' && resolvedTile.structureName
+          ? resolvedTile.structureName
+          : resolvedTile.structureDetails && typeof resolvedTile.structureDetails.name === 'string'
+          ? resolvedTile.structureDetails.name
+          : null;
+
+      if (resolvedName) {
+        const finalTile =
+          resolvedName === resolvedTile.structureName
+            ? resolvedTile
+            : { ...resolvedTile, structureName: resolvedName };
+        showStructureDetails(finalTile, { tileX, tileY });
       }
     });
   }
