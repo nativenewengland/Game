@@ -11675,7 +11675,8 @@ const assetPromises = Promise.all([
   ...orcSpriteSheetPromises,
   ...dungeonPlayerSpritePromises,
   ...characterCreatorPortraitPromises,
-  loadLandMask('titlescreen/Titlescreen image.png')
+  // Use the actual location of the title land mask image
+  loadLandMask('titlescreen/normal/Titlescreen image.png')
 ]);
 
 let startRequestedBeforeReady = false;
@@ -33856,3 +33857,17 @@ function initialise() {
 }
 
 initialise();
+
+// Mark app initialised for any non-module fallback scripts
+if (typeof document !== 'undefined' && document.documentElement) {
+  try {
+    document.documentElement.setAttribute('data-app-initialised', 'true');
+  } catch (_) {}
+}
+
+// Expose beginGame as a safe global for fallback UIs
+try {
+  if (typeof window !== 'undefined' && typeof beginGame === 'function') {
+    window.beginGame = beginGame;
+  }
+} catch (_) {}

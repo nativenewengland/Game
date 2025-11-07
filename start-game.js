@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+// If the module-based app has already initialised, don't attach fallback handlers
+try {
+  const root = document.documentElement;
+  if (root && root.getAttribute('data-app-initialised') === 'true') {
+    return;
+  }
+} catch (_) {}
 const startButton = document.getElementById('start-button');
 const titleScreen = document.getElementById('title-screen');
 const worldInfo = document.getElementById('world-info');
