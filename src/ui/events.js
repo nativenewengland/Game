@@ -156,6 +156,12 @@ export function attachEvents(elements, deps) {
     });
   }
 
+  if (elements.startButton) {
+    elements.startButton.addEventListener('click', () => {
+      deps.openWorldInfoModal();
+    });
+  }
+
   if (elements.optionsButton) {
     elements.optionsButton.addEventListener('click', () => {
       openOptionsScreen('title');
