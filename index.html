@@ -1147,13 +1147,8 @@
         }
         var warning = document.getElementById('file-warning');
         var dismiss = document.getElementById('file-warning-dismiss');
-        var startButton = document.getElementById('start-button');
         if (warning) {
           warning.classList.remove('hidden');
-        }
-        if (startButton) {
-          startButton.setAttribute('disabled', 'true');
-          startButton.setAttribute('aria-disabled', 'true');
         }
         if (dismiss && warning) {
           dismiss.addEventListener('click', function () {
@@ -1163,6 +1158,5 @@
       })();
     </script>
     <script src="main.js" type="module"></script>
-    <script src="start-game.js" type="module"></script>
   </body>
 </html>
