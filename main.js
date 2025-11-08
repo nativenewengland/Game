@@ -33813,6 +33813,7 @@ attachEvents(elements, {
   updateChronologyDisplay,
   openDwarfCustomizer,
   closeWorldInfoModal,
+  openWorldInfoModal,
   applyMapSizePresetToState,
   getMapSizePreset,
   handleRegenerate,
