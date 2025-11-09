@@ -9543,15 +9543,7 @@ const presetDwarfFirstNames = new Set(
   Object.values(dwarfNamePools).reduce((allNames, pool) => allNames.concat(pool), [])
 );
 
-const dwarfHairColorToFrame = {
-  obsidian: { column: 2 },
-  umber: { column: 6 },
-  auburn: { column: 3 },
-  copper: { column: 5, tint: '#b56a33' },
-  golden: { column: 4 },
-  ashen: { column: 1, tint: '#c0c6d1' },
-  white: { column: 1 }
-};
+
 
 function resolveHairStyleValue(value) {
   if (!value) {
@@ -29220,6 +29212,7 @@ try {
     window.beginGame = beginGame;
   }
 } catch (_) {}
+
 
 
 
