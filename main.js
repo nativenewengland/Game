@@ -1,4 +1,4 @@
-import {
+﻿import {
   tileSheets,
   dwarfSpriteSheets,
   orcSpriteSheets,
@@ -24,6 +24,14 @@ import { clamp } from './src/utils/math.js';
 import { elements, getMusicToggleElements, getMusicVolumeInputs, getMusicNowPlayingDisplays } from './src/ui/elements.js';
 import { attachEvents } from './src/ui/events.js';
 import { createStateModule } from './src/state/index.js';
+import {
+  drawHamletStructure,
+  drawDarkDwarfholdStructure,
+  drawRoadsideTavernStructure,
+  drawAmbientHuntingLodgeStructure,
+  drawAmbientMoonwellStructure
+} from './src/world/structures.js';
+import { updateDwarfPortrait, updateDwarfTraitSummary, updateRosterList } from './src/dwarves/customizer.js';
 
 function populateClanSelectFromOptions(options) {
   try {
@@ -75,298 +83,28 @@ async function loadDwarfholdGenerator() {
 
 const drawSize = 32;
 const defaultWorldGenerationType = 'normal';
-const defaultLoadingStatusMessage = 'Calculating terrain layers…';
+const defaultLoadingStatusMessage = 'Calculating terrain layersâ€¦';
 const icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
-
-function drawHamletStructure(ctx, { pixelX, pixelY, size }) {
-  const tile = {
-    sheet: 'custom',
-    sx: 0,
-    sy: 0,
-    size: 16
-  };
-  const sheet = state.tileSheets[tile.sheet];
-  if (!sheet || !sheet.image) {
-    return;
-  }
-  ctx.drawImage(
-    sheet.image,
-    tile.sx,
-    tile.sy,
-    tile.size,
-    tile.size,
-    pixelX,
-    pixelY,
-    size,
-    size
-  );
-}
-
-function drawCastleStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  ctx.fillStyle = '#5b666f';
-  ctx.fillRect(size * 0.12, size * 0.3, size * 0.76, size * 0.5);
-  ctx.fillStyle = '#77828b';
-  ctx.fillRect(size * 0.18, size * 0.36, size * 0.64, size * 0.38);
-
-  ctx.fillStyle = '#4a545c';
-  const towerWidth = size * 0.2;
-  ctx.fillRect(size * 0.12, size * 0.18, towerWidth, size * 0.42);
-  ctx.fillRect(size * 0.68, size * 0.18, towerWidth, size * 0.42);
-
-  ctx.fillStyle = '#2a2f33';
-  ctx.fillRect(size * 0.44, size * 0.54, size * 0.12, size * 0.26);
-
-  ctx.fillStyle = '#c7352d';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.5, size * 0.18);
-  ctx.lineTo(size * 0.6, size * 0.32);
-  ctx.lineTo(size * 0.4, size * 0.32);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = '#32393f';
-  ctx.lineWidth = Math.max(1, size * 0.03);
-  ctx.beginPath();
-  const merlonCount = 4;
-  for (let i = 0; i < merlonCount; i += 1) {
-    const startX = size * 0.22 + (size * 0.56 * i) / merlonCount;
-    ctx.moveTo(startX, size * 0.32);
-    ctx.lineTo(startX + size * 0.08, size * 0.32);
-  }
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawDarkDwarfholdStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const baseWidth = size * 0.72;
-  const baseHeight = size * 0.38;
-  const baseX = (size - baseWidth) / 2;
-  const baseY = size * 0.44;
-
-  ctx.fillStyle = '#241b2b';
-  ctx.fillRect(baseX, baseY, baseWidth, baseHeight);
-
-  const towerWidth = size * 0.18;
-  const towerHeight = size * 0.46;
-  const towerY = size * 0.18;
-  ctx.fillStyle = '#35263d';
-  ctx.fillRect(baseX - size * 0.04, towerY, towerWidth, towerHeight);
-  ctx.fillRect(baseX + baseWidth - towerWidth + size * 0.04, towerY, towerWidth, towerHeight);
-
-  ctx.fillStyle = '#4a2e3a';
-  ctx.fillRect(size * 0.44, size * 0.34, size * 0.12, size * 0.48);
-
-  ctx.fillStyle = '#f97316';
-  ctx.fillRect(baseX + baseWidth * 0.22, baseY + baseHeight * 0.1, baseWidth * 0.18, baseHeight * 0.26);
-  ctx.fillRect(baseX + baseWidth * 0.6, baseY + baseHeight * 0.08, baseWidth * 0.18, baseHeight * 0.28);
-
-  ctx.fillStyle = '#1f2937';
-  ctx.beginPath();
-  ctx.moveTo(size * 0.18, towerY);
-  ctx.lineTo(size * 0.32, towerY - size * 0.12);
-  ctx.lineTo(size * 0.46, towerY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(size * 0.54, towerY);
-  ctx.lineTo(size * 0.68, towerY - size * 0.12);
-  ctx.lineTo(size * 0.82, towerY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#ef4444';
-  ctx.fillRect(size * 0.46, size * 0.62, size * 0.08, size * 0.2);
-
-  ctx.strokeStyle = 'rgba(249, 115, 22, 0.65)';
-  ctx.lineWidth = Math.max(1, size * 0.06);
-  ctx.beginPath();
-  ctx.moveTo(baseX + baseWidth * 0.1, baseY + baseHeight * 0.9);
-  ctx.lineTo(baseX + baseWidth * 0.9, baseY + baseHeight * 0.9);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function drawRoadsideTavernStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-  const baseWidth = size * 0.74;
-  const baseHeight = size * 0.44;
-  const baseX = (size - baseWidth) / 2;
-  const baseY = size * 0.38;
-
-  ctx.fillStyle = '#c7a06b';
-  ctx.fillRect(baseX, baseY, baseWidth, baseHeight);
-
-  ctx.fillStyle = '#854c30';
-  ctx.beginPath();
-  ctx.moveTo(baseX - size * 0.04, baseY);
-  ctx.lineTo(size / 2, size * 0.18);
-  ctx.lineTo(baseX + baseWidth + size * 0.04, baseY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#56311f';
-  ctx.fillRect(baseX + baseWidth * 0.36, baseY + baseHeight * 0.38, baseWidth * 0.16, baseHeight * 0.62);
-
-  ctx.fillStyle = '#f1d8a5';
-  ctx.fillRect(baseX + baseWidth * 0.14, baseY + baseHeight * 0.28, baseWidth * 0.16, baseHeight * 0.32);
-  ctx.fillRect(baseX + baseWidth * 0.7, baseY + baseHeight * 0.28, baseWidth * 0.16, baseHeight * 0.32);
-
-  ctx.fillStyle = '#d27d2c';
-  ctx.fillRect(baseX + baseWidth * 0.82, baseY + baseHeight * 0.1, baseWidth * 0.14, baseHeight * 0.28);
-
-  ctx.fillStyle = '#311a10';
-  ctx.fillRect(baseX + baseWidth * 0.86, baseY + baseHeight * 0.24, baseWidth * 0.06, baseHeight * 0.18);
-
-  ctx.restore();
-}
-
-function drawAmbientHuntingLodgeStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const cabinWidth = size * 0.6;
-  const cabinHeight = size * 0.32;
-  const cabinX = (size - cabinWidth) / 2;
-  const cabinY = size * 0.42;
-
-  ctx.fillStyle = '#7b4f2b';
-  ctx.fillRect(cabinX, cabinY, cabinWidth, cabinHeight);
-
-  ctx.fillStyle = '#4a2f18';
-  ctx.fillRect(cabinX + cabinWidth * 0.38, cabinY + cabinHeight * 0.28, cabinWidth * 0.18, cabinHeight * 0.72);
-
-  ctx.fillStyle = '#9c6c3c';
-  ctx.beginPath();
-  ctx.moveTo(cabinX - size * 0.04, cabinY);
-  ctx.lineTo(cabinX + cabinWidth / 2, cabinY - size * 0.2);
-  ctx.lineTo(cabinX + cabinWidth + size * 0.04, cabinY);
-  ctx.closePath();
-  ctx.fill();
-
-  const smokeBaseX = cabinX + cabinWidth * 0.68;
-  const smokeBaseY = cabinY - size * 0.08;
-  ctx.fillStyle = '#c8c8c8';
-  ctx.globalAlpha = 0.65;
-  ctx.beginPath();
-  ctx.ellipse(smokeBaseX, smokeBaseY, size * 0.08, size * 0.12, 0, 0, Math.PI * 2);
-  ctx.ellipse(smokeBaseX - size * 0.06, smokeBaseY - size * 0.12, size * 0.06, size * 0.1, 0, 0, Math.PI * 2);
-  ctx.ellipse(smokeBaseX - size * 0.12, smokeBaseY - size * 0.22, size * 0.05, size * 0.08, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  const treeBaseY = size * 0.38;
-  const treeBaseX = cabinX - size * 0.1;
-  const treeWidth = size * 0.16;
-  const treeHeight = size * 0.32;
-  ctx.fillStyle = '#3f6b2b';
-  ctx.beginPath();
-  ctx.moveTo(treeBaseX + treeWidth / 2, treeBaseY - treeHeight);
-  ctx.lineTo(treeBaseX, treeBaseY);
-  ctx.lineTo(treeBaseX + treeWidth, treeBaseY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillRect(treeBaseX + treeWidth * 0.44, treeBaseY, treeWidth * 0.12, size * 0.14);
-
-  ctx.restore();
-}
-
-function drawAmbientMoonwellStructure(ctx, { pixelX, pixelY, size }) {
-  ctx.save();
-  ctx.translate(pixelX, pixelY);
-
-  const clearingRadiusX = size * 0.46;
-  const clearingRadiusY = size * 0.28;
-  const clearingCenterX = size * 0.5;
-  const clearingCenterY = size * 0.64;
-
-  ctx.fillStyle = '#355640';
-  ctx.beginPath();
-  ctx.ellipse(clearingCenterX, clearingCenterY, clearingRadiusX, clearingRadiusY, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#4e7256';
-  ctx.beginPath();
-  ctx.ellipse(clearingCenterX, clearingCenterY, clearingRadiusX * 0.84, clearingRadiusY * 0.82, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  const poolRadiusX = clearingRadiusX * 0.62;
-  const poolRadiusY = clearingRadiusY * 0.68;
-  ctx.fillStyle = '#7cd6ff';
-  ctx.beginPath();
-  ctx.ellipse(clearingCenterX, clearingCenterY, poolRadiusX, poolRadiusY, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#b6f4ff';
-  ctx.beginPath();
-  ctx.ellipse(clearingCenterX, clearingCenterY - size * 0.04, poolRadiusX * 0.65, poolRadiusY * 0.62, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = '#d6f7ff';
-  ctx.lineWidth = Math.max(1.2, size * 0.025);
-  ctx.beginPath();
-  ctx.ellipse(clearingCenterX, clearingCenterY, poolRadiusX, poolRadiusY, 0, 0, Math.PI * 2);
-  ctx.stroke();
-
-  const stoneCount = 6;
-  const ringRadius = poolRadiusX * 1.1;
-  ctx.fillStyle = '#d4d8f0';
-  for (let i = 0; i < stoneCount; i += 1) {
-    const angle = (Math.PI * 2 * i) / stoneCount;
-    const stoneX = clearingCenterX + Math.cos(angle) * ringRadius;
-    const stoneY = clearingCenterY + Math.sin(angle) * ringRadius * 0.8;
-    const stoneWidth = size * 0.12;
-    const stoneHeight = size * 0.18;
-    ctx.save();
-    ctx.translate(stoneX, stoneY);
-    ctx.rotate(Math.sin(angle) * 0.12);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, stoneWidth * 0.5, stoneHeight * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  const lightCount = 4;
-  ctx.fillStyle = 'rgba(180, 246, 255, 0.85)';
-  for (let i = 0; i < lightCount; i += 1) {
-    const angle = (Math.PI * 2 * i) / lightCount + Math.PI / lightCount;
-    const lightX = clearingCenterX + Math.cos(angle) * poolRadiusX * 0.55;
-    const lightY = clearingCenterY + Math.sin(angle) * poolRadiusY * 0.5 - size * 0.1;
-    const lightRadius = size * 0.06;
-    const gradient = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, lightRadius);
-    gradient.addColorStop(0, 'rgba(210, 255, 255, 0.95)');
-    gradient.addColorStop(1, 'rgba(180, 246, 255, 0)');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(lightX, lightY, lightRadius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
 
 registerTiles('base', baseTileCoords);
 registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
 
-registerCustomStructure('HAMLET', (ctx, drawOptions) => drawHamletStructure(ctx, drawOptions));
-registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) => drawRoadsideTavernStructure(ctx, drawOptions));
+registerCustomStructure('HAMLET', (ctx, drawOptions) =>
+  drawHamletStructure(ctx, drawOptions, structureDrawDeps)
+);
+registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) =>
+  drawRoadsideTavernStructure(ctx, drawOptions, structureDrawDeps)
+);
 registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
-  drawDarkDwarfholdStructure(ctx, drawOptions)
+  drawDarkDwarfholdStructure(ctx, drawOptions, structureDrawDeps)
 );
 // AMBIENT_HOMESTEAD draws directly from the base sprite sheet via baseTileCoords.
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
-  drawAmbientHuntingLodgeStructure(ctx, drawOptions)
+  drawAmbientHuntingLodgeStructure(ctx, drawOptions, structureDrawDeps)
 );
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
-  drawAmbientMoonwellStructure(ctx, drawOptions)
+  drawAmbientMoonwellStructure(ctx, drawOptions, structureDrawDeps)
 );
 
 
@@ -583,12 +321,12 @@ function applyMapSizePresetToState(preset) {
 
 function getMapSizeLabel(preset, width, height) {
   if (preset) {
-    return `${preset.label} — ${preset.width} × ${preset.height} tiles`;
+    return `${preset.label} â€” ${preset.width} Ã— ${preset.height} tiles`;
   }
   if (typeof width === 'number' && typeof height === 'number') {
-    return `${width} × ${height} tiles`;
+    return `${width} Ã— ${height} tiles`;
   }
-  return '—';
+  return 'â€”';
 }
 
 const defaultMapSize = getMapSizePreset('normal');
@@ -596,12 +334,12 @@ const defaultForestFrequency = 35;
 const defaultMountainFrequency = 35;
 
 const worldNames = [
-  'Nûrn',
+  'NÃ»rn',
   'Ardganor',
   'Drakmor',
   'Thaldur',
   'Eldrakis',
-  'Karrûn',
+  'KarrÃ»n',
   'Tholmar',
   'Torra',
   'Albia',
@@ -612,11 +350,11 @@ const worldNames = [
   'Ulthos',
   'Grrth',
   'Erin',
-  'Nûrnheim',
+  'NÃ»rnheim',
   'Midkemia',
   'Skarnheim',
   'Shannara',
-  'Alagaësia',
+  'AlagaÃ«sia',
   'Syf',
   'Elysium',
   'Lankhmar',
@@ -635,7 +373,7 @@ const worldNames = [
   'Thra',
   'Acheron',
   'Cosmere',
-  'Tékumel',
+  'TÃ©kumel',
   'Norrathal',
   'Prydain',
   'Kulthea',
@@ -784,99 +522,99 @@ function pickFactionColor(index) {
 }
 
 const dwarfholdCuratedNames = [
-  'Khazadûn Kharn',
-  'Dhurnomli Bûr',
+  'KhazadÃ»n Kharn',
+  'Dhurnomli BÃ»r',
   'Zarak-az-Garaz',
-  'Barûn-karag',
-  'Gundûm Garmak',
+  'BarÃ»n-karag',
+  'GundÃ»m Garmak',
   'Azar-khazad',
-  'Thûrdrim Duraz',
+  'ThÃ»rdrim Duraz',
   'Kazad-grimil',
-  'Bêrdûm Barak',
+  'BÃªrdÃ»m Barak',
   'Zirak-khazad',
   'Uzbad-az-Narg',
   'Karag Gor',
-  'Dûmthûr Mîn',
-  'Gûndâl Grum',
-  'Thrâng-khazad',
-  'Khirûn-karag',
-  'Gazad-az-Bôr',
-  'Dûrgrim Dûm',
-  'Bazâr-durin',
+  'DÃ»mthÃ»r MÃ®n',
+  'GÃ»ndÃ¢l Grum',
+  'ThrÃ¢ng-khazad',
+  'KhirÃ»n-karag',
+  'Gazad-az-BÃ´r',
+  'DÃ»rgrim DÃ»m',
+  'BazÃ¢r-durin',
   'Kharak-khazad',
-  'Thûrdûn Thrum',
-  'Gazûl-dûm',
-  'Gor Dûrgheled',
-  'Khûrmak Dûm',
-  'Barak-dûrûn',
+  'ThÃ»rdÃ»n Thrum',
+  'GazÃ»l-dÃ»m',
+  'Gor DÃ»rgheled',
+  'KhÃ»rmak DÃ»m',
+  'Barak-dÃ»rÃ»n',
   'Gadrin-karag',
-  'Mornûl Khazad',
-  'Tharûm Barûn',
-  'Dûr-az-Gor',
-  'Kûzad Thrang',
-  'Grumkhaz Dûm',
-  'Narûm-barak',
-  'Khûldar Narg',
-  'Azûl-az-Khazad',
-  'Dûmthrûn Garaz',
-  'Grom-dûrin',
-  'Khazdûl Garm',
-  'Burin-dûm',
-  'Zarak-nâl',
-  'Thuldûn Karag',
-  'Durgrûn Khazad',
-  'Garak-dûm',
-  'Tharn-az-Dûr',
-  'Kharûm Grimdûm',
-  'Balzûr Karûn',
-  'Mûrkhaz Barak',
-  'Thrûm-az-Garaz',
-  'Gundûl-dûm',
-  'Bârgrin Khazad',
-  'Dûmbar Thûr',
-  'Nûrgrim Karag',
-  'Thûlûm Dûrûn',
-  'Kharn-dûm-nâl',
-  'Throgar-Mâl',
-  'Krundûn Barak',
-  'Dûrkhal Varrum',
-  'Ghazdûr Grimbar',
-  'Kuldûn-Dûr',
-  'Brakûl Thrang',
-  'Zarnak-dûm',
+  'MornÃ»l Khazad',
+  'TharÃ»m BarÃ»n',
+  'DÃ»r-az-Gor',
+  'KÃ»zad Thrang',
+  'Grumkhaz DÃ»m',
+  'NarÃ»m-barak',
+  'KhÃ»ldar Narg',
+  'AzÃ»l-az-Khazad',
+  'DÃ»mthrÃ»n Garaz',
+  'Grom-dÃ»rin',
+  'KhazdÃ»l Garm',
+  'Burin-dÃ»m',
+  'Zarak-nÃ¢l',
+  'ThuldÃ»n Karag',
+  'DurgrÃ»n Khazad',
+  'Garak-dÃ»m',
+  'Tharn-az-DÃ»r',
+  'KharÃ»m GrimdÃ»m',
+  'BalzÃ»r KarÃ»n',
+  'MÃ»rkhaz Barak',
+  'ThrÃ»m-az-Garaz',
+  'GundÃ»l-dÃ»m',
+  'BÃ¢rgrin Khazad',
+  'DÃ»mbar ThÃ»r',
+  'NÃ»rgrim Karag',
+  'ThÃ»lÃ»m DÃ»rÃ»n',
+  'Kharn-dÃ»m-nÃ¢l',
+  'Throgar-MÃ¢l',
+  'KrundÃ»n Barak',
+  'DÃ»rkhal Varrum',
+  'GhazdÃ»r Grimbar',
+  'KuldÃ»n-DÃ»r',
+  'BrakÃ»l Thrang',
+  'Zarnak-dÃ»m',
   'Throldar Kharn',
-  'Mûldûn Grakhaz',
-  'Durmûr Barûn',
-  'Merûn Barin',
-  'Dûldar Harnûm',
-  'Bronarûm',
-  'Kharalûn Dûr',
-  'Garûn-kaz',
-  'Thûrli Barûn',
-  'Balnar Dûm',
-  'Orûn Khazal',
-  'Dûmren Thûr',
-  'Beldûr Karûn',
-  'Uldûm Nargaz',
-  'Khardûl Barzûn',
-  'Thûrkûn-Môr',
-  'Zuldarûn',
-  'Dûrthang Kharûz',
-  'Brûm-dûl',
-  'Gûldûn Thazrak',
-  'Khazûr-Dumli',
-  'Thrûnûl Barûz',
-  'Mûrzan-Dûm',
-  'Grendûl Varrin',
+  'MÃ»ldÃ»n Grakhaz',
+  'DurmÃ»r BarÃ»n',
+  'MerÃ»n Barin',
+  'DÃ»ldar HarnÃ»m',
+  'BronarÃ»m',
+  'KharalÃ»n DÃ»r',
+  'GarÃ»n-kaz',
+  'ThÃ»rli BarÃ»n',
+  'Balnar DÃ»m',
+  'OrÃ»n Khazal',
+  'DÃ»mren ThÃ»r',
+  'BeldÃ»r KarÃ»n',
+  'UldÃ»m Nargaz',
+  'KhardÃ»l BarzÃ»n',
+  'ThÃ»rkÃ»n-MÃ´r',
+  'ZuldarÃ»n',
+  'DÃ»rthang KharÃ»z',
+  'BrÃ»m-dÃ»l',
+  'GÃ»ldÃ»n Thazrak',
+  'KhazÃ»r-Dumli',
+  'ThrÃ»nÃ»l BarÃ»z',
+  'MÃ»rzan-DÃ»m',
+  'GrendÃ»l Varrin',
   'Kharnfell',
-  'Dûmholm',
+  'DÃ»mholm',
   'Barakdel',
-  'Thûrdûn Holdfast',
-  'Gromir Karûn',
-  'Kharûm Tor',
+  'ThÃ»rdÃ»n Holdfast',
+  'Gromir KarÃ»n',
+  'KharÃ»m Tor',
   "Thulgar's Deep",
-  'Brumkeldûm',
-  'Dûrmar Hollow',
+  'BrumkeldÃ»m',
+  'DÃ»rmar Hollow',
   'the Great Halls of Thorbardin'
 ];
 
@@ -3884,7 +3622,7 @@ function generateMineDetails(name, random, options = {}) {
       name: overseerName
     },
     foundedYearsAgo,
-    prominentGroup: `${crew} — Shift ${shiftCount}`,
+    prominentGroup: `${crew} â€” Shift ${shiftCount}`,
     prominentGroupLabel: 'Crew in Charge',
     majorGuilds,
     majorGuildsLabel: 'Guild Presence',
@@ -9015,6 +8753,30 @@ const {
   documentRef: typeof document !== 'undefined' ? document : null
 });
 
+const structureDrawDeps = { state };
+const customizerDeps = {
+  state,
+  elements,
+  getOptionByValue,
+  getOptionLabel,
+  getHairSummaryPhrase,
+  getHairStyleConfig,
+  resolveHairStyleValue,
+  resolveHeadTypeValue,
+  dwarfHeadTypes,
+  dwarfSpriteSheets,
+  characterCreatorPortraitAssets,
+  characterCreatorBeardAssetMap,
+  characterCreatorHairAssetMap,
+  characterCreatorHairStyleCategoryMap,
+  characterCreatorDefaultSkinColor,
+  characterCreatorDefaultHairColor,
+  getCharacterCreatorSkinTintLayers,
+  getCharacterCreatorHairTintLayers,
+  setActiveDwarf,
+  getActiveDwarf
+};
+
 function matchesHighlightGroupValue(value, group) {
   const normalized = normalizeHighlightValue(value);
   if (!normalized || !group) {
@@ -9114,81 +8876,81 @@ const dwarfClanOptions = [
   { value: 'deepmantle', label: 'Deepmantle' },
   { value: 'ashmantle', label: 'Ashmantle' },
   { value: 'shadowhearth', label: 'Shadowhearth' },
-  { value: 'angrund', label: 'Angrund — royal clan of Karak Eight Peaks' },
-  { value: 'angrulok', label: 'Angrulok — royal clan of Karak Kadrin' },
-  { value: 'badrikk', label: 'Badrikk — Karak Azul; metalsmiths' },
-  { value: 'barruk', label: 'Barruk — North of Karag Dron; miners' },
-  { value: 'burrdrik', label: 'Burrdrik — Karak Azul; metalsmiths' },
-  { value: 'bronzebeards', label: 'Bronzebeards — Karak Norn; cannon-makers' },
-  { value: 'bronzefist', label: 'Bronzefist — Karak Eight Peaks; lode wardens' },
-  { value: 'copperback', label: 'Copperback — Karak Eight Peaks; miners' },
-  { value: 'cragbrow_barak_varr_engineers', label: 'Cragbrow — Barak Varr; engineers' },
-  { value: 'cragbrow_karak_azul_miners', label: 'Cragbrow — Karak Azul; miners' },
-  { value: 'craghand', label: 'Craghand — Karak Eight Peaks; miners' },
-  { value: 'cragtooth', label: 'Cragtooth — Karak Azgaraz; ?' },
-  { value: 'donarkhun', label: 'Donarkhun — royal clan of Karak Azul' },
-  { value: 'dourback', label: 'Dourback — Karak Eight Peaks; brewers' },
-  { value: 'dragonback', label: 'Dragonback — Ekrund; clan of Josef Bugman' },
-  { value: 'drakebeard', label: 'Drakebeard — royal clan of Karak Kadrin' },
-  { value: 'drazhkarak', label: 'Drazhkarak — royal clan of Karak Hirn' },
-  { value: 'dunrakin', label: 'Dunrakin — Karak Azul; brewers' },
-  { value: 'firehand', label: 'Firehand — Karak Azul; metalsmiths' },
-  { value: 'firehelm', label: 'Firehelm — Karak Eight Peaks; miners' },
-  { value: 'flintbeard', label: 'Flintbeard — Karak Azgaraz; ?' },
-  { value: 'flinthand_karak_azul_engineers', label: 'Flinthand — Karak Azul; engineers' },
-  { value: 'flinthand_k8p_miners', label: 'Flinthand — Karak Eight Peaks; miners' },
-  { value: 'flintheart', label: 'Flintheart — Karak Eight Peaks; metalsmiths' },
-  { value: 'fooger', label: 'Fooger — Expatriate; merchants' },
-  { value: 'forgehand', label: 'Forgehand — Karak Azul; runesmiths' },
-  { value: 'grimhelm', label: 'Grimhelm — Karak Azgaraz; ?' },
-  { value: 'grimstone', label: 'Grimstone — Karak Eight Peaks; prospectors' },
-  { value: 'growlsh', label: "Growlsh — infamous drinkers; disgraced after failing to protect High King Alrik Deathdealer's daughter" },
-  { value: 'gunnarsson', label: 'Gunnarsson — unknown; possibly Barak Varr' },
-  { value: 'gunnisson_first', label: 'Gunnisson (First contingent) — Karaz-a-Karak; warriors' },
-  { value: 'gunnisson_second', label: 'Gunnisson (Second contingent) — destroyed attempting to reclaim Mount Silverspear' },
-  { value: 'gunnisson_third', label: 'Gunnisson (Third contingent) — Itinerant; Orc-hunters' },
-  { value: 'guttrik', label: 'Guttrik — Karak Eight Peaks; rope-makers' },
-  { value: 'halgakrin', label: 'Halgakrin — Karak Azul; carpenters' },
-  { value: 'hammerback', label: 'Hammerback — Karak Azgaraz; miners' },
-  { value: 'helhein', label: 'Helhein — Karak Eight Peaks; warriors' },
-  { value: 'irebeard', label: 'Irebeard — Karak Azgaraz; ?' },
-  { value: 'ironbeard', label: 'Ironbeard — Karag Durak' },
-  { value: 'ironarm', label: 'Ironarm — Karak Azgaraz; ?' },
-  { value: 'ironback', label: 'Ironback — Karak Eight Peaks; miners' },
-  { value: 'ironfinger', label: 'Ironfinger — Karak Azul; from Eight Peaks; metalsmiths' },
-  { value: 'ironfist_cities', label: 'Ironfist — Metallschlacke, Neiderwind, Altdorf, Ubersreik' },
-  { value: 'ironforge', label: 'Ironforge — Karak Azul; runesmiths' },
-  { value: 'ironhammer', label: 'Ironhammer — Karak Azul; metalsmiths' },
-  { value: 'ironpick', label: 'Ironpick — royal clan of Karak Norn' },
-  { value: 'ironspike', label: 'Ironspike — Karak Eight Peaks; carpenters' },
-  { value: 'izorgrung', label: 'Izorgrung — royal clan of Karak Izor' },
-  { value: 'kaznagar', label: 'Kaznagar — Karak Azul; jewelsmiths' },
-  { value: 'magrest', label: 'Magrest — Karak Kadrin; miners (possibly)' },
-  { value: 'norgrimlings', label: 'Norgrimlings — Karak Eight Peaks; miners' },
-  { value: 'oakbarrel', label: 'Oakbarrel — Neiderwind, Altdorf; brewers' },
-  { value: 'redbeard', label: 'Redbeard — Karak Azul; runesmiths' },
-  { value: 'silverscar', label: 'Silverscar — Karak Azgaraz; engineers' },
-  { value: 'skorrun', label: 'Skorrun — Karak Azgal; foreign imports merchants' },
-  { value: 'steelcrag', label: 'Steelcrag — Karak Azgaraz; ?' },
-  { value: 'sternbeard', label: 'Sternbeard — Karak Azul' },
-  { value: 'stoneback', label: 'Stoneback — Karak Eight Peaks; masons' },
-  { value: 'stonebeard_k8p_engineers', label: 'Stonebeard — Karak Eight Peaks; engineers' },
-  { value: 'stonebeater', label: 'Stonebeater — Karak Azul; masons' },
-  { value: 'stonebreakers', label: 'Stonebreakers — Zhufbar; masons and miners' },
-  { value: 'stonehammer_cities', label: 'Stonehammer — Neiderwind, Altdorf' },
-  { value: 'stonehand', label: 'Stonehand — Karak Azul; masons' },
-  { value: 'stoneheart', label: 'Stoneheart — Karak Azul; masons' },
-  { value: 'stoutgirth', label: 'Stoutgirth — Karak Azul; brewers' },
-  { value: 'stoutpeak', label: 'Stoutpeak — Karak Azul; carpenters' },
-  { value: 'svengeln', label: 'Svengeln — Karak Azul; prospectors' },
-  { value: 'threkkson', label: 'Threkkson — Karak Azul; lode wardens' },
-  { value: 'thundergun', label: 'Thundergun — Metallschlacke, Altdorf' },
-  { value: 'thunderheart', label: 'Thunderheart — Karak Azul; jewelsmiths' },
-  { value: 'thunderstone', label: 'Thunderstone — Karak Azgaraz; runesmiths' },
-  { value: 'ullek', label: 'Ullek (the Ullekssons) — Karaz-a-Karak; warriors' },
-  { value: 'varnskan', label: 'Varnskan — Karak Azul; miners' },
-  { value: 'vorgrund', label: 'Vorgrund — unknown; possibly Karak Kadrin' },
-  { value: 'yinlinsson', label: 'Yinlinsson — Karaz-a-Karak; brewers' },
+  { value: 'angrund', label: 'Angrund â€” royal clan of Karak Eight Peaks' },
+  { value: 'angrulok', label: 'Angrulok â€” royal clan of Karak Kadrin' },
+  { value: 'badrikk', label: 'Badrikk â€” Karak Azul; metalsmiths' },
+  { value: 'barruk', label: 'Barruk â€” North of Karag Dron; miners' },
+  { value: 'burrdrik', label: 'Burrdrik â€” Karak Azul; metalsmiths' },
+  { value: 'bronzebeards', label: 'Bronzebeards â€” Karak Norn; cannon-makers' },
+  { value: 'bronzefist', label: 'Bronzefist â€” Karak Eight Peaks; lode wardens' },
+  { value: 'copperback', label: 'Copperback â€” Karak Eight Peaks; miners' },
+  { value: 'cragbrow_barak_varr_engineers', label: 'Cragbrow â€” Barak Varr; engineers' },
+  { value: 'cragbrow_karak_azul_miners', label: 'Cragbrow â€” Karak Azul; miners' },
+  { value: 'craghand', label: 'Craghand â€” Karak Eight Peaks; miners' },
+  { value: 'cragtooth', label: 'Cragtooth â€” Karak Azgaraz; ?' },
+  { value: 'donarkhun', label: 'Donarkhun â€” royal clan of Karak Azul' },
+  { value: 'dourback', label: 'Dourback â€” Karak Eight Peaks; brewers' },
+  { value: 'dragonback', label: 'Dragonback â€” Ekrund; clan of Josef Bugman' },
+  { value: 'drakebeard', label: 'Drakebeard â€” royal clan of Karak Kadrin' },
+  { value: 'drazhkarak', label: 'Drazhkarak â€” royal clan of Karak Hirn' },
+  { value: 'dunrakin', label: 'Dunrakin â€” Karak Azul; brewers' },
+  { value: 'firehand', label: 'Firehand â€” Karak Azul; metalsmiths' },
+  { value: 'firehelm', label: 'Firehelm â€” Karak Eight Peaks; miners' },
+  { value: 'flintbeard', label: 'Flintbeard â€” Karak Azgaraz; ?' },
+  { value: 'flinthand_karak_azul_engineers', label: 'Flinthand â€” Karak Azul; engineers' },
+  { value: 'flinthand_k8p_miners', label: 'Flinthand â€” Karak Eight Peaks; miners' },
+  { value: 'flintheart', label: 'Flintheart â€” Karak Eight Peaks; metalsmiths' },
+  { value: 'fooger', label: 'Fooger â€” Expatriate; merchants' },
+  { value: 'forgehand', label: 'Forgehand â€” Karak Azul; runesmiths' },
+  { value: 'grimhelm', label: 'Grimhelm â€” Karak Azgaraz; ?' },
+  { value: 'grimstone', label: 'Grimstone â€” Karak Eight Peaks; prospectors' },
+  { value: 'growlsh', label: "Growlsh â€” infamous drinkers; disgraced after failing to protect High King Alrik Deathdealer's daughter" },
+  { value: 'gunnarsson', label: 'Gunnarsson â€” unknown; possibly Barak Varr' },
+  { value: 'gunnisson_first', label: 'Gunnisson (First contingent) â€” Karaz-a-Karak; warriors' },
+  { value: 'gunnisson_second', label: 'Gunnisson (Second contingent) â€” destroyed attempting to reclaim Mount Silverspear' },
+  { value: 'gunnisson_third', label: 'Gunnisson (Third contingent) â€” Itinerant; Orc-hunters' },
+  { value: 'guttrik', label: 'Guttrik â€” Karak Eight Peaks; rope-makers' },
+  { value: 'halgakrin', label: 'Halgakrin â€” Karak Azul; carpenters' },
+  { value: 'hammerback', label: 'Hammerback â€” Karak Azgaraz; miners' },
+  { value: 'helhein', label: 'Helhein â€” Karak Eight Peaks; warriors' },
+  { value: 'irebeard', label: 'Irebeard â€” Karak Azgaraz; ?' },
+  { value: 'ironbeard', label: 'Ironbeard â€” Karag Durak' },
+  { value: 'ironarm', label: 'Ironarm â€” Karak Azgaraz; ?' },
+  { value: 'ironback', label: 'Ironback â€” Karak Eight Peaks; miners' },
+  { value: 'ironfinger', label: 'Ironfinger â€” Karak Azul; from Eight Peaks; metalsmiths' },
+  { value: 'ironfist_cities', label: 'Ironfist â€” Metallschlacke, Neiderwind, Altdorf, Ubersreik' },
+  { value: 'ironforge', label: 'Ironforge â€” Karak Azul; runesmiths' },
+  { value: 'ironhammer', label: 'Ironhammer â€” Karak Azul; metalsmiths' },
+  { value: 'ironpick', label: 'Ironpick â€” royal clan of Karak Norn' },
+  { value: 'ironspike', label: 'Ironspike â€” Karak Eight Peaks; carpenters' },
+  { value: 'izorgrung', label: 'Izorgrung â€” royal clan of Karak Izor' },
+  { value: 'kaznagar', label: 'Kaznagar â€” Karak Azul; jewelsmiths' },
+  { value: 'magrest', label: 'Magrest â€” Karak Kadrin; miners (possibly)' },
+  { value: 'norgrimlings', label: 'Norgrimlings â€” Karak Eight Peaks; miners' },
+  { value: 'oakbarrel', label: 'Oakbarrel â€” Neiderwind, Altdorf; brewers' },
+  { value: 'redbeard', label: 'Redbeard â€” Karak Azul; runesmiths' },
+  { value: 'silverscar', label: 'Silverscar â€” Karak Azgaraz; engineers' },
+  { value: 'skorrun', label: 'Skorrun â€” Karak Azgal; foreign imports merchants' },
+  { value: 'steelcrag', label: 'Steelcrag â€” Karak Azgaraz; ?' },
+  { value: 'sternbeard', label: 'Sternbeard â€” Karak Azul' },
+  { value: 'stoneback', label: 'Stoneback â€” Karak Eight Peaks; masons' },
+  { value: 'stonebeard_k8p_engineers', label: 'Stonebeard â€” Karak Eight Peaks; engineers' },
+  { value: 'stonebeater', label: 'Stonebeater â€” Karak Azul; masons' },
+  { value: 'stonebreakers', label: 'Stonebreakers â€” Zhufbar; masons and miners' },
+  { value: 'stonehammer_cities', label: 'Stonehammer â€” Neiderwind, Altdorf' },
+  { value: 'stonehand', label: 'Stonehand â€” Karak Azul; masons' },
+  { value: 'stoneheart', label: 'Stoneheart â€” Karak Azul; masons' },
+  { value: 'stoutgirth', label: 'Stoutgirth â€” Karak Azul; brewers' },
+  { value: 'stoutpeak', label: 'Stoutpeak â€” Karak Azul; carpenters' },
+  { value: 'svengeln', label: 'Svengeln â€” Karak Azul; prospectors' },
+  { value: 'threkkson', label: 'Threkkson â€” Karak Azul; lode wardens' },
+  { value: 'thundergun', label: 'Thundergun â€” Metallschlacke, Altdorf' },
+  { value: 'thunderheart', label: 'Thunderheart â€” Karak Azul; jewelsmiths' },
+  { value: 'thunderstone', label: 'Thunderstone â€” Karak Azgaraz; runesmiths' },
+  { value: 'ullek', label: 'Ullek (the Ullekssons) â€” Karaz-a-Karak; warriors' },
+  { value: 'varnskan', label: 'Varnskan â€” Karak Azul; miners' },
+  { value: 'vorgrund', label: 'Vorgrund â€” unknown; possibly Karak Kadrin' },
+  { value: 'yinlinsson', label: 'Yinlinsson â€” Karaz-a-Karak; brewers' },
   { value: 'ironfist', label: 'Ironfist' },
   { value: 'coppervein', label: 'Coppervein' },
   { value: 'graniteheart', label: 'Graniteheart' },
@@ -9547,97 +9309,97 @@ const dwarfHairStyles = {
     hideHairColorDescription: true
   },
   straight_shoulder: {
-    label: 'Straight — Shoulder Length',
+    label: 'Straight â€” Shoulder Length',
     description: 'shoulder-length straight',
     sheet: 'hair',
     rows: { default: 5 }
   },
   straight_short: {
-    label: 'Straight — Short Crop',
+    label: 'Straight â€” Short Crop',
     description: 'short straight',
     sheet: 'hair',
     rows: { default: 4 }
   },
   straight_braided: {
-    label: 'Straight — Braided Tail',
+    label: 'Straight â€” Braided Tail',
     description: 'braided straight',
     sheet: 'hair',
     rows: { default: 8 }
   },
   curly_stubble: {
-    label: 'Curly — Close Shave',
+    label: 'Curly â€” Close Shave',
     description: 'closely shorn curly',
     sheet: 'hairCurly',
     rows: { default: 0 }
   },
   curly_short_unkempt: {
-    label: 'Curly — Short & Tousled',
+    label: 'Curly â€” Short & Tousled',
     description: 'short unkempt curly',
     sheet: 'hairCurly',
     rows: { default: 1 }
   },
   curly_mid_unkempt: {
-    label: 'Curly — Mid-Length Tousled',
+    label: 'Curly â€” Mid-Length Tousled',
     description: 'mid-length unkempt curly',
     sheet: 'hairCurly',
     rows: { default: 2 }
   },
   curly_long_unkempt: {
-    label: 'Curly — Long & Tousled',
+    label: 'Curly â€” Long & Tousled',
     description: 'long unkempt curly',
     sheet: 'hairCurly',
     rows: { default: 3 }
   },
   curly_short_combed: {
-    label: 'Curly — Short Combed',
+    label: 'Curly â€” Short Combed',
     description: 'short combed curly',
     sheet: 'hairCurly',
     rows: { default: 4 }
   },
   curly_mid_combed: {
-    label: 'Curly — Mid-Length Combed',
+    label: 'Curly â€” Mid-Length Combed',
     description: 'mid-length combed curly',
     sheet: 'hairCurly',
     rows: { default: 5 }
   },
   curly_long_combed: {
-    label: 'Curly — Long Combed',
+    label: 'Curly â€” Long Combed',
     description: 'long combed curly',
     sheet: 'hairCurly',
     rows: { default: 6 }
   },
   curly_short_braided: {
-    label: 'Curly — Short Braids',
+    label: 'Curly â€” Short Braids',
     description: 'short braided curly',
     sheet: 'hairCurly',
     rows: { default: 7 }
   },
   curly_mid_braided: {
-    label: 'Curly — Mid Braids',
+    label: 'Curly â€” Mid Braids',
     description: 'mid-length braided curly',
     sheet: 'hairCurly',
     rows: { default: 8 }
   },
   curly_long_braided: {
-    label: 'Curly — Long Braids',
+    label: 'Curly â€” Long Braids',
     description: 'long braided curly',
     sheet: 'hairCurly',
     rows: { default: 9 }
   },
   curly_short_double_braids: {
-    label: 'Curly — Short Double Braids',
+    label: 'Curly â€” Short Double Braids',
     description: 'short double-braided curly',
     sheet: 'hairCurly',
     rows: { default: 10 }
   },
   curly_mid_double_braids: {
-    label: 'Curly — Mid Double Braids',
+    label: 'Curly â€” Mid Double Braids',
     description: 'mid-length double-braided curly',
     sheet: 'hairCurly',
     rows: { default: 11 }
   },
   curly_long_double_braids: {
-    label: 'Curly — Long Double Braids',
+    label: 'Curly â€” Long Double Braids',
     description: 'long double-braided curly',
     sheet: 'hairCurly',
     rows: { default: 12 }
@@ -9781,7 +9543,7 @@ const dwarfTraitAttributeDefinitions = [
     key: 'grey-dwarf',
     label: 'Grey Dwarf Heritage',
     description:
-      'Your skin is the colour of ashes and your heart is that of steel. Known as a Dwügar you may not be as despised as the dark dwarves are yet the kinship you have with the rest of Dwarfdom is strained. Your ancestors were followers of the Lawgiver and Forgebearers of the Forgotten Era who preached a strain of total dwarven separatism and supremacy that led your people to form holds far away from your homeland. You may be welcomed into any dwarf hold but not well liked and the races you hunt as slaves will attack you on sight.',
+      'Your skin is the colour of ashes and your heart is that of steel. Known as a DwÃ¼gar you may not be as despised as the dark dwarves are yet the kinship you have with the rest of Dwarfdom is strained. Your ancestors were followers of the Lawgiver and Forgebearers of the Forgotten Era who preached a strain of total dwarven separatism and supremacy that led your people to form holds far away from your homeland. You may be welcomed into any dwarf hold but not well liked and the races you hunt as slaves will attack you on sight.',
     monogram: 'GD',
     isActive: (dwarf) => dwarf?.skin === 'ashen'
   }
@@ -9790,8 +9552,8 @@ const dwarfTraitAttributeDefinitions = [
 const dwarfNamePools = {
   female: [
     'Domas',
-    'Rigòth',
-    'Kadôl',
+    'RigÃ²th',
+    'KadÃ´l',
     'Meng',
     'Onol',
     'Rith',
@@ -9809,7 +9571,7 @@ const dwarfNamePools = {
     'Stukos',
     'Likot',
     'Datan',
-    'Mörul',
+    'MÃ¶rul',
     'Logem',
     'Rakust',
     'Thorin',
@@ -9870,3912 +9632,6 @@ function getHairSummaryPhrase(dwarf) {
   return 'hair';
 }
 
-const dwarfBeardRows = {
-  clean: null,
-  short: 24,
-  full: 26,
-  braided: 29,
-  forked: 23,
-  mutton: 21,
-  stubble: null,
-  trimmed: null,
-  goatee: null,
-  imperial: null,
-  wizard: null,
-  ringed: null,
-  default: 26
-};
-
-const dwarfBaseBodyTint = '#5b473c';
-
-const dwarfPortraitBaseFrames = {
-  male: {
-    sheet: 'body',
-    col: 0,
-    row: 0,
-    tint: dwarfBaseBodyTint,
-    offsetY: 4,
-    sourceTileSize: 64,
-    destTileSize: 64
-  },
-  female: {
-    sheet: 'body',
-    col: 0,
-    row: 1,
-    tint: dwarfBaseBodyTint,
-    offsetY: 4,
-    sourceTileSize: 64,
-    destTileSize: 64
-  }
-};
-
-const dwarfPortraitConfig = {
-  tileSize: 64,
-  scale: 2,
-  baseFrame: dwarfPortraitBaseFrames.male,
-  baseFrames: dwarfPortraitBaseFrames,
-  head: {
-    sheet: 'head',
-    rows: { male: 0, female: 1 },
-    row: 0,
-    offsetY: -1
-  },
-  hairOffsetY: -4,
-  beardOffsetY: 8,
-  eyePositions: [
-    { x: 27.5, y: 30 },
-    { x: 33.5, y: 30 }
-  ],
-  eyeSize: 1
-};
-
-const bodyPanelPortraitScaleMultiplier = 1.6;
-
-const dwarfPortraitState = {
-  canvas: null,
-  ctx: null
-};
-
-const dwarfBodyPortraitState = {
-  canvas: null,
-  ctx: null
-};
-
-const dwarfTestState = {
-  canvas: null,
-  ctx: null,
-  active: false,
-  pressed: new Set(),
-  lastFrameTime: null,
-  rafId: null,
-  backgroundOffset: 0,
-  position: { x: 0, y: 0 },
-  map: null,
-  tileSize: 16,
-  tileScale: 2,
-  camera: { x: 0, y: 0 },
-  animationTime: 0,
-  world: null,
-  focusReturnElement: null,
-  player: null,
-  enemies: []
-};
-const dwarfTestDefaultWorldKey = 'overworld';
-const dwarfTestOverworldTileSheetKey = 'dwarfTest';
-const dwarfTestDungeonFloorSheetKey = 'dwarfTestDungeonFloor';
-const dwarfTestDungeonWaterSheetKey = 'dwarfTestDungeonWater';
-
-const dwarfTestOverworldTilePalette = {
-  grass: { sheet: dwarfTestOverworldTileSheetKey, col: 0, row: 2 },
-  grassAlt: { sheet: dwarfTestOverworldTileSheetKey, col: 3, row: 2 },
-  savanna: { sheet: dwarfTestOverworldTileSheetKey, col: 6, row: 2 },
-  swamp: { sheet: dwarfTestOverworldTileSheetKey, col: 4, row: 3 },
-  hills: { sheet: dwarfTestOverworldTileSheetKey, col: 2, row: 2 },
-  beach: { sheet: dwarfTestOverworldTileSheetKey, col: 12, row: 0 },
-  shore: {
-    sheet: dwarfTestOverworldTileSheetKey,
-    frames: [
-      { col: 12, row: 1 },
-      { col: 12, row: 2 },
-      { col: 12, row: 3 }
-    ],
-    animationSpeed: 1.2
-  },
-  tundra: { sheet: dwarfTestOverworldTileSheetKey, col: 13, row: 3 },
-  glacier: { sheet: dwarfTestOverworldTileSheetKey, col: 14, row: 2 },
-  desert: { sheet: dwarfTestOverworldTileSheetKey, col: 19, row: 2 },
-  lake: {
-    sheet: dwarfTestOverworldTileSheetKey,
-    frames: [
-      { col: 16, row: 1 },
-      { col: 16, row: 2 },
-      { col: 16, row: 3 }
-    ],
-    animationSpeed: 1.4
-  },
-  ocean: {
-    sheet: dwarfTestOverworldTileSheetKey,
-    frames: [
-      { col: 17, row: 1 },
-      { col: 17, row: 2 },
-      { col: 17, row: 3 }
-    ],
-    animationSpeed: 1.6
-  },
-  deepOcean: {
-    sheet: dwarfTestOverworldTileSheetKey,
-    frames: [
-      { col: 18, row: 1 },
-      { col: 18, row: 2 },
-      { col: 18, row: 3 }
-    ],
-    animationSpeed: 1.7
-  },
-  frozenOcean: {
-    sheet: dwarfTestOverworldTileSheetKey,
-    frames: [
-      { col: 15, row: 0 },
-      { col: 15, row: 1 },
-      { col: 15, row: 2 }
-    ],
-    animationSpeed: 1.1
-  }
-};
-
-const dwarfTestDungeonTilePalette = {
-  void: null,
-  floor: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 8 },
-  floorAlt: { sheet: dwarfTestDungeonFloorSheetKey, col: 3, row: 8 },
-  floorCracked: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 9 },
-  wall: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 2 },
-  wallTop: { sheet: dwarfTestDungeonFloorSheetKey, col: 2, row: 5 },
-  wallCorner: { sheet: dwarfTestDungeonFloorSheetKey, col: 1, row: 2 },
-  pillar: { sheet: dwarfTestDungeonFloorSheetKey, col: 4, row: 1 },
-  pool: {
-    sheet: dwarfTestDungeonWaterSheetKey,
-    frames: [
-      { col: 0, row: 0 },
-      { col: 1, row: 0 },
-      { col: 2, row: 0 }
-    ],
-    animationSpeed: 1.35
-  },
-  poolEdge: {
-    sheet: dwarfTestDungeonWaterSheetKey,
-    frames: [
-      { col: 3, row: 0 },
-      { col: 4, row: 0 },
-      { col: 5, row: 0 }
-    ],
-    animationSpeed: 1.35
-  }
-};
-
-const dungeonPlayerAnimationDefinitions = {
-  idle: { sheet: 'dungeonPlayerIdle', frameCount: 12, speed: 4 },
-  walk: { sheet: 'dungeonPlayerWalk', frameCount: 6, speed: 9 }
-};
-
-const dungeonPlayerSpriteConfig = {
-  heightTileMultiplier: 2.8
-};
-
-const orcAnimationTemplates = {
-  orc1: {
-    idle: { sheet: 'orc1_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
-    walk: { sheet: 'orc1_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
-    attack: {
-      sheet: 'orc1_attack',
-      row: 0,
-      frameCount: 12,
-      speed: 11,
-      loop: false,
-      impactFrame: 6,
-      columns: 32,
-      rows: 16
-    },
-    hurt: { sheet: 'orc1_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
-    death: { sheet: 'orc1_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
-  },
-  orc2: {
-    idle: { sheet: 'orc2_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
-    walk: { sheet: 'orc2_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
-    attack: {
-      sheet: 'orc2_attack',
-      row: 0,
-      frameCount: 12,
-      speed: 11,
-      loop: false,
-      impactFrame: 6,
-      columns: 32,
-      rows: 16
-    },
-    hurt: { sheet: 'orc2_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
-    death: { sheet: 'orc2_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
-  },
-  orc3: {
-    idle: { sheet: 'orc3_idle', row: 0, frameCount: 8, speed: 6, loop: true, columns: 16, rows: 16 },
-    walk: { sheet: 'orc3_walk', row: 0, frameCount: 8, speed: 8, loop: true, columns: 24, rows: 16 },
-    attack: {
-      sheet: 'orc3_attack',
-      row: 0,
-      frameCount: 12,
-      speed: 11,
-      loop: false,
-      impactFrame: 6,
-      columns: 32,
-      rows: 16
-    },
-    hurt: { sheet: 'orc3_hurt', row: 0, frameCount: 6, speed: 10, loop: false, columns: 24, rows: 16 },
-    death: { sheet: 'orc3_death', row: 0, frameCount: 12, speed: 8, loop: false, columns: 32, rows: 16 }
-  }
-};
-
-const orcAnimationCache = new Map();
-let dwarfTestEnemyIdCounter = 0;
-
-function getDungeonPlayerSpriteFrame(player) {
-  if (!player) {
-    return null;
-  }
-  const animationKey = player.animationKey || 'idle';
-  const definition = dungeonPlayerAnimationDefinitions[animationKey] ||
-    dungeonPlayerAnimationDefinitions.idle;
-  if (!definition) {
-    return null;
-  }
-  const sheet = dungeonPlayerSpriteSheets[definition.sheet];
-  const image = sheet?.image;
-  if (!image) {
-    return null;
-  }
-  const frameWidth = sheet.frameWidth || sheet.tileSize || image.width || 1;
-  const frameHeight = sheet.frameHeight || sheet.tileSize || image.height || 1;
-  const columns = sheet.columns || Math.max(1, Math.floor(image.width / frameWidth));
-  const framesPerRow = Math.max(1, Math.min(definition.frameCount || columns, columns));
-  const speed = definition.speed || 1;
-  const elapsed = Math.max(0, player.animationElapsed || 0);
-  const frameIndex = Math.floor(elapsed * speed) % framesPerRow;
-  const sx = frameIndex * frameWidth;
-  const sy = 0;
-  return {
-    sheetKey: definition.sheet,
-    sx,
-    sy,
-    sw: frameWidth,
-    sh: frameHeight
-  };
-}
-
-function getOrcAnimationDefinition(type, key) {
-  if (!type || !key) {
-    return null;
-  }
-  const cacheKey = `${type}:${key}`;
-  if (orcAnimationCache.has(cacheKey)) {
-    return orcAnimationCache.get(cacheKey);
-  }
-  const template = orcAnimationTemplates[type]?.[key];
-  if (!template) {
-    return null;
-  }
-  const columns = Math.max(1, template.columns || orcSpriteSheets[template.sheet]?.columns || 1);
-  const rows = Math.max(1, template.rows || orcSpriteSheets[template.sheet]?.rows || 1);
-  const rowIndex = clamp(template.row ?? 0, 0, rows - 1);
-  const frameTotal = Math.max(1, Math.min(template.frameCount || columns, columns));
-  const frames = [];
-  for (let i = 0; i < frameTotal; i += 1) {
-    frames.push({ sheet: template.sheet, col: i, row: rowIndex });
-  }
-  const definition = {
-    type,
-    key,
-    frames,
-    speed: Math.max(1, template.speed || 8),
-    loop: template.loop !== false,
-    impactFrame: Number.isFinite(template.impactFrame) ? clamp(template.impactFrame, 0, frameTotal - 1) : null
-  };
-  orcAnimationCache.set(cacheKey, definition);
-  return definition;
-}
-
-function createOrcEnemyAnimationState(key) {
-  return {
-    key,
-    frameIndex: 0,
-    elapsed: 0,
-    completed: false,
-    hitApplied: false
-  };
-}
-
-function setOrcEnemyAnimation(enemy, key, { reset = false } = {}) {
-  if (!enemy) {
-    return;
-  }
-  const currentKey = enemy.animation?.key;
-  if (!reset && currentKey === key) {
-    return;
-  }
-  enemy.animation = createOrcEnemyAnimationState(key);
-}
-
-function advanceOrcEnemyAnimation(enemy, delta) {
-  if (!enemy?.animation) {
-    return;
-  }
-  const definition = getOrcAnimationDefinition(enemy.type, enemy.animation.key);
-  if (!definition || !definition.frames || definition.frames.length === 0) {
-    return;
-  }
-  const frameDuration = 1 / definition.speed;
-  enemy.animation.elapsed += delta;
-  while (enemy.animation.elapsed >= frameDuration) {
-    enemy.animation.elapsed -= frameDuration;
-    enemy.animation.frameIndex += 1;
-    if (enemy.animation.frameIndex >= definition.frames.length) {
-      if (definition.loop) {
-        enemy.animation.frameIndex = 0;
-        enemy.animation.completed = false;
-      } else {
-        enemy.animation.frameIndex = definition.frames.length - 1;
-        enemy.animation.completed = true;
-        break;
-      }
-    }
-  }
-}
-
-function isDwarfTestPositionWalkable(x, y, destTileSize, map) {
-  if (!map || !Array.isArray(map.tiles) || !Number.isFinite(destTileSize) || destTileSize <= 0) {
-    return true;
-  }
-  const col = clamp(Math.floor(x / destTileSize), 0, map.columns - 1);
-  const row = clamp(Math.floor((y - destTileSize * 0.25) / destTileSize), 0, map.rows - 1);
-  const tileKey = map.tiles[row]?.[col];
-  if (!tileKey) {
-    return false;
-  }
-  return !isDwarfTestWaterTileKey(tileKey);
-}
-
-function createOrcEnemy(type, spawnTile, destTileSize) {
-  dwarfTestEnemyIdCounter += 1;
-  const baseX = (spawnTile.col + 0.5) * destTileSize;
-  const baseY = (spawnTile.row + 1) * destTileSize - destTileSize * 0.12;
-  return {
-    id: `orc-${dwarfTestEnemyIdCounter}`,
-    type,
-    position: { x: baseX, y: baseY },
-    facing: 1,
-    animation: createOrcEnemyAnimationState('idle'),
-    tileSpeed: 0.9,
-    attackRangeTiles: 0.7,
-    attackCooldown: Math.random() * 0.6,
-    attackCooldownDuration: 1.2,
-    damage: 8
-  };
-}
-
-function getDefaultOrcSpawnTiles(map, referenceTile) {
-  if (!map) {
-    return [];
-  }
-  const { col: refCol = Math.floor(map.columns / 2), row: refRow = Math.floor(map.rows / 2) } = referenceTile || {};
-  const spawnOffsets = [
-    { type: 'orc1', col: refCol + 5, row: refRow - 1 },
-    { type: 'orc2', col: refCol - 6, row: refRow - 2 },
-    { type: 'orc3', col: refCol + 2, row: refRow + 4 }
-  ];
-  const results = [];
-  for (const entry of spawnOffsets) {
-    const targetCol = clamp(entry.col, 0, map.columns - 1);
-    const targetRow = clamp(entry.row, 0, map.rows - 1);
-    const walkable = findNearestDwarfTestWalkableTile(map, targetCol, targetRow);
-    results.push({ type: entry.type, col: walkable.col, row: walkable.row });
-  }
-  return results;
-}
-
-function spawnDwarfTestEnemies(map, destTileSize, referenceTile) {
-  if (!map || !Number.isFinite(destTileSize) || destTileSize <= 0) {
-    dwarfTestState.enemies = [];
-    return;
-  }
-  dwarfTestEnemyIdCounter = 0;
-  const spawnTiles = getDefaultOrcSpawnTiles(map, referenceTile);
-  dwarfTestState.enemies = spawnTiles.map((entry) => createOrcEnemy(entry.type, entry, destTileSize));
-}
-
-function applyDamageToDwarfTestPlayer(amount) {
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return;
-  }
-  const player = dwarfTestState.player;
-  if (!player || player.damageCooldown > 0 || player.dead) {
-    return;
-  }
-  player.health = clamp(player.health - amount, 0, player.maxHealth);
-  player.damageCooldown = 0.6;
-  player.hurtFlash = 0.35;
-  if (player.health <= 0) {
-    player.dead = true;
-  }
-}
-
-function updateOrcEnemies(delta, spriteDimensions, bounds) {
-  const enemies = dwarfTestState.enemies;
-  if (!Array.isArray(enemies) || enemies.length === 0) {
-    return;
-  }
-  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  const playerPosition = dwarfTestState.position;
-  const map = dwarfTestState.map;
-  for (const enemy of enemies) {
-    if (!enemy || !enemy.position) {
-      continue;
-    }
-    enemy.attackCooldown = Math.max(0, (enemy.attackCooldown || 0) - delta);
-    const dx = playerPosition.x - enemy.position.x;
-    const dy = playerPosition.y - enemy.position.y;
-    const distance = Math.hypot(dx, dy);
-    const directionX = distance > 0 ? dx / distance : 0;
-    const directionY = distance > 0 ? dy / distance : 0;
-    const attackRange = enemy.attackRangeTiles * destTileSize;
-    const moveSpeed = enemy.tileSpeed * destTileSize;
-    const isAttacking = enemy.animation?.key === 'attack' && !enemy.animation.completed;
-
-    if (!isAttacking) {
-      if (distance > attackRange * 0.85) {
-        const moveDistance = Math.min(distance, moveSpeed * delta);
-        if (moveDistance > 0.01) {
-          const nextX = enemy.position.x + directionX * moveDistance;
-          const nextY = enemy.position.y + directionY * moveDistance;
-          if (isDwarfTestPositionWalkable(nextX, nextY, destTileSize, map)) {
-            enemy.position.x = nextX;
-            enemy.position.y = nextY;
-          }
-          enemy.facing = directionX < 0 ? -1 : 1;
-          setOrcEnemyAnimation(enemy, 'walk');
-        } else {
-          setOrcEnemyAnimation(enemy, 'idle');
-        }
-      } else if (enemy.attackCooldown <= 0) {
-        setOrcEnemyAnimation(enemy, 'attack', { reset: true });
-      } else {
-        setOrcEnemyAnimation(enemy, 'idle');
-      }
-    }
-
-    if (distance > 0.1 && Math.abs(directionX) > 0.05) {
-      enemy.facing = directionX < 0 ? -1 : 1;
-    }
-
-    advanceOrcEnemyAnimation(enemy, delta);
-
-    const animation = enemy.animation;
-    const definition = animation ? getOrcAnimationDefinition(enemy.type, animation.key) : null;
-    if (animation && definition && animation.key === 'attack') {
-      if (!animation.hitApplied && definition.impactFrame !== null && animation.frameIndex >= definition.impactFrame) {
-        applyDamageToDwarfTestPlayer(enemy.damage);
-        animation.hitApplied = true;
-      }
-      if (animation.completed) {
-        enemy.attackCooldown = enemy.attackCooldownDuration;
-        setOrcEnemyAnimation(enemy, 'idle', { reset: true });
-      }
-    }
-
-    enemy.position.x = clamp(enemy.position.x, bounds.minX, bounds.maxX);
-    enemy.position.y = clamp(enemy.position.y, bounds.minY, bounds.maxY);
-  }
-}
-
-function drawOrcEnemy(ctx, enemy, camera, destTileSize) {
-  const { width, height } = ctx.canvas;
-  const baseX = enemy.position.x - camera.x;
-  const baseY = enemy.position.y - camera.y;
-  const margin = destTileSize * 2;
-  if (baseX < -margin || baseX > width + margin || baseY < -margin || baseY > height + margin) {
-    return;
-  }
-  const shadowWidth = destTileSize * 0.75;
-  const shadowHeight = Math.max(4, destTileSize * 0.24);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-  ctx.beginPath();
-  ctx.ellipse(baseX, baseY - destTileSize * 0.08, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  const animation = enemy.animation;
-  const definition = animation ? getOrcAnimationDefinition(enemy.type, animation.key) : null;
-  const frame = definition?.frames?.[Math.min(animation?.frameIndex || 0, (definition?.frames?.length || 1) - 1)];
-  if (!frame) {
-    ctx.fillStyle = '#374151';
-    ctx.beginPath();
-    ctx.arc(baseX, baseY - destTileSize * 0.6, destTileSize * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-    return;
-  }
-  const sheet = orcSpriteSheets[frame.sheet];
-  if (!sheet?.image) {
-    return;
-  }
-  const tileSize = sheet.tileSize || 16;
-  const sx = frame.col * tileSize;
-  const sy = frame.row * tileSize;
-  const sw = tileSize;
-  const sh = tileSize;
-  const destWidth = destTileSize;
-  const destHeight = destTileSize;
-
-  ctx.save();
-  ctx.translate(baseX, baseY - destHeight);
-  if (enemy.facing === -1) {
-    ctx.scale(-1, 1);
-  }
-  ctx.drawImage(sheet.image, sx, sy, sw, sh, -destWidth / 2, 0, destWidth, destHeight);
-  ctx.restore();
-}
-
-function drawDwarfTestEnemies(ctx) {
-  const enemies = dwarfTestState.enemies;
-  if (!Array.isArray(enemies) || enemies.length === 0) {
-    return;
-  }
-  const camera = dwarfTestState.camera || { x: 0, y: 0 };
-  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  const sorted = [...enemies];
-  sorted.sort((a, b) => (a?.position?.y || 0) - (b?.position?.y || 0));
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  for (const enemy of sorted) {
-    if (!enemy?.position) {
-      continue;
-    }
-    drawOrcEnemy(ctx, enemy, camera, destTileSize);
-  }
-  ctx.restore();
-}
-
-function drawDwarfTestHud(ctx) {
-  const player = dwarfTestState.player;
-  if (!player) {
-    return;
-  }
-  const { width } = ctx.canvas;
-  const barWidth = Math.min(width * 0.32, 200);
-  const barHeight = 12;
-  const x = 18;
-  const y = 18;
-  ctx.save();
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
-  ctx.fillRect(x - 6, y - 6, barWidth + 12, barHeight + 12);
-  ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
-  ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
-  const ratio = clamp(player.health / player.maxHealth, 0, 1);
-  const gradient = ctx.createLinearGradient(x, y, x + barWidth, y);
-  gradient.addColorStop(0, '#fca5a5');
-  gradient.addColorStop(0.5, '#ef4444');
-  gradient.addColorStop(1, '#b91c1c');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(x, y, Math.max(0, barWidth * ratio), barHeight);
-  ctx.strokeStyle = 'rgba(248, 250, 252, 0.35)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x, y, barWidth, barHeight);
-  ctx.fillStyle = '#f9fafb';
-  ctx.font = 'bold 12px "Cormorant Garamond", serif';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(`Health ${Math.round(player.health)}/${player.maxHealth}`, x + 4, y + barHeight / 2);
-  if (player.dead) {
-    ctx.font = 'bold 18px "Cormorant Garamond", serif';
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
-    ctx.fillText('You have fallen!', x, y + barHeight + 24);
-  }
-  ctx.restore();
-}
-
-function drawDwarfTestScene(ctx, spriteDimensions) {
-  drawDwarfTestBackground(ctx);
-  drawDwarfTestEnemies(ctx);
-  drawDwarfTestCharacter(ctx, spriteDimensions);
-  drawDwarfTestHud(ctx);
-}
-
-function getDwarfTestWorldConfig(worldKey) {
-  return dwarfTestWorlds[worldKey] || dwarfTestWorlds[dwarfTestDefaultWorldKey];
-}
-
-function getActiveDwarfTestWorld() {
-  return dwarfTestState.world || dwarfTestWorlds[dwarfTestDefaultWorldKey];
-}
-
-function isDwarfTestWaterTileKey(tileKey) {
-  const world = getActiveDwarfTestWorld();
-  return world.waterTileKeys?.has(tileKey) || false;
-}
-
-function resolveDwarfTestTileFrame(tileKey) {
-  if (!tileKey) {
-    return null;
-  }
-  const world = getActiveDwarfTestWorld();
-  const palette = world.tilePalette || {};
-  const entry = palette[tileKey];
-  if (!entry) {
-    return null;
-  }
-  if (entry === null) {
-    return null;
-  }
-  if (entry.frames && entry.frames.length > 0) {
-    const speed = entry.animationSpeed || 1;
-    const phase = Math.floor((dwarfTestState.animationTime || 0) * speed);
-    const frame = entry.frames[Math.abs(phase) % entry.frames.length] || entry.frames[0];
-    return { sheet: entry.sheet, col: frame.col, row: frame.row };
-  }
-  return entry;
-}
-
-function generateDwarfTestOverworldMap(world) {
-  const { columns, rows } = world.mapDimensions;
-  const tiles = Array.from({ length: rows }, () => new Array(columns));
-
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < columns; col += 1) {
-      const noise = Math.random();
-      let key = noise < 0.45 ? 'grassAlt' : 'grass';
-      if (noise > 0.92) {
-        key = 'savanna';
-      }
-      tiles[row][col] = key;
-    }
-  }
-
-  const desertRowStart = Math.floor(rows * 0.62);
-  const desertColEnd = Math.floor(columns * 0.28);
-  for (let row = desertRowStart; row < rows; row += 1) {
-    for (let col = 0; col < desertColEnd; col += 1) {
-      tiles[row][col] = 'desert';
-    }
-  }
-
-  const hillRowStart = Math.floor(rows * 0.34);
-  const hillRowEnd = Math.floor(rows * 0.6);
-  const hillColStart = Math.floor(columns * 0.18);
-  const hillColEnd = Math.floor(columns * 0.56);
-  for (let row = hillRowStart; row < hillRowEnd; row += 1) {
-    for (let col = hillColStart; col < hillColEnd; col += 1) {
-      if ((row + col) % 3 === 0) {
-        tiles[row][col] = 'hills';
-      }
-    }
-  }
-
-  const swampCenterCol = Math.floor(columns * 0.42);
-  const swampCenterRow = Math.floor(rows * 0.76);
-  const swampRadius = 3.6;
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < columns; col += 1) {
-      const dx = col - swampCenterCol;
-      const dy = row - swampCenterRow;
-      if (Math.sqrt(dx * dx + dy * dy) <= swampRadius) {
-        tiles[row][col] = 'swamp';
-      }
-    }
-  }
-
-  const lakeCenterCol = Math.floor(columns * 0.58);
-  const lakeCenterRow = Math.floor(rows * 0.52);
-  const lakeRadius = 4.4;
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < columns; col += 1) {
-      const dx = col - lakeCenterCol;
-      const dy = row - lakeCenterRow;
-      if (dx * dx + dy * dy <= lakeRadius * lakeRadius) {
-        tiles[row][col] = 'lake';
-      }
-    }
-  }
-
-  const oceanStartCol = columns - 8;
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = oceanStartCol; col < columns; col += 1) {
-      const depth = columns - col - 1;
-      if (depth <= 1) {
-        tiles[row][col] = 'deepOcean';
-      } else if (row < 3) {
-        tiles[row][col] = 'frozenOcean';
-      } else {
-        tiles[row][col] = 'ocean';
-      }
-    }
-  }
-
-  for (let row = 0; row < rows; row += 1) {
-    const coastalCol = Math.max(0, oceanStartCol - 1);
-    tiles[row][coastalCol] = row < 4 ? 'glacier' : 'beach';
-  }
-
-  const tundraColStart = Math.max(Math.floor(columns * 0.64), oceanStartCol - 6);
-  const tundraRowEnd = Math.floor(rows * 0.28);
-  for (let row = 0; row < tundraRowEnd; row += 1) {
-    for (let col = tundraColStart; col < oceanStartCol - 1; col += 1) {
-      tiles[row][col] = row < 2 ? 'glacier' : 'tundra';
-    }
-  }
-
-  const neighborOffsets = [
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1],
-    [-1, -1],
-    [-1, 1],
-    [1, -1],
-    [1, 1]
-  ];
-
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < columns; col += 1) {
-      const key = tiles[row][col];
-      if (isDwarfTestWaterTileKey(key)) {
-        continue;
-      }
-      let touchesWater = false;
-      for (const [dx, dy] of neighborOffsets) {
-        const nx = col + dx;
-        const ny = row + dy;
-        if (nx < 0 || ny < 0 || nx >= columns || ny >= rows) {
-          continue;
-        }
-        if (isDwarfTestWaterTileKey(tiles[ny][nx])) {
-          touchesWater = true;
-          break;
-        }
-      }
-      if (!touchesWater) {
-        continue;
-      }
-      if (key === 'desert') {
-        tiles[row][col] = 'beach';
-      } else if (key !== 'glacier' && key !== 'tundra') {
-        tiles[row][col] = 'shore';
-      }
-    }
-  }
-
-  return { columns, rows, tiles };
-}
-
-function generateDwarfTestDungeonMap(world) {
-  const { columns, rows } = world.mapDimensions;
-  const tiles = Array.from({ length: rows }, () => new Array(columns).fill('void'));
-
-  const chamber = {
-    startCol: 2,
-    endCol: columns - 3,
-    startRow: 2,
-    endRow: rows - 3
-  };
-
-  for (let row = chamber.startRow; row <= chamber.endRow; row += 1) {
-    for (let col = chamber.startCol; col <= chamber.endCol; col += 1) {
-      const noise = (row + col) % 6;
-      if (row <= chamber.startRow + 1 || row >= chamber.endRow - 1 || col <= chamber.startCol + 1 || col >= chamber.endCol - 1) {
-        tiles[row][col] = noise % 2 === 0 ? 'floorCracked' : 'floorAlt';
-      } else {
-        tiles[row][col] = noise % 3 === 0 ? 'floorAlt' : 'floor';
-      }
-    }
-  }
-
-  const pool = {
-    startCol: Math.floor(columns / 2) - 3,
-    endCol: Math.floor(columns / 2) + 3,
-    startRow: Math.floor(rows / 2) - 2,
-    endRow: Math.floor(rows / 2) + 2
-  };
-
-  for (let row = pool.startRow; row <= pool.endRow; row += 1) {
-    for (let col = pool.startCol; col <= pool.endCol; col += 1) {
-      const isEdge = row === pool.startRow || row === pool.endRow || col === pool.startCol || col === pool.endCol;
-      tiles[row][col] = isEdge ? 'poolEdge' : 'pool';
-    }
-  }
-
-  for (let col = chamber.startCol; col <= chamber.endCol; col += 1) {
-    tiles[chamber.startRow][col] = col % 4 === 0 ? 'wallTop' : 'wall';
-    tiles[chamber.endRow][col] = col % 4 === 0 ? 'wallTop' : 'wall';
-  }
-
-  for (let row = chamber.startRow; row <= chamber.endRow; row += 1) {
-    tiles[row][chamber.startCol] = row % 3 === 0 ? 'wallCorner' : 'wall';
-    tiles[row][chamber.endCol] = row % 3 === 0 ? 'wallCorner' : 'wall';
-  }
-
-  tiles[chamber.startRow][chamber.startCol] = 'pillar';
-  tiles[chamber.startRow][chamber.endCol] = 'pillar';
-  tiles[chamber.endRow][chamber.startCol] = 'pillar';
-  tiles[chamber.endRow][chamber.endCol] = 'pillar';
-
-  const spawn = {
-    col: Math.floor(columns / 2),
-    row: chamber.endRow - 2
-  };
-
-  return { columns, rows, tiles, spawn };
-}
-
-const dwarfTestWorlds = {
-  overworld: {
-    key: 'overworld',
-    buttonId: 'dwarf-test',
-    buttonLabel: 'Test',
-    buttonActiveLabel: 'Close Test',
-    tileSheetKey: dwarfTestOverworldTileSheetKey,
-    tilePalette: dwarfTestOverworldTilePalette,
-    tileSize: 16,
-    baseTileScale: 2,
-    scaleConfig: {
-      min: 2,
-      max: 4,
-      targetVisibleColumns: 18,
-      targetVisibleRows: 12
-    },
-    mapDimensions: { columns: 42, rows: 24 },
-    waterTileKeys: new Set(['lake', 'ocean', 'deepOcean', 'frozenOcean']),
-    fallbackTileKey: 'grass',
-    backgroundColor: '#070c14',
-    skyGradientStops: [
-      { offset: 0, color: 'rgba(12, 19, 30, 0.9)' },
-      { offset: 1, color: 'rgba(12, 19, 30, 0)' }
-    ],
-    groundGradientStops: [
-      { offset: 0, color: 'rgba(11, 18, 27, 0)' },
-      { offset: 1, color: 'rgba(7, 12, 20, 0.55)' }
-    ],
-    generateMap: generateDwarfTestOverworldMap,
-    defaultSpawn: null
-  },
-  dungeon: {
-    key: 'dungeon',
-    buttonId: 'dwarf-test-dungeon',
-    buttonLabel: 'Dungeon Test',
-    buttonActiveLabel: 'Close Dungeon Test',
-    tileSheetKey: dwarfTestDungeonFloorSheetKey,
-    tilePalette: dwarfTestDungeonTilePalette,
-    tileSize: 16,
-    baseTileScale: 2,
-    scaleConfig: {
-      min: 2,
-      max: 4,
-      targetVisibleColumns: 14,
-      targetVisibleRows: 10
-    },
-    mapDimensions: { columns: 32, rows: 24 },
-    waterTileKeys: new Set(['pool']),
-    fallbackTileKey: 'floor',
-    backgroundColor: '#040506',
-    skyGradientStops: [
-      { offset: 0, color: 'rgba(10, 14, 20, 0.75)' },
-      { offset: 1, color: 'rgba(10, 14, 20, 0)' }
-    ],
-    groundGradientStops: [
-      { offset: 0, color: 'rgba(8, 10, 14, 0)' },
-      { offset: 1, color: 'rgba(12, 16, 18, 0.6)' }
-    ],
-    generateMap: generateDwarfTestDungeonMap,
-    defaultSpawn: { col: 16, row: 18 }
-  }
-};
-
-function getActiveDwarfTestTileSize() {
-  const world = getActiveDwarfTestWorld();
-  const size = world.tileSize;
-  return Number.isFinite(size) && size > 0 ? size : 16;
-}
-
-function getActiveDwarfTestBaseScale() {
-  const world = getActiveDwarfTestWorld();
-  const scale = world.baseTileScale;
-  return Number.isFinite(scale) && scale > 0 ? scale : 1;
-}
-
-function getActiveDwarfTestScaleConfig() {
-  const world = getActiveDwarfTestWorld();
-  return world.scaleConfig || { min: 1, max: 4, targetVisibleColumns: 16, targetVisibleRows: 10 };
-}
-
-function getDwarfTestFallbackTileKey() {
-  const world = getActiveDwarfTestWorld();
-  return world.fallbackTileKey || null;
-}
-
-function getDwarfTestBackgroundColor() {
-  const world = getActiveDwarfTestWorld();
-  return world.backgroundColor || '#070c14';
-}
-
-function getDwarfTestGradientStops(type) {
-  const world = getActiveDwarfTestWorld();
-  if (type === 'sky') {
-    return world.skyGradientStops || [
-      { offset: 0, color: 'rgba(12, 19, 30, 0.9)' },
-      { offset: 1, color: 'rgba(12, 19, 30, 0)' }
-    ];
-  }
-  if (type === 'ground') {
-    return world.groundGradientStops || [
-      { offset: 0, color: 'rgba(11, 18, 27, 0)' },
-      { offset: 1, color: 'rgba(7, 12, 20, 0.55)' }
-    ];
-  }
-  return [];
-}
-
-function calculateDwarfTestTileScale(canvas) {
-  const { min, max, targetVisibleColumns, targetVisibleRows } = getActiveDwarfTestScaleConfig();
-  const fallbackScale = getActiveDwarfTestBaseScale();
-  const tileSize = getActiveDwarfTestTileSize();
-  if (!canvas) {
-    return clamp(fallbackScale, min, max);
-  }
-  const width = Math.max(canvas.width || 0, canvas.clientWidth || 0);
-  const height = Math.max(canvas.height || 0, canvas.clientHeight || 0);
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return clamp(fallbackScale, min, max);
-  }
-  const safeColumns = Math.max(1, targetVisibleColumns);
-  const safeRows = Math.max(1, targetVisibleRows);
-  const columnScale = width / (tileSize * safeColumns);
-  const rowScale = height / (tileSize * safeRows);
-  const rawScale = Math.min(columnScale, rowScale);
-  const roundedScale = Math.round(rawScale);
-  const baseScale = Number.isFinite(roundedScale) && roundedScale > 0 ? roundedScale : fallbackScale;
-  return clamp(baseScale, min, max);
-}
-
-function applyDwarfTestScaleChange(newScale) {
-  const previousScale = dwarfTestState.tileScale || getActiveDwarfTestBaseScale();
-  if (!Number.isFinite(newScale) || newScale <= 0 || newScale === previousScale) {
-    return false;
-  }
-
-  const baseTileSize = dwarfTestState.tileSize || getActiveDwarfTestTileSize();
-  const previousDestTileSize = baseTileSize * previousScale;
-  const nextDestTileSize = baseTileSize * newScale;
-
-  if (previousDestTileSize > 0 && nextDestTileSize > 0) {
-    const positionTileX = dwarfTestState.position.x / previousDestTileSize;
-    const positionTileY = dwarfTestState.position.y / previousDestTileSize;
-    if (Number.isFinite(positionTileX)) {
-      dwarfTestState.position.x = positionTileX * nextDestTileSize;
-    }
-    if (Number.isFinite(positionTileY)) {
-      dwarfTestState.position.y = positionTileY * nextDestTileSize;
-    }
-
-    const cameraTileX = dwarfTestState.camera.x / previousDestTileSize;
-    const cameraTileY = dwarfTestState.camera.y / previousDestTileSize;
-    if (Number.isFinite(cameraTileX)) {
-      dwarfTestState.camera.x = cameraTileX * nextDestTileSize;
-    }
-    if (Number.isFinite(cameraTileY)) {
-      dwarfTestState.camera.y = cameraTileY * nextDestTileSize;
-    }
-
-    if (Number.isFinite(dwarfTestState.backgroundOffset)) {
-      dwarfTestState.backgroundOffset *= nextDestTileSize / previousDestTileSize;
-    }
-    const scaleFactor = nextDestTileSize / previousDestTileSize;
-    if (Array.isArray(dwarfTestState.enemies) && Number.isFinite(scaleFactor)) {
-      for (const enemy of dwarfTestState.enemies) {
-        if (!enemy?.position) {
-          continue;
-        }
-        if (Number.isFinite(enemy.position.x)) {
-          enemy.position.x *= scaleFactor;
-        }
-        if (Number.isFinite(enemy.position.y)) {
-          enemy.position.y *= scaleFactor;
-        }
-      }
-    }
-  }
-
-  dwarfTestState.tileScale = newScale;
-  return true;
-}
-
-function findNearestDwarfTestWalkableTile(map, startCol, startRow) {
-  if (!map || !Array.isArray(map.tiles)) {
-    return { col: startCol, row: startRow };
-  }
-  const clampedStartCol = clamp(startCol, 0, map.columns - 1);
-  const clampedStartRow = clamp(startRow, 0, map.rows - 1);
-  const maxRadius = Math.max(map.columns, map.rows);
-  for (let radius = 0; radius < maxRadius; radius += 1) {
-    for (let dy = -radius; dy <= radius; dy += 1) {
-      for (let dx = -radius; dx <= radius; dx += 1) {
-        const col = clampedStartCol + dx;
-        const row = clampedStartRow + dy;
-        if (col < 0 || row < 0 || col >= map.columns || row >= map.rows) {
-          continue;
-        }
-        const tileKey = map.tiles[row][col];
-        if (!isDwarfTestWaterTileKey(tileKey)) {
-          return { col, row };
-        }
-      }
-    }
-  }
-  return { col: clampedStartCol, row: clampedStartRow };
-}
-
-function updateDwarfTestCamera(ctx, spriteDimensions, options = {}) {
-  const { immediate = false } = options;
-  const map = dwarfTestState.map;
-  if (!map) {
-    dwarfTestState.camera.x = 0;
-    dwarfTestState.camera.y = 0;
-    return dwarfTestState.camera;
-  }
-
-  const tileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  const worldWidth = map.columns * tileSize;
-  const worldHeight = map.rows * tileSize;
-  const viewWidth = ctx.canvas.width;
-  const viewHeight = ctx.canvas.height;
-  const paddingY = Math.max(0, spriteDimensions.height * 0.35);
-
-  const targetX = clamp(
-    dwarfTestState.position.x - viewWidth / 2,
-    0,
-    Math.max(0, worldWidth - viewWidth)
-  );
-  const targetY = clamp(
-    dwarfTestState.position.y - viewHeight + paddingY,
-    0,
-    Math.max(0, worldHeight - viewHeight)
-  );
-
-  if (immediate || !Number.isFinite(dwarfTestState.lastFrameTime)) {
-    dwarfTestState.camera.x = targetX;
-    dwarfTestState.camera.y = targetY;
-    return dwarfTestState.camera;
-  }
-
-  const smoothing = 0.18;
-  dwarfTestState.camera.x += (targetX - dwarfTestState.camera.x) * smoothing;
-  dwarfTestState.camera.y += (targetY - dwarfTestState.camera.y) * smoothing;
-
-  if (Math.abs(targetX - dwarfTestState.camera.x) < 0.5) {
-    dwarfTestState.camera.x = targetX;
-  }
-  if (Math.abs(targetY - dwarfTestState.camera.y) < 0.5) {
-    dwarfTestState.camera.y = targetY;
-  }
-
-  return dwarfTestState.camera;
-}
-
-const musicTracks = [
-  { title: 'Another Year', src: 'sound/tracks/another_year/AY_Full.ogg' },
-  { title: 'Craftsdwarfship', src: 'sound/tracks/craftsdwarfship/CS_Full.ogg' },
-  { title: 'Death Spiral', src: 'sound/tracks/death_spiral/DS_Full.ogg' },
-  { title: 'Drink & Industry', src: 'sound/tracks/drink_&_industry/DI_Full.ogg' },
-  { title: 'Dwarf Fortress', src: 'sound/tracks/dwarf_fortress/Dwarf_Fortress.ogg' },
-  { title: 'Expansive Cavern', src: 'sound/tracks/expansive_cavern/EC_Full.ogg' },
-  { title: 'First Year', src: 'sound/tracks/first_year/FY_Full.ogg' },
-  { title: 'Forgotten Beast', src: 'sound/tracks/forgotten_beast/FB_Full.ogg' },
-  { title: 'Hill Dwarf', src: 'sound/tracks/hill_dwarf/HD_Full.ogg' },
-  { title: 'Koganusan', src: 'sound/tracks/koganusan/KG_Full.ogg' },
-  { title: 'Mountainhome', src: 'sound/tracks/mountainhome/MH_Full.ogg' },
-  { title: 'Strike the Earth!', src: 'sound/tracks/strike_the_earth!/STE_Full.ogg' },
-  { title: 'Strange Moods', src: 'sound/tracks/strange_moods/SM_Full.ogg' },
-  { title: 'Vile Force of Darkness', src: 'sound/tracks/vile_force_of_darkness/VFOD_Full.ogg' },
-  { title: 'Winter Entombs You', src: 'sound/tracks/winter_entombs_you/WEY_Full.ogg' }
-];
-
-const audioState = {
-  tracks: musicTracks,
-  currentIndex: 0,
-  isPlaying: false,
-  initialised: false,
-  effectsMuted: false,
-  effectsVolume: 0.6
-};
-
-const soundEffects = {
-  randomiseClick: createSoundEffect('sound/sounds/rolling-dice.mp3', {
-    volume: 0.6
-  })
-};
-
-const wizardTowerAmbienceTracks = [
-  'sound/ambience/Blizzard.ogg',
-  'sound/ambience/Evil.ogg',
-  'sound/ambience/Glacier.ogg'
-];
-
-const structureAmbienceState = {
-  currentTrack: null
-};
-
-if (elements.structureAmbienceAudio) {
-  elements.structureAmbienceAudio.loop = true;
-  elements.structureAmbienceAudio.volume = clamp(audioState.effectsVolume, 0, 1);
-}
-
-
-
-function createSoundEffect(src, options = {}) {
-  const audio = new Audio(src);
-  audio.preload = options.preload ?? 'auto';
-  if (typeof options.volume === 'number') {
-    const clampedVolume = Math.max(0, Math.min(1, options.volume));
-    audio.volume = clampedVolume;
-  }
-  return audio;
-}
-
-function playSoundEffect(audio) {
-  if (!audio || audioState.effectsMuted || audioState.effectsVolume <= 0) {
-    return;
-  }
-  try {
-    audio.volume = clamp(audioState.effectsVolume, 0, 1);
-    audio.currentTime = 0;
-    const playPromise = audio.play();
-    if (playPromise && typeof playPromise.catch === 'function') {
-      playPromise.catch(() => {});
-    }
-  } catch (error) {
-    /* ignore playback errors triggered by browser policies */
-  }
-}
-
-function createLandMask(image) {
-  const canvas = document.createElement('canvas');
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const context = canvas.getContext('2d', { willReadFrequently: true });
-  if (!context) {
-    return null;
-  }
-
-  context.drawImage(image, 0, 0);
-  const { data } = context.getImageData(0, 0, image.width, image.height);
-  const maskData = new Float32Array(image.width * image.height);
-
-  const horizontalMargin = Math.max(1, Math.floor(image.width * 0.06));
-  const verticalMargin = Math.max(1, Math.floor(image.height * 0.06));
-  let borderSum = 0;
-  let borderCount = 0;
-
-  for (let y = 0; y < image.height; y += 1) {
-    for (let x = 0; x < image.width; x += 1) {
-      const idx = (y * image.width + x) * 4;
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
-      const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-      maskData[y * image.width + x] = brightness;
-
-      if (
-        x < horizontalMargin ||
-        x >= image.width - horizontalMargin ||
-        y < verticalMargin ||
-        y >= image.height - verticalMargin
-      ) {
-        borderSum += brightness;
-        borderCount += 1;
-      }
-    }
-  }
-
-  const borderAverage = borderCount > 0 ? borderSum / borderCount : 0;
-  let minValue = Infinity;
-  let maxValue = -Infinity;
-
-  for (let i = 0; i < maskData.length; i += 1) {
-    const centered = maskData[i] - borderAverage;
-    maskData[i] = centered;
-    if (centered < minValue) {
-      minValue = centered;
-    }
-    if (centered > maxValue) {
-      maxValue = centered;
-    }
-  }
-
-  const range = maxValue - minValue || 1;
-
-  for (let i = 0; i < maskData.length; i += 1) {
-    const normalized = (maskData[i] - minValue) / range;
-    maskData[i] = clamp(normalized, 0, 1);
-  }
-
-  return {
-    width: image.width,
-    height: image.height,
-    data: maskData
-  };
-}
-
-function loadLandMask(src) {
-  return loadImage(src)
-    .then((image) => {
-      const mask = createLandMask(image);
-      if (!mask) {
-        throw new Error('Failed to create land mask context.');
-      }
-      state.landMask = mask;
-      landMaskCache.set(defaultWorldGenerationType, mask);
-      return mask;
-    })
-    .catch((error) => {
-      console.warn('Failed to load land mask, falling back to noise-based shape.', error);
-      state.landMask = null;
-      return null;
-    });
-}
-
-const tileSheetPromises = Object.values(tileSheets).map((sheet) =>
-  loadImage(sheet.path)
-    .then((img) => {
-      sheet.image = img;
-      return img;
-    })
-    .catch((error) => {
-      console.error(`Failed to load tile sheet at ${sheet.path}`, error);
-      throw error;
-    })
-);
-
-const dwarfSpriteSheetPromises = Object.values(dwarfSpriteSheets).map((sheet) =>
-  loadImage(sheet.path)
-    .then((img) => {
-      sheet.image = img;
-      const tileSize = sheet.tileSize || img.width || 1;
-      sheet.columns = Math.max(1, Math.floor(img.width / tileSize));
-      sheet.rows = Math.max(1, Math.floor(img.height / tileSize));
-      return img;
-    })
-    .catch((error) => {
-      console.error(`Failed to load dwarf sprite sheet at ${sheet.path}`, error);
-      throw error;
-    })
-);
-
-const orcSpriteSheetPromises = Object.values(orcSpriteSheets).map((sheet) =>
-  loadImage(sheet.path)
-    .then((img) => {
-      sheet.image = img;
-      const columns = Math.max(1, Math.floor(img.width / (sheet.tileSize || 1)));
-      const rows = Math.max(1, Math.floor(img.height / (sheet.tileSize || 1)));
-      sheet.columns = columns;
-      sheet.rows = rows;
-      return img;
-    })
-    .catch((error) => {
-      console.error(`Failed to load orc sprite sheet at ${sheet.path}`, error);
-      throw error;
-    })
-);
-
-const dungeonPlayerSpritePromises = Object.values(dungeonPlayerSpriteSheets).map((sheet) =>
-  loadImage(sheet.path)
-    .then((img) => {
-      sheet.image = img;
-      const frameWidth = sheet.frameWidth || sheet.tileSize || img.width || 1;
-      const frameHeight = sheet.frameHeight || sheet.tileSize || img.height || 1;
-      sheet.columns = Math.max(1, Math.floor(img.width / frameWidth));
-      sheet.rows = Math.max(1, Math.floor(img.height / frameHeight));
-      return img;
-    })
-    .catch((error) => {
-      console.error(`Failed to load dungeon player sprite sheet at ${sheet.path}`, error);
-      throw error;
-    })
-);
-
-const characterCreatorPortraitPromises = Object.values(characterCreatorPortraitAssets).map((asset) =>
-  loadImage(asset.path)
-    .then((img) => {
-      asset.image = img;
-      return img;
-    })
-    .catch((error) => {
-      console.warn(`Failed to load character creator portrait asset at ${asset.path}`, error);
-      asset.image = null;
-      return null;
-    })
-);
-
-console.log('assetPromises started');
-console.log('assetPromises started');
-const assetPromises = Promise.all([
-  ...tileSheetPromises,
-  ...dwarfSpriteSheetPromises,
-  ...orcSpriteSheetPromises,
-  ...dungeonPlayerSpritePromises,
-  ...characterCreatorPortraitPromises,
-  // Use the actual location of the title land mask image
-  loadLandMask('titlescreen/normal/Titlescreen image.png')
-]);
-
-let startRequestedBeforeReady = false;
-
-function getStartButtonElement() {
-  const button = elements.startButton;
-  if (button && typeof button.addEventListener === 'function') {
-    return button;
-  }
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  const resolved = document.getElementById('start-button');
-  if (resolved && typeof resolved.addEventListener === 'function') {
-    elements.startButton = resolved;
-    return resolved;
-  }
-  return null;
-}
-
-function updateStartButtonState() {
-  const button = getStartButtonElement();
-  if (!button) {
-    return;
-  }
-  if (state.ready) {
-    button.disabled = false;
-    button.textContent = 'Start Game';
-    return;
-  }
-  button.disabled = true;
-  button.textContent = startRequestedBeforeReady ? 'Finishing loading…' : 'Loading tiles…';
-}
-
-function handleStartButtonClick(event) {
-  console.log('Start button clicked');
-  if (!state.ready) {
-    startRequestedBeforeReady = true;
-    updateStartButtonState();
-    return;
-  }
-  handleStartButtonRequest(event);
-}
-
-function attachStartButtonListener() {
-  const button = getStartButtonElement();
-  if (!button || button.dataset.startHandlerAttached === 'true') {
-    return;
-  }
-  button.addEventListener('click', handleStartButtonClick);
-  button.dataset.startHandlerAttached = 'true';
-}
-
-function initialiseStartButton() {
-  updateStartButtonState();
-  attachStartButtonListener();
-}
-
-if (typeof document !== 'undefined' && document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initialiseStartButton, { once: true });
-}
-
-initialiseStartButton();
-
-assetPromises
-  .catch((error) => {
-    console.log('assetPromises failed');
-    console.error('One or more assets failed to load.', error);
-  })
-  .finally(() => {
-    console.log('assetPromises finished');
-    state.ready = true;
-    updateStartButtonState();
-    attachStartButtonListener();
-    if (startRequestedBeforeReady) {
-      startRequestedBeforeReady = false;
-      handleStartButtonRequest();
-    }
-  });
-
-let optionsVisible = false;
-let optionsContext = {
-  source: 'title',
-  returnFocus: null
-};
-
-function handleStartButtonRequest() {
-  console.log('Start button request');
-  if (optionsVisible) {
-    closeOptionsScreen({ restoreScreen: false, returnFocus: false });
-  }
-  openWorldInfoModal();
-}
-
-function updateOptionsBackButtonLabel() {
-  if (!elements.closeOptions) {
-    return;
-  }
-  const label = optionsContext.source === 'game' ? 'Return to Game' : 'Back to Title';
-  elements.closeOptions.textContent = label;
-}
-
-function openOptionsScreen(source = 'title') {
-  if (!elements.optionsScreen) {
-    return;
-  }
-  optionsVisible = true;
-  const activeElement =
-    typeof document !== 'undefined' && document.activeElement &&
-    typeof document.activeElement.focus === 'function'
-      ? document.activeElement
-      : null;
-  optionsContext = {
-    source,
-    returnFocus: activeElement
-  };
-  syncInputsWithSettings();
-  if (source === 'title' && elements.titleScreen) {
-    elements.titleScreen.classList.add('hidden');
-  }
-  if (source === 'game' && elements.gameContainer) {
-    elements.gameContainer.classList.add('hidden');
-  }
-  elements.optionsScreen.classList.remove('hidden');
-  updateOptionsBackButtonLabel();
-  if (elements.closeOptions) {
-    elements.closeOptions.focus();
-  }
-}
-
-function closeOptionsScreen({ restoreScreen = true, returnFocus = true } = {}) {
-  if (!elements.optionsScreen) {
-    return optionsContext.source;
-  }
-  const previousSource = optionsContext.source;
-  if (!optionsVisible) {
-    return previousSource;
-  }
-  optionsVisible = false;
-  elements.optionsScreen.classList.add('hidden');
-  if (restoreScreen) {
-    if (previousSource === 'title' && elements.titleScreen) {
-      elements.titleScreen.classList.remove('hidden');
-      state.settings.seedString = '';
-    }
-    if (previousSource === 'game' && elements.gameContainer) {
-      elements.gameContainer.classList.remove('hidden');
-    }
-  }
-  if (
-    returnFocus &&
-    optionsContext.returnFocus &&
-    typeof optionsContext.returnFocus.focus === 'function'
-  ) {
-    optionsContext.returnFocus.focus();
-  }
-  optionsContext = {
-    source: 'title',
-    returnFocus: null
-  };
-  return previousSource;
-}
-
-function applyFormSettings() {
-  const selectedKey = elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize;
-  const preset = getMapSizePreset(selectedKey);
-  const rawSeedValue = elements.seedInput ? elements.seedInput.value : state.settings.seedString;
-  const seedString = (rawSeedValue || '').trim();
-  const generationTypeValue = elements.worldGenerationTypeSelect
-    ? elements.worldGenerationTypeSelect.value
-    : state.settings.worldGenerationType;
-  const forestFrequencyRaw = elements.forestFrequencyInput
-    ? Number.parseInt(elements.forestFrequencyInput.value, 10)
-    : state.settings.forestFrequency;
-  const mountainFrequencyRaw = elements.mountainFrequencyInput
-    ? Number.parseInt(elements.mountainFrequencyInput.value, 10)
-    : state.settings.mountainFrequency;
-  const riverFrequencyRaw = elements.riverFrequencyInput
-    ? Number.parseInt(elements.riverFrequencyInput.value, 10)
-    : state.settings.riverFrequency;
-  const humanSettlementFrequencyRaw = elements.humanSettlementFrequencyInput
-    ? Number.parseInt(elements.humanSettlementFrequencyInput.value, 10)
-    : state.settings.humanSettlementFrequency;
-  const dwarfSettlementFrequencyRaw = elements.dwarfSettlementFrequencyInput
-    ? Number.parseInt(elements.dwarfSettlementFrequencyInput.value, 10)
-    : state.settings.dwarfSettlementFrequency;
-  const woodElfSettlementFrequencyRaw = elements.woodElfSettlementFrequencyInput
-    ? Number.parseInt(elements.woodElfSettlementFrequencyInput.value, 10)
-    : state.settings.woodElfSettlementFrequency;
-  const lizardmenSettlementFrequencyRaw = elements.lizardmenSettlementFrequencyInput
-    ? Number.parseInt(elements.lizardmenSettlementFrequencyInput.value, 10)
-    : state.settings.lizardmenSettlementFrequency;
-
-  applyMapSizePresetToState(preset);
-  state.settings.seedString = seedString;
-  if (seedString) {
-    state.settings.lastSeedString = seedString;
-  }
-  state.settings.forestFrequency = sanitizeFrequencyValue(
-    Number.isNaN(forestFrequencyRaw) ? state.settings.forestFrequency : forestFrequencyRaw,
-    state.settings.forestFrequency
-  );
-  state.settings.mountainFrequency = sanitizeFrequencyValue(
-    Number.isNaN(mountainFrequencyRaw) ? state.settings.mountainFrequency : mountainFrequencyRaw,
-    state.settings.mountainFrequency
-  );
-  state.settings.riverFrequency = sanitizeFrequencyValue(
-    Number.isNaN(riverFrequencyRaw) ? state.settings.riverFrequency : riverFrequencyRaw,
-    state.settings.riverFrequency
-  );
-  state.settings.humanSettlementFrequency = sanitizeFrequencyValue(
-    Number.isNaN(humanSettlementFrequencyRaw)
-      ? state.settings.humanSettlementFrequency
-      : humanSettlementFrequencyRaw,
-    state.settings.humanSettlementFrequency
-  );
-  state.settings.dwarfSettlementFrequency = sanitizeFrequencyValue(
-    Number.isNaN(dwarfSettlementFrequencyRaw)
-      ? state.settings.dwarfSettlementFrequency
-      : dwarfSettlementFrequencyRaw,
-    state.settings.dwarfSettlementFrequency
-  );
-  state.settings.woodElfSettlementFrequency = sanitizeFrequencyValue(
-    Number.isNaN(woodElfSettlementFrequencyRaw)
-      ? state.settings.woodElfSettlementFrequency
-      : woodElfSettlementFrequencyRaw,
-    state.settings.woodElfSettlementFrequency
-  );
-  state.settings.lizardmenSettlementFrequency = sanitizeFrequencyValue(
-    Number.isNaN(lizardmenSettlementFrequencyRaw)
-      ? state.settings.lizardmenSettlementFrequency
-      : lizardmenSettlementFrequencyRaw,
-    state.settings.lizardmenSettlementFrequency
-  );
-  setWorldGenerationType(generationTypeValue);
-
-  if (elements.worldMapSizeSelect) {
-    elements.worldMapSizeSelect.value = state.settings.mapSize;
-  }
-  updateWorldInfoSizeDisplay();
-  updateWorldInfoGenerationTypeDisplay();
-
-  if (elements.worldSeedInput) {
-    elements.worldSeedInput.value = state.settings.seedString;
-  }
-  updateWorldInfoSeedDisplay(state.settings.seedString);
-}
-
-function sampleRange(randomFn, range, fallbackMin, fallbackMax) {
-  const hasRange = Array.isArray(range) && range.length === 2;
-  const min = hasRange && Number.isFinite(range[0]) ? range[0] : fallbackMin;
-  const max = hasRange && Number.isFinite(range[1]) ? range[1] : fallbackMax;
-  if (!Number.isFinite(min) || !Number.isFinite(max)) {
-    const defaultSpan = fallbackMax - fallbackMin;
-    return fallbackMin + randomFn() * defaultSpan;
-  }
-  if (max <= min) {
-    return min;
-  }
-  const span = max - min;
-  return min + randomFn() * span;
-}
-
-function shuffleArray(items, random = Math.random) {
-  if (!Array.isArray(items) || items.length <= 1) {
-    return Array.isArray(items) ? items.slice() : [];
-  }
-  const result = items.slice();
-  const rng = typeof random === 'function' ? random : Math.random;
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const sample = clamp(rng(), 0, 1);
-    const j = Math.floor(sample * (i + 1));
-    const swapIndex = clamp(Number.isFinite(j) ? j : 0, 0, i);
-    if (swapIndex !== i) {
-      const temp = result[i];
-      result[i] = result[swapIndex];
-      result[swapIndex] = temp;
-    }
-  }
-  return result;
-}
-
-function compute1dDistanceTransform(sourceLine, length, outputLine, v, z) {
-  let k = 0;
-  v[0] = 0;
-  z[0] = Number.NEGATIVE_INFINITY;
-  z[1] = Number.POSITIVE_INFINITY;
-  for (let q = 1; q < length; q += 1) {
-    let s;
-    do {
-      const p = v[k];
-      const numerator = sourceLine[q] + q * q - (sourceLine[p] + p * p);
-      const denominator = 2 * (q - p);
-      s = numerator / denominator;
-      if (s <= z[k]) {
-        k -= 1;
-      } else {
-        break;
-      }
-    } while (k >= 0);
-    k += 1;
-    v[k] = q;
-    z[k] = s;
-    z[k + 1] = Number.POSITIVE_INFINITY;
-  }
-  k = 0;
-  for (let q = 0; q < length; q += 1) {
-    while (z[k + 1] < q) {
-      k += 1;
-    }
-    const p = v[k];
-    const diff = q - p;
-    outputLine[q] = diff * diff + sourceLine[p];
-  }
-}
-
-function computeEuclideanDistanceField(sourceMask, width, height) {
-  const size = width * height;
-  const distances = new Float64Array(size);
-  const inf = 1e12;
-  for (let i = 0; i < size; i += 1) {
-    distances[i] = sourceMask[i] ? 0 : inf;
-  }
-  const maxDim = Math.max(width, height);
-  const lineBuffer = new Float64Array(maxDim);
-  const lineResult = new Float64Array(maxDim);
-  const v = new Int32Array(maxDim);
-  const z = new Float64Array(maxDim + 1);
-
-  for (let y = 0; y < height; y += 1) {
-    const offset = y * width;
-    for (let x = 0; x < width; x += 1) {
-      lineBuffer[x] = distances[offset + x];
-    }
-    compute1dDistanceTransform(lineBuffer, width, lineResult, v, z);
-    for (let x = 0; x < width; x += 1) {
-      distances[offset + x] = lineResult[x];
-    }
-  }
-
-  for (let x = 0; x < width; x += 1) {
-    for (let y = 0; y < height; y += 1) {
-      lineBuffer[y] = distances[y * width + x];
-    }
-    compute1dDistanceTransform(lineBuffer, height, lineResult, v, z);
-    for (let y = 0; y < height; y += 1) {
-      distances[y * width + x] = lineResult[y];
-    }
-  }
-
-  return distances;
-}
-
-function escapeHtml(value) {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  return String(value).replace(/[&<>"']/g, (char) => {
-    switch (char) {
-      case '&':
-        return '&amp;';
-      case '<':
-        return '&lt;';
-      case '>':
-        return '&gt;';
-      case '"':
-        return '&quot;';
-      case "'":
-        return '&#39;';
-      default:
-        return char;
-    }
-  });
-}
-
-function sanitizeFrequencyValue(value, fallback) {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return clamp(value, 0, 100);
-  }
-  const parsed = Number.parseInt(value, 10);
-  if (Number.isNaN(parsed)) {
-    return clamp(fallback, 0, 100);
-  }
-  return clamp(parsed, 0, 100);
-}
-
-function describeFrequency(value) {
-  const numeric = clamp(Math.round(value), 0, 100);
-  if (numeric <= 10) {
-    return 'Minimal';
-  }
-  if (numeric <= 30) {
-    return 'Sparse';
-  }
-  if (numeric <= 45) {
-    return 'Low';
-  }
-  if (numeric < 60) {
-    return 'Balanced';
-  }
-  if (numeric <= 75) {
-    return 'High';
-  }
-  if (numeric <= 90) {
-    return 'Dense';
-  }
-  return 'Abundant';
-}
-
-function updateFrequencyDisplay(displayElement, value) {
-  if (!displayElement) {
-    return;
-  }
-  const numeric = clamp(Math.round(value), 0, 100);
-  displayElement.textContent = `${numeric}% — ${describeFrequency(numeric)}`;
-}
-
-function computeFrequencyMultiplier(setting, minMultiplier = 0.25, maxMultiplier = 1.75) {
-  const normalized = clamp(setting / 100, 0, 1);
-  return lerp(minMultiplier, maxMultiplier, normalized);
-}
-
-function computeStructurePlacementLimit(baseTarget, baseLimit, multiplier) {
-  const scaledTarget = Math.max(1, Math.round(baseTarget * multiplier));
-  const scaledLimit = Math.max(1, Math.round(baseLimit * multiplier));
-  return Math.min(scaledTarget, scaledLimit);
-}
-
-function adjustMinDistance(baseDistance, normalized) {
-  const scale = lerp(1.35, 0.7, clamp(normalized, 0, 1));
-  return Math.max(2, Math.round(baseDistance * scale));
-}
-
-function computeAbandonedDwarfholdChance(normalizedFrequency) {
-  const scarcity = 1 - clamp(normalizedFrequency, 0, 1);
-  return clamp(lerp(0.08, 0.28, scarcity), 0, 1);
-}
-
-function connectTownsWithinRange(tiles, towns, options = {}) {
-  if (!Array.isArray(tiles) || !Array.isArray(towns) || towns.length < 2) {
-    return;
-  }
-
-  const {
-    maxDistance = 25,
-    overlayKey = TOWN_ROAD_OVERLAY_KEY,
-    width,
-    height,
-    isLandBaseTile,
-    waterMask,
-    treeOverlayKey,
-    treeSnowOverlayKey,
-    treeOverlayKeys: allTreeOverlayKeys,
-    isMountainOverlay,
-    replaceableOverlays
-  } = options;
-
-  if (!overlayKey || !Number.isFinite(maxDistance) || maxDistance <= 0) {
-    return;
-  }
-
-  const mapHeight = Number.isFinite(height) ? height : tiles.length;
-  const mapWidth = Number.isFinite(width)
-    ? width
-    : tiles.length > 0 && Array.isArray(tiles[0])
-      ? tiles[0].length
-      : 0;
-
-  if (!Number.isFinite(mapWidth) || mapWidth <= 0 || !Number.isFinite(mapHeight) || mapHeight <= 0) {
-    return;
-  }
-
-  const maxDistanceSq = maxDistance * maxDistance;
-
-  for (let i = 0; i < towns.length; i += 1) {
-    const townA = towns[i];
-    if (!townA || !Number.isFinite(townA.x) || !Number.isFinite(townA.y)) {
-      continue;
-    }
-    for (let j = i + 1; j < towns.length; j += 1) {
-      const townB = towns[j];
-      if (!townB || !Number.isFinite(townB.x) || !Number.isFinite(townB.y)) {
-        continue;
-      }
-      const dx = townA.x - townB.x;
-      const dy = townA.y - townB.y;
-      if (dx * dx + dy * dy > maxDistanceSq) {
-        continue;
-      }
-      if (
-        doesDirectTownConnectionCrossWater(
-          townA,
-          townB,
-          mapWidth,
-          mapHeight,
-          waterMask
-        )
-      ) {
-        continue;
-      }
-      carveRoadBetweenPoints(townA, townB, {
-        tiles,
-        overlayKey,
-        width: mapWidth,
-        height: mapHeight,
-        isLandBaseTile,
-        waterMask,
-        treeOverlayKey,
-        treeSnowOverlayKey,
-        treeOverlayKeys: allTreeOverlayKeys,
-        isMountainOverlay,
-        replaceableOverlays
-      });
-    }
-  }
-}
-
-function doesDirectTownConnectionCrossWater(start, end, width, height, waterMask) {
-  if (
-    !start ||
-    !end ||
-    !Number.isFinite(start.x) ||
-    !Number.isFinite(start.y) ||
-    !Number.isFinite(end.x) ||
-    !Number.isFinite(end.y)
-  ) {
-    return false;
-  }
-
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return false;
-  }
-
-  if (!waterMask || (!Array.isArray(waterMask) && !(waterMask instanceof Uint8Array))) {
-    return false;
-  }
-
-  const totalTiles = width * height;
-  if (!Number.isFinite(totalTiles) || totalTiles <= 0) {
-    return false;
-  }
-
-  let x0 = clamp(Math.round(start.x), 0, width - 1);
-  let y0 = clamp(Math.round(start.y), 0, height - 1);
-  const x1 = clamp(Math.round(end.x), 0, width - 1);
-  const y1 = clamp(Math.round(end.y), 0, height - 1);
-
-  const dx = Math.abs(x1 - x0);
-  const sx = x0 < x1 ? 1 : -1;
-  const dy = -Math.abs(y1 - y0);
-  const sy = y0 < y1 ? 1 : -1;
-  let err = dx + dy;
-
-  while (true) {
-    const index = y0 * width + x0;
-    if (index >= 0 && index < waterMask.length && waterMask[index]) {
-      return true;
-    }
-    if (x0 === x1 && y0 === y1) {
-      break;
-    }
-    const e2 = err * 2;
-    if (e2 >= dy) {
-      err += dy;
-      x0 += sx;
-    }
-    if (e2 <= dx) {
-      err += dx;
-      y0 += sy;
-    }
-  }
-
-  return false;
-}
-
-function carveRoadBetweenPoints(start, end, options) {
-  if (!start || !end || !options || !options.tiles) {
-    return;
-  }
-
-  const path = findRoadPathBetweenPoints(start, end, options);
-  if (Array.isArray(path) && path.length > 0) {
-    for (let i = 0; i < path.length; i += 1) {
-      const step = path[i];
-      placeRoadOverlayAt(step.x, step.y, options);
-    }
-    return;
-  }
-
-  let x0 = Math.round(start.x);
-  let y0 = Math.round(start.y);
-  const x1 = Math.round(end.x);
-  const y1 = Math.round(end.y);
-
-  const dx = Math.abs(x1 - x0);
-  const sx = x0 < x1 ? 1 : -1;
-  const dy = -Math.abs(y1 - y0);
-  const sy = y0 < y1 ? 1 : -1;
-  let err = dx + dy;
-
-  while (true) {
-    placeRoadOverlayAt(x0, y0, options);
-    if (x0 === x1 && y0 === y1) {
-      break;
-    }
-    const e2 = err * 2;
-    if (e2 >= dy) {
-      err += dy;
-      x0 += sx;
-    }
-    if (e2 <= dx) {
-      err += dx;
-      y0 += sy;
-    }
-  }
-}
-
-function placeRoadOverlayAt(x, y, options) {
-  const {
-    tiles,
-    overlayKey = TOWN_ROAD_OVERLAY_KEY,
-    width,
-    height,
-    isLandBaseTile,
-    waterMask,
-    treeOverlayKey,
-    treeSnowOverlayKey,
-    treeOverlayKeys: allTreeOverlayKeys,
-    isMountainOverlay,
-    replaceableOverlays
-  } = options || {};
-
-  const evaluation = evaluateRoadTileForPath(x, y, options);
-  if (!evaluation.passableForPlacement || !tiles || !overlayKey) {
-    return;
-  }
-
-  const row = tiles[y];
-  if (!Array.isArray(row)) {
-    return;
-  }
-
-  const tile = row[x];
-  if (!tile) {
-    return;
-  }
-
-  tile.overlay = overlayKey;
-}
-
-function evaluateRoadTileForPath(x, y, options) {
-  const {
-    tiles,
-    overlayKey = TOWN_ROAD_OVERLAY_KEY,
-    width,
-    height,
-    isLandBaseTile,
-    waterMask,
-    treeOverlayKey,
-    treeSnowOverlayKey,
-    treeOverlayKeys: allTreeOverlayKeys,
-    isMountainOverlay,
-    replaceableOverlays
-  } = options || {};
-
-  const defaultResult = {
-    passable: false,
-    passableForPlacement: false,
-    cost: Number.POSITIVE_INFINITY,
-    tile: null,
-    isHill: false,
-    isWater: false
-  };
-
-  if (!tiles || x < 0 || y < 0 || !Number.isFinite(x) || !Number.isFinite(y)) {
-    return defaultResult;
-  }
-
-  const mapWidth = Number.isFinite(width) ? width : tiles.length > 0 ? tiles[0].length : 0;
-  const mapHeight = Number.isFinite(height) ? height : tiles.length;
-
-  if (x >= mapWidth || y >= mapHeight) {
-    return defaultResult;
-  }
-
-  const row = tiles[y];
-  if (!Array.isArray(row)) {
-    return defaultResult;
-  }
-
-  const tile = row[x];
-  if (!tile) {
-    return defaultResult;
-  }
-
-  if (tile.river) {
-    return { ...defaultResult, tile, isWater: true };
-  }
-
-  if (typeof isLandBaseTile === 'function' && !isLandBaseTile(tile.base)) {
-    return { ...defaultResult, tile };
-  }
-
-  const waterResult = { ...defaultResult, tile, isWater: true };
-
-  if (waterMask && (Array.isArray(waterMask) || waterMask instanceof Uint8Array)) {
-    const idx = y * mapWidth + x;
-    if (idx >= 0 && idx < waterMask.length && waterMask[idx]) {
-      return waterResult;
-    }
-  }
-
-  let passable = true;
-  let passableForPlacement = true;
-  let cost = 1;
-
-  if (tile.structure) {
-    passableForPlacement = false;
-    passable = false;
-  }
-
-  const treeOverlays = Array.isArray(allTreeOverlayKeys) && allTreeOverlayKeys.length > 0
-    ? allTreeOverlayKeys
-    : [treeOverlayKey, treeSnowOverlayKey].filter((key, index, array) => key && array.indexOf(key) === index);
-
-  const tileOverlay = tile.overlay;
-  const mountainOverlayPresent =
-    typeof isMountainOverlay === 'function' &&
-    (isMountainOverlay(tileOverlay) || (tile.hillOverlay && isMountainOverlay(tile.hillOverlay)));
-
-  if (mountainOverlayPresent) {
-    passable = false;
-    passableForPlacement = false;
-  }
-
-  const isHillOverlayPresent =
-    typeof isHillOverlayKey === 'function' &&
-    (isHillOverlayKey(tileOverlay) || (tile.hillOverlay && isHillOverlayKey(tile.hillOverlay)));
-
-  if (isHillOverlayPresent) {
-    cost = Math.max(cost, 6);
-  }
-
-  if (tileOverlay && tileOverlay !== overlayKey) {
-    let canReplace = false;
-    if (replaceableOverlays) {
-      if (typeof replaceableOverlays.has === 'function') {
-        canReplace = replaceableOverlays.has(tileOverlay);
-      } else if (Array.isArray(replaceableOverlays)) {
-        canReplace = replaceableOverlays.includes(tileOverlay);
-      }
-    }
-    if (!canReplace) {
-      const isTreeOverlay = treeOverlays.length > 0 && treeOverlays.includes(tileOverlay);
-      if (!isTreeOverlay && tileOverlay !== overlayKey) {
-        passable = false;
-        passableForPlacement = false;
-      }
-    }
-  }
-
-  if (!passable) {
-    return { ...defaultResult, tile, passable: false, passableForPlacement, cost: Number.POSITIVE_INFINITY, isHill: isHillOverlayPresent };
-  }
-
-  return {
-    passable,
-    passableForPlacement,
-    cost,
-    tile,
-    isHill: isHillOverlayPresent,
-    isWater: false
-  };
-}
-
-function findRoadPathBetweenPoints(start, end, options) {
-  if (!options || !options.tiles) {
-    return null;
-  }
-
-  const {
-    width,
-    height
-  } = options;
-
-  const mapWidth = Number.isFinite(width) ? width : options.tiles.length > 0 ? options.tiles[0].length : 0;
-  const mapHeight = Number.isFinite(height) ? height : options.tiles.length;
-
-  if (!Number.isFinite(mapWidth) || !Number.isFinite(mapHeight) || mapWidth <= 0 || mapHeight <= 0) {
-    return null;
-  }
-
-  const startX = clamp(Math.round(start.x), 0, mapWidth - 1);
-  const startY = clamp(Math.round(start.y), 0, mapHeight - 1);
-  const endX = clamp(Math.round(end.x), 0, mapWidth - 1);
-  const endY = clamp(Math.round(end.y), 0, mapHeight - 1);
-
-  const padding = 8;
-  const minX = Math.max(0, Math.min(startX, endX) - padding);
-  const maxX = Math.min(mapWidth - 1, Math.max(startX, endX) + padding);
-  const minY = Math.max(0, Math.min(startY, endY) - padding);
-  const maxY = Math.min(mapHeight - 1, Math.max(startY, endY) + padding);
-
-  const searchWidth = maxX - minX + 1;
-  const searchHeight = maxY - minY + 1;
-  const totalCells = searchWidth * searchHeight;
-
-  if (totalCells <= 0) {
-    return null;
-  }
-
-  const evaluations = new Array(totalCells);
-  for (let localY = 0; localY < searchHeight; localY += 1) {
-    for (let localX = 0; localX < searchWidth; localX += 1) {
-      const worldX = minX + localX;
-      const worldY = minY + localY;
-      const index = localY * searchWidth + localX;
-      evaluations[index] = evaluateRoadTileForPath(worldX, worldY, options);
-    }
-  }
-
-  const startIndex = (startY - minY) * searchWidth + (startX - minX);
-  const goalIndex = (endY - minY) * searchWidth + (endX - minX);
-
-  const startInfo = evaluations[startIndex];
-  const goalInfo = evaluations[goalIndex];
-
-  if (startInfo) {
-    if (!startInfo.passable && startInfo.tile && !startInfo.isWater) {
-      startInfo.passable = true;
-      startInfo.cost = Math.min(startInfo.cost, 1);
-    }
-  }
-
-  if (goalInfo) {
-    if (!goalInfo.passable && goalInfo.tile && !goalInfo.isWater) {
-      goalInfo.passable = true;
-      goalInfo.cost = Math.min(goalInfo.cost, 1);
-    }
-  }
-
-  if (!startInfo || !startInfo.passable || !goalInfo || !goalInfo.passable) {
-    return null;
-  }
-
-  const gScores = new Array(totalCells).fill(Number.POSITIVE_INFINITY);
-  const fScores = new Array(totalCells).fill(Number.POSITIVE_INFINITY);
-  const cameFrom = new Array(totalCells).fill(-1);
-  const openSet = [];
-  const inOpenSet = new Array(totalCells).fill(false);
-
-  const heuristic = (x, y) => {
-    const dx = Math.abs(x - (endX - minX));
-    const dy = Math.abs(y - (endY - minY));
-    return Math.max(dx, dy);
-  };
-
-  gScores[startIndex] = 0;
-  fScores[startIndex] = heuristic(startX - minX, startY - minY);
-  openSet.push(startIndex);
-  inOpenSet[startIndex] = true;
-
-  const neighborSteps = [
-    { dx: 1, dy: 0, cost: 1 },
-    { dx: -1, dy: 0, cost: 1 },
-    { dx: 0, dy: 1, cost: 1 },
-    { dx: 0, dy: -1, cost: 1 },
-    { dx: 1, dy: 1, cost: Math.SQRT2 },
-    { dx: 1, dy: -1, cost: Math.SQRT2 },
-    { dx: -1, dy: 1, cost: Math.SQRT2 },
-    { dx: -1, dy: -1, cost: Math.SQRT2 }
-  ];
-
-  const isIndexValid = (index) => index >= 0 && index < totalCells;
-
-  while (openSet.length > 0) {
-    openSet.sort((a, b) => fScores[a] - fScores[b]);
-    const currentIndex = openSet.shift();
-    inOpenSet[currentIndex] = false;
-
-    if (currentIndex === goalIndex) {
-      return reconstructRoadPath(cameFrom, currentIndex, searchWidth, minX, minY);
-    }
-
-    const currentY = Math.floor(currentIndex / searchWidth);
-    const currentX = currentIndex - currentY * searchWidth;
-
-    for (let i = 0; i < neighborSteps.length; i += 1) {
-      const step = neighborSteps[i];
-      const neighborX = currentX + step.dx;
-      const neighborY = currentY + step.dy;
-
-      if (neighborX < 0 || neighborY < 0 || neighborX >= searchWidth || neighborY >= searchHeight) {
-        continue;
-      }
-
-      const neighborIndex = neighborY * searchWidth + neighborX;
-      if (!isIndexValid(neighborIndex)) {
-        continue;
-      }
-
-      const neighborInfo = evaluations[neighborIndex];
-      if (!neighborInfo || !neighborInfo.passable || neighborInfo.isWater) {
-        continue;
-      }
-
-      if (Math.abs(step.dx) + Math.abs(step.dy) === 2) {
-        const adjX = currentX + step.dx;
-        const adjY = currentY;
-        const adjIndex = adjY * searchWidth + adjX;
-        const otherAdjX = currentX;
-        const otherAdjY = currentY + step.dy;
-        const otherAdjIndex = otherAdjY * searchWidth + otherAdjX;
-        const adjInfo = evaluations[adjIndex];
-        const otherAdjInfo = evaluations[otherAdjIndex];
-        if ((adjInfo && !adjInfo.passable) || (otherAdjInfo && !otherAdjInfo.passable)) {
-          continue;
-        }
-      }
-
-      const traversalCost = neighborInfo.cost * step.cost;
-      const tentativeG = gScores[currentIndex] + traversalCost;
-
-      if (tentativeG >= gScores[neighborIndex]) {
-        continue;
-      }
-
-      cameFrom[neighborIndex] = currentIndex;
-      gScores[neighborIndex] = tentativeG;
-      fScores[neighborIndex] = tentativeG + heuristic(neighborX, neighborY);
-
-      if (!inOpenSet[neighborIndex]) {
-        openSet.push(neighborIndex);
-        inOpenSet[neighborIndex] = true;
-      }
-    }
-  }
-
-  return null;
-}
-
-function reconstructRoadPath(cameFrom, currentIndex, width, offsetX, offsetY) {
-  const path = [];
-  let current = currentIndex;
-  while (current !== -1) {
-    const y = Math.floor(current / width);
-    const x = current - y * width;
-    path.push({ x: offsetX + x, y: offsetY + y });
-    current = cameFrom[current];
-  }
-  path.reverse();
-  return path;
-}
-
-function computeDwarfholdDistributionAdjustment(x, y, height, seed) {
-  if (!Number.isFinite(y) || !Number.isFinite(height) || height <= 1) {
-    return 0;
-  }
-
-  const jitter = (hashCoords(x, y, seed >>> 0) - 0.5) * 0.06;
-
-  return jitter;
-}
-
-function isCandidateNearVolcano(candidate, options) {
-  if (!candidate || !options || !options.tiles) {
-    return false;
-  }
-
-  const radius = Math.max(
-    0,
-    Math.floor(
-      Number.isFinite(options.darkDwarfholdVolcanoRadius)
-        ? options.darkDwarfholdVolcanoRadius
-        : darkDwarfholdVolcanoRadius
-    )
-  );
-
-  if (radius <= 0) {
-    return false;
-  }
-
-  const { width, height, tiles } = options;
-  const { x, y } = candidate;
-
-  if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    return false;
-  }
-
-  for (let dy = -radius; dy <= radius; dy += 1) {
-    const ny = y + dy;
-    if (ny < 0 || ny >= height) {
-      continue;
-    }
-    const row = tiles[ny];
-    if (!Array.isArray(row)) {
-      continue;
-    }
-    for (let dx = -radius; dx <= radius; dx += 1) {
-      const nx = x + dx;
-      if (nx < 0 || nx >= width) {
-        continue;
-      }
-      if (dx === 0 && dy === 0) {
-        continue;
-      }
-      if (dx * dx + dy * dy > radius * radius) {
-        continue;
-      }
-      const neighbor = row[nx];
-      if (!neighbor) {
-        continue;
-      }
-      if (isVolcanoOverlayKey(neighbor.overlay) || isVolcanoOverlayKey(neighbor.hillOverlay)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-function tryPlaceDwarfhold(candidate, options) {
-  if (!candidate || !options) {
-    return false;
-  }
-  const {
-    placed,
-    minDistanceSq,
-    tiles,
-    width,
-    height,
-    waterMask,
-    mountainScores,
-    fallbackMountainScoreThreshold,
-    mountainOverlayKey,
-    dwarfholdKey,
-    darkDwarfholdKey,
-    greatDwarfholdKey,
-    abandonedDwarfholdKey,
-    abandonedDwarfholdChance,
-    rng,
-    mountainRuggednessSeed,
-    dwarfholds,
-    towns,
-    nearbyTownDistanceSq,
-    darkDwarfholdVolcanoRadius: customDarkVolcanoRadius
-  } = options;
-
-  if (!tiles || !Array.isArray(tiles[candidate.y])) {
-    return false;
-  }
-
-  const tile = tiles[candidate.y][candidate.x];
-  if (!tile || tile.structure || tile.river) {
-    return false;
-  }
-
-  if (
-    Array.isArray(placed) &&
-    Number.isFinite(minDistanceSq) &&
-    minDistanceSq > 0 &&
-    placed.length > 0
-  ) {
-    for (let i = 0; i < placed.length; i += 1) {
-      const other = placed[i];
-      const dx = candidate.x - other.x;
-      const dy = candidate.y - other.y;
-      if (dx * dx + dy * dy < minDistanceSq) {
-        return false;
-      }
-    }
-  }
-
-  const idx = candidate.y * width + candidate.x;
-  const qualifiesForPlacement =
-    candidate.isMountainTile ||
-    (!tile.overlay &&
-      mountainScores &&
-      mountainScores[idx] >= fallbackMountainScoreThreshold &&
-      waterMask &&
-      !waterMask[idx]);
-
-  if (!qualifiesForPlacement) {
-    return false;
-  }
-
-  const nearVolcano = isCandidateNearVolcano(candidate, {
-    tiles,
-    width,
-    height,
-    darkDwarfholdVolcanoRadius: customDarkVolcanoRadius
-  });
-
-  if (!candidate.isMountainTile && mountainOverlayKey && !tile.overlay) {
-    tile.overlay = mountainOverlayKey;
-    if (mountainRuggednessSeed) {
-      const ruggednessNoise = hashCoords(candidate.x, candidate.y, mountainRuggednessSeed ^ 0x51a3b1f7);
-      tile.mountainRuggedness = clamp(0.4 + ruggednessNoise * 0.45, 0, 1);
-    } else {
-      tile.mountainRuggedness = Math.max(Number(tile.mountainRuggedness) || 0, 0.45);
-    }
-  }
-
-  const resolvedTownDistanceSq =
-    Number.isFinite(nearbyTownDistanceSq) && nearbyTownDistanceSq >= 0
-      ? nearbyTownDistanceSq
-      : dwarfholdNearbyTownRadius * dwarfholdNearbyTownRadius;
-
-  const hasNearbyHumanSettlement =
-    Array.isArray(towns) &&
-    towns.some((town) => {
-      if (!town || !Number.isFinite(town.x) || !Number.isFinite(town.y)) {
-        return false;
-      }
-      const dx = candidate.x - town.x;
-      const dy = candidate.y - town.y;
-      const distanceSq = dx * dx + dy * dy;
-      if (distanceSq > resolvedTownDistanceSq) {
-        return false;
-      }
-      const type = typeof town.type === 'string' ? town.type.toLowerCase() : '';
-      if (type === 'city' || type === 'town' || type === 'village') {
-        return true;
-      }
-      const classification =
-        typeof town.classification === 'string' ? town.classification.toLowerCase() : '';
-      if (classification === 'city' || classification === 'village' || classification.includes('town')) {
-        return true;
-      }
-      return false;
-    });
-
-  const randomFn = typeof rng === 'function' ? rng : Math.random;
-  const resolvedAbandonedChance = clamp(
-    Number.isFinite(abandonedDwarfholdChance) ? abandonedDwarfholdChance : 0,
-    0,
-    1
-  );
-  const isAbandoned = !nearVolcano && resolvedAbandonedChance > 0 && randomFn() < resolvedAbandonedChance;
-  const name = generateDwarfholdName(randomFn);
-  const details = generateDwarfholdDetails(name, randomFn, {
-    hasNearbyHumanSettlement,
-    isAbandoned,
-    isDarkHold: nearVolcano
-  });
-  let structureKey = dwarfholdKey;
-  if (
-    details.type === 'abandonedDwarfhold' ||
-    details.type === 'ruinedDwarfhold' ||
-    details.type === 'occupiedDwarfhold'
-  ) {
-    structureKey = abandonedDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
-  } else if (details.type === 'darkDwarfhold') {
-    structureKey = darkDwarfholdKey || dwarfholdKey || greatDwarfholdKey || null;
-  } else if (details.type === 'greatDwarfhold') {
-    structureKey = greatDwarfholdKey || dwarfholdKey || null;
-  }
-
-  tile.structure = structureKey;
-  tile.structureName = name;
-  tile.structureDetails = details;
-
-  if (Array.isArray(placed)) {
-    placed.push(candidate);
-  }
-  if (Array.isArray(dwarfholds)) {
-    dwarfholds.push({ x: candidate.x, y: candidate.y, ...details });
-  }
-
-  return true;
-}
-
-function randomInt(min, max) {
-  const lower = Math.ceil(min);
-  const upper = Math.floor(max);
-  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
-}
-
-function randomChoice(options) {
-  if (!Array.isArray(options) || options.length === 0) {
-    return null;
-  }
-  const index = randomInt(0, options.length - 1);
-  return options[index];
-}
-
-function getOptionByValue(category, value) {
-  const bucket = dwarfOptions[category];
-  if (!bucket || bucket.length === 0) {
-    return null;
-  }
-  let resolvedValue = value;
-  if (category === 'hairStyle') {
-    resolvedValue = resolveHairStyleValue(value);
-  } else if (category === 'head') {
-    resolvedValue = resolveHeadTypeValue(value);
-  }
-  return bucket.find((option) => option.value === resolvedValue) || bucket[0];
-}
-
-function getOptionLabel(category, value) {
-  const option = getOptionByValue(category, value);
-  return option ? option.label : value;
-}
-
-function generateDwarfFirstName(gender) {
-  const pool = dwarfNamePools[gender] || dwarfNamePools.male;
-  return randomChoice(pool) || 'Urist';
-}
-
-function generateDwarfClanName() {
-  const option = randomChoice(dwarfOptions.clan) || dwarfOptions.clan[0];
-  return option?.label || 'Stonebeard';
-}
-
-function generateDwarfName(gender, clanValue) {
-  const firstName = generateDwarfFirstName(gender);
-  const clanName = clanValue ? getOptionLabel('clan', clanValue) : generateDwarfClanName();
-  return `${firstName} ${clanName}`;
-}
-
-function extractFirstName(fullName) {
-  if (!fullName) {
-    return '';
-  }
-  const trimmed = fullName.trim();
-  if (!trimmed) {
-    return '';
-  }
-  const [firstName] = trimmed.split(/\s+/);
-  return firstName || '';
-}
-
-function isPresetDwarfFirstName(firstName) {
-  return presetDwarfFirstNames.has(firstName);
-}
-
-function createRandomDwarf(preferredGender) {
-  const genderOption = preferredGender
-    ? getOptionByValue('gender', preferredGender)
-    : randomChoice(dwarfOptions.gender);
-  const genderValue = genderOption ? genderOption.value : dwarfOptions.gender[0].value;
-  const skinOption = randomChoice(dwarfOptions.skin) || dwarfOptions.skin[0];
-  const eyeOption = randomChoice(dwarfOptions.eyes) || dwarfOptions.eyes[0];
-  const headOption = randomChoice(dwarfOptions.head) || dwarfOptions.head[0];
-  const hairStyleOption = randomChoice(dwarfOptions.hairStyle) || dwarfOptions.hairStyle[0];
-  const hairOption = randomChoice(dwarfOptions.hair) || dwarfOptions.hair[0];
-  const beardOption =
-    genderValue === 'female'
-      ? dwarfOptions.beard.find((option) => option.value === 'clean') || dwarfOptions.beard[0]
-      : randomChoice(dwarfOptions.beard) || dwarfOptions.beard[0];
-  const clanOption = randomChoice(dwarfOptions.clan) || dwarfOptions.clan[0];
-  const guildOption = randomChoice(dwarfOptions.guild) || dwarfOptions.guild[0];
-  const professionOption = randomChoice(dwarfOptions.profession) || dwarfOptions.profession[0];
-
-  return {
-    name: generateDwarfName(genderValue, clanOption?.value),
-    gender: genderValue,
-    skin: skinOption.value,
-    eyes: eyeOption.value,
-    head: resolveHeadTypeValue(headOption.value),
-    hairStyle: resolveHairStyleValue(hairStyleOption.value),
-    hair: hairOption.value,
-    beard: genderValue === 'female' ? 'clean' : beardOption.value,
-    clan: clanOption?.value,
-    guild: guildOption?.value,
-    profession: professionOption?.value
-  };
-}
-
-function initialiseDwarfParty() {
-  const dwarves = Array.from({ length: defaultDwarfCount }, () => createRandomDwarf());
-  state.dwarfParty = {
-    dwarves,
-    activeIndex: 0
-  };
-}
-
-function ensureDwarfParty({ forceReset = false } = {}) {
-  if (forceReset || !Array.isArray(state.dwarfParty?.dwarves) || state.dwarfParty.dwarves.length === 0) {
-    initialiseDwarfParty();
-    return;
-  }
-  state.dwarfParty.activeIndex = clamp(
-    state.dwarfParty.activeIndex,
-    0,
-    Math.max(0, state.dwarfParty.dwarves.length - 1)
-  );
-}
-
-function getActiveDwarf() {
-  if (!state.dwarfParty || !Array.isArray(state.dwarfParty.dwarves)) {
-    return null;
-  }
-  return state.dwarfParty.dwarves[state.dwarfParty.activeIndex] || null;
-}
-
-function ensurePortraitContext() {
-  const canvas = elements.dwarfPortraitCanvas || null;
-  if (!canvas) {
-    dwarfPortraitState.canvas = null;
-    dwarfPortraitState.ctx = null;
-    return null;
-  }
-  if (canvas !== dwarfPortraitState.canvas) {
-    const context = canvas.getContext('2d');
-    if (!context) {
-      dwarfPortraitState.canvas = null;
-      dwarfPortraitState.ctx = null;
-      return null;
-    }
-    context.imageSmoothingEnabled = false;
-    dwarfPortraitState.canvas = canvas;
-    dwarfPortraitState.ctx = context;
-  }
-  return dwarfPortraitState.ctx;
-}
-
-function ensureBodyPortraitContext() {
-  const canvas = elements.dwarfBodyPortraitCanvas || null;
-  if (!canvas) {
-    dwarfBodyPortraitState.canvas = null;
-    dwarfBodyPortraitState.ctx = null;
-    return null;
-  }
-  if (canvas !== dwarfBodyPortraitState.canvas) {
-    const context = canvas.getContext('2d');
-    if (!context) {
-      dwarfBodyPortraitState.canvas = null;
-      dwarfBodyPortraitState.ctx = null;
-      return null;
-    }
-    context.imageSmoothingEnabled = false;
-    dwarfBodyPortraitState.canvas = canvas;
-    dwarfBodyPortraitState.ctx = context;
-  }
-  return dwarfBodyPortraitState.ctx;
-}
-
-function ensureDwarfTestContext() {
-  const canvas = elements.dwarfTestCanvas || null;
-  if (!canvas) {
-    dwarfTestState.canvas = null;
-    dwarfTestState.ctx = null;
-    return null;
-  }
-  if (canvas !== dwarfTestState.canvas) {
-    const context = canvas.getContext('2d');
-    if (!context) {
-      dwarfTestState.canvas = null;
-      dwarfTestState.ctx = null;
-      return null;
-    }
-    context.imageSmoothingEnabled = false;
-    dwarfTestState.canvas = canvas;
-    dwarfTestState.ctx = context;
-  }
-  return dwarfTestState.ctx;
-}
-
-function resizeDwarfTestCanvas() {
-  const canvas = elements.dwarfTestCanvas;
-  if (!canvas) {
-    return;
-  }
-  const width = Math.floor(canvas.clientWidth || 0);
-  const height = Math.floor(canvas.clientHeight || 0);
-  if (width > 0 && canvas.width !== width) {
-    canvas.width = width;
-  }
-  if (height > 0 && canvas.height !== height) {
-    canvas.height = height;
-  }
-}
-
-function handleDwarfTestResize() {
-  const area = elements.dwarfTestArea;
-  if (!area || area.classList.contains('hidden')) {
-    return;
-  }
-  resizeDwarfTestCanvas();
-  if (!dwarfTestState.active) {
-    return;
-  }
-  const ctx = ensureDwarfTestContext();
-  if (!ctx) {
-    return;
-  }
-  const targetScale = calculateDwarfTestTileScale(ctx.canvas);
-  const scaleChanged = applyDwarfTestScaleChange(targetScale);
-  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
-  if (scaleChanged) {
-    const bounds = getDwarfTestBounds(ctx, spriteDimensions);
-    dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
-    dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
-  }
-  updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
-  drawDwarfTestScene(ctx, spriteDimensions);
-}
-
-function updateDwarfTestButtonState() {
-  const activeKey = dwarfTestState.active && dwarfTestState.world ? dwarfTestState.world.key : null;
-  const buttonEntries = [
-    { element: elements.dwarfTestButton, worldKey: 'overworld' },
-    { element: elements.dwarfTestDungeonButton, worldKey: 'dungeon' }
-  ];
-
-  for (const entry of buttonEntries) {
-    if (!entry.element) {
-      continue;
-    }
-    const worldConfig = getDwarfTestWorldConfig(entry.worldKey);
-    const isActive = dwarfTestState.active && activeKey === entry.worldKey;
-    const defaultLabel = worldConfig.buttonLabel || entry.element.textContent || '';
-    const activeLabel = worldConfig.buttonActiveLabel || defaultLabel;
-    entry.element.textContent = isActive ? activeLabel : defaultLabel;
-    entry.element.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    entry.element.classList.toggle('active', isActive);
-  }
-}
-
-function getDwarfTestSpriteDimensions(ctx) {
-  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  const targetHeight = Math.max(
-    1,
-    destTileSize * (dungeonPlayerSpriteConfig.heightTileMultiplier || 2.8)
-  );
-  const baseAnimation = dungeonPlayerAnimationDefinitions.idle;
-  const baseSheet = baseAnimation ? dungeonPlayerSpriteSheets[baseAnimation.sheet] : null;
-  const baseImage = baseSheet?.image || null;
-  const frameWidth = baseSheet?.frameWidth || baseSheet?.tileSize || (baseImage?.width ?? 0);
-  const frameHeight = baseSheet?.frameHeight || baseSheet?.tileSize || (baseImage?.height ?? 0);
-
-  if (baseImage && frameWidth > 0 && frameHeight > 0) {
-    const scale = targetHeight / frameHeight;
-    return {
-      width: Math.max(1, frameWidth * scale),
-      height: Math.max(1, frameHeight * scale),
-      scale
-    };
-  }
-
-  const source = elements.dwarfBodyPortraitCanvas;
-  const fallbackHeight = Math.max(1, destTileSize);
-
-  if (!source || source.width === 0 || source.height === 0) {
-    return {
-      width: Math.max(1, fallbackHeight * 0.7),
-      height: fallbackHeight
-    };
-  }
-
-  const aspectRatio = source.width / source.height;
-  const clampedAspectRatio = Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : 1;
-  const width = Math.max(1, fallbackHeight * clampedAspectRatio);
-
-  return {
-    width,
-    height: fallbackHeight
-  };
-}
-
-function getDwarfTestBounds(ctx, spriteDimensions) {
-  const map = dwarfTestState.map;
-  const tileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  if (!map) {
-    const { canvas } = ctx;
-    const paddingX = Math.max(16, canvas.width * 0.06);
-    const paddingY = Math.max(18, canvas.height * 0.1);
-    const minX = paddingX + spriteDimensions.width / 2;
-    const maxX = canvas.width - paddingX - spriteDimensions.width / 2;
-    const groundPadding = Math.max(paddingY, spriteDimensions.height * 0.2);
-    const minY = paddingY + spriteDimensions.height / 2;
-    const maxY = canvas.height - groundPadding;
-    return { minX, maxX, minY, maxY };
-  }
-
-  const worldWidth = map.columns * tileSize;
-  const worldHeight = map.rows * tileSize;
-  const minX = spriteDimensions.width / 2;
-  const maxX = Math.max(minX, worldWidth - spriteDimensions.width / 2);
-  const minY = spriteDimensions.height / 2;
-  const groundPadding = Math.max(tileSize * 0.5, spriteDimensions.height * 0.25);
-  const maxY = Math.max(minY, worldHeight - groundPadding);
-  return { minX, maxX, minY, maxY };
-}
-
-function drawDwarfTestFallbackBackground(ctx) {
-  const { canvas } = ctx;
-  const { width, height } = canvas;
-  const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, '#101926');
-  gradient.addColorStop(1, '#070c14');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-
-  const groundHeight = Math.max(32, Math.round(height * 0.32));
-  const groundY = height - groundHeight;
-  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
-  groundGradient.addColorStop(0, '#1e3a2f');
-  groundGradient.addColorStop(1, '#14261f');
-  ctx.fillStyle = groundGradient;
-  ctx.fillRect(0, groundY, width, groundHeight);
-
-  const stripeSpacing = Math.max(18, Math.round(width / 14));
-  const offset = ((dwarfTestState.backgroundOffset % stripeSpacing) + stripeSpacing) % stripeSpacing;
-
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let x = -stripeSpacing + offset; x < width + stripeSpacing; x += stripeSpacing) {
-    ctx.moveTo(x, groundY);
-    ctx.lineTo(x, height);
-  }
-  ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-  ctx.beginPath();
-  const horizontalSpacing = Math.max(14, stripeSpacing * 0.6);
-  for (let y = groundY; y < height; y += horizontalSpacing) {
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-  }
-  ctx.stroke();
-
-  const glowGradient = ctx.createRadialGradient(
-    width / 2,
-    groundY,
-    Math.max(10, width * 0.15),
-    width / 2,
-    groundY,
-    Math.max(60, width * 0.7)
-  );
-  glowGradient.addColorStop(0, 'rgba(88, 137, 196, 0.2)');
-  glowGradient.addColorStop(1, 'rgba(16, 25, 38, 0)');
-  ctx.fillStyle = glowGradient;
-  ctx.fillRect(0, 0, width, height);
-}
-
-function drawDwarfTestBackground(ctx) {
-  const world = getActiveDwarfTestWorld();
-  const palette = world.tilePalette || {};
-  const map = dwarfTestState.map;
-  if (!map || !Array.isArray(map.tiles)) {
-    drawDwarfTestFallbackBackground(ctx);
-    return;
-  }
-
-  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  const { columns, rows, tiles } = map;
-  const camera = dwarfTestState.camera || { x: 0, y: 0 };
-  const { width, height } = ctx.canvas;
-
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = getDwarfTestBackgroundColor();
-  ctx.fillRect(0, 0, width, height);
-
-  const startCol = Math.max(0, Math.floor(camera.x / destTileSize));
-  const startRow = Math.max(0, Math.floor(camera.y / destTileSize));
-  const offsetX = camera.x - startCol * destTileSize;
-  const offsetY = camera.y - startRow * destTileSize;
-  const visibleCols = Math.min(columns - startCol, Math.ceil((width + offsetX) / destTileSize) + 1);
-  const visibleRows = Math.min(rows - startRow, Math.ceil((height + offsetY) / destTileSize) + 1);
-
-  for (let row = 0; row < visibleRows; row += 1) {
-    const mapRow = startRow + row;
-    const destY = Math.round(row * destTileSize - offsetY);
-    for (let col = 0; col < visibleCols; col += 1) {
-      const mapCol = startCol + col;
-      const tileKey = tiles[mapRow][mapCol];
-      let frame = resolveDwarfTestTileFrame(tileKey);
-      const hasExplicitNull = Object.prototype.hasOwnProperty.call(palette, tileKey) && palette[tileKey] === null;
-      if (!frame && !hasExplicitNull) {
-        const fallbackKey = getDwarfTestFallbackTileKey();
-        if (fallbackKey && fallbackKey !== tileKey) {
-          frame = resolveDwarfTestTileFrame(fallbackKey);
-        }
-      }
-      const sheetKey = frame?.sheet || world.tileSheetKey;
-      const sheet = sheetKey ? state.tileSheets[sheetKey] : null;
-      if (!frame || !sheet?.image) {
-        continue;
-      }
-      const tileSize = sheet.tileSize || getActiveDwarfTestTileSize();
-      const sx = frame.col * tileSize;
-      const sy = frame.row * tileSize;
-      const destX = Math.round(col * destTileSize - offsetX);
-      ctx.drawImage(sheet.image, sx, sy, tileSize, tileSize, destX, destY, destTileSize, destTileSize);
-    }
-  }
-
-  ctx.restore();
-
-  const skyGradient = ctx.createLinearGradient(0, 0, 0, Math.max(1, height * 0.45));
-  const skyStops = getDwarfTestGradientStops('sky');
-  if (Array.isArray(skyStops) && skyStops.length > 0) {
-    for (const stop of skyStops) {
-      if (!stop || !Number.isFinite(stop.offset) || typeof stop.color !== 'string') {
-        continue;
-      }
-      const clampedOffset = clamp(stop.offset, 0, 1);
-      skyGradient.addColorStop(clampedOffset, stop.color);
-    }
-    ctx.fillStyle = skyGradient;
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  const groundGradient = ctx.createLinearGradient(0, height * 0.6, 0, height);
-  const groundStops = getDwarfTestGradientStops('ground');
-  if (Array.isArray(groundStops) && groundStops.length > 0) {
-    for (const stop of groundStops) {
-      if (!stop || !Number.isFinite(stop.offset) || typeof stop.color !== 'string') {
-        continue;
-      }
-      const clampedOffset = clamp(stop.offset, 0, 1);
-      groundGradient.addColorStop(clampedOffset, stop.color);
-    }
-    ctx.fillStyle = groundGradient;
-    ctx.fillRect(0, 0, width, height);
-  }
-}
-
-function drawDwarfTestCharacter(ctx, spriteDimensions) {
-  const { width, height } = ctx.canvas;
-  const position = dwarfTestState.position;
-  const camera = dwarfTestState.camera || { x: 0, y: 0 };
-  const baseX = position.x - camera.x;
-  const baseY = position.y - camera.y;
-  const margin = Math.max(spriteDimensions.width, spriteDimensions.height);
-  if (
-    baseX < -margin ||
-    baseX > width + margin ||
-    baseY < -margin ||
-    baseY > height + margin
-  ) {
-    return;
-  }
-
-  const shadowWidth = spriteDimensions.width * 0.6;
-  const shadowHeight = Math.max(6, spriteDimensions.height * 0.18);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-  ctx.beginPath();
-  ctx.ellipse(baseX, baseY - 4, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  const player = dwarfTestState.player;
-  let drewCharacter = false;
-  const spriteFrame = getDungeonPlayerSpriteFrame(player);
-  if (spriteFrame) {
-    const sheet = dungeonPlayerSpriteSheets[spriteFrame.sheetKey];
-    const image = sheet?.image;
-    if (image) {
-      const frameHeight = spriteFrame.sh || sheet?.frameHeight || sheet?.tileSize || image.height || 1;
-      const scale = spriteDimensions?.scale ||
-        (frameHeight > 0 ? (spriteDimensions.height || frameHeight) / frameHeight : 1);
-      const destWidth = (spriteFrame.sw || sheet?.frameWidth || sheet?.tileSize || image.width) * scale;
-      const destHeight = frameHeight * scale;
-      ctx.save();
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(
-        image,
-        spriteFrame.sx,
-        spriteFrame.sy,
-        spriteFrame.sw,
-        spriteFrame.sh,
-        baseX - destWidth / 2,
-        baseY - destHeight,
-        destWidth,
-        destHeight
-      );
-      ctx.restore();
-      drewCharacter = true;
-    }
-  }
-
-  if (!drewCharacter) {
-    const source = elements.dwarfBodyPortraitCanvas;
-    if (source && source.width > 0 && source.height > 0) {
-      ctx.save();
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(
-        source,
-        baseX - spriteDimensions.width / 2,
-        baseY - spriteDimensions.height,
-        spriteDimensions.width,
-        spriteDimensions.height
-      );
-      ctx.restore();
-      drewCharacter = true;
-    }
-  }
-
-  if (!drewCharacter) {
-    ctx.fillStyle = '#d0b89a';
-    ctx.beginPath();
-    ctx.arc(baseX, baseY - spriteDimensions.height / 2, spriteDimensions.width / 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#5b473c';
-    ctx.fillRect(
-      baseX - spriteDimensions.width / 4,
-      baseY - spriteDimensions.height + spriteDimensions.height * 0.2,
-      spriteDimensions.width / 2,
-      spriteDimensions.height * 0.6
-    );
-  }
-
-  if (player?.hurtFlash > 0) {
-    const intensity = clamp(player.hurtFlash / 0.35, 0, 1);
-    ctx.fillStyle = `rgba(239, 68, 68, ${0.4 * intensity})`;
-    ctx.beginPath();
-    ctx.ellipse(
-      baseX,
-      baseY - spriteDimensions.height * 0.6,
-      spriteDimensions.width * 0.35,
-      spriteDimensions.height * 0.45,
-      0,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-  }
-  if (player?.dead) {
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
-    ctx.fillRect(
-      baseX - spriteDimensions.width / 2,
-      baseY - spriteDimensions.height,
-      spriteDimensions.width,
-      spriteDimensions.height
-    );
-  }
-}
-
-function getDwarfTestDirectionVector() {
-  let dx = 0;
-  let dy = 0;
-  if (dwarfTestState.pressed.has('left')) {
-    dx -= 1;
-  }
-  if (dwarfTestState.pressed.has('right')) {
-    dx += 1;
-  }
-  if (dwarfTestState.pressed.has('up')) {
-    dy -= 1;
-  }
-  if (dwarfTestState.pressed.has('down')) {
-    dy += 1;
-  }
-  if (dx === 0 && dy === 0) {
-    return { dx: 0, dy: 0 };
-  }
-  const length = Math.hypot(dx, dy) || 1;
-  return { dx: dx / length, dy: dy / length };
-}
-
-function updateDwarfTestFrame(timestamp) {
-  if (!dwarfTestState.active) {
-    return;
-  }
-  const ctx = ensureDwarfTestContext();
-  if (!ctx) {
-    closeDwarfTest();
-    return;
-  }
-
-  if (!Number.isFinite(dwarfTestState.lastFrameTime)) {
-    dwarfTestState.lastFrameTime = timestamp;
-  }
-  const deltaMs = timestamp - (dwarfTestState.lastFrameTime || timestamp);
-  const delta = clamp(deltaMs / 1000, 0, 0.1);
-  dwarfTestState.lastFrameTime = timestamp;
-  dwarfTestState.animationTime += delta;
-
-  if (dwarfTestState.player) {
-    dwarfTestState.player.damageCooldown = Math.max(0, (dwarfTestState.player.damageCooldown || 0) - delta);
-    dwarfTestState.player.hurtFlash = Math.max(0, (dwarfTestState.player.hurtFlash || 0) - delta);
-  }
-
-  const direction = getDwarfTestDirectionVector();
-  const moveSpeed = dwarfTestState.player?.dead ? 0 : 160;
-  const distance = moveSpeed * delta;
-  if (direction.dx !== 0 || direction.dy !== 0) {
-    dwarfTestState.position.x += direction.dx * distance;
-    dwarfTestState.position.y += direction.dy * distance;
-    dwarfTestState.backgroundOffset += direction.dx * distance * 0.6;
-  } else {
-    dwarfTestState.backgroundOffset *= 0.9;
-  }
-
-  const player = dwarfTestState.player;
-  if (player) {
-    const isMoving = direction.dx !== 0 || direction.dy !== 0;
-    const nextAnimation = player.dead ? 'idle' : isMoving ? 'walk' : 'idle';
-    if (player.animationKey !== nextAnimation) {
-      player.animationKey = nextAnimation;
-      player.animationElapsed = 0;
-    }
-    if (!player.dead) {
-      player.animationElapsed += delta;
-    }
-  }
-
-  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
-  const bounds = getDwarfTestBounds(ctx, spriteDimensions);
-  dwarfTestState.position.x = clamp(dwarfTestState.position.x, bounds.minX, bounds.maxX);
-  dwarfTestState.position.y = clamp(dwarfTestState.position.y, bounds.minY, bounds.maxY);
-
-  updateOrcEnemies(delta, spriteDimensions, bounds);
-  updateDwarfTestCamera(ctx, spriteDimensions);
-  drawDwarfTestScene(ctx, spriteDimensions);
-
-  dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
-}
-
-function normaliseDwarfTestKey(rawKey) {
-  switch (rawKey) {
-    case 'ArrowUp':
-    case 'Up':
-    case 'w':
-    case 'W':
-      return 'up';
-    case 'ArrowDown':
-    case 'Down':
-    case 's':
-    case 'S':
-      return 'down';
-    case 'ArrowLeft':
-    case 'Left':
-    case 'a':
-    case 'A':
-      return 'left';
-    case 'ArrowRight':
-    case 'Right':
-    case 'd':
-    case 'D':
-      return 'right';
-    default:
-      return null;
-  }
-}
-
-function handleDwarfTestKeyDown(event) {
-  if (!dwarfTestState.active) {
-    return;
-  }
-  const target = event.target;
-  if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
-    return;
-  }
-  const key = normaliseDwarfTestKey(event.key);
-  if (!key) {
-    return;
-  }
-  event.preventDefault();
-  dwarfTestState.pressed.add(key);
-}
-
-function handleDwarfTestKeyUp(event) {
-  if (!dwarfTestState.active) {
-    return;
-  }
-  const key = normaliseDwarfTestKey(event.key);
-  if (!key) {
-    return;
-  }
-  event.preventDefault();
-  dwarfTestState.pressed.delete(key);
-}
-
-function resetDwarfTestState() {
-  const ctx = ensureDwarfTestContext();
-  if (!ctx) {
-    return;
-  }
-  const world = getActiveDwarfTestWorld();
-  dwarfTestState.tileSize = getActiveDwarfTestTileSize();
-  const resolvedScale = calculateDwarfTestTileScale(ctx.canvas);
-  dwarfTestState.tileScale = resolvedScale;
-  const mapGenerator = world.generateMap;
-  dwarfTestState.map = typeof mapGenerator === 'function' ? mapGenerator(world) : null;
-  dwarfTestState.animationTime = 0;
-  const spriteDimensions = getDwarfTestSpriteDimensions(ctx);
-  const destTileSize = (dwarfTestState.tileSize || getActiveDwarfTestTileSize()) * (dwarfTestState.tileScale || 1);
-  const mapDimensions = world.mapDimensions || { columns: 0, rows: 0 };
-  const defaultSpawn = dwarfTestState.map?.spawn || world.defaultSpawn || {
-    col: Math.floor((mapDimensions.columns || 1) * 0.35),
-    row: Math.max(0, (mapDimensions.rows || 1) - 4)
-  };
-  const walkable = findNearestDwarfTestWalkableTile(
-    dwarfTestState.map,
-    defaultSpawn.col ?? 0,
-    defaultSpawn.row ?? 0
-  );
-  const spawnX = (walkable.col + 0.5) * destTileSize;
-  const spawnY = (walkable.row + 1) * destTileSize - destTileSize * 0.12;
-  const bounds = getDwarfTestBounds(ctx, spriteDimensions);
-  dwarfTestState.position.x = clamp(spawnX, bounds.minX, bounds.maxX);
-  dwarfTestState.position.y = clamp(spawnY, bounds.minY, bounds.maxY);
-  dwarfTestState.backgroundOffset = 0;
-  dwarfTestState.lastFrameTime = null;
-  dwarfTestState.pressed.clear();
-  dwarfTestState.player = {
-    health: 100,
-    maxHealth: 100,
-    damageCooldown: 0,
-    hurtFlash: 0,
-    dead: false,
-    animationKey: 'idle',
-    animationElapsed: 0
-  };
-  spawnDwarfTestEnemies(dwarfTestState.map, destTileSize, walkable);
-  updateDwarfTestCamera(ctx, spriteDimensions, { immediate: true });
-  drawDwarfTestScene(ctx, spriteDimensions);
-}
-
-function openDwarfTest(worldKey = dwarfTestDefaultWorldKey, options = {}) {
-  const area = elements.dwarfTestArea;
-  if (!area) {
-    return;
-  }
-  if (dwarfTestState.active) {
-    return;
-  }
-  const world = getDwarfTestWorldConfig(worldKey);
-  dwarfTestState.world = world;
-  dwarfTestState.focusReturnElement = options.trigger || null;
-  area.classList.remove('hidden');
-  area.classList.add('fullscreen');
-  area.setAttribute('aria-hidden', 'false');
-  resizeDwarfTestCanvas();
-  const ctx = ensureDwarfTestContext();
-  if (!ctx) {
-    area.classList.add('hidden');
-    area.classList.remove('fullscreen');
-    area.setAttribute('aria-hidden', 'true');
-    return;
-  }
-  dwarfTestState.active = true;
-  resetDwarfTestState();
-  updateDwarfTestButtonState();
-  window.addEventListener('keydown', handleDwarfTestKeyDown);
-  window.addEventListener('keyup', handleDwarfTestKeyUp);
-  handleDwarfTestResize();
-  dwarfTestState.rafId = window.requestAnimationFrame(updateDwarfTestFrame);
-  window.requestAnimationFrame(() => {
-    handleDwarfTestResize();
-    if (typeof area.focus === 'function') {
-      area.focus();
-    }
-  });
-}
-
-function closeDwarfTest(options = {}) {
-  const { returnFocus = false, focusTarget = null } = options;
-  const fallbackButton = elements.dwarfTestButton || null;
-  if (!dwarfTestState.active) {
-    updateDwarfTestButtonState();
-    const focusElement = focusTarget || dwarfTestState.focusReturnElement || fallbackButton;
-    dwarfTestState.focusReturnElement = null;
-    if (returnFocus && focusElement && typeof focusElement.focus === 'function') {
-      focusElement.focus();
-    }
-    return;
-  }
-  dwarfTestState.active = false;
-  dwarfTestState.pressed.clear();
-  if (dwarfTestState.rafId !== null) {
-    window.cancelAnimationFrame(dwarfTestState.rafId);
-    dwarfTestState.rafId = null;
-  }
-  window.removeEventListener('keydown', handleDwarfTestKeyDown);
-  window.removeEventListener('keyup', handleDwarfTestKeyUp);
-  dwarfTestState.lastFrameTime = null;
-  dwarfTestState.animationTime = 0;
-  dwarfTestState.enemies = [];
-  dwarfTestState.player = null;
-  dwarfTestEnemyIdCounter = 0;
-  if (elements.dwarfTestArea) {
-    elements.dwarfTestArea.classList.add('hidden');
-    elements.dwarfTestArea.classList.remove('fullscreen');
-    elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
-  }
-  updateDwarfTestButtonState();
-  const focusElement = focusTarget || dwarfTestState.focusReturnElement || fallbackButton;
-  dwarfTestState.focusReturnElement = null;
-  if (returnFocus && focusElement && typeof focusElement.focus === 'function') {
-    focusElement.focus();
-  }
-}
-
-function toggleDwarfTest(worldKey = dwarfTestDefaultWorldKey, options = {}) {
-  const targetWorld = getDwarfTestWorldConfig(worldKey);
-  if (dwarfTestState.active && dwarfTestState.world?.key === targetWorld.key) {
-    closeDwarfTest({ returnFocus: true, focusTarget: options.trigger || dwarfTestState.focusReturnElement });
-    return;
-  }
-  if (dwarfTestState.active) {
-    closeDwarfTest();
-  }
-  openDwarfTest(targetWorld.key, options);
-}
-
-function isDwarfTestActive() {
-  return dwarfTestState.active;
-}
-
-function getBaseBodyFrame(dwarf) {
-  const frames = dwarfPortraitConfig.baseFrames;
-  const gender = dwarf?.gender;
-  if (gender && frames && Object.prototype.hasOwnProperty.call(frames, gender)) {
-    return frames[gender];
-  }
-  return dwarfPortraitConfig.baseFrame || null;
-}
-
-function drawTintedSprite(ctx, sheetKey, frame, baseX, baseY, scale, tint) {
-  const sheet = dwarfSpriteSheets[sheetKey];
-  if (!sheet?.image) {
-    return;
-  }
-  const sourceTileSize = typeof frame.sourceTileSize === 'number' ? frame.sourceTileSize : sheet.tileSize;
-  const destTileSize = typeof frame.destTileSize === 'number' ? frame.destTileSize : sourceTileSize;
-  const sx = frame.col * sourceTileSize;
-  const sy = frame.row * sourceTileSize;
-  const sw = sourceTileSize;
-  const sh = sourceTileSize;
-  const destX = baseX;
-  const destY = baseY + Math.round((frame.offsetY || 0) * scale);
-  const destW = destTileSize * scale;
-  const destH = destTileSize * scale;
-
-  const offscreen = document.createElement('canvas');
-  offscreen.width = sw;
-  offscreen.height = sh;
-  const offscreenCtx = offscreen.getContext('2d');
-  if (!offscreenCtx) {
-    return;
-  }
-  offscreenCtx.imageSmoothingEnabled = false;
-  offscreenCtx.drawImage(sheet.image, sx, sy, sw, sh, 0, 0, sw, sh);
-  if (tint) {
-    offscreenCtx.globalCompositeOperation = 'source-atop';
-    offscreenCtx.fillStyle = tint;
-    offscreenCtx.globalAlpha = 0.9;
-    offscreenCtx.fillRect(0, 0, sw, sh);
-    offscreenCtx.globalAlpha = 1;
-    offscreenCtx.globalCompositeOperation = 'source-over';
-  }
-  ctx.drawImage(offscreen, 0, 0, sw, sh, destX, destY, destW, destH);
-}
-
-function getHeadFrame(dwarf, headValue) {
-  const headConfig = dwarfPortraitConfig.head;
-  const resolvedValue = resolveHeadTypeValue(headValue);
-  const headType = dwarfHeadTypes[resolvedValue];
-  if (!headConfig || !headType) {
-    return null;
-  }
-  const sheet = headConfig.sheet;
-  const sheetConfig = dwarfSpriteSheets[sheet];
-  const sourceTileSize = typeof sheetConfig?.tileSize === 'number' ? sheetConfig.tileSize : dwarfPortraitConfig.tileSize;
-  const genderRow =
-    (headConfig.rows && Object.prototype.hasOwnProperty.call(headConfig.rows, dwarf?.gender)
-      ? headConfig.rows[dwarf?.gender]
-      : undefined);
-  const row = typeof genderRow === 'number' ? genderRow : headConfig.row || 0;
-  return {
-    sheet,
-    col: headType.column,
-    row,
-    offsetY: headConfig.offsetY ?? 0,
-    sourceTileSize,
-    destTileSize: dwarfPortraitConfig.tileSize
-  };
-}
-
-function getHairFrame(dwarf, hairOption, hairStyleValue) {
-  const styleConfig = getHairStyleConfig(hairStyleValue ?? dwarf?.hairStyle);
-  const rows = styleConfig?.rows || {};
-  const genderRow = rows[dwarf?.gender];
-  const row = typeof genderRow === 'number' ? genderRow : rows.default;
-  const mapping = dwarfHairColorToFrame[hairOption?.value] || dwarfHairColorToFrame.obsidian;
-  if (typeof row !== 'number' || !mapping || typeof mapping.column !== 'number') {
-    return null;
-  }
-  return {
-    sheet: styleConfig?.sheet || 'hair',
-    col: mapping.column,
-    row,
-    tint: mapping.tint || null,
-    offsetY: styleConfig?.offsetY ?? dwarfPortraitConfig.hairOffsetY,
-    destTileSize: dwarfPortraitConfig.tileSize
-  };
-}
-
-function getBeardFrame(dwarf, hairOption) {
-  if (!dwarf || dwarf.gender === 'female') {
-    return null;
-  }
-  const beardValue = dwarf.beard || 'clean';
-  const hasBeardConfig = Object.prototype.hasOwnProperty.call(dwarfBeardRows, beardValue);
-  const row = hasBeardConfig ? dwarfBeardRows[beardValue] : dwarfBeardRows.default;
-  if (row === null || row === undefined) {
-    return null;
-  }
-  const mapping = dwarfHairColorToFrame[hairOption?.value] || dwarfHairColorToFrame.obsidian;
-  if (!mapping || typeof mapping.column !== 'number') {
-    return null;
-  }
-  return {
-    sheet: 'hair',
-    col: mapping.column,
-    row,
-    tint: mapping.tint || null,
-    offsetY: dwarfPortraitConfig.beardOffsetY,
-    destTileSize: dwarfPortraitConfig.tileSize
-  };
-}
-
-function shouldUseCharacterCreatorPortrait(dwarf) {
-  if (!dwarf) {
-    return false;
-  }
-  const gender = dwarf.gender === 'female' ? 'female' : 'male';
-  const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
-  const bodyImage = characterCreatorPortraitAssets[bodyKey]?.image || null;
-  const headImage = characterCreatorPortraitAssets.headDefault?.image || null;
-  return Boolean(bodyImage && headImage);
-}
-
-function getCharacterCreatorHairAssetKey(dwarf) {
-  if (!dwarf) {
-    return null;
-  }
-  const resolvedStyle = resolveHairStyleValue(dwarf.hairStyle);
-  const category = characterCreatorHairStyleCategoryMap[resolvedStyle];
-  if (!category) {
-    return null;
-  }
-  const assetKey = characterCreatorHairAssetMap[category];
-  return assetKey || null;
-}
-
-function getCharacterCreatorBeardAssetKey(dwarf) {
-  if (!dwarf || dwarf.gender !== 'male') {
-    return null;
-  }
-  const beardValue = dwarf.beard || 'clean';
-  const assetKey = characterCreatorBeardAssetMap[beardValue];
-  return assetKey || null;
-}
-
-function getCharacterCreatorBeardImage(dwarf) {
-  const assetKey = getCharacterCreatorBeardAssetKey(dwarf);
-  if (!assetKey) {
-    return null;
-  }
-  return characterCreatorPortraitAssets[assetKey]?.image || null;
-}
-
-function renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption) {
-  const gender = dwarf?.gender === 'female' ? 'female' : 'male';
-  const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
-  const bodyImage = characterCreatorPortraitAssets[bodyKey]?.image;
-  const headImage = characterCreatorPortraitAssets.headDefault?.image;
-  if (!bodyImage || !headImage) {
-    return;
-  }
-  ctx.imageSmoothingEnabled = false;
-  const scale = Math.min(canvas.width / bodyImage.width, canvas.height / bodyImage.height);
-  const drawWidth = bodyImage.width * scale;
-  const drawHeight = bodyImage.height * scale;
-  const offsetX = Math.floor((canvas.width - drawWidth) / 2);
-  const offsetY = Math.floor((canvas.height - drawHeight) / 2);
-  const skinOption = getOptionByValue('skin', dwarf?.skin);
-  const skinColor = skinOption?.color || characterCreatorDefaultSkinColor;
-  const bodyLayers = getCharacterCreatorSkinTintLayers(bodyKey, skinColor);
-  if (bodyLayers) {
-    ctx.drawImage(bodyLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
-    ctx.drawImage(bodyLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
-  } else {
-    ctx.drawImage(bodyImage, offsetX, offsetY, drawWidth, drawHeight);
-  }
-  const shouldRenderHead = gender !== 'female';
-  if (shouldRenderHead) {
-    const headLayers = getCharacterCreatorSkinTintLayers('headDefault', skinColor);
-    if (headLayers) {
-      ctx.drawImage(headLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
-      ctx.drawImage(headLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
-    } else {
-      ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
-    }
-  }
-  const hairAssetKey = getCharacterCreatorHairAssetKey(dwarf);
-  const hairTintLayers = getCharacterCreatorHairTintLayers(
-    hairAssetKey,
-    hairOption?.color || characterCreatorDefaultHairColor
-  );
-  if (hairTintLayers) {
-    ctx.drawImage(hairTintLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
-    ctx.drawImage(hairTintLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
-  } else {
-    const hairImage = hairAssetKey ? characterCreatorPortraitAssets[hairAssetKey]?.image : null;
-    if (hairImage) {
-      ctx.drawImage(hairImage, offsetX, offsetY, drawWidth, drawHeight);
-    }
-  }
-  const beardAssetKey = getCharacterCreatorBeardAssetKey(dwarf);
-  if (beardAssetKey) {
-    const beardTintLayers = getCharacterCreatorHairTintLayers(
-      beardAssetKey,
-      hairOption?.color || characterCreatorDefaultHairColor
-    );
-    if (beardTintLayers) {
-      ctx.drawImage(beardTintLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
-      ctx.drawImage(beardTintLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
-    } else {
-      const beardImage = characterCreatorPortraitAssets[beardAssetKey]?.image;
-      if (beardImage) {
-        ctx.drawImage(beardImage, offsetX, offsetY, drawWidth, drawHeight);
-      }
-    }
-  }
-  const shouldRenderNose = gender !== 'female';
-  const noseImage = shouldRenderNose ? characterCreatorPortraitAssets.nose?.image : null;
-  if (noseImage) {
-    ctx.drawImage(noseImage, offsetX, offsetY, drawWidth, drawHeight);
-  }
-}
-
-function renderTilesheetPortrait(
-  ctx,
-  canvas,
-  dwarf,
-  skinOption,
-  hairOption,
-  eyeOption,
-  hairStyleOption,
-  headOption,
-  options = {}
-) {
-  const { tileSize, scale: baseScale, head, eyePositions, eyeSize } = dwarfPortraitConfig;
-  const scaleMultiplier = typeof options.scaleMultiplier === 'number' ? options.scaleMultiplier : 1;
-  const scale = typeof options.scale === 'number' ? options.scale : baseScale * scaleMultiplier;
-  const destSize = tileSize * scale;
-  const baseX = Math.floor((canvas.width - destSize) / 2);
-  const baseY = Math.floor((canvas.height - destSize) / 2);
-
-  const baseFrame = getBaseBodyFrame(dwarf);
-  if (baseFrame) {
-    drawTintedSprite(ctx, baseFrame.sheet, baseFrame, baseX, baseY, scale, baseFrame.tint);
-  }
-
-  if (head) {
-    const headFrame = getHeadFrame(dwarf, headOption?.value ?? dwarf?.head);
-    if (headFrame) {
-      const skinColor = skinOption?.color || '#c59b7d';
-      drawTintedSprite(ctx, headFrame.sheet, headFrame, baseX, baseY, scale, skinColor);
-    }
-  }
-
-  const hairStyleValue = resolveHairStyleValue(hairStyleOption?.value ?? dwarf?.hairStyle);
-  const hairFrame = getHairFrame(dwarf, hairOption, hairStyleValue);
-  if (hairFrame) {
-    drawTintedSprite(ctx, hairFrame.sheet, hairFrame, baseX, baseY, scale, hairFrame.tint);
-  }
-
-  const beardFrame = getBeardFrame(dwarf, hairOption);
-  if (beardFrame) {
-    drawTintedSprite(ctx, beardFrame.sheet, beardFrame, baseX, baseY, scale, beardFrame.tint);
-  }
-
-  const eyeColor = eyeOption?.color || '#604a2b';
-  ctx.fillStyle = eyeColor;
-  eyePositions.forEach(({ x, y }) => {
-    ctx.fillRect(baseX + Math.round(x * scale), baseY + Math.round(y * scale), eyeSize * scale, eyeSize * scale);
-  });
-
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
-  eyePositions.forEach(({ x, y }) => {
-    const highlightSize = Math.max(1, Math.floor(scale / 2));
-    ctx.fillRect(
-      baseX + Math.round((x + 0.5) * scale),
-      baseY + Math.round((y + 0.5) * scale),
-      highlightSize,
-      highlightSize
-    );
-  });
-}
-
-function renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
-  const ctx = ensurePortraitContext();
-  if (!ctx) {
-    return;
-  }
-  const canvas = dwarfPortraitState.canvas;
-  if (!canvas) {
-    return;
-  }
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (shouldUseCharacterCreatorPortrait(dwarf)) {
-    renderCharacterCreatorPortrait(ctx, canvas, dwarf, hairOption);
-    return;
-  }
-  renderTilesheetPortrait(ctx, canvas, dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
-}
-
-function renderBodyPanelPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption) {
-  const ctx = ensureBodyPortraitContext();
-  if (!ctx) {
-    return;
-  }
-  const canvas = dwarfBodyPortraitState.canvas;
-  if (!canvas) {
-    return;
-  }
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  renderTilesheetPortrait(
-    ctx,
-    canvas,
-    dwarf,
-    skinOption,
-    hairOption,
-    eyeOption,
-    hairStyleOption,
-    headOption,
-    { scaleMultiplier: bodyPanelPortraitScaleMultiplier }
-  );
-}
-
-function updateDwarfPortrait(dwarf) {
-  if (!elements.dwarfPortrait || !dwarf) {
-    return;
-  }
-  const skinOption = getOptionByValue('skin', dwarf.skin);
-  const hairOption = getOptionByValue('hair', dwarf.hair);
-  const eyeOption = getOptionByValue('eyes', dwarf.eyes);
-  const hairStyleOption = getOptionByValue('hairStyle', dwarf.hairStyle);
-  const headOption = getOptionByValue('head', dwarf.head);
-
-  renderDwarfPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
-  renderBodyPanelPortrait(dwarf, skinOption, hairOption, eyeOption, hairStyleOption, headOption);
-
-  const beardValue = dwarf.beard || 'clean';
-  const genderLabel = getOptionLabel('gender', dwarf.gender);
-  const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
-  const hairPhrase = getHairSummaryPhrase(dwarf);
-  const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
-  const beardLabel = getOptionLabel('beard', beardValue).toLowerCase();
-  const headLabel = getOptionLabel('head', dwarf.head).toLowerCase();
-  const clanLabel = getOptionLabel('clan', dwarf.clan);
-  const guildLabel = getOptionLabel('guild', dwarf.guild);
-  const professionLabel = getOptionLabel('profession', dwarf.profession);
-  const affiliationParts = [];
-  if (clanLabel) {
-    affiliationParts.push(`member of the ${clanLabel} clan`);
-  }
-  if (professionLabel && guildLabel) {
-    affiliationParts.push(`${professionLabel.toLowerCase()} of the ${guildLabel}`);
-  } else if (professionLabel) {
-    affiliationParts.push(professionLabel.toLowerCase());
-  } else if (guildLabel) {
-    affiliationParts.push(`of the ${guildLabel}`);
-  }
-  let ariaDescription = `${genderLabel} dwarf with ${headLabel} features, ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
-  if (affiliationParts.length > 0) {
-    ariaDescription += ` ${affiliationParts.join(', ')}.`;
-  }
-  const displayName = getDwarfDisplayName(dwarf);
-  elements.dwarfPortrait.setAttribute('aria-label', `${displayName}: ${ariaDescription}`);
-}
-
-function buildDwarfSummary(dwarf) {
-  if (!dwarf) {
-    return '';
-  }
-  const genderLabel = getOptionLabel('gender', dwarf.gender);
-  const skinLabel = getOptionLabel('skin', dwarf.skin).toLowerCase();
-  const eyeLabel = getOptionLabel('eyes', dwarf.eyes).toLowerCase();
-  const hairPhrase = getHairSummaryPhrase(dwarf);
-  const beardLabel = getOptionLabel('beard', dwarf.beard).toLowerCase();
-  const headLabel = getOptionLabel('head', dwarf.head).toLowerCase();
-  const clanLabel = getOptionLabel('clan', dwarf.clan);
-  const guildLabel = getOptionLabel('guild', dwarf.guild);
-  const professionLabel = getOptionLabel('profession', dwarf.profession);
-  let summary = `${genderLabel} dwarf with ${headLabel} features, ${skinLabel} skin, ${hairPhrase}, ${eyeLabel} eyes, and ${beardLabel}.`;
-  const affiliationSentences = [];
-  if (clanLabel) {
-    affiliationSentences.push(`Member of the ${clanLabel} clan`);
-  }
-  if (professionLabel && guildLabel) {
-    affiliationSentences.push(`${professionLabel} of the ${guildLabel}`);
-  } else if (professionLabel) {
-    affiliationSentences.push(professionLabel);
-  } else if (guildLabel) {
-    affiliationSentences.push(`Of the ${guildLabel}`);
-  }
-  if (affiliationSentences.length > 0) {
-    summary += ` ${affiliationSentences.join('. ')}.`;
-  }
-  return summary;
-}
-
-function getDwarfDisplayName(dwarf) {
-  if (!dwarf) {
-    return 'Unnamed Founder';
-  }
-  const trimmed = (dwarf.name || '').trim();
-  return trimmed || 'Unnamed Founder';
-}
-
-function updateDwarfTraitSummary() {
-  const dwarf = getActiveDwarf();
-  if (elements.dwarfTraitSummary) {
-    elements.dwarfTraitSummary.textContent = buildDwarfSummary(dwarf);
-  }
-  updateDwarfTraitAttributes(dwarf);
-}
-
-function getActiveTraitAttributes(dwarf) {
-  if (!dwarf) {
-    return [];
-  }
-  return dwarfTraitAttributeDefinitions.filter((attribute) => {
-    try {
-      return typeof attribute.isActive === 'function' ? attribute.isActive(dwarf) : false;
-    } catch (error) {
-      return false;
-    }
-  });
-}
-
-function createTraitAttributeElement(attribute) {
-  const item = document.createElement('div');
-  item.className = 'trait-attribute';
-  item.setAttribute('role', 'listitem');
-  item.setAttribute('tabindex', '0');
-  item.setAttribute('aria-label', attribute.label);
-
-  if (attribute.icon) {
-    const icon = document.createElement('img');
-    icon.className = 'trait-attribute__icon';
-    icon.src = attribute.icon;
-    icon.alt = attribute.label;
-    icon.loading = 'lazy';
-    item.appendChild(icon);
-  } else {
-    const monogram = document.createElement('span');
-    monogram.className = 'trait-attribute__icon trait-attribute__icon--monogram';
-    const fallback = attribute.monogram || attribute.label || '';
-    monogram.textContent = fallback
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((segment) => segment[0] || '')
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
-    monogram.setAttribute('aria-hidden', 'true');
-    item.appendChild(monogram);
-  }
-
-  const tooltip = document.createElement('span');
-  tooltip.className = 'trait-attribute__tooltip';
-
-  const tooltipTitle = document.createElement('span');
-  tooltipTitle.className = 'trait-attribute__tooltip-title';
-  tooltipTitle.textContent = attribute.label || '';
-  tooltip.appendChild(tooltipTitle);
-
-  if (attribute.description) {
-    const tooltipDescription = document.createElement('span');
-    tooltipDescription.className = 'trait-attribute__tooltip-description';
-    tooltipDescription.textContent = attribute.description;
-    tooltip.appendChild(tooltipDescription);
-  }
-
-  item.appendChild(tooltip);
-
-  return item;
-}
-
-function updateDwarfTraitAttributes(dwarf = getActiveDwarf()) {
-  const container = elements.dwarfTraitAttributes;
-  if (!container) {
-    return;
-  }
-  container.innerHTML = '';
-  const activeAttributes = getActiveTraitAttributes(dwarf);
-  if (activeAttributes.length === 0) {
-    container.setAttribute('aria-hidden', 'true');
-    container.dataset.hasAttributes = 'false';
-    return;
-  }
-  container.setAttribute('aria-hidden', 'false');
-  container.dataset.hasAttributes = 'true';
-  const fragment = document.createDocumentFragment();
-  activeAttributes.forEach((attribute) => {
-    fragment.appendChild(createTraitAttributeElement(attribute));
-  });
-  container.appendChild(fragment);
-}
-
-function updateRosterList() {
-  if (!elements.dwarfRosterList || !state.dwarfParty || !Array.isArray(state.dwarfParty.dwarves)) {
-    return;
-  }
-  const { dwarves, activeIndex } = state.dwarfParty;
-  const fragment = document.createDocumentFragment();
-
-  dwarves.forEach((dwarf, index) => {
-    const item = document.createElement('li');
-    item.classList.toggle('active', index === activeIndex);
-    item.setAttribute('role', 'button');
-    item.setAttribute('tabindex', '0');
-    item.setAttribute('aria-pressed', index === activeIndex ? 'true' : 'false');
-    item.dataset.index = index.toString();
-
-    const name = document.createElement('p');
-    name.className = 'dwarf-roster-name';
-    name.textContent = getDwarfDisplayName(dwarf);
-
-    const traits = document.createElement('p');
-    traits.className = 'dwarf-roster-traits';
-    const genderLabel = getOptionLabel('gender', dwarf.gender);
-    const headLabel = getOptionLabel('head', dwarf.head);
-    const hairStyleLabel = getOptionLabel('hairStyle', dwarf.hairStyle);
-    const hairLabel = getOptionLabel('hair', dwarf.hair);
-    const beardLabel = getOptionLabel('beard', dwarf.beard);
-    traits.textContent = `${genderLabel} • ${headLabel} • ${hairStyleLabel} • ${hairLabel} • ${beardLabel}`;
-
-    const affiliations = document.createElement('p');
-    affiliations.className = 'dwarf-roster-traits dwarf-roster-affiliations';
-    const affiliationParts = [];
-    const clanLabel = getOptionLabel('clan', dwarf.clan);
-    const guildLabel = getOptionLabel('guild', dwarf.guild);
-    const professionLabel = getOptionLabel('profession', dwarf.profession);
-    if (clanLabel) {
-      affiliationParts.push(`${clanLabel} Clan`);
-    }
-    if (guildLabel) {
-      affiliationParts.push(guildLabel);
-    }
-    if (professionLabel) {
-      affiliationParts.push(professionLabel);
-    }
-    affiliations.textContent = affiliationParts.join(' • ');
-
-    item.appendChild(name);
-    item.appendChild(traits);
-    if (affiliationParts.length > 0) {
-      item.appendChild(affiliations);
-    }
-
-    item.addEventListener('click', () => {
-      setActiveDwarf(index);
-    });
-
-    item.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        setActiveDwarf(index);
-      }
-    });
-
-    fragment.appendChild(item);
-  });
-
-  elements.dwarfRosterList.replaceChildren(fragment);
-}
-
 function ensureSelectValue(selectElement, value, fallback) {
   if (!selectElement) {
     return;
@@ -13821,7 +9677,7 @@ function updateTraitSliderDisplay(trait, sliderElement, valueElement, indexOverr
       }
       valueElement.dataset.traitValue = option.value;
     } else {
-      valueElement.textContent = '—';
+      valueElement.textContent = 'â€”';
       valueElement.style.removeProperty('--trait-color');
       valueElement.classList.remove('has-color');
       delete valueElement.dataset.traitValue;
@@ -13922,6 +9778,13 @@ function updateBeardFieldState(dwarf) {
   }
 }
 
+function getActiveDwarf() {
+  if (!state.dwarfParty || !Array.isArray(state.dwarfParty.dwarves)) {
+    return null;
+  }
+  return state.dwarfParty.dwarves[state.dwarfParty.activeIndex] || null;
+}
+
 function updateCustomizerUI() {
   ensureDwarfParty();
   const dwarf = getActiveDwarf();
@@ -13990,9 +9853,9 @@ function updateCustomizerUI() {
 
   updateBeardFieldState(dwarf);
 
-  updateDwarfPortrait(dwarf);
-  updateDwarfTraitSummary();
-  updateRosterList();
+  updateDwarfPortrait(dwarf, customizerDeps);
+  updateDwarfTraitSummary(customizerDeps);
+  updateRosterList(customizerDeps);
   updateDwarfTestButtonState();
 }
 
@@ -14021,8 +9884,8 @@ function updateDwarfTrait(trait, value) {
   }
   if (trait === 'name') {
     dwarf.name = value;
-    updateDwarfPortrait(dwarf);
-    updateRosterList();
+    updateDwarfPortrait(dwarf, customizerDeps);
+    updateRosterList(customizerDeps);
     return;
   }
   if (trait === 'clan') {
@@ -14291,7 +10154,7 @@ function updateChronologyDisplay() {
     );
     return;
   }
-  elements.worldInfoChronology.textContent = '—';
+  elements.worldInfoChronology.textContent = 'â€”';
 }
 
 function updateWorldInfoSizeDisplay() {
@@ -16000,7 +11863,7 @@ const verticalGridLines = hasYearsData
     peakIndex === sanitizedPoints.length - 1 && peakPoint.population === endPoint.population
       ? 'Current peak'
       : 'Peak';
-  const peakHeading = peakLabel ? `${peakLabelText} • ${peakLabel}` : peakLabelText;
+  const peakHeading = peakLabel ? `${peakLabelText} â€¢ ${peakLabel}` : peakLabelText;
 
   return `
     <section class="structure-details-history-chart">
@@ -16174,10 +12037,10 @@ function enhancePopulationHistoryCharts(root) {
 
       const populationText = Number.isFinite(point.population)
         ? point.population.toLocaleString('en-US')
-        : '—';
+        : 'â€”';
       const timeLabel = typeof point.label === 'string' ? point.label : '';
       const descriptorText = descriptor ? ` ${descriptor}` : '';
-      tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` • ${timeLabel}` : ''}`;
+      tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` â€¢ ${timeLabel}` : ''}`;
       tooltip.hidden = false;
       tooltip.setAttribute('aria-hidden', 'false');
       tooltip.style.left = `${tooltipX}px`;
@@ -16414,7 +12277,7 @@ function gatherStructureDescriptorInfo(tile) {
     }
     const lower = trimmed.toLowerCase();
     const normalized = lower.replace(/[_-]+/g, ' ');
-    const candidates = [lower, normalized, normalized.replace(/[’']/g, '')];
+    const candidates = [lower, normalized, normalized.replace(/[â€™']/g, '')];
     candidates.forEach((candidate) => {
       if (!candidate) {
         return;
@@ -17250,7 +13113,7 @@ function buildStructureTooltipContent(tile) {
       ? describeInfluenceStrength(tile.culturalInfluence.strength)
       : null;
     if (cultureLabel) {
-      const value = influenceDescription ? `${cultureLabel} — ${influenceDescription}` : cultureLabel;
+      const value = influenceDescription ? `${cultureLabel} â€” ${influenceDescription}` : cultureLabel;
       entries.push({ label: 'Cultural Tie', value });
     }
     const areaName = tile.areaName;
@@ -17387,7 +13250,7 @@ function buildStructureTooltipContent(tile) {
     if (dominantCulture) {
       const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
       const value = influenceDescription
-        ? `${dominantCulture.label} — ${influenceDescription}`
+        ? `${dominantCulture.label} â€” ${influenceDescription}`
         : dominantCulture.label;
       entries.push({ label: 'Cultural Influence', value });
     }
@@ -17507,7 +13370,7 @@ function buildStructureTooltipContent(tile) {
   if (dominantCulture) {
     const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
     const value = influenceDescription
-      ? `${dominantCulture.label} — ${influenceDescription}`
+      ? `${dominantCulture.label} â€” ${influenceDescription}`
       : dominantCulture.label;
     entries.push({ label: 'Cultural Influence', value });
   }
@@ -17646,7 +13509,7 @@ function resolveLocalSubtitle(tile) {
       subtitleParts.push(tile.biomeType.charAt(0).toUpperCase() + tile.biomeType.slice(1));
     }
   }
-  return subtitleParts.length > 0 ? subtitleParts.join(' • ') : 'Local terrain preview';
+  return subtitleParts.length > 0 ? subtitleParts.join(' â€¢ ') : 'Local terrain preview';
 }
 
 function renderDwarfholdScreen() {
@@ -17717,7 +13580,7 @@ function renderDwarfholdScreen() {
       const baseLabel = `World Tile ${view.tileX + 1}, ${view.tileY + 1}`;
       const sizeLabel =
         Number.isFinite(customMap.width) && Number.isFinite(customMap.height)
-          ? ` — ${customMap.width}×${customMap.height} tiles`
+          ? ` â€” ${customMap.width}Ã—${customMap.height} tiles`
           : '';
       elements.dwarfholdCoordinates.textContent = `${baseLabel}${sizeLabel}`;
     } else {
@@ -18240,10 +14103,10 @@ function refreshLocalMapPreview() {
     }
 
     if (elements.localMapCoordinates) {
-      const sourceLabel = `${patch.worldWidth}×${patch.worldHeight}`;
-      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+      const sourceLabel = `${patch.worldWidth}Ã—${patch.worldHeight}`;
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} â€” ${
         patch.width
-      }×${patch.height} tiles (sampled from ${sourceLabel})`;
+      }Ã—${patch.height} tiles (sampled from ${sourceLabel})`;
     }
 
     if (elements.localMapDetails) {
@@ -18344,9 +14207,9 @@ function refreshLocalMapPreview() {
     }
 
     if (elements.localMapCoordinates) {
-      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} â€” ${
         mapWidth
-      }×${mapHeight} tiles`;
+      }Ã—${mapHeight} tiles`;
     }
 
     if (elements.localMapDetails) {
@@ -18537,9 +14400,9 @@ function refreshLocalMapPreview() {
   }
 
   if (elements.localMapCoordinates) {
-    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} — ${
+    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} â€” ${
       tileWidth
-    }×${tileHeight} tiles`;
+    }Ã—${tileHeight} tiles`;
   }
 
   if (elements.localMapDetails) {
@@ -18596,7 +14459,7 @@ function refreshLocalMapPreview() {
     'aria-label',
     `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${
       localView.centerY + 1
-    } at approximately ${zoom.toFixed(2)}× zoom.`
+    } at approximately ${zoom.toFixed(2)}Ã— zoom.`
   );
   canvas.setAttribute('aria-hidden', 'false');
 
@@ -20644,7 +16507,7 @@ function buildRulerPortraitPanelSection(resolvedName, details) {
     figureLabelParts.push(secondaryLine);
   }
   const figureAriaLabel =
-    figureLabelParts.length > 0 ? figureLabelParts.join(' — ') : 'Ruler portrait';
+    figureLabelParts.length > 0 ? figureLabelParts.join(' â€” ') : 'Ruler portrait';
   const styleParts = [];
   if (theme.background) {
     styleParts.push(`--portrait-background:${theme.background}`);
@@ -20694,7 +16557,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   if (typeLabel) {
     subtitleParts.push(typeLabel);
   }
-  const subtitle = subtitleParts.join(' • ') || null;
+  const subtitle = subtitleParts.join(' â€¢ ') || null;
 
   const overviewEntries = [];
   const addOverviewEntry = (label, value) => {
@@ -20770,7 +16633,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   if (dominantCulture) {
     const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
     const value = influenceDescription
-      ? `${dominantCulture.label} — ${influenceDescription}`
+      ? `${dominantCulture.label} â€” ${influenceDescription}`
       : dominantCulture.label;
     addOverviewEntry('Cultural Influence', value);
   }
@@ -32561,7 +28424,7 @@ function drawWorld(world, options = {}) {
   const chronologyLabel = isChronologyValid(state.worldChronology)
     ? `${formatChronology(state.worldChronology.year, state.worldChronology.age)} | `
     : '';
-  elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}×${height}`;
+  elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}Ã—${height}`;
 }
 
 function updateLoadingProgress(value) {
@@ -32736,7 +28599,7 @@ function beginGame() {
     elements.gameContainer.setAttribute('aria-busy', 'true');
   }
   elements.seedDisplay.textContent = '';
-  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
+  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your worldâ€¦' })
     .then(() => {
       if (elements.gameContainer) {
         elements.gameContainer.classList.remove('game-container--loading');
@@ -32761,14 +28624,14 @@ async function generateAndRender(seedOverride) {
   ensureLandMaskForProfile(state.settings.worldGenerationType);
   hideMapTooltip();
   hideLocalView({ suppressRedraw: true });
-  await updateLoadingProgressAndWait(12, 'Stabilizing ley lines…');
-  await updateLoadingProgressAndWait(28, 'Surveying continental plates…');
+  await updateLoadingProgressAndWait(12, 'Stabilizing ley linesâ€¦');
+  await updateLoadingProgressAndWait(28, 'Surveying continental platesâ€¦');
   const world = createWorld(seedToUse);
-  await updateLoadingProgressAndWait(68, 'Raising civilizations…');
+  await updateLoadingProgressAndWait(68, 'Raising civilizationsâ€¦');
   state.currentWorld = world;
-  await updateLoadingProgressAndWait(82, 'Rendering cartography…');
+  await updateLoadingProgressAndWait(82, 'Rendering cartographyâ€¦');
   drawWorld(world);
-  await updateLoadingProgressAndWait(92, 'Finalizing expedition briefs…', { force: true });
+  await updateLoadingProgressAndWait(92, 'Finalizing expedition briefsâ€¦', { force: true });
   if (elements.seedInput) {
     elements.seedInput.value = world.seedString;
   }
@@ -32875,7 +28738,7 @@ function handleRegenerate() {
   updateWorldInfoSeedDisplay(randomSeed);
   return runWithLoadingScreen(
     () => generateAndRender(randomSeed),
-    { statusText: 'Forging a new world…' }
+    { statusText: 'Forging a new worldâ€¦' }
   ).catch((error) => {
     console.error('Failed to regenerate world.', error);
   });
@@ -33014,7 +28877,7 @@ function syncInputsWithSettings() {
       applyFormSettings();
       const previousSource = closeOptionsScreen();
       if (previousSource === 'game' && elements.gameContainer) {
-        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
+        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realmâ€¦' }).catch((error) => {
           console.error('Failed to apply new world settings.', error);
         });
       }
@@ -33398,3 +29261,6 @@ try {
     window.beginGame = beginGame;
   }
 } catch (_) {}
+
+
+
