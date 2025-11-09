@@ -23,6 +23,7 @@ import {
 import { clamp } from './src/utils/math.js';
 import { elements, getMusicToggleElements, getMusicVolumeInputs, getMusicNowPlayingDisplays } from './src/ui/elements.js';
 import { attachEvents } from './src/ui/events.js';
+import { createStateModule } from './src/state/index.js';
 
 function populateClanSelectFromOptions(options) {
   try {
@@ -8961,14 +8962,6 @@ function syncStructureHighlightMenuOptions(menu) {
   }
 }
 
-function createDefaultStructureHighlightState() {
-  const baseState = { menuOpen: false };
-  structureHighlightTypeKeys.forEach((key) => {
-    baseState[key] = false;
-  });
-  return baseState;
-}
-
 let loadingProgressValue = 0;
 let loadingProgressIntervalId = null;
 let hasManualLoadingProgress = false;
@@ -8990,445 +8983,37 @@ const localViewConfig = {
   structureScaleCap: 1
 };
 
-const mapEditorBrushConfig = {
-  min: 1,
-  max: 9
-};
-
-const mapEditorTerrainSuggestionKeys = (() => {
-  const coords = baseTileCoords && typeof baseTileCoords === 'object' ? baseTileCoords : {};
-  const keys = Object.keys(coords);
-  const normalized = keys.map((key) => (typeof key === 'string' ? key.trim().toUpperCase() : '')).filter(Boolean);
-  const unique = Array.from(new Set(normalized));
-  unique.sort();
-  return unique;
-})();
-
-const mapEditorStructureSuggestionKeys = (() => {
-  const suggestions = new Set();
-  structureHighlightTypeKeys.forEach((typeKey) => {
-    const group = structureHighlightGroups[typeKey];
-    if (!group || !Array.isArray(group.keys)) {
-      return;
-    }
-    group.keys.forEach((key) => {
-      if (typeof key === 'string' && key.trim()) {
-        suggestions.add(key.trim().toUpperCase());
-      }
-    });
-  });
-  const ordered = Array.from(suggestions);
-  ordered.sort();
-  if (!ordered.includes('NONE')) {
-    ordered.unshift('NONE');
-  }
-  return ordered;
-})();
-
-let lastMapEditorTerrainSignature = '';
-let lastMapEditorStructureSignature = '';
-
-function getDefaultMapEditorTerrainKey() {
-  if (mapEditorTerrainSuggestionKeys.length > 0) {
-    return mapEditorTerrainSuggestionKeys.includes('GRASS')
-      ? 'GRASS'
-      : mapEditorTerrainSuggestionKeys[0];
-  }
-  return '';
-}
-
-function normalizeTileKey(value) {
-  if (typeof value !== 'string') {
-    return '';
-  }
-  return value.trim().toUpperCase();
-}
-
-function normalizeStructureKey(value) {
-  const normalized = normalizeTileKey(value);
-  if (!normalized || normalized === 'NONE' || normalized === 'NULL') {
-    return '';
-  }
-  return normalized;
-}
-
-const state = {
-  settings: {
-    mapSize: defaultMapSize.key,
-    width: defaultMapSize.width,
-    height: defaultMapSize.height,
-    seedString: '',
-    lastSeedString: '',
-    forestFrequency: defaultForestFrequency,
-    mountainFrequency: defaultMountainFrequency,
-    riverFrequency: 50,
-    humanSettlementFrequency: 50,
-    dwarfSettlementFrequency: 50,
-    woodElfSettlementFrequency: 50,
-    lizardmenSettlementFrequency: 50,
-    worldGenerationType: defaultWorldGenerationType
-  },
+const {
+  state,
+  ensureMapEditorState,
+  refreshMapEditorUI,
+  toggleMapEditor,
+  closeMapEditor,
+  setMapEditorTerrainKey,
+  setMapEditorStructureKey,
+  setMapEditorApplyTerrain,
+  setMapEditorApplyStructure,
+  setMapEditorBrushSize,
+  clearMapEditorStructure,
+  applyMapEditorPaint,
+  ensureStructureHighlightState
+} = createStateModule({
   tileSheets,
-  landMask: null,
-  ready: false,
-  worldName: '',
-  worldChronology: null,
-  dwarfParty: {
-    dwarves: [],
-    activeIndex: 0
-  },
-  ui: {
-    showPoliticalBorders: false,
-    showPoliticalInfluence: false,
-    showElevation: false,
-    showBiomes: false,
-    showTemperature: false,
-    showLocationLabels: false,
-    structureHighlights: createDefaultStructureHighlightState(),
-    mapEditor: {
-      enabled: false,
-      applyTerrain: true,
-      applyStructure: false,
-      terrainKey: getDefaultMapEditorTerrainKey(),
-      structureKey: '',
-      brushSize: mapEditorBrushConfig.min
-    }
-  },
-  currentWorld: null,
-  localView: {
-    active: false,
-    centerX: null,
-    centerY: null,
-    bounds: null,
-    mode: 'world',
-    customMap: null,
-    structure: null,
-    highResolution: null,
-    zoom: localViewConfig.defaultZoom || 1
-  },
-  dwarfholdView: {
-    active: false,
-    map: null,
-    tileX: null,
-    tileY: null,
-    structure: null
-  }
-};
-
-function ensureMapEditorState() {
-  if (!state.ui || typeof state.ui !== 'object') {
-    state.ui = {};
-  }
-  if (!state.ui.mapEditor || typeof state.ui.mapEditor !== 'object') {
-    state.ui.mapEditor = {
-      enabled: false,
-      applyTerrain: true,
-      applyStructure: false,
-      terrainKey: getDefaultMapEditorTerrainKey(),
-      structureKey: '',
-      brushSize: mapEditorBrushConfig.min
-    };
-  }
-  const mapEditor = state.ui.mapEditor;
-  mapEditor.enabled = Boolean(mapEditor.enabled);
-  mapEditor.applyTerrain = mapEditor.applyTerrain !== false;
-  mapEditor.applyStructure = Boolean(mapEditor.applyStructure);
-  mapEditor.terrainKey = typeof mapEditor.terrainKey === 'string'
-    ? mapEditor.terrainKey.trim().toUpperCase()
-    : getDefaultMapEditorTerrainKey();
-  mapEditor.structureKey = typeof mapEditor.structureKey === 'string'
-    ? normalizeStructureKey(mapEditor.structureKey)
-    : '';
-  const numericBrush = Number.isFinite(mapEditor.brushSize)
-    ? Math.round(mapEditor.brushSize)
-    : mapEditorBrushConfig.min;
-  mapEditor.brushSize = clamp(numericBrush, mapEditorBrushConfig.min, mapEditorBrushConfig.max);
-  return mapEditor;
-}
-
-function isMapEditorActive() {
-  const mapEditor = ensureMapEditorState();
-  return Boolean(mapEditor.enabled);
-}
-
-function refreshMapEditorUI() {
-  const mapEditor = ensureMapEditorState();
-  const {
-    mapEditorToggle,
-    mapEditorPanel,
-    mapEditorTerrainInput,
-    mapEditorStructureInput,
-    mapEditorApplyTerrain,
-    mapEditorApplyStructure,
-    mapEditorBrushSizeInput,
-    mapEditorClearStructure,
-    mapEditorTerrainOptions,
-    mapEditorStructureOptions
-  } = elements;
-
-  if (mapEditorToggle) {
-    const activeLabel = 'Exit Edit Mode';
-    const inactiveLabel = 'Edit Map';
-    mapEditorToggle.textContent = mapEditor.enabled ? activeLabel : inactiveLabel;
-    mapEditorToggle.classList.toggle('active', mapEditor.enabled);
-    mapEditorToggle.setAttribute('aria-pressed', mapEditor.enabled ? 'true' : 'false');
-    mapEditorToggle.setAttribute('aria-expanded', mapEditor.enabled ? 'true' : 'false');
-  }
-
-  if (mapEditorPanel) {
-    mapEditorPanel.classList.toggle('hidden', !mapEditor.enabled);
-    mapEditorPanel.setAttribute('aria-hidden', mapEditor.enabled ? 'false' : 'true');
-  }
-
-  if (mapEditorApplyTerrain) {
-    mapEditorApplyTerrain.checked = Boolean(mapEditor.applyTerrain);
-  }
-
-  if (mapEditorApplyStructure) {
-    mapEditorApplyStructure.checked = Boolean(mapEditor.applyStructure);
-  }
-
-  if (mapEditorTerrainInput) {
-    mapEditorTerrainInput.value = mapEditor.terrainKey || '';
-    mapEditorTerrainInput.disabled = !mapEditor.applyTerrain;
-  }
-
-  if (mapEditorStructureInput) {
-    mapEditorStructureInput.value = mapEditor.structureKey || '';
-    mapEditorStructureInput.disabled = !mapEditor.applyStructure;
-    if (!mapEditor.structureKey) {
-      mapEditorStructureInput.placeholder = 'None';
-    }
-  }
-
-  if (mapEditorBrushSizeInput) {
-    mapEditorBrushSizeInput.value = mapEditor.brushSize.toString();
-  }
-
-  if (mapEditorClearStructure) {
-    mapEditorClearStructure.disabled = !mapEditor.applyStructure || !mapEditor.structureKey;
-  }
-
-  const ensureOption = (datalist, value) => {
-    if (!datalist || !value) {
-      return;
-    }
-    const existingOptions = datalist.querySelectorAll('option');
-    for (let i = 0; i < existingOptions.length; i += 1) {
-      if (existingOptions[i].value === value) {
-        return;
-      }
-    }
-    const option = document.createElement('option');
-    option.value = value;
-    datalist.appendChild(option);
-  };
-
-  if (mapEditorTerrainOptions) {
-    const signature = mapEditorTerrainSuggestionKeys.join('|');
-    if (signature !== lastMapEditorTerrainSignature) {
-      lastMapEditorTerrainSignature = signature;
-      mapEditorTerrainOptions.innerHTML = '';
-      mapEditorTerrainSuggestionKeys.forEach((key) => {
-        const option = document.createElement('option');
-        option.value = key;
-        mapEditorTerrainOptions.appendChild(option);
-      });
-    }
-    if (mapEditor.terrainKey) {
-      ensureOption(mapEditorTerrainOptions, mapEditor.terrainKey);
-    }
-  }
-
-  if (mapEditorStructureOptions) {
-    const signature = mapEditorStructureSuggestionKeys.join('|');
-    if (signature !== lastMapEditorStructureSignature) {
-      lastMapEditorStructureSignature = signature;
-      mapEditorStructureOptions.innerHTML = '';
-      mapEditorStructureSuggestionKeys.forEach((key) => {
-        const option = document.createElement('option');
-        option.value = key;
-        mapEditorStructureOptions.appendChild(option);
-      });
-    }
-    if (mapEditor.structureKey) {
-      ensureOption(mapEditorStructureOptions, mapEditor.structureKey);
-    }
-  }
-}
-
-function toggleMapEditor(forceState) {
-  const mapEditor = ensureMapEditorState();
-  const nextState = typeof forceState === 'boolean' ? forceState : !mapEditor.enabled;
-  if (mapEditor.enabled === nextState) {
-    refreshMapEditorUI();
-    return mapEditor.enabled;
-  }
-  mapEditor.enabled = nextState;
-  if (mapEditor.enabled) {
-    hideStructureContextMenu();
-    hideMapTooltip();
-  }
-  if (mapEditor.enabled && !mapEditor.applyTerrain && !mapEditor.applyStructure) {
-    mapEditor.applyTerrain = true;
-  }
-  refreshMapEditorUI();
-  return mapEditor.enabled;
-}
-
-function closeMapEditor(options = {}) {
-  const { returnFocus = false } = options;
-  const wasActive = isMapEditorActive();
-  toggleMapEditor(false);
-  if (returnFocus && elements.mapEditorToggle && typeof elements.mapEditorToggle.focus === 'function') {
-    elements.mapEditorToggle.focus({ preventScroll: true });
-  }
-  return wasActive;
-}
-
-function setMapEditorTerrainKey(value) {
-  const mapEditor = ensureMapEditorState();
-  mapEditor.terrainKey = normalizeTileKey(value);
-  refreshMapEditorUI();
-  return mapEditor.terrainKey;
-}
-
-function setMapEditorStructureKey(value) {
-  const mapEditor = ensureMapEditorState();
-  mapEditor.structureKey = normalizeStructureKey(value);
-  refreshMapEditorUI();
-  return mapEditor.structureKey;
-}
-
-function setMapEditorApplyTerrain(enabled) {
-  const mapEditor = ensureMapEditorState();
-  mapEditor.applyTerrain = Boolean(enabled);
-  refreshMapEditorUI();
-  return mapEditor.applyTerrain;
-}
-
-function setMapEditorApplyStructure(enabled) {
-  const mapEditor = ensureMapEditorState();
-  mapEditor.applyStructure = Boolean(enabled);
-  refreshMapEditorUI();
-  return mapEditor.applyStructure;
-}
-
-function setMapEditorBrushSize(value) {
-  const mapEditor = ensureMapEditorState();
-  const parsed = Number.parseInt(value, 10);
-  const fallback = Number.isFinite(mapEditor.brushSize) ? mapEditor.brushSize : mapEditorBrushConfig.min;
-  const normalized = Number.isFinite(parsed) ? parsed : fallback;
-  const clampedBrush = clamp(normalized, mapEditorBrushConfig.min, mapEditorBrushConfig.max);
-  mapEditor.brushSize = clampedBrush;
-  refreshMapEditorUI();
-  return mapEditor.brushSize;
-}
-
-function clearMapEditorStructure() {
-  const mapEditor = ensureMapEditorState();
-  mapEditor.structureKey = '';
-  mapEditor.applyStructure = true;
-  refreshMapEditorUI();
-  return mapEditor.structureKey;
-}
-
-function applyMapEditorPaint(tileX, tileY) {
-  const world = state.currentWorld;
-  if (!world || !Array.isArray(world.tiles)) {
-    return false;
-  }
-  if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
-    return false;
-  }
-  const tiles = world.tiles;
-  if (tileY < 0 || tileY >= tiles.length) {
-    return false;
-  }
-  const mapEditor = ensureMapEditorState();
-  if (!mapEditor.enabled) {
-    return false;
-  }
-  const applyTerrain = mapEditor.applyTerrain && Boolean(mapEditor.terrainKey);
-  const applyStructure = Boolean(mapEditor.applyStructure);
-  if (!applyTerrain && !applyStructure) {
-    return false;
-  }
-  const brushBase = Number.isFinite(mapEditor.brushSize) ? Math.round(mapEditor.brushSize) : mapEditorBrushConfig.min;
-  const brushSize = clamp(brushBase, mapEditorBrushConfig.min, mapEditorBrushConfig.max);
-  const radius = Math.max(0, Math.floor((brushSize - 1) / 2));
-  let changed = false;
-
-  for (let y = tileY - radius; y <= tileY + radius; y += 1) {
-    if (y < 0 || y >= tiles.length) {
-      continue;
-    }
-    const row = tiles[y];
-    if (!Array.isArray(row)) {
-      continue;
-    }
-    for (let x = tileX - radius; x <= tileX + radius; x += 1) {
-      if (x < 0 || x >= row.length) {
-        continue;
-      }
-      const tile = row[x];
-      if (!tile) {
-        continue;
-      }
-
-      if (applyTerrain && mapEditor.terrainKey) {
-        const targetBase = mapEditor.terrainKey;
-        if (tile.base !== targetBase) {
-          tile.base = targetBase;
-          if (tile.overlay) {
-            tile.overlay = null;
-          }
-          if (tile.hillOverlay) {
-            tile.hillOverlay = null;
-          }
-          changed = true;
-        }
-      }
-
-      if (applyStructure) {
-        const targetStructure = mapEditor.structureKey ? mapEditor.structureKey : null;
-        if (tile.structure !== targetStructure) {
-          tile.structure = targetStructure;
-          tile.structureDetails = null;
-          tile.structureName = null;
-          changed = true;
-        } else if (!targetStructure && (tile.structureDetails || tile.structureName)) {
-          tile.structureDetails = null;
-          tile.structureName = null;
-          changed = true;
-        }
-      }
-    }
-  }
-
-  if (changed) {
-    drawWorld(world, { preserveView: true });
-  }
-  return changed;
-}
-
-function ensureStructureHighlightState() {
-  if (!state.ui.structureHighlights || typeof state.ui.structureHighlights !== 'object') {
-    state.ui.structureHighlights = createDefaultStructureHighlightState();
-    return state.ui.structureHighlights;
-  }
-
-  const highlightState = state.ui.structureHighlights;
-  if (typeof highlightState.menuOpen !== 'boolean') {
-    highlightState.menuOpen = false;
-  }
-  structureHighlightTypeKeys.forEach((key) => {
-    if (typeof highlightState[key] !== 'boolean') {
-      highlightState[key] = false;
-    }
-  });
-  return highlightState;
-}
+  defaultMapSize,
+  defaultForestFrequency,
+  defaultMountainFrequency,
+  defaultWorldGenerationType,
+  localViewConfig,
+  clamp,
+  elements,
+  hideStructureContextMenu,
+  hideMapTooltip,
+  drawWorld,
+  structureHighlightGroups,
+  structureHighlightTypeKeys,
+  baseTileCoords,
+  documentRef: typeof document !== 'undefined' ? document : null
+});
 
 function matchesHighlightGroupValue(value, group) {
   const normalized = normalizeHighlightValue(value);
