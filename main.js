@@ -9506,48 +9506,7 @@ const editableDwarfTraits = new Set([
   'profession'
 ]);
 
-const dwarfTraitAttributeDefinitions = [
-  {
-    key: 'beardless',
-    label: 'Beardless',
-    description:
-      'You are the shame of your clan and the disgrace of your holdfast. Without a beard a dwarf is nothing, consider this path to be one that will lead to scorn and ridicule among your peers.',
-    icon: 'tilesheet/beardless.png',
-    isActive: (dwarf) => {
-      if (dwarf?.gender !== 'male') {
-        return false;
-      }
-      const beardValue = dwarf?.beard || 'clean';
-      const hasBeardConfig = Object.prototype.hasOwnProperty.call(dwarfBeardRows, beardValue);
-      const row = hasBeardConfig ? dwarfBeardRows[beardValue] : dwarfBeardRows.default;
-      return row === null || row === undefined;
-    }
-  },
-  {
-    key: 'dark-dwarf',
-    label: 'Dark Dwarf Heritage',
-    description:
-      'Your soot colored skin indicates you to hail from the ash covered lands of Dun Mortis. You are known by your ivory skinned cousins as the Dark Dwarves, a race cast away from the light of the All-father into the refuge bin of Stonebeards furance. You are hated by your kin as an oathbreaker by virture of your birthright and if you attempt to enter into their holds will likely be killed on sight.',
-    icon: 'tilesheet/darkdwarf.png',
-    isActive: (dwarf) => dwarf?.skin === 'umber' || dwarf?.skin === 'coal'
-  },
-  {
-    key: 'banker-profession',
-    label: 'Banker',
-    description:
-      'Among men you would be in a respected profession, among dwarves its the opposite, expect your increased income to be met with glaring judgments and distain from your peers who think your very livilooh to be undwarvsmen like.',
-    icon: 'tilesheet/banker.png',
-    isActive: (dwarf) => dwarf?.profession === 'banker'
-  },
-  {
-    key: 'grey-dwarf',
-    label: 'Grey Dwarf Heritage',
-    description:
-      'Your skin is the colour of ashes and your heart is that of steel. Known as a DwÃ¼gar you may not be as despised as the dark dwarves are yet the kinship you have with the rest of Dwarfdom is strained. Your ancestors were followers of the Lawgiver and Forgebearers of the Forgotten Era who preached a strain of total dwarven separatism and supremacy that led your people to form holds far away from your homeland. You may be welcomed into any dwarf hold but not well liked and the races you hunt as slaves will attack you on sight.',
-    monogram: 'GD',
-    isActive: (dwarf) => dwarf?.skin === 'ashen'
-  }
-];
+
 
 const dwarfNamePools = {
   female: [
@@ -29261,6 +29220,7 @@ try {
     window.beginGame = beginGame;
   }
 } catch (_) {}
+
 
 
 
