@@ -91,20 +91,20 @@ registerTiles('worldDetails', riverTileCoords);
 registerTiles('base', icebergTileCoords);
 
 registerCustomStructure('HAMLET', (ctx, drawOptions) =>
-  drawHamletStructure(ctx, drawOptions, structureDrawDeps)
+  drawHamletStructure(ctx, drawOptions, { state })
 );
 registerCustomStructure('ROADSIDE_TAVERN', (ctx, drawOptions) =>
-  drawRoadsideTavernStructure(ctx, drawOptions, structureDrawDeps)
+  drawRoadsideTavernStructure(ctx, drawOptions, { state })
 );
 registerCustomStructure('DARK_DWARFHOLD', (ctx, drawOptions) =>
-  drawDarkDwarfholdStructure(ctx, drawOptions, structureDrawDeps)
+  drawDarkDwarfholdStructure(ctx, drawOptions, { state })
 );
 // AMBIENT_HOMESTEAD draws directly from the base sprite sheet via baseTileCoords.
 registerCustomStructure('AMBIENT_HUNTING_LODGE', (ctx, drawOptions) =>
-  drawAmbientHuntingLodgeStructure(ctx, drawOptions, structureDrawDeps)
+  drawAmbientHuntingLodgeStructure(ctx, drawOptions, { state })
 );
 registerCustomStructure('AMBIENT_MOONWELL', (ctx, drawOptions) =>
-  drawAmbientMoonwellStructure(ctx, drawOptions, structureDrawDeps)
+  drawAmbientMoonwellStructure(ctx, drawOptions, { state })
 );
 
 
@@ -8753,7 +8753,6 @@ const {
   documentRef: typeof document !== 'undefined' ? document : null
 });
 
-const structureDrawDeps = { state };
 const customizerDeps = {
   state,
   elements,
