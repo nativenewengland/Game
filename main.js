@@ -965,24 +965,6 @@ const dwarfholdNameRegions = [
   'the Brass Line'
 ];
 
-const dwarfholdNameRegions = [
-  'the North',
-  'the Deep',
-  'the First Kings',
-  'the Ancients',
-  'Stonehome',
-  'Stormpeak',
-  'Ember Range',
-  'Thunderholt',
-  'the Underway',
-  'Skyforge',
-  'the Iron Sea',
-  'Grimspire',
-  'Highstone',
-  'Runecrest',
-  'the Brass Line'
-];
-
 function generateAdditionalDwarfClanNames(count, randomFn) {
   const names = new Set();
   while (names.size < count) {
@@ -9786,54 +9768,9 @@ const dwarfGuildOptions = [
   { value: 'smelters-guild', label: 'Smelters Guild' }
 ];
 
-const dwarfGuildOptions = [
-  { value: 'miners-guild', label: 'Miners Guild' },
-  { value: 'coopers-guild', label: 'Coopers Guild' },
-  { value: 'merchants-guild', label: 'Merchants Guild' },
-  { value: 'commerce-guild', label: 'Commerce Guild' },
-  { value: 'armourers-weaponsmiths-guild', label: 'Armourers and Weaponsmiths Guild' },
-  { value: 'artisans-guild', label: 'Artisans Guild' },
-  { value: 'bakers-guild', label: 'Bakers Guild' },
-  { value: 'brewers-guild', label: 'Brewers Guild' },
-  { value: 'carpenters-guild', label: 'Carpenters Guild' },
-  { value: 'construction-guild', label: 'Construction Guild' },
-  { value: 'corpsebinders-guild', label: 'Corpsebinders Guild' },
-  { value: 'distiller-guild', label: 'Distiller Guild' },
-  { value: 'dyers-guild', label: 'Dyers Guild' },
-  { value: 'engineers-guild', label: 'Engineers Guild' },
-  { value: 'farmers-herders-guild', label: 'Farmers and Herders Guild' },
-  { value: 'gemcutters-guild', label: 'Gemcutters Guild' },
-  { value: 'goldsmiths-guild', label: 'Goldsmiths Guild' },
-  { value: 'guild-of-alchemists', label: 'Guild of Alchemists' },
-  { value: 'jewelsmiths-guild', label: 'Jewelsmiths Guild' },
-  { value: 'leatherworkers-guild', label: 'Leatherworkers Guild' },
-  { value: 'metalsmiths-guild', label: 'Metalsmiths Guild' },
-  { value: 'powdermakers-guild', label: 'Powdermakers Guild' },
-  { value: 'saltworkers-guild', label: 'Saltworkers Guild' },
-  { value: 'stonemasons-guild', label: 'Stonemasons Guild' },
-  { value: 'runescribes-guild', label: 'Runescribes Guild' },
-  { value: 'runesmiths', label: 'Runesmiths' },
-  { value: 'warriors-guild', label: 'Warriors Guild' },
-  { value: 'toolmakers-guild', label: "Toolmakers' Guild" },
-  { value: 'soapmakers-guild', label: 'Soapmakers Guild' },
-  { value: 'candlelighters-guild', label: 'Candlelighters Guild' },
-  { value: 'lamplighters-guild', label: 'Lamplighters Guild' },
-  { value: 'butchers-guild', label: 'Butchers Guild' },
-  { value: 'ropemakers-guild', label: 'Ropemakers Guild' },
-  { value: 'cartwrights-wheelwrights-guild', label: 'Cartwrights & Wheelwrights Guild' },
-  { value: 'glassblowers-guild', label: 'Glassblowers Guild' },
-  { value: 'millers-guild', label: 'Millers Guild' },
-  { value: 'cobblers-guild', label: 'Cobblers Guild' },
-  { value: 'cartographers-guild', label: 'Cartographers Guild' },
-  { value: 'explorers-guild', label: 'Explorers Guild' },
-  { value: 'lorekeepers-guild', label: 'Lorekeepers Guild' },
-  { value: 'tunnel-wardens-guild', label: 'Tunnel Wardens Guild' },
-  { value: 'smelters-guild', label: 'Smelters Guild' }
-];
-
-function generateProfessionsFromGuilds(guildOptions) {
+function generateProfessionsFromGuilds(guildOptions, existingOptions = []) {
   const professions = [];
-  const seenValues = new Set(dwarfProfessionOptions.map(p => p.value)); // Track existing profession values
+  const seenValues = new Set(existingOptions.map((p) => p.value));
 
   guildOptions.forEach(guild => {
     let label = guild.label;
@@ -10000,7 +9937,7 @@ function generateProfessionsFromGuilds(guildOptions) {
   return professions;
 }
 
-const dwarfProfessionOptions = [
+const baseDwarfProfessionOptions = [
   { value: 'miner', label: 'Miner' },
   { value: 'mason', label: 'Master Mason' },
   { value: 'smith', label: 'Master Smith' },
@@ -10011,7 +9948,11 @@ const dwarfProfessionOptions = [
   { value: 'carpenter', label: 'Master Carpenter' },
   { value: 'gemcutter', label: 'Gemcutter' },
   { value: 'banker', label: 'Banker' }
-].concat(generateProfessionsFromGuilds(dwarfGuildOptions));
+];
+
+const dwarfProfessionOptions = baseDwarfProfessionOptions.concat(
+  generateProfessionsFromGuilds(dwarfGuildOptions, baseDwarfProfessionOptions)
+);
 
 const dwarfHairStyles = {
   bald: {
