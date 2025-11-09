@@ -335,20 +335,22 @@ const getCharacterCreatorBeardImage = (dwarf, deps) => {
   return assetKey ? deps.characterCreatorPortraitAssets?.[assetKey]?.image || null : null;
 };
 
-const renderCharacterCreatorPortrait = (ctx, canvas, dwarf, hairOption, deps) => {
-  const gender = dwarf.gender === 'female' ? 'female' : 'male';
+const renderCharacterCreatorPortrait = (ctx, canvas, dwarf, appearance, deps) => {
+  const gender = dwarf?.gender === 'female' ? 'female' : 'male';
   const bodyKey = gender === 'female' ? 'femaleBody' : 'maleBody';
   const bodyImage = deps.characterCreatorPortraitAssets?.[bodyKey]?.image;
   const headImage = deps.characterCreatorPortraitAssets?.headDefault?.image;
   if (!bodyImage || !headImage) {
     return;
   }
-  const drawWidth = bodyImage.width;
-  const drawHeight = bodyImage.height;
+  ctx.imageSmoothingEnabled = false;
+  const scale = Math.min(canvas.width / bodyImage.width, canvas.height / bodyImage.height);
+  const drawWidth = bodyImage.width * scale;
+  const drawHeight = bodyImage.height * scale;
   const offsetX = Math.floor((canvas.width - drawWidth) / 2);
   const offsetY = Math.floor((canvas.height - drawHeight) / 2);
-  const skinColor = dwarf.skinOption?.color || deps.characterCreatorDefaultSkinColor || '#c59b7d';
-
+  const skinColor =
+    appearance.skin?.color || deps.characterCreatorDefaultSkinColor || '#c59b7d';
   const bodyLayers =
     typeof deps.getCharacterCreatorSkinTintLayers === 'function'
       ? deps.getCharacterCreatorSkinTintLayers(bodyKey, skinColor)
@@ -360,15 +362,18 @@ const renderCharacterCreatorPortrait = (ctx, canvas, dwarf, hairOption, deps) =>
     ctx.drawImage(bodyImage, offsetX, offsetY, drawWidth, drawHeight);
   }
 
-  const headLayers =
-    typeof deps.getCharacterCreatorSkinTintLayers === 'function'
-      ? deps.getCharacterCreatorSkinTintLayers('headDefault', skinColor)
-      : null;
-  if (headLayers) {
-    ctx.drawImage(headLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
-    ctx.drawImage(headLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
-  } else {
-    ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+  const shouldRenderHead = gender !== 'female';
+  if (shouldRenderHead) {
+    const headLayers =
+      typeof deps.getCharacterCreatorSkinTintLayers === 'function'
+        ? deps.getCharacterCreatorSkinTintLayers('headDefault', skinColor)
+        : null;
+    if (headLayers) {
+      ctx.drawImage(headLayers.baseCanvas, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.drawImage(headLayers.tintedCanvas, offsetX, offsetY, drawWidth, drawHeight);
+    } else {
+      ctx.drawImage(headImage, offsetX, offsetY, drawWidth, drawHeight);
+    }
   }
 
   const hairAssetKey = getCharacterCreatorHairAssetKey(dwarf, deps);
@@ -377,7 +382,7 @@ const renderCharacterCreatorPortrait = (ctx, canvas, dwarf, hairOption, deps) =>
       typeof deps.getCharacterCreatorHairTintLayers === 'function'
         ? deps.getCharacterCreatorHairTintLayers(
             hairAssetKey,
-            hairOption?.color || deps.characterCreatorDefaultHairColor
+            appearance.hair?.color || deps.characterCreatorDefaultHairColor
           )
         : null;
     if (hairTintLayers) {
@@ -397,7 +402,7 @@ const renderCharacterCreatorPortrait = (ctx, canvas, dwarf, hairOption, deps) =>
       typeof deps.getCharacterCreatorHairTintLayers === 'function'
         ? deps.getCharacterCreatorHairTintLayers(
             beardAssetKey,
-            hairOption?.color || deps.characterCreatorDefaultHairColor
+            appearance.hair?.color || deps.characterCreatorDefaultHairColor
           )
         : null;
     if (beardTintLayers) {
@@ -482,7 +487,7 @@ const renderPrimaryPortrait = (dwarf, appearance, deps) => {
   }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (shouldUseCharacterCreatorPortrait(dwarf, deps)) {
-    renderCharacterCreatorPortrait(ctx, canvas, dwarf, appearance.hair, deps);
+    renderCharacterCreatorPortrait(ctx, canvas, dwarf, appearance, deps);
     return;
   }
   renderTilesheetPortrait(ctx, canvas, dwarf, appearance, {}, deps);
