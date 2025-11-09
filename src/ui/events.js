@@ -630,7 +630,7 @@ export function attachEvents(elements, deps) {
   if (elements.mapSizeSelect) {
     elements.mapSizeSelect.addEventListener('change', (event) => {
       const preset = getMapSizePreset(event.target.value);
-      applyMapSizePresetToState(preset);
+      applyMapSizePresetToState(state, preset);
       updateWorldInfoSizeDisplay();
       if (elements.worldMapSizeSelect) {
         elements.worldMapSizeSelect.value = state.settings.mapSize;
@@ -712,7 +712,7 @@ export function attachEvents(elements, deps) {
     elements.optionsForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const mapSizePreset = getMapSizePreset(elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize);
-      applyMapSizePresetToState(mapSizePreset);
+      applyMapSizePresetToState(state, mapSizePreset);
       updateWorldInfoSizeDisplay();
       if (elements.worldMapSizeSelect) {
         elements.worldMapSizeSelect.value = state.settings.mapSize;
@@ -733,7 +733,7 @@ export function attachEvents(elements, deps) {
     elements.worldInfoForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const selectedPreset = getMapSizePreset(elements.worldMapSizeSelect?.value || state.settings.mapSize);
-      applyMapSizePresetToState(selectedPreset);
+      applyMapSizePresetToState(state, selectedPreset);
       if (elements.mapSizeSelect) {
         elements.mapSizeSelect.value = state.settings.mapSize;
       }
@@ -821,7 +821,7 @@ export function attachEvents(elements, deps) {
   if (elements.worldMapSizeSelect) {
     elements.worldMapSizeSelect.addEventListener('change', (event) => {
       const preset = getMapSizePreset(event.target.value);
-      applyMapSizePresetToState(preset);
+      applyMapSizePresetToState(state, preset);
       if (elements.mapSizeSelect) {
         elements.mapSizeSelect.value = state.settings.mapSize;
       }

@@ -1,4 +1,4 @@
-﻿import {
+import {
   tileSheets,
   dwarfSpriteSheets,
   orcSpriteSheets,
@@ -32,35 +32,16 @@ import {
   drawAmbientMoonwellStructure
 } from './src/world/structures.js';
 import { updateDwarfPortrait, updateDwarfTraitSummary, updateRosterList } from './src/dwarves/customizer.js';
-
-function populateClanSelectFromOptions(options) {
-  try {
-    const select = document.getElementById('dwarf-clan-select');
-    if (!select || !Array.isArray(options)) return;
-
-    const previous = select.value || null;
-    while (select.firstChild) select.removeChild(select.firstChild);
-
-    options.forEach((opt) => {
-      if (!opt || typeof opt.value !== 'string' || typeof opt.label !== 'string') return;
-      const o = document.createElement('option');
-      o.value = opt.value;
-      o.textContent = opt.label;
-      if (opt.description && typeof opt.description === 'string') {
-        o.title = opt.description;
-      }
-      select.appendChild(o);
-    });
-
-    if (previous && options.some((o) => o && o.value === previous)) {
-      select.value = previous;
-    } else if (options.length > 0) {
-      select.value = options[0].value;
-    }
-  } catch (_err) {
-    // ignore
-  }
-}
+import { populateClanSelectFromOptions } from './src/main/clan-select.js';
+import {
+  applyMapSizePresetToState,
+  defaultForestFrequency,
+  defaultMapSize,
+  defaultMountainFrequency,
+  getMapSizeLabel,
+  getMapSizePreset
+} from './src/main/map-config.js';
+import { getRandomWorldName } from './src/main/world-names.js';
 
 let cachedDwarfholdGeneratorPromise = null;
 
@@ -293,164 +274,6 @@ function evaluateFactionTileSuitability(faction, tile, x, y) {
 }
 
 
-const mapSizePresets = [
-  { key: 'mini', label: 'Mini', width: 192, height: 144 },
-  { key: 'small', label: 'Small', width: 260, height: 195 },
-  { key: 'normal', label: 'Normal', width: 324, height: 243 },
-  { key: 'large', label: 'Large', width: 424, height: 318 },
-  { key: 'extra-large', label: 'Extra Large', width: 520, height: 390 }
-];
-
-const mapSizeByKey = mapSizePresets.reduce((acc, preset) => {
-  acc[preset.key] = preset;
-  return acc;
-}, {});
-
-function getMapSizePreset(key) {
-  return mapSizeByKey[key] || mapSizeByKey.normal;
-}
-
-function applyMapSizePresetToState(preset) {
-  if (!preset) {
-    return;
-  }
-  state.settings.mapSize = preset.key;
-  state.settings.width = preset.width;
-  state.settings.height = preset.height;
-}
-
-function getMapSizeLabel(preset, width, height) {
-  if (preset) {
-    return `${preset.label} â€” ${preset.width} Ã— ${preset.height} tiles`;
-  }
-  if (typeof width === 'number' && typeof height === 'number') {
-    return `${width} Ã— ${height} tiles`;
-  }
-  return 'â€”';
-}
-
-const defaultMapSize = getMapSizePreset('normal');
-const defaultForestFrequency = 35;
-const defaultMountainFrequency = 35;
-
-const worldNames = [
-  'NÃ»rn',
-  'Ardganor',
-  'Drakmor',
-  'Thaldur',
-  'Eldrakis',
-  'KarrÃ»n',
-  'Tholmar',
-  'Torra',
-  'Albia',
-  'Tor',
-  'Lassel',
-  "Marrov'gar",
-  'Planetos',
-  'Ulthos',
-  'Grrth',
-  'Erin',
-  'NÃ»rnheim',
-  'Midkemia',
-  'Skarnheim',
-  'Shannara',
-  'AlagaÃ«sia',
-  'Syf',
-  'Elysium',
-  'Lankhmar',
-  'Arcadia',
-  'Eberron',
-  'Crobuzon',
-  'Valdemar',
-  'Uresia',
-  'Tiassa',
-  'Tairnadal',
-  'Solara',
-  'Golarion',
-  'Aerth',
-  'Khand',
-  'Sanctuary',
-  'Thra',
-  'Acheron',
-  'Cosmere',
-  'TÃ©kumel',
-  'Norrathal',
-  'Prydain',
-  'Kulthea',
-  'Bas-Lag',
-  'Eternia',
-  'Xanth',
-  'Abeir-Toril',
-  'Earthsea',
-  'Pern',
-  'Discworld',
-  'Hyboria',
-  'Avalon',
-  'Tyria',
-  'Tarnadam',
-  'Rokugan',
-  'Glorantha',
-  'Ivalice',
-  'The World of the Five Gods',
-  'Narnia',
-  'Azeroth',
-  'Spira',
-  'Noxus',
-  'Volkran',
-  "Tal'Dorei",
-  'Exandria',
-  'Runeterra',
-  'Eorzea',
-  'Thraenor',
-  'Xadia',
-  'Roshar',
-  'Teldrassil',
-  'Draenor',
-  'Valisthea',
-  'Gensokyo',
-  'Temeria',
-  'Nilfgaard',
-  'Aedirn',
-  'Redania',
-  'Kaedwen',
-  'Toussaint',
-  'Rivellon',
-  'Lucis',
-  'Gransys',
-  'Drangleic',
-  'Lothric',
-  'Boletaria',
-  'Lordran',
-  'Caelid',
-  'Limgrave',
-  'Altus',
-  'Plateauonia',
-  'Iria',
-  'Theros',
-  'Dominaria',
-  'Zendikar',
-  'Innistrad',
-  'Ravnica',
-  'Kamigawa',
-  'Lorwyn',
-  'Tarkir',
-  'Ikoria',
-  'Strixhaven',
-  'Brazenforge',
-  'Solarae',
-  'Ethyra',
-  'Lunathor',
-  'Aethernis',
-  'Veydris',
-  'Nytherra',
-  'Astralis',
-  'Zephyra',
-  'Umbryss',
-  'Eclipthar',
-  'Skibiti Toliterium',
-  'Syx',
-  'Quidd'
-];
 
 const realmNameAdjectives = [
   'Azure',
@@ -9492,6 +9315,10 @@ const dwarfOptions = {
   profession: dwarfProfessionOptions
 };
 
+if (elements.dwarfClanSelect) {
+  populateClanSelectFromOptions(dwarfOptions.clan);
+}
+
 const editableDwarfTraits = new Set([
   'gender',
   'skin',
@@ -10195,20 +10022,6 @@ function updateWorldInfoSeedDisplay(seedValue) {
   elements.worldInfoSeed.textContent = trimmed || 'Random';
 }
 
-function getRandomWorldName(excludeName) {
-  if (worldNames.length === 0) {
-    return 'Unnamed World';
-  }
-  if (!excludeName || worldNames.length === 1) {
-    return worldNames[Math.floor(Math.random() * worldNames.length)];
-  }
-  let name = worldNames[Math.floor(Math.random() * worldNames.length)];
-  while (name === excludeName) {
-    name = worldNames[Math.floor(Math.random() * worldNames.length)];
-  }
-  return name;
-}
-
 function ensureSeedString() {
   const trimmed = (state.settings.seedString || '').trim();
   if (trimmed) {
@@ -10240,7 +10053,7 @@ function openWorldInfoModal() {
     return;
   }
   const sizePreset = getMapSizePreset(state.settings.mapSize);
-  applyMapSizePresetToState(sizePreset);
+  applyMapSizePresetToState(state, sizePreset);
   if (elements.worldMapSizeSelect) {
     elements.worldMapSizeSelect.value = state.settings.mapSize;
   }
@@ -28844,7 +28657,7 @@ function syncInputsWithSettings() {
         ? elements.worldMapSizeSelect.value
         : state.settings.mapSize;
       const selectedPreset = getMapSizePreset(selectedMapSizeKey);
-      applyMapSizePresetToState(selectedPreset);
+      applyMapSizePresetToState(state, selectedPreset);
       if (elements.worldMapSizeSelect) {
         elements.worldMapSizeSelect.value = state.settings.mapSize;
       }
@@ -28937,7 +28750,7 @@ function syncInputsWithSettings() {
   if (elements.worldMapSizeSelect) {
     elements.worldMapSizeSelect.addEventListener('change', (event) => {
       const preset = getMapSizePreset(event.target.value);
-      applyMapSizePresetToState(preset);
+      applyMapSizePresetToState(state, preset);
       if (elements.mapSizeSelect) {
         elements.mapSizeSelect.value = state.settings.mapSize;
       }
