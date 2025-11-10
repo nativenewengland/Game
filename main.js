@@ -28859,6 +28859,19 @@ function initialise() {
 
 initialise();
 
+function autoStartGameIfNeeded() {
+  const gameContainerHidden =
+    !elements.gameContainer || elements.gameContainer.classList.contains('hidden');
+  if (state.currentWorld || !gameContainerHidden) {
+    return;
+  }
+
+  openWorldInfoModal();
+  beginGame();
+}
+
+autoStartGameIfNeeded();
+
 // Mark app initialised for any non-module fallback scripts
 if (typeof document !== 'undefined' && document.documentElement) {
   try {
