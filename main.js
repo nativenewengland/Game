@@ -28507,6 +28507,139 @@ function handleRegenerate() {
   });
 }
 
+let optionsVisible = false;
+let optionsSource = null;
+let lastFocusedBeforeOptions = null;
+
+function focusFirstOptionsControl() {
+  if (!elements.optionsScreen || typeof elements.optionsScreen.querySelector !== 'function') {
+    return;
+  }
+
+  const explicitInitialFocus = elements.optionsScreen.querySelector('[data-initial-focus="true"]');
+  const candidate =
+    explicitInitialFocus ||
+    elements.closeOptions ||
+    elements.optionsScreen.querySelector(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+
+  if (candidate && typeof candidate.focus === 'function') {
+    try {
+      candidate.focus({ preventScroll: true });
+    } catch (_) {
+      candidate.focus();
+    }
+  }
+}
+
+function setOptionsButtonExpanded(target, expanded) {
+  if (!target || typeof target.setAttribute !== 'function') {
+    return;
+  }
+  target.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+}
+
+function rememberCurrentFocus() {
+  if (typeof document === 'undefined') {
+    lastFocusedBeforeOptions = null;
+    return;
+  }
+
+  const activeElement = document.activeElement;
+  if (!activeElement || typeof activeElement.focus !== 'function') {
+    lastFocusedBeforeOptions = null;
+    return;
+  }
+
+  lastFocusedBeforeOptions = activeElement;
+}
+
+function restorePreviousFocus(fallback) {
+  const target = lastFocusedBeforeOptions && typeof lastFocusedBeforeOptions.focus === 'function'
+    ? lastFocusedBeforeOptions
+    : fallback;
+
+  if (target && typeof target.focus === 'function') {
+    try {
+      target.focus({ preventScroll: true });
+    } catch (_) {
+      target.focus();
+    }
+  }
+
+  lastFocusedBeforeOptions = null;
+}
+
+function openOptionsScreen(source = 'title') {
+  if (!elements.optionsScreen) {
+    return;
+  }
+
+  const normalizedSource = source === 'game' ? 'game' : 'title';
+  rememberCurrentFocus();
+
+  optionsVisible = true;
+  optionsSource = normalizedSource;
+
+  elements.optionsScreen.classList.remove('hidden');
+  elements.optionsScreen.setAttribute('aria-hidden', 'false');
+  elements.optionsScreen.setAttribute('data-open-source', normalizedSource);
+
+  if (normalizedSource === 'title') {
+    if (elements.titleScreen) {
+      elements.titleScreen.classList.add('hidden');
+      elements.titleScreen.setAttribute('aria-hidden', 'true');
+    }
+    setOptionsButtonExpanded(elements.optionsButton, true);
+  } else {
+    setOptionsButtonExpanded(elements.inGameOptions, true);
+    if (elements.gameContainer) {
+      elements.gameContainer.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  focusFirstOptionsControl();
+}
+
+function closeOptionsScreen(options = {}) {
+  const { returnFocus = true } = options;
+
+  const previousSource = optionsSource;
+  optionsVisible = false;
+  optionsSource = null;
+
+  if (!elements.optionsScreen) {
+    return previousSource;
+  }
+
+  elements.optionsScreen.classList.add('hidden');
+  elements.optionsScreen.setAttribute('aria-hidden', 'true');
+  elements.optionsScreen.removeAttribute('data-open-source');
+
+  if (previousSource === 'title') {
+    setOptionsButtonExpanded(elements.optionsButton, false);
+    if (elements.titleScreen) {
+      elements.titleScreen.classList.remove('hidden');
+      elements.titleScreen.setAttribute('aria-hidden', 'false');
+    }
+  } else if (previousSource === 'game') {
+    setOptionsButtonExpanded(elements.inGameOptions, false);
+    if (elements.gameContainer) {
+      elements.gameContainer.removeAttribute('aria-hidden');
+    }
+  }
+
+  if (returnFocus) {
+    const fallback = previousSource === 'game' ? elements.inGameOptions : elements.optionsButton;
+    restorePreviousFocus(fallback);
+  } else {
+    lastFocusedBeforeOptions = null;
+  }
+
+  return previousSource;
+}
+
 function syncInputsWithSettings() {
   if (elements.mapSizeSelect) {
     elements.mapSizeSelect.value = state.settings.mapSize;
@@ -28570,7 +28703,6 @@ function syncInputsWithSettings() {
     const value = sanitizeFrequencyValue(state.settings.lizardmenSettlementFrequency, 50);
     elements.lizardmenSettlementFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
-  }
   }
 
   if (elements.forestFrequencyInput) {
@@ -28933,6 +29065,8 @@ function syncInputsWithSettings() {
   });
 
   refreshOverlayToggleButtons();
+}
+
 attachEvents(elements, {
   structureContextMenuState,
   hideStructureContextMenu,
