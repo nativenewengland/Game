@@ -58,7 +58,9 @@ export function attachEvents(elements, deps) {
     setMapEditorApplyTerrain,
     setMapEditorApplyStructure,
     setMapEditorBrushSize,
-    clearMapEditorStructure
+    clearMapEditorStructure,
+    runWithLoadingScreen,
+    generateAndRender
   } = deps;
 
   const dismissContextMenuOnPointerDown = (event) => {
@@ -704,6 +706,9 @@ export function attachEvents(elements, deps) {
         defaultValue
       );
       state.settings[key] = sanitisedValue;
+      if (event.target.value !== sanitisedValue.toString()) {
+        event.target.value = sanitisedValue.toString();
+      }
       updateFrequencyDisplay(valueElement, sanitisedValue);
     });
   });
@@ -711,21 +716,50 @@ export function attachEvents(elements, deps) {
   if (elements.optionsForm) {
     elements.optionsForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const mapSizePreset = getMapSizePreset(elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize);
+      sliderInputHandlers.forEach(({ input, valueElement, defaultValue, key }) => {
+        if (!input) {
+          return;
+        }
+        const rawValue = Number.parseInt(input.value, 10);
+        const sanitisedValue = sanitizeFrequencyValue(
+          Number.isNaN(rawValue) ? state.settings[key] : rawValue,
+          defaultValue
+        );
+        state.settings[key] = sanitisedValue;
+        if (input.value !== sanitisedValue.toString()) {
+          input.value = sanitisedValue.toString();
+        }
+        updateFrequencyDisplay(valueElement, sanitisedValue);
+      });
+
+      const mapSizeKey = elements.mapSizeSelect ? elements.mapSizeSelect.value : state.settings.mapSize;
+      const mapSizePreset = getMapSizePreset(mapSizeKey);
       applyMapSizePresetToState(state, mapSizePreset);
       updateWorldInfoSizeDisplay();
       if (elements.worldMapSizeSelect) {
         elements.worldMapSizeSelect.value = state.settings.mapSize;
       }
+
       const selectedGenerationType = elements.worldGenerationTypeSelect
         ? elements.worldGenerationTypeSelect.value
         : state.settings.worldGenerationType;
       setWorldGenerationType(selectedGenerationType);
       updateWorldInfoGenerationTypeDisplay();
-      const seedString = (elements.seedInput.value || '').trim();
-      state.settings.seedString = seedString;
-      updateWorldInfoSeedDisplay(seedString);
-      closeOptionsScreen();
+
+      const seedInputValue = elements.seedInput ? elements.seedInput.value.trim() : '';
+      state.settings.seedString = seedInputValue;
+      state.settings.lastSeedString = seedInputValue;
+      updateWorldInfoSeedDisplay(seedInputValue);
+      if (elements.worldSeedInput && elements.worldSeedInput !== elements.seedInput) {
+        elements.worldSeedInput.value = seedInputValue;
+      }
+
+      const previousSource = closeOptionsScreen();
+      if (previousSource === 'game' && elements.gameContainer) {
+        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realm…' }).catch((error) => {
+          console.error('Failed to apply new world settings.', error);
+        });
+      }
     });
   }
 
