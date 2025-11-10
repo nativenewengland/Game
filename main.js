@@ -42,22 +42,13 @@ import {
   getMapSizePreset
 } from './src/main/map-config.js';
 import { getRandomWorldName } from './src/main/world-names.js';
+import { generateDwarfholdMap } from './src/local/dwarfhold-map.js';
 
 let cachedDwarfholdGeneratorPromise = null;
 
 async function loadDwarfholdGenerator() {
   if (!cachedDwarfholdGeneratorPromise) {
-    cachedDwarfholdGeneratorPromise = import('./src/local/dwarfhold-map.js')
-      .then((module) => {
-        if (module && typeof module.generateDwarfholdMap === 'function') {
-          return module.generateDwarfholdMap;
-        }
-        throw new Error('Dwarfhold map module is missing the generateDwarfholdMap export.');
-      })
-      .catch((error) => {
-        cachedDwarfholdGeneratorPromise = null;
-        throw error;
-      });
+    cachedDwarfholdGeneratorPromise = Promise.resolve(generateDwarfholdMap);
   }
   return cachedDwarfholdGeneratorPromise;
 }
