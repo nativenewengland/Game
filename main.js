@@ -28647,9 +28647,6 @@ function syncInputsWithSettings() {
     });
   }
 
-  updateStartButtonState();
-  attachStartButtonListener();
-
   if (elements.worldInfoForm) {
     elements.worldInfoForm.addEventListener('submit', (event) => {
       event.preventDefault();
