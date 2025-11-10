@@ -12249,6 +12249,12 @@ const structureContextMenuState = {
   tileY: null
 };
 
+let optionsVisible = false;
+let optionsSource = null;
+let optionsReturnFocusElement = null;
+let gameContainerAriaHiddenByOptions = false;
+let titleHiddenByOptions = false;
+
 const normalizeDwarfholdKey = (value) => {
   if (typeof value !== 'string') {
     return '';
@@ -28504,6 +28510,208 @@ function handleRegenerate() {
     { statusText: 'Forging a new worldâ€¦' }
   ).catch((error) => {
     console.error('Failed to regenerate world.', error);
+  });
+}
+
+function focusOptionsElement(element) {
+  if (!element || typeof element.focus !== 'function') {
+    return;
+  }
+  const focusAction = () => {
+    element.focus();
+  };
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(focusAction);
+  } else {
+    focusAction();
+  }
+}
+
+function getFocusableOptionsElement() {
+  if (!elements.optionsScreen) {
+    return null;
+  }
+  if (elements.closeOptions) {
+    return elements.closeOptions;
+  }
+  return elements.optionsScreen.querySelector(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+}
+
+function openOptionsScreen(source = 'title') {
+  if (!elements.optionsScreen) {
+    return;
+  }
+
+  const normalizedSource = source === 'game' ? 'game' : 'title';
+  const activeElement =
+    typeof document !== 'undefined' && document.activeElement &&
+    typeof document.activeElement.focus === 'function'
+      ? document.activeElement
+      : null;
+
+  optionsReturnFocusElement = activeElement;
+  optionsSource = normalizedSource;
+  optionsVisible = true;
+
+  if (normalizedSource === 'title' && elements.titleScreen && !elements.titleScreen.classList.contains('hidden')) {
+    elements.titleScreen.classList.add('hidden');
+    titleHiddenByOptions = true;
+  } else {
+    titleHiddenByOptions = false;
+  }
+
+  gameContainerAriaHiddenByOptions = false;
+  if (normalizedSource === 'game' && elements.gameContainer) {
+    elements.gameContainer.setAttribute('aria-hidden', 'true');
+    gameContainerAriaHiddenByOptions = true;
+  }
+
+  elements.optionsScreen.classList.remove('hidden');
+  elements.optionsScreen.setAttribute('aria-hidden', 'false');
+  elements.optionsScreen.scrollTop = 0;
+
+  const focusTarget = getFocusableOptionsElement();
+  if (focusTarget) {
+    focusOptionsElement(focusTarget);
+  }
+}
+
+function closeOptionsScreen(options = {}) {
+  const { returnFocus = true } = options || {};
+  const previousSource = optionsSource;
+  const wasVisible = optionsVisible;
+
+  optionsVisible = false;
+  optionsSource = null;
+
+  if (elements.optionsScreen) {
+    elements.optionsScreen.classList.add('hidden');
+    elements.optionsScreen.setAttribute('aria-hidden', 'true');
+  }
+
+  if (gameContainerAriaHiddenByOptions && elements.gameContainer) {
+    elements.gameContainer.removeAttribute('aria-hidden');
+  }
+  gameContainerAriaHiddenByOptions = false;
+
+  if (
+    titleHiddenByOptions &&
+    elements.titleScreen &&
+    (!elements.gameContainer || elements.gameContainer.classList.contains('hidden'))
+  ) {
+    elements.titleScreen.classList.remove('hidden');
+  }
+  titleHiddenByOptions = false;
+
+  const focusCandidate =
+    optionsReturnFocusElement && typeof optionsReturnFocusElement.focus === 'function'
+      ? optionsReturnFocusElement
+      : null;
+  optionsReturnFocusElement = null;
+
+  let fallbackFocus = null;
+  if (previousSource === 'game') {
+    fallbackFocus = elements.inGameOptions || elements.closeOptions;
+  } else {
+    fallbackFocus = elements.optionsButton || elements.startButton;
+  }
+
+  const focusTarget = focusCandidate || fallbackFocus;
+  if (returnFocus && focusTarget) {
+    focusOptionsElement(focusTarget);
+  }
+
+  return wasVisible ? previousSource : null;
+}
+
+function applyFormSettings() {
+  if (elements.mapSizeSelect) {
+    const preset = getMapSizePreset(elements.mapSizeSelect.value);
+    applyMapSizePresetToState(state, preset);
+  }
+
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
+
+  if (elements.worldGenerationTypeSelect) {
+    setWorldGenerationType(elements.worldGenerationTypeSelect.value);
+  }
+  if (elements.worldInfoGenerationTypeSelect) {
+    elements.worldInfoGenerationTypeSelect.value = state.settings.worldGenerationType;
+  }
+  updateWorldInfoGenerationTypeDisplay();
+
+  if (elements.seedInput) {
+    const trimmedSeed = elements.seedInput.value ? elements.seedInput.value.trim() : '';
+    elements.seedInput.value = trimmedSeed;
+    state.settings.seedString = trimmedSeed;
+  }
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.value = state.settings.seedString;
+  }
+  updateWorldInfoSeedDisplay(state.settings.seedString);
+
+  const sliderConfigs = [
+    {
+      input: elements.forestFrequencyInput,
+      valueElement: elements.forestFrequencyValue,
+      key: 'forestFrequency',
+      defaultValue: defaultForestFrequency
+    },
+    {
+      input: elements.mountainFrequencyInput,
+      valueElement: elements.mountainFrequencyValue,
+      key: 'mountainFrequency',
+      defaultValue: defaultMountainFrequency
+    },
+    {
+      input: elements.riverFrequencyInput,
+      valueElement: elements.riverFrequencyValue,
+      key: 'riverFrequency',
+      defaultValue: 50
+    },
+    {
+      input: elements.humanSettlementFrequencyInput,
+      valueElement: elements.humanSettlementFrequencyValue,
+      key: 'humanSettlementFrequency',
+      defaultValue: 50
+    },
+    {
+      input: elements.dwarfSettlementFrequencyInput,
+      valueElement: elements.dwarfSettlementFrequencyValue,
+      key: 'dwarfSettlementFrequency',
+      defaultValue: 50
+    },
+    {
+      input: elements.woodElfSettlementFrequencyInput,
+      valueElement: elements.woodElfSettlementFrequencyValue,
+      key: 'woodElfSettlementFrequency',
+      defaultValue: 50
+    },
+    {
+      input: elements.lizardmenSettlementFrequencyInput,
+      valueElement: elements.lizardmenSettlementFrequencyValue,
+      key: 'lizardmenSettlementFrequency',
+      defaultValue: 50
+    }
+  ];
+
+  sliderConfigs.forEach(({ input, valueElement, key, defaultValue }) => {
+    if (!input) {
+      return;
+    }
+    const rawValue = Number.parseInt(input.value, 10);
+    const sanitisedValue = sanitizeFrequencyValue(
+      Number.isNaN(rawValue) ? state.settings[key] : rawValue,
+      defaultValue
+    );
+    state.settings[key] = sanitisedValue;
+    input.value = sanitisedValue.toString();
+    updateFrequencyDisplay(valueElement, sanitisedValue);
   });
 }
 
