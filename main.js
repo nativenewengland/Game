@@ -29008,6 +29008,33 @@ function initialise() {
 
 initialise();
 
+function autoStartGameIfNeeded() {
+  const gameContainerHidden =
+    !elements.gameContainer || elements.gameContainer.classList.contains('hidden');
+  if (state.currentWorld || !gameContainerHidden) {
+    return;
+  }
+
+  openWorldInfoModal();
+
+  if (elements.worldInfoForm) {
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+    elements.worldInfoForm.dispatchEvent(submitEvent);
+  } else {
+    openDwarfCustomizer({ resetParty: true });
+  }
+
+  if (elements.dwarfCustomizerForm) {
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+    elements.dwarfCustomizerForm.dispatchEvent(submitEvent);
+  } else {
+    beginGame();
+    ensureMusicStarted();
+  }
+}
+
+autoStartGameIfNeeded();
+
 // Mark app initialised for any non-module fallback scripts
 if (typeof document !== 'undefined' && document.documentElement) {
   try {
