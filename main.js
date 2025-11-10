@@ -28571,7 +28571,6 @@ function syncInputsWithSettings() {
     elements.lizardmenSettlementFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
   }
-  }
 
   if (elements.forestFrequencyInput) {
     elements.forestFrequencyInput.addEventListener('input', (event) => {
@@ -28933,6 +28932,8 @@ function syncInputsWithSettings() {
   });
 
   refreshOverlayToggleButtons();
+}
+
 attachEvents(elements, {
   structureContextMenuState,
   hideStructureContextMenu,
