@@ -29369,11 +29369,48 @@ function beginGame() {
     });
 }
 
+async function loadTileSheetImages() {
+  // Load all tile sheet images if not already loaded
+  const sheetKeys = Object.keys(state.tileSheets || {});
+  const loadPromises = [];
+  
+  for (let i = 0; i < sheetKeys.length; i += 1) {
+    const key = sheetKeys[i];
+    const sheet = state.tileSheets[key];
+    if (!sheet || !sheet.path) {
+      continue;
+    }
+    if (sheet.image) {
+      // Already loaded
+      continue;
+    }
+    try {
+      const imagePromise = loadImage(sheet.path);
+      imagePromise.then((img) => {
+        if (sheet && img) {
+          sheet.image = img;
+        }
+      }).catch((error) => {
+        console.warn(`Failed to load tile sheet image: ${sheet.path}`, error);
+      });
+      loadPromises.push(imagePromise);
+    } catch (error) {
+      console.warn(`Error loading tile sheet: ${key}`, error);
+    }
+  }
+  
+  if (loadPromises.length > 0) {
+    await Promise.all(loadPromises);
+  }
+}
+
 async function generateAndRender(seedOverride) {
   const seedToUse = typeof seedOverride === 'string' ? seedOverride : state.settings.seedString;
   ensureLandMaskForProfile(state.settings.worldGenerationType);
   hideMapTooltip();
   hideLocalView({ suppressRedraw: true });
+  await updateLoadingProgressAndWait(5, 'Loading tile sheetsâ€¦');
+  await loadTileSheetImages();
   await updateLoadingProgressAndWait(12, 'Stabilizing ley linesâ€¦');
   await updateLoadingProgressAndWait(28, 'Surveying continental platesâ€¦');
   const world = createWorld(seedToUse);
