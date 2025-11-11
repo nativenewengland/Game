@@ -42,29 +42,20 @@ import {
   getMapSizePreset
 } from './src/main/map-config.js';
 import { getRandomWorldName } from './src/main/world-names.js';
+import { generateDwarfholdMap } from './src/local/dwarfhold-map.js';
 
 let cachedDwarfholdGeneratorPromise = null;
 
 async function loadDwarfholdGenerator() {
   if (!cachedDwarfholdGeneratorPromise) {
-    cachedDwarfholdGeneratorPromise = import('./src/local/dwarfhold-map.js')
-      .then((module) => {
-        if (module && typeof module.generateDwarfholdMap === 'function') {
-          return module.generateDwarfholdMap;
-        }
-        throw new Error('Dwarfhold map module is missing the generateDwarfholdMap export.');
-      })
-      .catch((error) => {
-        cachedDwarfholdGeneratorPromise = null;
-        throw error;
-      });
+    cachedDwarfholdGeneratorPromise = Promise.resolve(generateDwarfholdMap);
   }
   return cachedDwarfholdGeneratorPromise;
 }
 
 const drawSize = 32;
 const defaultWorldGenerationType = 'normal';
-const defaultLoadingStatusMessage = 'Calculating terrain layersâ€¦';
+const defaultLoadingStatusMessage = 'Calculating terrain layers…';
 const icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
 
 registerTiles('base', baseTileCoords);
@@ -2486,6 +2477,24 @@ function pickRandomFrom(array, random) {
   return array[clampedIndex];
 }
 
+function shuffleArray(array, random) {
+  // Shuffle an array using Fisher-Yates algorithm
+  // Returns a new shuffled array, does not modify the original
+  if (!Array.isArray(array) || array.length === 0) {
+    return [];
+  }
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const result = array.slice(); // Create a copy
+  
+  // Fisher-Yates shuffle
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(randomFn() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  
+  return result;
+}
+
 function pickUniqueFrom(array, count, random) {
   if (!Array.isArray(array) || array.length === 0 || count <= 0) {
     return [];
@@ -2660,6 +2669,22 @@ function generateLakeName(random, context = {}) {
     return `The ${descriptor} ${noun} of the ${motif}`;
   }
   return `The ${descriptor} ${noun}`;
+}
+
+function generateRealmName(random) {
+  // Generate a name for a realm/kingdom using existing realm name arrays
+  const randomFn = typeof random === 'function' ? random : Math.random;
+  const adjective = pickRandomFrom(realmNameAdjectives, randomFn);
+  const noun = pickRandomFrom(realmNameNouns, randomFn);
+  
+  if (adjective && noun) {
+    return `${adjective} ${noun}`;
+  } else if (noun) {
+    return noun;
+  } else if (adjective) {
+    return `${adjective} Realm`;
+  }
+  return 'The Realm';
 }
 
 const biomeTypeDefinitions = {
@@ -8576,28 +8601,836 @@ const {
   documentRef: typeof document !== 'undefined' ? document : null
 });
 
-const customizerDeps = {
-  state,
-  elements,
-  getOptionByValue,
-  getOptionLabel,
-  getHairSummaryPhrase,
-  getHairStyleConfig,
-  resolveHairStyleValue,
-  resolveHeadTypeValue,
-  dwarfHeadTypes,
-  dwarfSpriteSheets,
-  characterCreatorPortraitAssets,
-  characterCreatorBeardAssetMap,
-  characterCreatorHairAssetMap,
-  characterCreatorHairStyleCategoryMap,
-  characterCreatorDefaultSkinColor,
-  characterCreatorDefaultHairColor,
-  getCharacterCreatorSkinTintLayers,
-  getCharacterCreatorHairTintLayers,
-  setActiveDwarf,
-  getActiveDwarf
+// customizerDeps will be defined after dwarfOptions and helper functions
+let customizerDeps = null;
+
+function computeFrequencyMultiplier(frequency) {
+  // Convert frequency (0-100) to multiplier (0.5 to 2.0)
+  // 50 (default) = 1.0, 0 = 0.5, 100 = 2.0
+  const normalized = clamp(frequency / 100, 0, 1);
+  return 0.5 + normalized * 1.5;
+}
+
+function sampleRange(rng, range, defaultMin, defaultMax) {
+  if (!rng || typeof rng !== 'function') {
+    rng = Math.random;
+  }
+  let min = defaultMin;
+  let max = defaultMax;
+  if (Array.isArray(range) && range.length >= 2) {
+    if (Number.isFinite(range[0])) {
+      min = range[0];
+    }
+    if (Number.isFinite(range[1])) {
+      max = range[1];
+    }
+  } else if (Number.isFinite(range)) {
+    return range;
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    min = defaultMin;
+    max = defaultMax;
+  }
+  if (max <= min) {
+    return min;
+  }
+  return min + rng() * (max - min);
+}
+
+function computeDwarfholdDistributionAdjustment(x, y, height, seed) {
+  // Create a deterministic spatial adjustment based on position and seed
+  // This helps distribute dwarfholds more evenly across the map
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(height) || height <= 0) {
+    return 0;
+  }
+  if (!Number.isFinite(seed)) {
+    seed = 0;
+  }
+  
+  // Create a hash-like value from position and seed
+  const hash = ((x * 73856093) ^ (y * 19349663) ^ (seed * 83492791)) >>> 0;
+  const normalized = (hash % 1000000) / 1000000;
+  
+  // Use normalized y position to create vertical distribution bias
+  const verticalBias = (y / height) * 2 - 1; // -1 to 1
+  
+  // Combine hash-based noise with slight vertical bias
+  // The adjustment should be small relative to typical scores
+  const noise = (normalized - 0.5) * 0.15; // -0.075 to 0.075
+  const verticalAdjustment = verticalBias * 0.05; // -0.05 to 0.05
+  
+  return noise + verticalAdjustment;
+}
+
+function computeStructurePlacementLimit(baseTarget, maxLimit, multiplier) {
+  // Calculate the maximum number of structures to place
+  // baseTarget: base number calculated from candidate count
+  // maxLimit: hard maximum cap
+  // multiplier: frequency multiplier (typically 0.5 to 2.0)
+  if (!Number.isFinite(baseTarget) || baseTarget <= 0) {
+    baseTarget = 1;
+  }
+  if (!Number.isFinite(maxLimit) || maxLimit <= 0) {
+    maxLimit = 1;
+  }
+  if (!Number.isFinite(multiplier) || multiplier <= 0) {
+    multiplier = 1;
+  }
+  
+  // Apply multiplier and clamp to maxLimit, ensure minimum of 1
+  const adjusted = baseTarget * multiplier;
+  return Math.max(1, Math.min(Math.round(adjusted), maxLimit));
+}
+
+function computeAbandonedDwarfholdChance(frequencyNormalized) {
+  // Calculate the chance that a dwarfhold will be abandoned
+  // frequencyNormalized: normalized settlement frequency (0 to 1)
+  // Lower frequency = higher chance of abandonment (more ruins)
+  // Higher frequency = lower chance of abandonment (more active holds)
+  if (!Number.isFinite(frequencyNormalized)) {
+    frequencyNormalized = 0.5;
+  }
+  const clamped = clamp(frequencyNormalized, 0, 1);
+  
+  // Inverse relationship: low frequency (0) = high abandonment chance (0.35)
+  // high frequency (1) = low abandonment chance (0.05)
+  const minChance = 0.05;
+  const maxChance = 0.35;
+  
+  // Linear interpolation: chance decreases as frequency increases
+  const chance = maxChance - (clamped * (maxChance - minChance));
+  
+  return clamp(chance, minChance, maxChance);
+}
+
+function adjustMinDistance(baseDistance, frequencyNormalized) {
+  // Adjust minimum distance between settlements based on frequency
+  // baseDistance: base minimum distance
+  // frequencyNormalized: normalized settlement frequency (0 to 1)
+  // Higher frequency = smaller min distance (settlements can be closer)
+  // Lower frequency = larger min distance (settlements stay farther apart)
+  if (!Number.isFinite(baseDistance) || baseDistance <= 0) {
+    return 6;
+  }
+  if (!Number.isFinite(frequencyNormalized)) {
+    frequencyNormalized = 0.5;
+  }
+  const clamped = clamp(frequencyNormalized, 0, 1);
+  
+  // When frequency is high (1.0), reduce distance by 30% (multiply by 0.7)
+  // When frequency is low (0.0), increase distance by 20% (multiply by 1.2)
+  const minMultiplier = 0.7;
+  const maxMultiplier = 1.2;
+  
+  // Linear interpolation: multiplier decreases as frequency increases
+  const multiplier = maxMultiplier - (clamped * (maxMultiplier - minMultiplier));
+  
+  const adjusted = baseDistance * multiplier;
+  return Math.max(1, Math.round(adjusted));
+}
+
+function computeNearestDistanceSq(x, y, points) {
+  // Compute squared distance to nearest point in array
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Array.isArray(points) || points.length === 0) {
+    return Infinity;
+  }
+  let minDistSq = Infinity;
+  for (let i = 0; i < points.length; i += 1) {
+    const point = points[i];
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+      continue;
+    }
+    const dx = x - point.x;
+    const dy = y - point.y;
+    const distSq = dx * dx + dy * dy;
+    if (distSq < minDistSq) {
+      minDistSq = distSq;
+    }
+  }
+  return minDistSq;
+}
+
+function findNearestPointWithDetails(x, y, points) {
+  // Find nearest point and return it with distance information
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Array.isArray(points) || points.length === 0) {
+    return null;
+  }
+  let nearest = null;
+  let minDistSq = Infinity;
+  for (let i = 0; i < points.length; i += 1) {
+    const point = points[i];
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+      continue;
+    }
+    const dx = x - point.x;
+    const dy = y - point.y;
+    const distSq = dx * dx + dy * dy;
+    if (distSq < minDistSq) {
+      minDistSq = distSq;
+      nearest = point;
+    }
+  }
+  if (!nearest) {
+    return null;
+  }
+  return {
+    ...nearest,
+    distance: Math.sqrt(minDistSq),
+    distanceSq: minDistSq
+  };
+}
+
+function isMountainOverlay(overlay) {
+  // Check if overlay is a mountain type
+  if (!overlay || typeof overlay !== 'string') {
+    return false;
+  }
+  return isMountainOverlayKey(overlay);
+}
+
+function escapeHtml(text) {
+  // Escape HTML special characters to prevent XSS
+  if (text == null || text === undefined) {
+    return '';
+  }
+  const str = String(text);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function findPathBetweenPoints(startX, startY, endX, endY, options) {
+  // Simple line-based pathfinding between two points on a grid
+  // Returns array of {x, y} coordinates or null if no path found
+  if (!Number.isFinite(startX) || !Number.isFinite(startY) || 
+      !Number.isFinite(endX) || !Number.isFinite(endY)) {
+    return null;
+  }
+  
+  const {
+    tiles,
+    width,
+    height,
+    waterMask,
+    isLandBaseTile,
+    maxDistance
+  } = options || {};
+  
+  if (!Array.isArray(tiles) || !Number.isFinite(width) || !Number.isFinite(height)) {
+    return null;
+  }
+  
+  // Check if start/end are valid
+  if (startX < 0 || startX >= width || startY < 0 || startY >= height ||
+      endX < 0 || endX >= width || endY < 0 || endY >= height) {
+    return null;
+  }
+  
+  // Check if start/end are on land
+  const startIdx = startY * width + startX;
+  const endIdx = endY * width + endX;
+  if (waterMask && (waterMask[startIdx] || waterMask[endIdx])) {
+    return null;
+  }
+  
+  const startTile = tiles[startY] && tiles[startY][startX];
+  const endTile = tiles[endY] && tiles[endY][endX];
+  if (!startTile || !endTile) {
+    return null;
+  }
+  
+  if (isLandBaseTile && (!isLandBaseTile(startTile.base) || !isLandBaseTile(endTile.base))) {
+    return null;
+  }
+  
+  // Simple distance check
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const distSq = dx * dx + dy * dy;
+  if (Number.isFinite(maxDistance) && distSq > maxDistance * maxDistance) {
+    return null;
+  }
+  
+  // Simple line drawing algorithm (Bresenham's line algorithm)
+  const path = [];
+  let x0 = Math.round(startX);
+  let y0 = Math.round(startY);
+  let x1 = Math.round(endX);
+  let y1 = Math.round(endY);
+  
+  const dx1 = Math.abs(x1 - x0);
+  const dy1 = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx1 - dy1;
+  
+  let x = x0;
+  let y = y0;
+  
+  while (true) {
+    // Check if tile is valid
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+      const idx = y * width + x;
+      if (!waterMask || !waterMask[idx]) {
+        const tile = tiles[y] && tiles[y][x];
+        if (tile && (!isLandBaseTile || isLandBaseTile(tile.base))) {
+          path.push({ x, y });
+        }
+      }
+    }
+    
+    if (x === x1 && y === y1) {
+      break;
+    }
+    
+    const e2 = 2 * err;
+    if (e2 > -dy1) {
+      err -= dy1;
+      x += sx;
+    }
+    if (e2 < dx1) {
+      err += dx1;
+      y += sy;
+    }
+  }
+  
+  return path.length > 0 ? path : null;
+}
+
+function connectTownsWithinRange(tiles, settlements, options) {
+  // Connect settlements within maxDistance using roads
+  // settlements: array of {x, y, ...} objects
+  // options: {maxDistance, overlayKey, width, height, isLandBaseTile, waterMask, replaceableOverlays, ...}
+  if (!Array.isArray(tiles) || !Array.isArray(settlements) || settlements.length < 2) {
+    return;
+  }
+  
+  const {
+    maxDistance = 25,
+    overlayKey = 'TOWN_ROAD',
+    width,
+    height,
+    isLandBaseTile,
+    waterMask,
+    replaceableOverlays
+  } = options || {};
+  
+  if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(maxDistance)) {
+    return;
+  }
+  
+  // Find all pairs of settlements within maxDistance
+  const connections = [];
+  for (let i = 0; i < settlements.length; i += 1) {
+    const from = settlements[i];
+    if (!from || !Number.isFinite(from.x) || !Number.isFinite(from.y)) {
+      continue;
+    }
+    
+    for (let j = i + 1; j < settlements.length; j += 1) {
+      const to = settlements[j];
+      if (!to || !Number.isFinite(to.x) || !Number.isFinite(to.y)) {
+        continue;
+      }
+      
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const distSq = dx * dx + dy * dy;
+      const dist = Math.sqrt(distSq);
+      
+      if (dist <= maxDistance) {
+        connections.push({ from, to, dist });
+      }
+    }
+  }
+  
+  // Sort by distance (connect closer settlements first)
+  connections.sort((a, b) => a.dist - b.dist);
+  
+  // Connect settlements with paths
+  const connectedPairs = new Set();
+  for (let i = 0; i < connections.length; i += 1) {
+    const { from, to } = connections[i];
+    const fromKey = `${from.x},${from.y}`;
+    const toKey = `${to.x},${to.y}`;
+    const pairKey = `${fromKey}-${toKey}`;
+    const reversePairKey = `${toKey}-${fromKey}`;
+    
+    // Skip if already connected
+    if (connectedPairs.has(pairKey) || connectedPairs.has(reversePairKey)) {
+      continue;
+    }
+    
+    // Find path between settlements
+    const path = findPathBetweenPoints(from.x, from.y, to.x, to.y, {
+      tiles,
+      width,
+      height,
+      waterMask,
+      isLandBaseTile,
+      maxDistance
+    });
+    
+    if (!path || path.length === 0) {
+      continue;
+    }
+    
+    // Mark as connected
+    connectedPairs.add(pairKey);
+    
+    // Place road overlay on path tiles
+    for (let p = 0; p < path.length; p += 1) {
+      const { x, y } = path[p];
+      if (x < 0 || x >= width || y < 0 || y >= height) {
+        continue;
+      }
+      
+      const row = tiles[y];
+      if (!Array.isArray(row)) {
+        continue;
+      }
+      const tile = row[x];
+      if (!tile) {
+        continue;
+      }
+      
+      // Skip if already has a road
+      if (tile.overlay === overlayKey) {
+        continue;
+      }
+      
+      // Skip if tile has a structure (don't overwrite structures)
+      if (tile.structure) {
+        continue;
+      }
+      
+      // Replace replaceable overlays (trees, hills) with road
+      if (replaceableOverlays && replaceableOverlays.has(tile.overlay)) {
+        tile.overlay = overlayKey;
+      } else if (!tile.overlay) {
+        // Only place road on empty overlay tiles
+        tile.overlay = overlayKey;
+      }
+    }
+  }
+}
+
+function tryPlaceDwarfhold(candidate, context) {
+  // Attempt to place a dwarfhold at the candidate location
+  // candidate: { x, y, score, biomeType, areaName, biomeClusterId, ... }
+  // context: placement context with tiles, keys, chances, etc.
+  // Returns: true if placed, false otherwise
+  if (!candidate || !Number.isFinite(candidate.x) || !Number.isFinite(candidate.y)) {
+    return false;
+  }
+  if (!context || !Array.isArray(context.tiles) || !Array.isArray(context.placed)) {
+    return false;
+  }
+  
+  const { x, y } = candidate;
+  const {
+    tiles,
+    width,
+    height,
+    waterMask,
+    placed,
+    minDistanceSq,
+    dwarfholdKey,
+    darkDwarfholdKey,
+    greatDwarfholdKey,
+    abandonedDwarfholdKey,
+    abandonedDwarfholdChance,
+    rng,
+    dwarfholds,
+    towns,
+    nearbyTownDistanceSq,
+    darkDwarfholdVolcanoRadius
+  } = context;
+  
+  // Check bounds
+  if (x < 0 || x >= width || y < 0 || y >= height) {
+    return false;
+  }
+  
+  // Check water
+  const idx = y * width + x;
+  if (waterMask && waterMask[idx]) {
+    return false;
+  }
+  
+  // Check tile
+  const row = tiles[y];
+  if (!Array.isArray(row)) {
+    return false;
+  }
+  const tile = row[x];
+  if (!tile || tile.structure || tile.river) {
+    return false;
+  }
+  
+  // Check minimum distance from other placed dwarfholds
+  if (Number.isFinite(minDistanceSq) && minDistanceSq > 0) {
+    for (let i = 0; i < placed.length; i += 1) {
+      const other = placed[i];
+      if (!other || !Number.isFinite(other.x) || !Number.isFinite(other.y)) {
+        continue;
+      }
+      const dx = x - other.x;
+      const dy = y - other.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < minDistanceSq) {
+        return false;
+      }
+    }
+  }
+  
+  // Check distance from towns
+  if (Number.isFinite(nearbyTownDistanceSq) && nearbyTownDistanceSq > 0 && Array.isArray(towns)) {
+    for (let i = 0; i < towns.length; i += 1) {
+      const town = towns[i];
+      if (!town || !Number.isFinite(town.x) || !Number.isFinite(town.y)) {
+        continue;
+      }
+      const dx = x - town.x;
+      const dy = y - town.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < nearbyTownDistanceSq) {
+        return false;
+      }
+    }
+  }
+  
+  // Determine hold type
+  const randomFn = rng || Math.random;
+  let structureKey = dwarfholdKey;
+  let isAbandoned = false;
+  let isDark = false;
+  let isGreat = false;
+  
+  // Check for dark dwarfhold (near volcano)
+  if (darkDwarfholdKey && darkDwarfholdVolcanoRadius) {
+    const volcanoRadiusSq = darkDwarfholdVolcanoRadius * darkDwarfholdVolcanoRadius;
+    for (let ty = Math.max(0, y - darkDwarfholdVolcanoRadius); ty <= Math.min(height - 1, y + darkDwarfholdVolcanoRadius); ty += 1) {
+      for (let tx = Math.max(0, x - darkDwarfholdVolcanoRadius); tx <= Math.min(width - 1, x + darkDwarfholdVolcanoRadius); tx += 1) {
+        const checkTile = tiles[ty] && tiles[ty][tx];
+        if (checkTile && isVolcanoOverlayKey(checkTile.overlay)) {
+          const dx = tx - x;
+          const dy = ty - y;
+          if (dx * dx + dy * dy <= volcanoRadiusSq) {
+            isDark = true;
+            structureKey = darkDwarfholdKey;
+            break;
+          }
+        }
+      }
+      if (isDark) {
+        break;
+      }
+    }
+  }
+  
+  // Check for great dwarfhold (high score)
+  if (!isDark && greatDwarfholdKey && candidate.score > 0.75) {
+    const greatRoll = randomFn();
+    if (greatRoll < 0.15) {
+      isGreat = true;
+      structureKey = greatDwarfholdKey;
+    }
+  }
+  
+  // Check for abandoned dwarfhold
+  if (!isDark && !isGreat && abandonedDwarfholdKey && Number.isFinite(abandonedDwarfholdChance)) {
+    const abandonRoll = randomFn();
+    if (abandonRoll < abandonedDwarfholdChance) {
+      isAbandoned = true;
+      structureKey = abandonedDwarfholdKey;
+    }
+  }
+  
+  if (!structureKey) {
+    return false;
+  }
+  
+  // Generate name and details
+  const name = generateDwarfholdName(randomFn);
+  const nearestHoldInfo = findNearestPointWithDetails(x, y, dwarfholds || []);
+  const hasNearbyHumanSettlement = Array.isArray(towns) && towns.length > 0 && 
+    computeNearestDistanceSq(x, y, towns) < (nearbyTownDistanceSq || Infinity);
+  
+  const details = generateDwarfholdDetails(name, randomFn, {
+    isAbandoned,
+    isDarkHold: isDark,
+    isGreatHold: isGreat,
+    nearestDwarfhold: nearestHoldInfo,
+    hasNearbyHumanSettlement
+  });
+  
+  // Place the structure
+  tile.structure = structureKey;
+  tile.structureName = name;
+  tile.structureDetails = details;
+  
+  // Add to arrays
+  placed.push(candidate);
+  if (Array.isArray(dwarfholds)) {
+    dwarfholds.push({ x, y, ...details });
+  }
+  
+  return true;
+}
+
+function computeEuclideanDistanceField(mask, width, height) {
+  if (!mask || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return new Float32Array(0);
+  }
+  const size = width * height;
+  const distanceField = new Float32Array(size);
+  
+  // Initialize: set distance to 0 for source pixels, infinity for others
+  for (let i = 0; i < size; i += 1) {
+    distanceField[i] = mask[i] ? 0 : Number.MAX_VALUE;
+  }
+  
+  // Two-pass Euclidean distance transform
+  // First pass: left-to-right, top-to-bottom
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (distanceField[idx] === 0) {
+        continue;
+      }
+      let minDist = distanceField[idx];
+      
+      // Check left neighbor
+      if (x > 0) {
+        const leftIdx = idx - 1;
+        const dist = distanceField[leftIdx] + 1;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      // Check top neighbor
+      if (y > 0) {
+        const topIdx = idx - width;
+        const dist = distanceField[topIdx] + 1;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      // Check top-left diagonal
+      if (x > 0 && y > 0) {
+        const diagIdx = idx - width - 1;
+        const dist = distanceField[diagIdx] + Math.SQRT2;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      // Check top-right diagonal
+      if (x < width - 1 && y > 0) {
+        const diagIdx = idx - width + 1;
+        const dist = distanceField[diagIdx] + Math.SQRT2;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      distanceField[idx] = minDist;
+    }
+  }
+  
+  // Second pass: right-to-left, bottom-to-top
+  for (let y = height - 1; y >= 0; y -= 1) {
+    for (let x = width - 1; x >= 0; x -= 1) {
+      const idx = y * width + x;
+      if (distanceField[idx] === 0) {
+        continue;
+      }
+      let minDist = distanceField[idx];
+      
+      // Check right neighbor
+      if (x < width - 1) {
+        const rightIdx = idx + 1;
+        const dist = distanceField[rightIdx] + 1;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      // Check bottom neighbor
+      if (y < height - 1) {
+        const bottomIdx = idx + width;
+        const dist = distanceField[bottomIdx] + 1;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      // Check bottom-left diagonal
+      if (x > 0 && y < height - 1) {
+        const diagIdx = idx + width - 1;
+        const dist = distanceField[diagIdx] + Math.SQRT2;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      // Check bottom-right diagonal
+      if (x < width - 1 && y < height - 1) {
+        const diagIdx = idx + width + 1;
+        const dist = distanceField[diagIdx] + Math.SQRT2;
+        if (dist < minDist) {
+          minDist = dist;
+        }
+      }
+      
+      distanceField[idx] = minDist;
+    }
+  }
+  
+  // Convert to squared distances (as expected by the code)
+  for (let i = 0; i < size; i += 1) {
+    const dist = distanceField[i];
+    distanceField[i] = dist * dist;
+  }
+  
+  return distanceField;
+}
+
+function sanitizeFrequencyValue(value, defaultValue) {
+  if (typeof defaultValue !== 'number' || !Number.isFinite(defaultValue)) {
+    defaultValue = 50;
+  }
+  const fallback = clamp(defaultValue, 0, 100);
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed)) {
+      return fallback;
+    }
+    return clamp(parsed, 0, 100);
+  }
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return clamp(value, 0, 100);
+}
+
+function updateFrequencyDisplay(element, value) {
+  if (!element || typeof value !== 'number' || !Number.isFinite(value)) {
+    return;
+  }
+  const clampedValue = clamp(value, 0, 100);
+  const percentage = Math.round(clampedValue);
+  let label = 'Balanced';
+  if (clampedValue < 30) {
+    label = 'Very Low';
+  } else if (clampedValue < 40) {
+    label = 'Low';
+  } else if (clampedValue < 60) {
+    label = 'Balanced';
+  } else if (clampedValue < 75) {
+    label = 'High';
+  } else {
+    label = 'Very High';
+  }
+  if (element && typeof element.textContent !== 'undefined') {
+    element.textContent = `${percentage}% — ${label}`;
+  }
+}
+
+const audioState = {
+  isPlaying: false,
+  currentIndex: 0,
+  tracks: [],
+  initialised: false,
+  effectsMuted: false,
+  effectsVolume: 0.6
 };
+
+const structureAmbienceState = {
+  currentTrack: null
+};
+
+const soundEffects = {
+  randomiseClick: null
+};
+
+function playSoundEffect(audio) {
+  if (!audio || audioState.effectsMuted || audioState.effectsVolume <= 0) {
+    return;
+  }
+  try {
+    if (audio && typeof audio.play === 'function') {
+      audio.volume = clamp(audioState.effectsVolume, 0, 1);
+      audio.play().catch(() => {
+        // Ignore playback errors
+      });
+    }
+  } catch (error) {
+    // Ignore sound effect errors
+  }
+}
+
+let dwarfTestState = {
+  active: false,
+  dungeon: false
+};
+
+function isDwarfTestActive() {
+  return Boolean(dwarfTestState.active);
+}
+
+function toggleDwarfTest(dungeon = false) {
+  if (dwarfTestState.active && dwarfTestState.dungeon === dungeon) {
+    closeDwarfTest();
+    return;
+  }
+  closeDwarfTest();
+  dwarfTestState.active = true;
+  dwarfTestState.dungeon = dungeon;
+  if (elements.dwarfTestArea) {
+    elements.dwarfTestArea.classList.remove('hidden');
+    elements.dwarfTestArea.setAttribute('aria-hidden', 'false');
+  }
+  updateDwarfTestButtonState();
+  handleDwarfTestResize();
+}
+
+function closeDwarfTest(options = {}) {
+  const { returnFocus = false } = options;
+  if (!dwarfTestState.active) {
+    return;
+  }
+  dwarfTestState.active = false;
+  dwarfTestState.dungeon = false;
+  if (elements.dwarfTestArea) {
+    elements.dwarfTestArea.classList.add('hidden');
+    elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
+  }
+  updateDwarfTestButtonState();
+  if (returnFocus && elements.dwarfTestButton) {
+    elements.dwarfTestButton.focus();
+  }
+}
+
+function updateDwarfTestButtonState() {
+  if (elements.dwarfTestButton) {
+    elements.dwarfTestButton.setAttribute('aria-pressed', isDwarfTestActive() ? 'true' : 'false');
+  }
+  if (elements.dwarfTestDungeonButton) {
+    elements.dwarfTestDungeonButton.setAttribute('aria-pressed', isDwarfTestActive() && dwarfTestState.dungeon ? 'true' : 'false');
+  }
+}
+
+function handleDwarfTestResize() {
+  // Placeholder for dwarf test resize handling
+  // This can be implemented when the dwarf test feature is fully developed
+}
 
 function matchesHighlightGroupValue(value, group) {
   const normalized = normalizeHighlightValue(value);
@@ -9319,6 +10152,52 @@ if (elements.dwarfClanSelect) {
   populateClanSelectFromOptions(dwarfOptions.clan);
 }
 
+function getOptionByValue(category, value) {
+  if (!category || !value || typeof category !== 'string' || typeof value !== 'string') {
+    return null;
+  }
+  const options = dwarfOptions[category];
+  if (!Array.isArray(options)) {
+    return null;
+  }
+  return options.find((option) => option && option.value === value) || null;
+}
+
+function getOptionLabel(category, value) {
+  if (!category || !value) {
+    return value || '';
+  }
+  const option = getOptionByValue(category, value);
+  if (option && typeof option.label === 'string') {
+    return option.label;
+  }
+  return value || '';
+}
+
+// Initialize customizerDeps now that all dependencies are available
+customizerDeps = {
+  state,
+  elements,
+  getOptionByValue,
+  getOptionLabel,
+  getHairSummaryPhrase,
+  getHairStyleConfig,
+  resolveHairStyleValue,
+  resolveHeadTypeValue,
+  dwarfHeadTypes,
+  dwarfSpriteSheets,
+  characterCreatorPortraitAssets,
+  characterCreatorBeardAssetMap,
+  characterCreatorHairAssetMap,
+  characterCreatorHairStyleCategoryMap,
+  characterCreatorDefaultSkinColor,
+  characterCreatorDefaultHairColor,
+  getCharacterCreatorSkinTintLayers,
+  getCharacterCreatorHairTintLayers,
+  setActiveDwarf,
+  getActiveDwarf
+};
+
 const editableDwarfTraits = new Set([
   'gender',
   'skin',
@@ -9553,6 +10432,109 @@ function updateBeardFieldState(dwarf) {
   } else {
     beardSlider.removeAttribute('tabindex');
   }
+}
+
+function extractFirstName(fullName) {
+  if (!fullName || typeof fullName !== 'string') {
+    return '';
+  }
+  const trimmed = fullName.trim();
+  const spaceIndex = trimmed.indexOf(' ');
+  if (spaceIndex > 0) {
+    return trimmed.substring(0, spaceIndex);
+  }
+  return trimmed;
+}
+
+function isPresetDwarfFirstName(name) {
+  if (!name || typeof name !== 'string') {
+    return false;
+  }
+  return presetDwarfFirstNames.has(name.trim());
+}
+
+function generateDwarfFirstName(gender) {
+  const genderKey = gender === 'female' ? 'female' : 'male';
+  const namePool = dwarfNamePools[genderKey] || dwarfNamePools.male;
+  if (!Array.isArray(namePool) || namePool.length === 0) {
+    return gender === 'female' ? 'Domas' : 'Urist';
+  }
+  return pickRandomFrom(namePool, Math.random) || (gender === 'female' ? 'Domas' : 'Urist');
+}
+
+function generateDwarfName(gender, clan) {
+  const firstName = generateDwarfFirstName(gender);
+  if (!clan) {
+    return firstName;
+  }
+  const clanLabel = getOptionLabel('clan', clan);
+  if (!clanLabel) {
+    return firstName;
+  }
+  return `${firstName} ${clanLabel}`;
+}
+
+function createRandomDwarf() {
+  const gender = Math.random() < 0.5 ? 'male' : 'female';
+  const clan = Array.isArray(dwarfOptions.clan) && dwarfOptions.clan.length > 0
+    ? pickRandomFrom(dwarfOptions.clan, Math.random)?.value || dwarfOptions.clan[0].value
+    : null;
+  const profession = Array.isArray(dwarfOptions.profession) && dwarfOptions.profession.length > 0
+    ? pickRandomFrom(dwarfOptions.profession, Math.random)?.value || dwarfOptions.profession[0].value
+    : null;
+  const skin = Array.isArray(dwarfOptions.skin) && dwarfOptions.skin.length > 0
+    ? pickRandomFrom(dwarfOptions.skin, Math.random)?.value || dwarfOptions.skin[0].value
+    : 'russet';
+  const eyes = Array.isArray(dwarfOptions.eyes) && dwarfOptions.eyes.length > 0
+    ? pickRandomFrom(dwarfOptions.eyes, Math.random)?.value || dwarfOptions.eyes[0].value
+    : 'amber';
+  const hair = Array.isArray(dwarfOptions.hair) && dwarfOptions.hair.length > 0
+    ? pickRandomFrom(dwarfOptions.hair, Math.random)?.value || dwarfOptions.hair[0].value
+    : 'umber';
+  const hairStyle = Array.isArray(dwarfOptions.hairStyle) && dwarfOptions.hairStyle.length > 0
+    ? pickRandomFrom(dwarfOptions.hairStyle, Math.random)?.value || defaultHairStyleValue
+    : defaultHairStyleValue;
+  const head = Array.isArray(dwarfOptions.head) && dwarfOptions.head.length > 0
+    ? pickRandomFrom(dwarfOptions.head, Math.random)?.value || dwarfOptions.head[0].value
+    : null;
+  const beard = gender === 'female'
+    ? 'clean'
+    : (Array.isArray(dwarfOptions.beard) && dwarfOptions.beard.length > 0
+      ? pickRandomFrom(dwarfOptions.beard, Math.random)?.value || 'clean'
+      : 'clean');
+  
+  return {
+    name: generateDwarfName(gender, clan),
+    gender,
+    clan: clan || null,
+    profession: profession || null,
+    skin,
+    eyes,
+    hair,
+    hairStyle,
+    head: head || null,
+    beard
+  };
+}
+
+function ensureDwarfParty(options = {}) {
+  const { forceReset = false } = options;
+  if (!state.dwarfParty || forceReset) {
+    state.dwarfParty = {
+      dwarves: [],
+      activeIndex: 0
+    };
+  }
+  if (!Array.isArray(state.dwarfParty.dwarves)) {
+    state.dwarfParty.dwarves = [];
+  }
+  if (typeof state.dwarfParty.activeIndex !== 'number' || !Number.isFinite(state.dwarfParty.activeIndex)) {
+    state.dwarfParty.activeIndex = 0;
+  }
+  if (state.dwarfParty.dwarves.length === 0) {
+    state.dwarfParty.dwarves.push(createRandomDwarf());
+  }
+  state.dwarfParty.activeIndex = clamp(state.dwarfParty.activeIndex, 0, Math.max(0, state.dwarfParty.dwarves.length - 1));
 }
 
 function getActiveDwarf() {
@@ -12005,6 +12987,11 @@ function setActiveStructureDetailsTab(tabId, options = {}) {
   }
 }
 
+const wizardTowerAmbienceTracks = [
+  'sound/ambience/Cavern.ogg',
+  'sound/ambience/Good.ogg'
+];
+
 function gatherStructureDescriptorInfo(tile) {
   const descriptors = new Set();
   const tokens = new Set();
@@ -12248,12 +13235,6 @@ const structureContextMenuState = {
   tileX: null,
   tileY: null
 };
-
-let optionsVisible = false;
-let optionsSource = null;
-let optionsReturnFocusElement = null;
-let gameContainerAriaHiddenByOptions = false;
-let titleHiddenByOptions = false;
 
 const normalizeDwarfholdKey = (value) => {
   if (typeof value !== 'string') {
@@ -28368,7 +29349,7 @@ function beginGame() {
     elements.gameContainer.setAttribute('aria-busy', 'true');
   }
   elements.seedDisplay.textContent = '';
-  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your worldâ€¦' })
+  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
     .then(() => {
       if (elements.gameContainer) {
         elements.gameContainer.classList.remove('game-container--loading');
@@ -28507,36 +29488,74 @@ function handleRegenerate() {
   updateWorldInfoSeedDisplay(randomSeed);
   return runWithLoadingScreen(
     () => generateAndRender(randomSeed),
-    { statusText: 'Forging a new worldâ€¦' }
+    { statusText: 'Forging a new world…' }
   ).catch((error) => {
     console.error('Failed to regenerate world.', error);
   });
 }
 
-function focusOptionsElement(element) {
-  if (!element || typeof element.focus !== 'function') {
+let optionsVisible = false;
+let optionsSource = null;
+let lastFocusedBeforeOptions = null;
+
+function focusFirstOptionsControl() {
+  if (!elements.optionsScreen || typeof elements.optionsScreen.querySelector !== 'function') {
     return;
   }
-  const focusAction = () => {
-    element.focus();
-  };
-  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-    window.requestAnimationFrame(focusAction);
-  } else {
-    focusAction();
+
+  const explicitInitialFocus = elements.optionsScreen.querySelector('[data-initial-focus="true"]');
+  const candidate =
+    explicitInitialFocus ||
+    elements.closeOptions ||
+    elements.optionsScreen.querySelector(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+
+  if (candidate && typeof candidate.focus === 'function') {
+    try {
+      candidate.focus({ preventScroll: true });
+    } catch (_) {
+      candidate.focus();
+    }
   }
 }
 
-function getFocusableOptionsElement() {
-  if (!elements.optionsScreen) {
-    return null;
+function setOptionsButtonExpanded(target, expanded) {
+  if (!target || typeof target.setAttribute !== 'function') {
+    return;
   }
-  if (elements.closeOptions) {
-    return elements.closeOptions;
+  target.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+}
+
+function rememberCurrentFocus() {
+  if (typeof document === 'undefined') {
+    lastFocusedBeforeOptions = null;
+    return;
   }
-  return elements.optionsScreen.querySelector(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
+
+  const activeElement = document.activeElement;
+  if (!activeElement || typeof activeElement.focus !== 'function') {
+    lastFocusedBeforeOptions = null;
+    return;
+  }
+
+  lastFocusedBeforeOptions = activeElement;
+}
+
+function restorePreviousFocus(fallback) {
+  const target = lastFocusedBeforeOptions && typeof lastFocusedBeforeOptions.focus === 'function'
+    ? lastFocusedBeforeOptions
+    : fallback;
+
+  if (target && typeof target.focus === 'function') {
+    try {
+      target.focus({ preventScroll: true });
+    } catch (_) {
+      target.focus();
+    }
+  }
+
+  lastFocusedBeforeOptions = null;
 }
 
 function openOptionsScreen(source = 'title') {
@@ -28545,174 +29564,67 @@ function openOptionsScreen(source = 'title') {
   }
 
   const normalizedSource = source === 'game' ? 'game' : 'title';
-  const activeElement =
-    typeof document !== 'undefined' && document.activeElement &&
-    typeof document.activeElement.focus === 'function'
-      ? document.activeElement
-      : null;
+  rememberCurrentFocus();
 
-  optionsReturnFocusElement = activeElement;
-  optionsSource = normalizedSource;
   optionsVisible = true;
-
-  if (normalizedSource === 'title' && elements.titleScreen && !elements.titleScreen.classList.contains('hidden')) {
-    elements.titleScreen.classList.add('hidden');
-    titleHiddenByOptions = true;
-  } else {
-    titleHiddenByOptions = false;
-  }
-
-  gameContainerAriaHiddenByOptions = false;
-  if (normalizedSource === 'game' && elements.gameContainer) {
-    elements.gameContainer.setAttribute('aria-hidden', 'true');
-    gameContainerAriaHiddenByOptions = true;
-  }
+  optionsSource = normalizedSource;
 
   elements.optionsScreen.classList.remove('hidden');
   elements.optionsScreen.setAttribute('aria-hidden', 'false');
-  elements.optionsScreen.scrollTop = 0;
+  elements.optionsScreen.setAttribute('data-open-source', normalizedSource);
 
-  const focusTarget = getFocusableOptionsElement();
-  if (focusTarget) {
-    focusOptionsElement(focusTarget);
+  if (normalizedSource === 'title') {
+    if (elements.titleScreen) {
+      elements.titleScreen.classList.add('hidden');
+      elements.titleScreen.setAttribute('aria-hidden', 'true');
+    }
+    setOptionsButtonExpanded(elements.optionsButton, true);
+  } else {
+    setOptionsButtonExpanded(elements.inGameOptions, true);
+    if (elements.gameContainer) {
+      elements.gameContainer.setAttribute('aria-hidden', 'true');
+    }
   }
+
+  focusFirstOptionsControl();
 }
 
 function closeOptionsScreen(options = {}) {
-  const { returnFocus = true } = options || {};
-  const previousSource = optionsSource;
-  const wasVisible = optionsVisible;
+  const { returnFocus = true } = options;
 
+  const previousSource = optionsSource;
   optionsVisible = false;
   optionsSource = null;
 
-  if (elements.optionsScreen) {
-    elements.optionsScreen.classList.add('hidden');
-    elements.optionsScreen.setAttribute('aria-hidden', 'true');
+  if (!elements.optionsScreen) {
+    return previousSource;
   }
 
-  if (gameContainerAriaHiddenByOptions && elements.gameContainer) {
-    elements.gameContainer.removeAttribute('aria-hidden');
+  elements.optionsScreen.classList.add('hidden');
+  elements.optionsScreen.setAttribute('aria-hidden', 'true');
+  elements.optionsScreen.removeAttribute('data-open-source');
+
+  if (previousSource === 'title') {
+    setOptionsButtonExpanded(elements.optionsButton, false);
+    if (elements.titleScreen) {
+      elements.titleScreen.classList.remove('hidden');
+      elements.titleScreen.setAttribute('aria-hidden', 'false');
+    }
+  } else if (previousSource === 'game') {
+    setOptionsButtonExpanded(elements.inGameOptions, false);
+    if (elements.gameContainer) {
+      elements.gameContainer.removeAttribute('aria-hidden');
+    }
   }
-  gameContainerAriaHiddenByOptions = false;
 
-  if (
-    titleHiddenByOptions &&
-    elements.titleScreen &&
-    (!elements.gameContainer || elements.gameContainer.classList.contains('hidden'))
-  ) {
-    elements.titleScreen.classList.remove('hidden');
-  }
-  titleHiddenByOptions = false;
-
-  const focusCandidate =
-    optionsReturnFocusElement && typeof optionsReturnFocusElement.focus === 'function'
-      ? optionsReturnFocusElement
-      : null;
-  optionsReturnFocusElement = null;
-
-  let fallbackFocus = null;
-  if (previousSource === 'game') {
-    fallbackFocus = elements.inGameOptions || elements.closeOptions;
+  if (returnFocus) {
+    const fallback = previousSource === 'game' ? elements.inGameOptions : elements.optionsButton;
+    restorePreviousFocus(fallback);
   } else {
-    fallbackFocus = elements.optionsButton || elements.startButton;
+    lastFocusedBeforeOptions = null;
   }
 
-  const focusTarget = focusCandidate || fallbackFocus;
-  if (returnFocus && focusTarget) {
-    focusOptionsElement(focusTarget);
-  }
-
-  return wasVisible ? previousSource : null;
-}
-
-function applyFormSettings() {
-  if (elements.mapSizeSelect) {
-    const preset = getMapSizePreset(elements.mapSizeSelect.value);
-    applyMapSizePresetToState(state, preset);
-  }
-
-  if (elements.worldMapSizeSelect) {
-    elements.worldMapSizeSelect.value = state.settings.mapSize;
-  }
-  updateWorldInfoSizeDisplay();
-
-  if (elements.worldGenerationTypeSelect) {
-    setWorldGenerationType(elements.worldGenerationTypeSelect.value);
-  }
-  if (elements.worldInfoGenerationTypeSelect) {
-    elements.worldInfoGenerationTypeSelect.value = state.settings.worldGenerationType;
-  }
-  updateWorldInfoGenerationTypeDisplay();
-
-  if (elements.seedInput) {
-    const trimmedSeed = elements.seedInput.value ? elements.seedInput.value.trim() : '';
-    elements.seedInput.value = trimmedSeed;
-    state.settings.seedString = trimmedSeed;
-  }
-  if (elements.worldSeedInput) {
-    elements.worldSeedInput.value = state.settings.seedString;
-  }
-  updateWorldInfoSeedDisplay(state.settings.seedString);
-
-  const sliderConfigs = [
-    {
-      input: elements.forestFrequencyInput,
-      valueElement: elements.forestFrequencyValue,
-      key: 'forestFrequency',
-      defaultValue: defaultForestFrequency
-    },
-    {
-      input: elements.mountainFrequencyInput,
-      valueElement: elements.mountainFrequencyValue,
-      key: 'mountainFrequency',
-      defaultValue: defaultMountainFrequency
-    },
-    {
-      input: elements.riverFrequencyInput,
-      valueElement: elements.riverFrequencyValue,
-      key: 'riverFrequency',
-      defaultValue: 50
-    },
-    {
-      input: elements.humanSettlementFrequencyInput,
-      valueElement: elements.humanSettlementFrequencyValue,
-      key: 'humanSettlementFrequency',
-      defaultValue: 50
-    },
-    {
-      input: elements.dwarfSettlementFrequencyInput,
-      valueElement: elements.dwarfSettlementFrequencyValue,
-      key: 'dwarfSettlementFrequency',
-      defaultValue: 50
-    },
-    {
-      input: elements.woodElfSettlementFrequencyInput,
-      valueElement: elements.woodElfSettlementFrequencyValue,
-      key: 'woodElfSettlementFrequency',
-      defaultValue: 50
-    },
-    {
-      input: elements.lizardmenSettlementFrequencyInput,
-      valueElement: elements.lizardmenSettlementFrequencyValue,
-      key: 'lizardmenSettlementFrequency',
-      defaultValue: 50
-    }
-  ];
-
-  sliderConfigs.forEach(({ input, valueElement, key, defaultValue }) => {
-    if (!input) {
-      return;
-    }
-    const rawValue = Number.parseInt(input.value, 10);
-    const sanitisedValue = sanitizeFrequencyValue(
-      Number.isNaN(rawValue) ? state.settings[key] : rawValue,
-      defaultValue
-    );
-    state.settings[key] = sanitisedValue;
-    input.value = sanitisedValue.toString();
-    updateFrequencyDisplay(valueElement, sanitisedValue);
-  });
+  return previousSource;
 }
 
 function syncInputsWithSettings() {
@@ -28779,9 +29691,369 @@ function syncInputsWithSettings() {
     elements.lizardmenSettlementFrequencyInput.value = value.toString();
     updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
   }
+
+  if (elements.forestFrequencyInput) {
+    elements.forestFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.forestFrequency);
+      updateFrequencyDisplay(elements.forestFrequencyValue, value);
+    });
+  }
+
+  if (elements.mountainFrequencyInput) {
+    elements.mountainFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.mountainFrequency);
+      updateFrequencyDisplay(elements.mountainFrequencyValue, value);
+    });
+  }
+
+  if (elements.riverFrequencyInput) {
+    elements.riverFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(event.target.value, state.settings.riverFrequency);
+      updateFrequencyDisplay(elements.riverFrequencyValue, value);
+    });
+  }
+
+  if (elements.humanSettlementFrequencyInput) {
+    elements.humanSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.humanSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.humanSettlementFrequencyValue, value);
+    });
+  }
+
+  if (elements.dwarfSettlementFrequencyInput) {
+    elements.dwarfSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.dwarfSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.dwarfSettlementFrequencyValue, value);
+    });
+  }
+
+  if (elements.woodElfSettlementFrequencyInput) {
+    elements.woodElfSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.woodElfSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.woodElfSettlementFrequencyValue, value);
+    });
+  }
+
+  if (elements.lizardmenSettlementFrequencyInput) {
+    elements.lizardmenSettlementFrequencyInput.addEventListener('input', (event) => {
+      const value = sanitizeFrequencyValue(
+        event.target.value,
+        state.settings.lizardmenSettlementFrequency
+      );
+      updateFrequencyDisplay(elements.lizardmenSettlementFrequencyValue, value);
+    });
+  }
+
+  if (elements.optionsForm) {
+    elements.optionsForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      applyFormSettings();
+      const previousSource = closeOptionsScreen();
+      if (previousSource === 'game' && elements.gameContainer) {
+        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realmâ€¦' }).catch((error) => {
+          console.error('Failed to apply new world settings.', error);
+        });
+      }
+    });
+  }
+
+  if (elements.worldInfoForm) {
+    elements.worldInfoForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const selectedMapSizeKey = elements.worldMapSizeSelect
+        ? elements.worldMapSizeSelect.value
+        : state.settings.mapSize;
+      const selectedPreset = getMapSizePreset(selectedMapSizeKey);
+      applyMapSizePresetToState(state, selectedPreset);
+      if (elements.worldMapSizeSelect) {
+        elements.worldMapSizeSelect.value = state.settings.mapSize;
+      }
+      if (elements.mapSizeSelect) {
+        elements.mapSizeSelect.value = state.settings.mapSize;
+      }
+      updateWorldInfoSizeDisplay();
+      const selectedGenerationType = elements.worldInfoGenerationTypeSelect
+        ? elements.worldInfoGenerationTypeSelect.value
+        : state.settings.worldGenerationType;
+      setWorldGenerationType(selectedGenerationType);
+
+      if (elements.worldSeedInput) {
+        state.settings.seedString = elements.worldSeedInput.value.trim();
+      }
+      let finalSeed = state.settings.seedString;
+      if (!finalSeed) {
+        finalSeed = ensureSeedString();
+        if (elements.worldSeedInput) {
+          elements.worldSeedInput.value = finalSeed;
+        }
+      }
+      state.settings.lastSeedString = finalSeed;
+      if (elements.seedInput) {
+        elements.seedInput.value = finalSeed;
+      }
+      updateWorldInfoSeedDisplay(finalSeed);
+
+      const submittedName = elements.worldNameInput ? elements.worldNameInput.value.trim() : '';
+      state.worldName = submittedName || getRandomWorldName(state.worldName);
+      const submittedChronology = getSanitisedChronologyFromInputs();
+      if (submittedChronology) {
+        state.worldChronology = submittedChronology;
+      } else {
+        state.worldChronology = generateRandomChronology();
+        if (elements.worldYearInput) {
+          elements.worldYearInput.value = state.worldChronology.year.toString();
+        }
+        if (elements.worldAgeInput) {
+          elements.worldAgeInput.value = state.worldChronology.age.toString();
+        }
+      }
+      updateChronologyDisplay();
+      openDwarfCustomizer();
+    });
+  }
+
+  if (elements.worldInfoCancel) {
+    elements.worldInfoCancel.addEventListener('click', () => {
+      closeWorldInfoModal({ returnFocus: true });
+    });
+  }
+
+  if (elements.worldYearInput) {
+    elements.worldYearInput.addEventListener('input', updateChronologyDisplay);
+  }
+
+  if (elements.worldAgeInput) {
+    elements.worldAgeInput.addEventListener('input', updateChronologyDisplay);
+  }
+
+  if (elements.worldChronologyRandom) {
+    elements.worldChronologyRandom.addEventListener('click', () => {
+      const newChronology = generateRandomChronology();
+      state.worldChronology = newChronology;
+      if (elements.worldYearInput) {
+        elements.worldYearInput.value = newChronology.year.toString();
+        elements.worldYearInput.focus();
+        elements.worldYearInput.select();
+      }
+      if (elements.worldAgeInput) {
+        elements.worldAgeInput.value = newChronology.age.toString();
+      }
+      updateChronologyDisplay();
+    });
+  }
+
+  if (elements.worldNameRandom) {
+    elements.worldNameRandom.addEventListener('click', () => {
+      const newName = getRandomWorldName(state.worldName);
+      state.worldName = newName;
+      if (elements.worldNameInput) {
+        elements.worldNameInput.value = newName;
+        elements.worldNameInput.focus();
+        elements.worldNameInput.select();
+      }
+    });
+  }
+
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.addEventListener('change', (event) => {
+      const preset = getMapSizePreset(event.target.value);
+      applyMapSizePresetToState(state, preset);
+      if (elements.mapSizeSelect) {
+        elements.mapSizeSelect.value = state.settings.mapSize;
+      }
+      updateWorldInfoSizeDisplay();
+    });
+  }
+
+  if (elements.worldInfoGenerationTypeSelect) {
+    elements.worldInfoGenerationTypeSelect.addEventListener('change', (event) => {
+      setWorldGenerationType(event.target.value);
+      if (elements.worldGenerationTypeSelect) {
+        elements.worldGenerationTypeSelect.value = state.settings.worldGenerationType;
+      }
+    });
+  }
+
+  if (elements.worldSeedInput) {
+    elements.worldSeedInput.addEventListener('input', (event) => {
+      const newValue = event.target.value;
+      state.settings.seedString = newValue.trim();
+      updateWorldInfoSeedDisplay(newValue);
+      if (elements.seedInput && elements.seedInput !== event.target) {
+        elements.seedInput.value = newValue;
+      }
+    });
+  }
+
+  elements.regenerate.addEventListener('click', handleRegenerate);
+
+  if (elements.dwarfPrev) {
+    elements.dwarfPrev.addEventListener('click', () => {
+      changeActiveDwarf(-1);
+    });
+  }
+
+  if (elements.dwarfNext) {
+    elements.dwarfNext.addEventListener('click', () => {
+      changeActiveDwarf(1);
+    });
+  }
+
+  if (elements.dwarfRandomise) {
+    elements.dwarfRandomise.addEventListener('click', () => {
+      randomiseActiveDwarf();
+      playSoundEffect(soundEffects.randomiseClick);
+      elements.dwarfRandomise.classList.add('randomise-button__dice--rolled');
+    });
+  }
+
+  if (elements.dwarfBack) {
+    elements.dwarfBack.addEventListener('click', () => {
+      closeDwarfCustomizer({ returnFocus: true });
+    });
+  }
+
+  if (elements.dwarfCustomizerForm) {
+    elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      closeDwarfTest();
+      beginGame();
+      ensureMusicStarted();
+    });
+  }
+
+  if (elements.dwarfNameInput) {
+    elements.dwarfNameInput.addEventListener('input', (event) => {
+      updateDwarfTrait('name', event.target.value);
+    });
+    elements.dwarfNameInput.addEventListener('blur', (event) => {
+      const trimmed = event.target.value.trim();
+      if (trimmed !== event.target.value) {
+        event.target.value = trimmed;
+      }
+      updateDwarfTrait('name', trimmed);
+    });
+  }
+
+  if (elements.dwarfGenderButtons) {
+    elements.dwarfGenderButtons.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-gender-value]');
+      if (!button || !elements.dwarfGenderButtons.contains(button)) {
+        return;
+      }
+      const { genderValue } = button.dataset;
+      if (!genderValue) {
+        return;
+      }
+      updateDwarfTrait('gender', genderValue);
+    });
+
+    elements.dwarfGenderButtons.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      const buttons = Array.from(
+        elements.dwarfGenderButtons.querySelectorAll('[data-gender-value]')
+      );
+      if (buttons.length === 0) {
+        return;
+      }
+      const currentIndex = buttons.findIndex((button) => button.classList.contains('active'));
+      const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      const nextIndex = currentIndex === -1 ? 0 : (currentIndex + direction + buttons.length) % buttons.length;
+      const nextButton = buttons[nextIndex];
+      if (!nextButton) {
+        return;
+      }
+      nextButton.focus();
+      const { genderValue } = nextButton.dataset;
+      if (genderValue) {
+        updateDwarfTrait('gender', genderValue);
+      }
+    });
+  }
+
+  if (elements.dwarfClanSelect) {
+    elements.dwarfClanSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('clan', event.target.value);
+    });
+  }
+
+  if (elements.dwarfProfessionSelect) {
+    elements.dwarfProfessionSelect.addEventListener('change', (event) => {
+      updateDwarfTrait('profession', event.target.value);
+    });
+  }
+
+  setupTraitSliderControl('skin', elements.dwarfSkinSlider, elements.dwarfSkinSliderValue);
+  setupTraitSliderControl('eyes', elements.dwarfEyeSlider, elements.dwarfEyeSliderValue);
+  setupTraitSliderControl(
+    'hairStyle',
+    elements.dwarfHairStyleSlider,
+    elements.dwarfHairStyleSliderValue
+  );
+  setupTraitSliderControl('hair', elements.dwarfHairSlider, elements.dwarfHairSliderValue);
+
+  setupTraitSliderControl('beard', elements.dwarfBeardSlider, elements.dwarfBeardSliderValue);
+
+  document.addEventListener('keydown', (event) => {
+    const activeElement = document.activeElement;
+    const isFormControl =
+      activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
+
+    if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        changeActiveDwarf(-1);
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        changeActiveDwarf(1);
+        return;
+      }
+    }
+
+    if (event.key === 'Escape') {
+      if (isDwarfTestActive()) {
+        closeDwarfTest({ returnFocus: true });
+        return;
+      }
+      if (state.localView && state.localView.active) {
+        hideLocalView();
+        return;
+      }
+      if (structureDetailsState.visible) {
+        hideStructureDetails({ returnFocus: true });
+        return;
+      }
+      if (isDwarfCustomizerVisible()) {
+        closeDwarfCustomizer({ returnFocus: true });
+        return;
+      }
+      if (elements.worldInfoModal && !elements.worldInfoModal.classList.contains('hidden')) {
+        closeWorldInfoModal({ returnFocus: true });
+        return;
+      }
+      if (optionsVisible) {
+        closeOptionsScreen();
+      }
+    }
+  });
+
+  refreshOverlayToggleButtons();
 }
 
-refreshOverlayToggleButtons();
 attachEvents(elements, {
   structureContextMenuState,
   hideStructureContextMenu,
@@ -28815,8 +30087,6 @@ attachEvents(elements, {
   applyMapSizePresetToState,
   getMapSizePreset,
   handleRegenerate,
-  runWithLoadingScreen,
-  generateAndRender,
   changeActiveDwarf,
   randomiseActiveDwarf,
   playSoundEffect,
@@ -28867,7 +30137,21 @@ function autoStartGameIfNeeded() {
   }
 
   openWorldInfoModal();
-  beginGame();
+
+  if (elements.worldInfoForm) {
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+    elements.worldInfoForm.dispatchEvent(submitEvent);
+  } else {
+    openDwarfCustomizer({ resetParty: true });
+  }
+
+  if (elements.dwarfCustomizerForm) {
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+    elements.dwarfCustomizerForm.dispatchEvent(submitEvent);
+  } else {
+    beginGame();
+    ensureMusicStarted();
+  }
 }
 
 autoStartGameIfNeeded();
