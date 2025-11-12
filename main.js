@@ -21,7 +21,13 @@ import {
   registerCustomStructure
 } from './src/assets.js';
 import { clamp } from './src/utils/math.js';
-import { elements, getMusicToggleElements, getMusicVolumeInputs, getMusicNowPlayingDisplays } from './src/ui/elements.js';
+import {
+  elements,
+  hydrateElements,
+  getMusicToggleElements,
+  getMusicVolumeInputs,
+  getMusicNowPlayingDisplays
+} from './src/ui/elements.js';
 import { attachEvents } from './src/ui/events.js';
 import { createStateModule } from './src/state/index.js';
 import {
@@ -10091,10 +10097,6 @@ const dwarfOptions = {
   guild: dwarfGuildOptions,
   profession: dwarfProfessionOptions
 };
-
-if (elements.dwarfClanSelect) {
-  populateClanSelectFromOptions(dwarfOptions.clan);
-}
 
 function getOptionByValue(category, value) {
   if (!category || !value || typeof category !== 'string' || typeof value !== 'string') {
@@ -30045,66 +30047,6 @@ function syncInputsWithSettings() {
   refreshOverlayToggleButtons();
 }
 
-attachEvents(elements, {
-  structureContextMenuState,
-  hideStructureContextMenu,
-  openOptionsScreen,
-  closeOptionsScreen,
-  hideStructureDetails,
-  showLocalViewAt,
-  showDwarfholdInterior,
-  showStructureDetails,
-  hideLocalView,
-  adjustLocalMapZoom,
-  resetLocalMapZoom,
-  closeDwarfholdInterior,
-  state,
-  refreshOverlayToggleButtons,
-  refreshStructureHighlightControls,
-  ensureStructureHighlightState,
-  drawWorld,
-  updateFrequencyDisplay,
-  sanitizeFrequencyValue,
-  defaultForestFrequency,
-  defaultMountainFrequency,
-  ensureSeedString,
-  getRandomWorldName,
-  getSanitisedChronologyFromInputs,
-  generateRandomChronology,
-  updateChronologyDisplay,
-  openDwarfCustomizer,
-  closeWorldInfoModal,
-  openWorldInfoModal,
-  applyMapSizePresetToState,
-  getMapSizePreset,
-  handleRegenerate,
-  changeActiveDwarf,
-  randomiseActiveDwarf,
-  playSoundEffect,
-  soundEffects,
-  ensureMusicStarted,
-  beginGame,
-  updateDwarfTrait,
-  setupTraitSliderControl,
-  isDwarfCustomizerVisible,
-  closeDwarfCustomizer,
-  structureDetailsState,
-  setActiveStructureDetailsTab,
-  isOptionsVisible: () => optionsVisible,
-  updateWorldInfoSeedDisplay,
-  updateWorldInfoSizeDisplay,
-  updateWorldInfoGenerationTypeDisplay,
-  setWorldGenerationType,
-  toggleMapEditor,
-  closeMapEditor,
-  setMapEditorTerrainKey,
-  setMapEditorStructureKey,
-  setMapEditorApplyTerrain,
-  setMapEditorApplyStructure,
-  setMapEditorBrushSize,
-  clearMapEditorStructure
-});
-
 function initialise() {
   syncInputsWithSettings();
   setupAudioControls();
@@ -30114,28 +30056,114 @@ function initialise() {
   setupMapInteractions();
   handleResize();
 }
-
-initialise();
-
 function autoStartGameIfNeeded() {
   showTitleScreen({ focusStartButton: true });
 }
+function ensureClanSelectOptions() {
+  if (elements.dwarfClanSelect) {
+    populateClanSelectFromOptions(dwarfOptions.clan);
+  }
+}
 
-autoStartGameIfNeeded();
+function bootApplication() {
+  hydrateElements();
+  ensureClanSelectOptions();
 
-// Mark app initialised for any non-module fallback scripts
-if (typeof document !== 'undefined' && document.documentElement) {
+  attachEvents(elements, {
+    structureContextMenuState,
+    hideStructureContextMenu,
+    openOptionsScreen,
+    closeOptionsScreen,
+    hideStructureDetails,
+    showLocalViewAt,
+    showDwarfholdInterior,
+    showStructureDetails,
+    hideLocalView,
+    adjustLocalMapZoom,
+    resetLocalMapZoom,
+    closeDwarfholdInterior,
+    state,
+    refreshOverlayToggleButtons,
+    refreshStructureHighlightControls,
+    ensureStructureHighlightState,
+    drawWorld,
+    updateFrequencyDisplay,
+    sanitizeFrequencyValue,
+    defaultForestFrequency,
+    defaultMountainFrequency,
+    ensureSeedString,
+    getRandomWorldName,
+    getSanitisedChronologyFromInputs,
+    generateRandomChronology,
+    updateChronologyDisplay,
+    openDwarfCustomizer,
+    closeWorldInfoModal,
+    openWorldInfoModal,
+    applyMapSizePresetToState,
+    getMapSizePreset,
+    handleRegenerate,
+    changeActiveDwarf,
+    randomiseActiveDwarf,
+    playSoundEffect,
+    soundEffects,
+    ensureMusicStarted,
+    beginGame,
+    updateDwarfTrait,
+    setupTraitSliderControl,
+    isDwarfCustomizerVisible,
+    closeDwarfCustomizer,
+    structureDetailsState,
+    setActiveStructureDetailsTab,
+    isOptionsVisible: () => optionsVisible,
+    updateWorldInfoSeedDisplay,
+    updateWorldInfoSizeDisplay,
+    updateWorldInfoGenerationTypeDisplay,
+    setWorldGenerationType,
+    toggleMapEditor,
+    closeMapEditor,
+    setMapEditorTerrainKey,
+    setMapEditorStructureKey,
+    setMapEditorApplyTerrain,
+    setMapEditorApplyStructure,
+    setMapEditorBrushSize,
+    clearMapEditorStructure
+  });
+
+  initialise();
+  autoStartGameIfNeeded();
+
+  if (typeof document !== 'undefined' && document.documentElement) {
+    try {
+      document.documentElement.setAttribute('data-app-initialised', 'true');
+    } catch (_) {}
+  }
+
   try {
-    document.documentElement.setAttribute('data-app-initialised', 'true');
+    if (typeof window !== 'undefined' && typeof beginGame === 'function') {
+      window.beginGame = beginGame;
+    }
   } catch (_) {}
 }
 
-// Expose beginGame as a safe global for fallback UIs
-try {
-  if (typeof window !== 'undefined' && typeof beginGame === 'function') {
-    window.beginGame = beginGame;
+function startApplicationWhenReady() {
+  if (typeof document === 'undefined') {
+    bootApplication();
+    return;
   }
-} catch (_) {}
+
+  if (document.readyState === 'loading') {
+    const handleReady = () => {
+      document.removeEventListener('DOMContentLoaded', handleReady);
+      bootApplication();
+    };
+    document.addEventListener('DOMContentLoaded', handleReady);
+    return;
+  }
+
+  bootApplication();
+}
+
+startApplicationWhenReady();
 
 
 
