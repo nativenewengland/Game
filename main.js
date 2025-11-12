@@ -9376,29 +9376,91 @@ function playSoundEffect(audio) {
   }
 }
 
+const defaultDwarfTestInstructionText =
+  elements.dwarfTestInstructions && typeof elements.dwarfTestInstructions.textContent === 'string'
+    ? elements.dwarfTestInstructions.textContent.trim()
+    : 'Use the arrow keys or WASD to move your dwarf around the proving grounds.';
+
+const dwarfTestScenarios = {
+  overworld: {
+    mapPath: 'maps/map1.tmj',
+    tilesetFallbacks: new Map([
+      ['../../../../rpg-village-tileset v1.0 (wonderdot)/Tiled/Village_Tileset.tsx', 'Village_Tileset.tsx'],
+      ['Village_Tileset.tsx', 'Village_Tileset.tsx']
+    ]),
+    backgroundColor: '#10131c',
+    instructions: defaultDwarfTestInstructionText
+  },
+  dungeon: {
+    mapPath: 'maps/battlemap.tmj',
+    backgroundColor: '#050608',
+    instructions:
+      'The dungeon proving grounds are a work in progress. Explore the current arena layout while we forge new encounters.'
+  }
+};
+
+const dwarfTestResourceCache = new Map();
+
 let dwarfTestState = {
   active: false,
-  dungeon: false
+  mode: 'overworld'
 };
+
+function getDwarfTestScenario(key) {
+  return dwarfTestScenarios[key] || dwarfTestScenarios.overworld;
+}
+
+function normalizeDwarfTestMode(value) {
+  if (typeof value === 'string') {
+    const lowered = value.toLowerCase();
+    if (lowered === 'dungeon') {
+      return 'dungeon';
+    }
+    if (lowered === 'overworld') {
+      return 'overworld';
+    }
+  }
+  if (value === true) {
+    return 'dungeon';
+  }
+  return 'overworld';
+}
+
+function setDwarfTestInstructions(message, { isError = false } = {}) {
+  if (elements.dwarfTestInstructions) {
+    elements.dwarfTestInstructions.textContent = message;
+  }
+  if (elements.dwarfTestArea) {
+    if (isError) {
+      elements.dwarfTestArea.setAttribute('data-error', 'true');
+    } else {
+      elements.dwarfTestArea.removeAttribute('data-error');
+    }
+  }
+}
 
 function isDwarfTestActive() {
   return Boolean(dwarfTestState.active);
 }
 
-function toggleDwarfTest(dungeon = false) {
-  if (dwarfTestState.active && dwarfTestState.dungeon === dungeon) {
+function toggleDwarfTest(requestedMode = 'overworld') {
+  const mode = normalizeDwarfTestMode(requestedMode);
+  if (dwarfTestState.active && dwarfTestState.mode === mode) {
     closeDwarfTest();
     return;
   }
   closeDwarfTest();
   dwarfTestState.active = true;
-  dwarfTestState.dungeon = dungeon;
+  dwarfTestState.mode = mode;
   if (elements.dwarfTestArea) {
     elements.dwarfTestArea.classList.remove('hidden');
     elements.dwarfTestArea.setAttribute('aria-hidden', 'false');
   }
+  if (elements.dwarfTestCanvas) {
+    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'true');
+  }
   updateDwarfTestButtonState();
-  handleDwarfTestResize();
+  startDwarfTestScenario(mode);
 }
 
 function closeDwarfTest(options = {}) {
@@ -9407,11 +9469,17 @@ function closeDwarfTest(options = {}) {
     return;
   }
   dwarfTestState.active = false;
-  dwarfTestState.dungeon = false;
+  dwarfTestState.mode = 'overworld';
   if (elements.dwarfTestArea) {
     elements.dwarfTestArea.classList.add('hidden');
     elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
   }
+  if (elements.dwarfTestCanvas) {
+    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'true');
+    elements.dwarfTestCanvas.style.transform = '';
+    elements.dwarfTestCanvas.style.transformOrigin = '';
+  }
+  setDwarfTestInstructions(defaultDwarfTestInstructionText);
   updateDwarfTestButtonState();
   if (returnFocus && elements.dwarfTestButton) {
     elements.dwarfTestButton.focus();
@@ -9419,17 +9487,347 @@ function closeDwarfTest(options = {}) {
 }
 
 function updateDwarfTestButtonState() {
+  const isActive = isDwarfTestActive();
   if (elements.dwarfTestButton) {
-    elements.dwarfTestButton.setAttribute('aria-pressed', isDwarfTestActive() ? 'true' : 'false');
+    const pressed = isActive && dwarfTestState.mode === 'overworld';
+    elements.dwarfTestButton.setAttribute('aria-pressed', pressed ? 'true' : 'false');
   }
   if (elements.dwarfTestDungeonButton) {
-    elements.dwarfTestDungeonButton.setAttribute('aria-pressed', isDwarfTestActive() && dwarfTestState.dungeon ? 'true' : 'false');
+    const pressed = isActive && dwarfTestState.mode === 'dungeon';
+    elements.dwarfTestDungeonButton.setAttribute('aria-pressed', pressed ? 'true' : 'false');
   }
 }
 
+async function ensureDwarfTestResources(mode) {
+  if (typeof window === 'undefined' || typeof fetch !== 'function') {
+    throw new Error('Dwarf test resources cannot be loaded without browser fetch support.');
+  }
+  const key = normalizeDwarfTestMode(mode);
+  const cached = dwarfTestResourceCache.get(key);
+  if (cached) {
+    if (cached.data) {
+      return cached.data;
+    }
+    return cached.promise;
+  }
+  const scenario = getDwarfTestScenario(key);
+  const loadPromise = loadDwarfTestScenarioResources(scenario)
+    .then((data) => {
+      dwarfTestResourceCache.set(key, { data });
+      return data;
+    })
+    .catch((error) => {
+      dwarfTestResourceCache.delete(key);
+      throw error;
+    });
+  dwarfTestResourceCache.set(key, { promise: loadPromise });
+  return loadPromise;
+}
+
+async function startDwarfTestScenario(mode) {
+  const scenarioKey = normalizeDwarfTestMode(mode);
+  const scenario = getDwarfTestScenario(scenarioKey);
+  if (!elements.dwarfTestCanvas) {
+    setDwarfTestInstructions(scenario.instructions || defaultDwarfTestInstructionText);
+    return;
+  }
+  setDwarfTestInstructions('Loading test arena…');
+  try {
+    const resources = await ensureDwarfTestResources(scenarioKey);
+    drawDwarfTestScenario(elements.dwarfTestCanvas, resources, scenario);
+    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'false');
+    setDwarfTestInstructions(scenario.instructions || defaultDwarfTestInstructionText);
+  } catch (error) {
+    console.error(`Failed to load ${scenarioKey} dwarf test arena`, error);
+    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'true');
+    setDwarfTestInstructions('Unable to load the test arena. Please try again later.', { isError: true });
+  } finally {
+    handleDwarfTestResize();
+  }
+}
+
+async function loadDwarfTestScenarioResources(scenario) {
+  const baseUrl = new URL(scenario.mapPath, window.location.href);
+  const response = await fetch(baseUrl.href);
+  if (!response.ok) {
+    throw new Error(`Failed to load map "${scenario.mapPath}" (status ${response.status})`);
+  }
+  const mapData = await response.json();
+  const tilesets = [];
+  if (Array.isArray(mapData.tilesets)) {
+    for (const tilesetRef of mapData.tilesets) {
+      try {
+        const descriptor = await loadDwarfTestTileset(tilesetRef, baseUrl, scenario, mapData);
+        if (descriptor) {
+          tilesets.push(descriptor);
+        }
+      } catch (error) {
+        console.warn('Unable to load dwarf test tileset', tilesetRef?.source || tilesetRef, error);
+      }
+    }
+  }
+  tilesets.sort((a, b) => a.firstgid - b.firstgid);
+  return { map: mapData, tilesets };
+}
+
+async function loadDwarfTestTileset(tilesetRef, mapUrl, scenario, mapData) {
+  if (!tilesetRef) {
+    return null;
+  }
+  const mapTileWidth = mapData?.tilewidth || 16;
+  const mapTileHeight = mapData?.tileheight || 16;
+  if (typeof tilesetRef.source === 'string' && tilesetRef.source.length > 0) {
+    return loadExternalDwarfTestTileset(tilesetRef, mapUrl, scenario, mapTileWidth, mapTileHeight);
+  }
+  if (typeof tilesetRef.image === 'string' && tilesetRef.image.length > 0) {
+    const imageUrl = new URL(tilesetRef.image, mapUrl);
+    const image = await loadImageAsset(imageUrl.href);
+    const tileWidth = tilesetRef.tilewidth || mapTileWidth;
+    const tileHeight = tilesetRef.tileheight || mapTileHeight;
+    const columns =
+      tilesetRef.columns || Math.max(1, Math.floor(image.width / Math.max(tileWidth, 1)));
+    const margin = tilesetRef.margin || 0;
+    const spacing = tilesetRef.spacing || 0;
+    return {
+      firstgid: tilesetRef.firstgid || 1,
+      tileWidth,
+      tileHeight,
+      columns,
+      margin,
+      spacing,
+      image
+    };
+  }
+  return null;
+}
+
+async function loadExternalDwarfTestTileset(tilesetRef, mapUrl, scenario, mapTileWidth, mapTileHeight) {
+  const fallbackPath = resolveTilesetFallback(scenario, tilesetRef.source);
+  const primaryUrl = new URL(tilesetRef.source, mapUrl);
+  const fallbackUrl = fallbackPath ? new URL(fallbackPath, mapUrl) : null;
+  const { text: tsxText, urlUsed } = await fetchTextWithFallback(primaryUrl.href, fallbackUrl ? fallbackUrl.href : null);
+  const parsed = parseTilesetXml(tsxText);
+  if (!parsed || !parsed.imageSource) {
+    throw new Error(`Tileset "${tilesetRef.source}" is missing an image definition.`);
+  }
+  const resolvedImageUrl = new URL(parsed.imageSource, urlUsed);
+  const image = await loadImageAsset(resolvedImageUrl.href);
+  const tileWidth = parsed.tileWidth || mapTileWidth;
+  const tileHeight = parsed.tileHeight || mapTileHeight;
+  const usableWidth = image.width - parsed.margin * 2 + parsed.spacing;
+  const columns =
+    parsed.columns || Math.max(1, Math.floor(usableWidth / Math.max(tileWidth + parsed.spacing, 1)));
+  return {
+    firstgid: tilesetRef.firstgid || 1,
+    tileWidth,
+    tileHeight,
+    columns,
+    margin: parsed.margin,
+    spacing: parsed.spacing,
+    image
+  };
+}
+
+async function fetchTextWithFallback(primaryUrl, fallbackUrl) {
+  try {
+    const response = await fetch(primaryUrl);
+    if (response.ok) {
+      return { text: await response.text(), urlUsed: primaryUrl };
+    }
+    if (!fallbackUrl) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+  } catch (error) {
+    if (!fallbackUrl) {
+      throw error;
+    }
+  }
+  if (!fallbackUrl) {
+    throw new Error(`Request to ${primaryUrl} failed and no fallback was provided.`);
+  }
+  const fallbackResponse = await fetch(fallbackUrl);
+  if (!fallbackResponse.ok) {
+    throw new Error(`Fallback request failed with status ${fallbackResponse.status}`);
+  }
+  return { text: await fallbackResponse.text(), urlUsed: fallbackUrl };
+}
+
+function normaliseTilesetPath(value) {
+  return typeof value === 'string' ? value.replace(/\\/g, '/').trim() : '';
+}
+
+function resolveTilesetFallback(scenario, source) {
+  if (!scenario || !scenario.tilesetFallbacks) {
+    return null;
+  }
+  const normalized = normaliseTilesetPath(source);
+  const basenameIndex = normalized.lastIndexOf('/');
+  const basename = basenameIndex >= 0 ? normalized.slice(basenameIndex + 1) : normalized;
+  const fallbacks = scenario.tilesetFallbacks;
+  if (fallbacks instanceof Map) {
+    if (fallbacks.has(source)) {
+      return fallbacks.get(source);
+    }
+    if (fallbacks.has(normalized)) {
+      return fallbacks.get(normalized);
+    }
+    if (fallbacks.has(basename)) {
+      return fallbacks.get(basename);
+    }
+    return null;
+  }
+  if (typeof fallbacks === 'object') {
+    return fallbacks[source] || fallbacks[normalized] || fallbacks[basename] || null;
+  }
+  return null;
+}
+
+function loadImageAsset(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Failed to load image at ${url}`));
+    image.src = url;
+  });
+}
+
+function parseTilesetXml(xmlText) {
+  if (typeof DOMParser === 'undefined') {
+    throw new Error('DOMParser is not available to parse tileset data.');
+  }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length > 0) {
+    throw new Error('Unable to parse tileset XML.');
+  }
+  const tilesetElement = doc.querySelector('tileset');
+  if (!tilesetElement) {
+    throw new Error('Tileset XML is missing the <tileset> element.');
+  }
+  const imageElement = tilesetElement.querySelector('image');
+  if (!imageElement) {
+    throw new Error('Tileset XML is missing the <image> element.');
+  }
+  const tileWidth = Number.parseInt(tilesetElement.getAttribute('tilewidth') || '', 10) || 0;
+  const tileHeight = Number.parseInt(tilesetElement.getAttribute('tileheight') || '', 10) || 0;
+  const margin = Number.parseInt(tilesetElement.getAttribute('margin') || '0', 10) || 0;
+  const spacing = Number.parseInt(tilesetElement.getAttribute('spacing') || '0', 10) || 0;
+  const columnsAttr = tilesetElement.getAttribute('columns');
+  const columns = columnsAttr ? Number.parseInt(columnsAttr, 10) : 0;
+  return {
+    tileWidth,
+    tileHeight,
+    margin,
+    spacing,
+    columns: Number.isFinite(columns) && columns > 0 ? columns : undefined,
+    imageSource: imageElement.getAttribute('source') || ''
+  };
+}
+
+function drawDwarfTestScenario(canvas, resources, scenario) {
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return;
+  }
+  const map = resources?.map;
+  if (!map || !map.width || !map.height) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  const tileWidth = map.tilewidth || 16;
+  const tileHeight = map.tileheight || 16;
+  const width = map.width * tileWidth;
+  const height = map.height * tileHeight;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  context.clearRect(0, 0, width, height);
+  const background = map.backgroundcolor || scenario.backgroundColor;
+  if (background) {
+    context.fillStyle = background;
+    context.fillRect(0, 0, width, height);
+  }
+  const layers = Array.isArray(map.layers)
+    ? map.layers.filter((layer) => layer.type === 'tilelayer' && layer.visible !== false && Array.isArray(layer.data))
+    : [];
+  if (!layers.length) {
+    return;
+  }
+  const tilesets = Array.isArray(resources.tilesets) ? resources.tilesets : [];
+  const sortedTilesets = tilesets.slice().sort((a, b) => a.firstgid - b.firstgid);
+  layers.forEach((layer) => {
+    const { data } = layer;
+    for (let index = 0; index < data.length; index += 1) {
+      const gid = data[index];
+      if (!gid) {
+        continue;
+      }
+      const tileset = findTilesetForGid(sortedTilesets, gid);
+      if (!tileset || !tileset.image) {
+        continue;
+      }
+      const localId = gid - tileset.firstgid;
+      if (localId < 0) {
+        continue;
+      }
+      const columns = tileset.columns || 1;
+      const sx = tileset.margin + (localId % columns) * (tileset.tileWidth + tileset.spacing);
+      const sy = tileset.margin + Math.floor(localId / columns) * (tileset.tileHeight + tileset.spacing);
+      const dx = (index % map.width) * tileWidth;
+      const dy = Math.floor(index / map.width) * tileHeight;
+      context.drawImage(
+        tileset.image,
+        sx,
+        sy,
+        tileset.tileWidth,
+        tileset.tileHeight,
+        dx,
+        dy,
+        tileWidth,
+        tileHeight
+      );
+    }
+  });
+}
+
+function findTilesetForGid(tilesets, gid) {
+  for (let index = tilesets.length - 1; index >= 0; index -= 1) {
+    const tileset = tilesets[index];
+    if (gid >= tileset.firstgid) {
+      return tileset;
+    }
+  }
+  return null;
+}
+
 function handleDwarfTestResize() {
-  // Placeholder for dwarf test resize handling
-  // This can be implemented when the dwarf test feature is fully developed
+  if (!dwarfTestState.active || !elements.dwarfTestArea || !elements.dwarfTestCanvas) {
+    return;
+  }
+  const canvas = elements.dwarfTestCanvas;
+  const area = elements.dwarfTestArea;
+  if (!canvas.width || !canvas.height) {
+    canvas.style.transform = '';
+    canvas.style.transformOrigin = '';
+    return;
+  }
+  const availableWidth = area.clientWidth;
+  const availableHeight = area.clientHeight;
+  if (!availableWidth || !availableHeight) {
+    canvas.style.transform = '';
+    canvas.style.transformOrigin = '';
+    return;
+  }
+  const scale = Math.min(availableWidth / canvas.width, availableHeight / canvas.height, 1);
+  if (Number.isFinite(scale) && scale > 0 && scale < 0.999) {
+    canvas.style.transform = `scale(${scale})`;
+    canvas.style.transformOrigin = 'top left';
+  } else {
+    canvas.style.transform = '';
+    canvas.style.transformOrigin = '';
+  }
 }
 
 function matchesHighlightGroupValue(value, group) {
