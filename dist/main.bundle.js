@@ -637,149 +637,187 @@
   }
 
   // src/ui/elements.js
-  var elements = {
-    startButton: document.getElementById("start-button"),
-    titleScreen: document.getElementById("title-screen"),
-    gameContainer: document.getElementById("game-container"),
-    loadingScreen: document.getElementById("loading-screen"),
-    loadingPanel: document.querySelector("#loading-screen .loading-panel"),
-    loadingProgressBar: document.getElementById("loading-progress"),
-    loadingProgressFill: document.getElementById("loading-progress-fill"),
-    loadingStatus: document.getElementById("loading-status"),
-    optionsButton: document.getElementById("title-options-button"),
-    inGameOptions: document.getElementById("in-game-options"),
-    optionsScreen: document.getElementById("options-screen"),
-    closeOptions: document.getElementById("close-options"),
-    optionsForm: document.getElementById("options-form"),
-    regenerate: document.getElementById("regenerate-button"),
-    canvas: document.getElementById("world-canvas"),
-    canvasWrapper: document.querySelector(".canvas-wrapper"),
-    mapTooltip: document.getElementById("world-tooltip"),
-    structureContextMenu: document.getElementById("structure-context-menu"),
-    structureContextMenuBegin: document.getElementById("structure-context-menu-begin"),
-    structureContextMenuMoreInfo: document.getElementById("structure-context-menu-more-info"),
-    localMapPanel: document.getElementById("local-map-panel"),
-    localMapCanvas: document.getElementById("local-map-canvas"),
-    localMapTitle: document.getElementById("local-map-title"),
-    localMapSubtitle: document.getElementById("local-map-subtitle"),
-    localMapCoordinates: document.getElementById("local-map-coordinates"),
-    localMapClose: document.getElementById("local-map-close"),
-    localMapZoomIn: document.getElementById("local-map-zoom-in"),
-    localMapZoomOut: document.getElementById("local-map-zoom-out"),
-    localMapZoomReset: document.getElementById("local-map-zoom-reset"),
-    localMapDetails: document.getElementById("local-map-details"),
-    dwarfholdScreen: document.getElementById("dwarfhold-screen"),
-    dwarfholdCanvas: document.getElementById("dwarfhold-canvas"),
-    dwarfholdTitle: document.getElementById("dwarfhold-title"),
-    dwarfholdSubtitle: document.getElementById("dwarfhold-subtitle"),
-    dwarfholdDescription: document.getElementById("dwarfhold-description"),
-    dwarfholdFeatures: document.getElementById("dwarfhold-features"),
-    dwarfholdLegend: document.getElementById("dwarfhold-legend"),
-    dwarfholdExit: document.getElementById("dwarfhold-exit"),
-    dwarfholdCoordinates: document.getElementById("dwarfhold-coordinates"),
-    structureDetailsPanel: document.getElementById("structure-details"),
-    structureDetailsTitle: document.getElementById("structure-details-title"),
-    structureDetailsSubtitle: document.getElementById("structure-details-subtitle"),
-    structureDetailsContent: document.getElementById("structure-details-content"),
-    structureDetailsTabs: Array.from(document.querySelectorAll(".structure-details-tab")),
-    structureDetailsClose: document.getElementById("structure-details-close"),
-    seedDisplay: document.querySelector(".seed-display"),
-    politicalBordersToggle: document.getElementById("toggle-political-borders"),
-    politicalInfluenceToggle: document.getElementById("toggle-political-influence"),
-    elevationToggle: document.getElementById("toggle-elevation"),
-    biomeToggle: document.getElementById("toggle-biomes"),
-    temperatureToggle: document.getElementById("toggle-temperature"),
-    locationLabelToggle: document.getElementById("toggle-location-labels"),
-    structureHighlightToggle: document.getElementById("toggle-structure-highlights"),
-    structureHighlightMenu: document.getElementById("structure-highlight-menu"),
-    mapEditorToggle: document.getElementById("toggle-map-editor"),
-    mapEditorPanel: document.getElementById("map-editor"),
-    mapEditorClose: document.getElementById("map-editor-close"),
-    mapEditorTerrainInput: document.getElementById("map-editor-terrain"),
-    mapEditorStructureInput: document.getElementById("map-editor-structure"),
-    mapEditorApplyTerrain: document.getElementById("map-editor-apply-terrain"),
-    mapEditorApplyStructure: document.getElementById("map-editor-apply-structure"),
-    mapEditorBrushSizeInput: document.getElementById("map-editor-brush-size"),
-    mapEditorClearStructure: document.getElementById("map-editor-clear-structure"),
-    mapEditorTerrainOptions: document.getElementById("map-editor-terrain-options"),
-    mapEditorStructureOptions: document.getElementById("map-editor-structure-options"),
-    mapSizeSelect: document.getElementById("map-size"),
-    worldGenerationTypeSelect: document.getElementById("world-generation-type"),
-    seedInput: document.getElementById("world-seed"),
-    worldMapSizeSelect: document.getElementById("world-map-size-select"),
-    worldSeedInput: document.getElementById("world-seed-input"),
-    forestFrequencyInput: document.getElementById("forest-frequency"),
-    forestFrequencyValue: document.getElementById("forest-frequency-value"),
-    mountainFrequencyInput: document.getElementById("mountain-frequency"),
-    mountainFrequencyValue: document.getElementById("mountain-frequency-value"),
-    riverFrequencyInput: document.getElementById("river-frequency"),
-    riverFrequencyValue: document.getElementById("river-frequency-value"),
-    humanSettlementFrequencyInput: document.getElementById("human-settlement-frequency"),
-    humanSettlementFrequencyValue: document.getElementById("human-settlement-frequency-value"),
-    dwarfSettlementFrequencyInput: document.getElementById("dwarf-settlement-frequency"),
-    dwarfSettlementFrequencyValue: document.getElementById("dwarf-settlement-frequency-value"),
-    woodElfSettlementFrequencyInput: document.getElementById("wood-elf-settlement-frequency"),
-    woodElfSettlementFrequencyValue: document.getElementById("wood-elf-settlement-frequency-value"),
-    lizardmenSettlementFrequencyInput: document.getElementById("lizardmen-settlement-frequency"),
-    lizardmenSettlementFrequencyValue: document.getElementById("lizardmen-settlement-frequency-value"),
-    musicToggle: document.getElementById("music-toggle"),
-    musicVolume: document.getElementById("music-volume"),
-    musicNowPlaying: document.getElementById("music-now-playing"),
-    musicToggleGame: document.getElementById("music-toggle-game"),
-    musicVolumeGame: document.getElementById("music-volume-game"),
-    musicNowPlayingGame: document.getElementById("music-now-playing-game"),
-    sfxToggle: document.getElementById("sfx-toggle"),
-    sfxVolume: document.getElementById("sfx-volume"),
-    audioElement: document.getElementById("background-music"),
-    structureAmbienceAudio: document.getElementById("structure-ambience"),
-    worldInfoModal: document.getElementById("world-info"),
-    worldInfoForm: document.getElementById("world-info-form"),
-    worldInfoSize: document.getElementById("world-info-size"),
-    worldInfoGenerationType: document.getElementById("world-info-generation-type"),
-    worldInfoSeed: document.getElementById("world-info-seed"),
-    worldInfoChronology: document.getElementById("world-info-chronology"),
-    worldYearInput: document.getElementById("world-year-input"),
-    worldAgeInput: document.getElementById("world-age-input"),
-    worldChronologyRandom: document.getElementById("world-chronology-random"),
-    worldInfoGenerationTypeSelect: document.getElementById("world-generation-type-select"),
-    worldNameInput: document.getElementById("world-name-input"),
-    worldNameRandom: document.getElementById("world-name-random"),
-    worldInfoCancel: document.getElementById("world-info-cancel"),
-    dwarfCustomizer: document.getElementById("dwarf-customizer"),
-    dwarfCustomizerForm: document.getElementById("dwarf-customizer-form"),
-    dwarfRosterList: document.getElementById("dwarf-roster-list"),
-    dwarfPrev: document.getElementById("dwarf-prev"),
-    dwarfNext: document.getElementById("dwarf-next"),
-    dwarfSlotLabel: document.getElementById("dwarf-slot-label"),
-    dwarfNameInput: document.getElementById("dwarf-name-input"),
-    dwarfGenderButtons: document.getElementById("dwarf-gender-buttons"),
-    dwarfClanSelect: document.getElementById("dwarf-clan-select"),
-    dwarfProfessionSelect: document.getElementById("dwarf-profession-select"),
-    dwarfSkinSlider: document.getElementById("dwarf-skin-slider"),
-    dwarfSkinSliderValue: document.getElementById("dwarf-skin-slider-value"),
-    dwarfEyeSlider: document.getElementById("dwarf-eye-slider"),
-    dwarfEyeSliderValue: document.getElementById("dwarf-eye-slider-value"),
-    dwarfHairStyleSlider: document.getElementById("dwarf-hair-style-slider"),
-    dwarfHairStyleSliderValue: document.getElementById("dwarf-hair-style-slider-value"),
-    dwarfHairSlider: document.getElementById("dwarf-hair-slider"),
-    dwarfHairSliderValue: document.getElementById("dwarf-hair-slider-value"),
-    dwarfBeardSlider: document.getElementById("dwarf-beard-slider"),
-    dwarfBeardSliderValue: document.getElementById("dwarf-beard-slider-value"),
-    dwarfBeardFieldGroup: document.getElementById("dwarf-beard-field-group"),
-    dwarfRandomise: document.getElementById("dwarf-randomise"),
-    dwarfBack: document.getElementById("dwarf-back"),
-    dwarfPortrait: document.getElementById("dwarf-portrait"),
-    dwarfPortraitCanvas: document.getElementById("dwarf-portrait-canvas"),
-    dwarfBodyPortraitCanvas: document.getElementById("dwarf-body-portrait-canvas"),
-    dwarfTraitSummary: document.getElementById("dwarf-trait-summary"),
-    dwarfTraitAttributes: document.getElementById("dwarf-trait-attributes")
+
+  function getElementById(id) {
+    if (typeof document === "undefined") {
+      return null;
+    }
+    return document.getElementById(id);
+  }
+
+  function queryAll(selector) {
+    if (typeof document === "undefined") {
+      return [];
+    }
+    return Array.from(document.querySelectorAll(selector));
+  }
+
+  var elementInitialisers = {
+    startButton: () => getElementById("start-button"),
+    titleScreen: () => getElementById("title-screen"),
+    gameContainer: () => getElementById("game-container"),
+    loadingScreen: () => getElementById("loading-screen"),
+    loadingPanel: () => typeof document === "undefined" ? null : document.querySelector("#loading-screen .loading-panel"),
+    loadingProgressBar: () => getElementById("loading-progress"),
+    loadingProgressFill: () => getElementById("loading-progress-fill"),
+    loadingStatus: () => getElementById("loading-status"),
+    optionsButton: () => getElementById("title-options-button"),
+    inGameOptions: () => getElementById("in-game-options"),
+    optionsScreen: () => getElementById("options-screen"),
+    closeOptions: () => getElementById("close-options"),
+    optionsForm: () => getElementById("options-form"),
+    regenerate: () => getElementById("regenerate-button"),
+    canvas: () => getElementById("world-canvas"),
+    canvasWrapper: () => typeof document === "undefined" ? null : document.querySelector(".canvas-wrapper"),
+    mapTooltip: () => getElementById("world-tooltip"),
+    structureContextMenu: () => getElementById("structure-context-menu"),
+    structureContextMenuBegin: () => getElementById("structure-context-menu-begin"),
+    structureContextMenuMoreInfo: () => getElementById("structure-context-menu-more-info"),
+    localMapPanel: () => getElementById("local-map-panel"),
+    localMapCanvas: () => getElementById("local-map-canvas"),
+    localMapTitle: () => getElementById("local-map-title"),
+    localMapSubtitle: () => getElementById("local-map-subtitle"),
+    localMapCoordinates: () => getElementById("local-map-coordinates"),
+    localMapClose: () => getElementById("local-map-close"),
+    localMapZoomIn: () => getElementById("local-map-zoom-in"),
+    localMapZoomOut: () => getElementById("local-map-zoom-out"),
+    localMapZoomReset: () => getElementById("local-map-zoom-reset"),
+    localMapDetails: () => getElementById("local-map-details"),
+    dwarfholdScreen: () => getElementById("dwarfhold-screen"),
+    dwarfholdCanvas: () => getElementById("dwarfhold-canvas"),
+    dwarfholdTitle: () => getElementById("dwarfhold-title"),
+    dwarfholdSubtitle: () => getElementById("dwarfhold-subtitle"),
+    dwarfholdDescription: () => getElementById("dwarfhold-description"),
+    dwarfholdFeatures: () => getElementById("dwarfhold-features"),
+    dwarfholdLegend: () => getElementById("dwarfhold-legend"),
+    dwarfholdExit: () => getElementById("dwarfhold-exit"),
+    dwarfholdCoordinates: () => getElementById("dwarfhold-coordinates"),
+    structureDetailsPanel: () => getElementById("structure-details"),
+    structureDetailsTitle: () => getElementById("structure-details-title"),
+    structureDetailsSubtitle: () => getElementById("structure-details-subtitle"),
+    structureDetailsContent: () => getElementById("structure-details-content"),
+    structureDetailsTabs: () => queryAll(".structure-details-tab"),
+    structureDetailsClose: () => getElementById("structure-details-close"),
+    seedDisplay: () => typeof document === "undefined" ? null : document.querySelector(".seed-display"),
+    politicalBordersToggle: () => getElementById("toggle-political-borders"),
+    politicalInfluenceToggle: () => getElementById("toggle-political-influence"),
+    elevationToggle: () => getElementById("toggle-elevation"),
+    biomeToggle: () => getElementById("toggle-biomes"),
+    temperatureToggle: () => getElementById("toggle-temperature"),
+    locationLabelToggle: () => getElementById("toggle-location-labels"),
+    structureHighlightToggle: () => getElementById("toggle-structure-highlights"),
+    structureHighlightMenu: () => getElementById("structure-highlight-menu"),
+    mapEditorToggle: () => getElementById("toggle-map-editor"),
+    mapEditorPanel: () => getElementById("map-editor"),
+    mapEditorClose: () => getElementById("map-editor-close"),
+    mapEditorTerrainInput: () => getElementById("map-editor-terrain"),
+    mapEditorStructureInput: () => getElementById("map-editor-structure"),
+    mapEditorApplyTerrain: () => getElementById("map-editor-apply-terrain"),
+    mapEditorApplyStructure: () => getElementById("map-editor-apply-structure"),
+    mapEditorBrushSizeInput: () => getElementById("map-editor-brush-size"),
+    mapEditorClearStructure: () => getElementById("map-editor-clear-structure"),
+    mapEditorTerrainOptions: () => getElementById("map-editor-terrain-options"),
+    mapEditorStructureOptions: () => getElementById("map-editor-structure-options"),
+    mapSizeSelect: () => getElementById("map-size"),
+    worldGenerationTypeSelect: () => getElementById("world-generation-type"),
+    seedInput: () => getElementById("world-seed"),
+    worldMapSizeSelect: () => getElementById("world-map-size-select"),
+    worldSeedInput: () => getElementById("world-seed-input"),
+    forestFrequencyInput: () => getElementById("forest-frequency"),
+    forestFrequencyValue: () => getElementById("forest-frequency-value"),
+    mountainFrequencyInput: () => getElementById("mountain-frequency"),
+    mountainFrequencyValue: () => getElementById("mountain-frequency-value"),
+    riverFrequencyInput: () => getElementById("river-frequency"),
+    riverFrequencyValue: () => getElementById("river-frequency-value"),
+    humanSettlementFrequencyInput: () => getElementById("human-settlement-frequency"),
+    humanSettlementFrequencyValue: () => getElementById("human-settlement-frequency-value"),
+    dwarfSettlementFrequencyInput: () => getElementById("dwarf-settlement-frequency"),
+    dwarfSettlementFrequencyValue: () => getElementById("dwarf-settlement-frequency-value"),
+    woodElfSettlementFrequencyInput: () => getElementById("wood-elf-settlement-frequency"),
+    woodElfSettlementFrequencyValue: () => getElementById("wood-elf-settlement-frequency-value"),
+    lizardmenSettlementFrequencyInput: () => getElementById("lizardmen-settlement-frequency"),
+    lizardmenSettlementFrequencyValue: () => getElementById("lizardmen-settlement-frequency-value"),
+    musicToggle: () => getElementById("music-toggle"),
+    musicVolume: () => getElementById("music-volume"),
+    musicNowPlaying: () => getElementById("music-now-playing"),
+    musicToggleGame: () => getElementById("music-toggle-game"),
+    musicVolumeGame: () => getElementById("music-volume-game"),
+    musicNowPlayingGame: () => getElementById("music-now-playing-game"),
+    sfxToggle: () => getElementById("sfx-toggle"),
+    sfxVolume: () => getElementById("sfx-volume"),
+    audioElement: () => getElementById("background-music"),
+    structureAmbienceAudio: () => getElementById("structure-ambience"),
+    worldInfoModal: () => getElementById("world-info"),
+    worldInfoForm: () => getElementById("world-info-form"),
+    worldInfoSize: () => getElementById("world-info-size"),
+    worldInfoGenerationType: () => getElementById("world-info-generation-type"),
+    worldInfoSeed: () => getElementById("world-info-seed"),
+    worldInfoChronology: () => getElementById("world-info-chronology"),
+    worldYearInput: () => getElementById("world-year-input"),
+    worldAgeInput: () => getElementById("world-age-input"),
+    worldChronologyRandom: () => getElementById("world-chronology-random"),
+    worldInfoGenerationTypeSelect: () => getElementById("world-generation-type-select"),
+    worldNameInput: () => getElementById("world-name-input"),
+    worldNameRandom: () => getElementById("world-name-random"),
+    worldInfoCancel: () => getElementById("world-info-cancel"),
+    dwarfCustomizer: () => getElementById("dwarf-customizer"),
+    dwarfCustomizerForm: () => getElementById("dwarf-customizer-form"),
+    dwarfRosterList: () => getElementById("dwarf-roster-list"),
+    dwarfPrev: () => getElementById("dwarf-prev"),
+    dwarfNext: () => getElementById("dwarf-next"),
+    dwarfSlotLabel: () => getElementById("dwarf-slot-label"),
+    dwarfNameInput: () => getElementById("dwarf-name-input"),
+    dwarfGenderButtons: () => getElementById("dwarf-gender-buttons"),
+    dwarfClanSelect: () => getElementById("dwarf-clan-select"),
+    dwarfProfessionSelect: () => getElementById("dwarf-profession-select"),
+    dwarfSkinSlider: () => getElementById("dwarf-skin-slider"),
+    dwarfSkinSliderValue: () => getElementById("dwarf-skin-slider-value"),
+    dwarfEyeSlider: () => getElementById("dwarf-eye-slider"),
+    dwarfEyeSliderValue: () => getElementById("dwarf-eye-slider-value"),
+    dwarfHairStyleSlider: () => getElementById("dwarf-hair-style-slider"),
+    dwarfHairStyleSliderValue: () => getElementById("dwarf-hair-style-slider-value"),
+    dwarfHairSlider: () => getElementById("dwarf-hair-slider"),
+    dwarfHairSliderValue: () => getElementById("dwarf-hair-slider-value"),
+    dwarfBeardSlider: () => getElementById("dwarf-beard-slider"),
+    dwarfBeardSliderValue: () => getElementById("dwarf-beard-slider-value"),
+    dwarfBeardFieldGroup: () => getElementById("dwarf-beard-field-group"),
+    dwarfRandomise: () => getElementById("dwarf-randomise"),
+    dwarfBack: () => getElementById("dwarf-back"),
+    dwarfPortrait: () => getElementById("dwarf-portrait"),
+    dwarfPortraitCanvas: () => getElementById("dwarf-portrait-canvas"),
+    dwarfBodyPortraitCanvas: () => getElementById("dwarf-body-portrait-canvas"),
+    dwarfTraitSummary: () => getElementById("dwarf-trait-summary"),
+    dwarfTraitAttributes: () => getElementById("dwarf-trait-attributes")
   };
+
+  var elements = {};
+
+  function hydrateElements() {
+    Object.entries(elementInitialisers).forEach(([key, initialise]) => {
+      try {
+        var value = initialise();
+        if (value === void 0) {
+          elements[key] = key === "structureDetailsTabs" ? [] : null;
+        } else {
+          elements[key] = value;
+        }
+      } catch (error) {
+        elements[key] = key === "structureDetailsTabs" ? [] : null;
+      }
+    });
+    return elements;
+  }
+
+  hydrateElements();
+
   function getMusicToggleElements() {
     return [elements.musicToggle, elements.musicToggleGame].filter(Boolean);
   }
+
   function getMusicVolumeInputs() {
     return [elements.musicVolume, elements.musicVolumeGame].filter(Boolean);
   }
+
   function getMusicNowPlayingDisplays() {
     return [elements.musicNowPlaying, elements.musicNowPlayingGame].filter(Boolean);
   }
@@ -12752,9 +12790,6 @@
     guild: dwarfGuildOptions,
     profession: dwarfProfessionOptions
   };
-  if (elements.dwarfClanSelect) {
-    populateClanSelectFromOptions(dwarfOptions.clan);
-  }
   function getOptionByValue(category, value) {
     if (!category || !value || typeof category !== "string" || typeof value !== "string") {
       return null;
@@ -30244,89 +30279,109 @@
     });
     refreshOverlayToggleButtons();
   }
-  attachEvents(elements, {
-    structureContextMenuState,
-    hideStructureContextMenu,
-    openOptionsScreen,
-    closeOptionsScreen,
-    hideStructureDetails,
-    showLocalViewAt,
-    showDwarfholdInterior,
-    showStructureDetails,
-    hideLocalView,
-    adjustLocalMapZoom,
-    resetLocalMapZoom,
-    closeDwarfholdInterior,
-    state,
-    refreshOverlayToggleButtons,
-    refreshStructureHighlightControls,
-    ensureStructureHighlightState,
-    drawWorld,
-    updateFrequencyDisplay,
-    sanitizeFrequencyValue,
-    defaultForestFrequency,
-    defaultMountainFrequency,
-    ensureSeedString,
-    getRandomWorldName,
-    getSanitisedChronologyFromInputs,
-    generateRandomChronology,
-    updateChronologyDisplay,
-    openDwarfCustomizer,
-    closeWorldInfoModal,
-    openWorldInfoModal,
-    applyMapSizePresetToState,
-    getMapSizePreset,
-    handleRegenerate,
-    changeActiveDwarf,
-    randomiseActiveDwarf,
-    playSoundEffect,
-    soundEffects,
-    ensureMusicStarted,
-    beginGame,
-    updateDwarfTrait,
-    setupTraitSliderControl,
-    isDwarfCustomizerVisible,
-    closeDwarfCustomizer,
-    structureDetailsState,
-    setActiveStructureDetailsTab,
-    isOptionsVisible: () => optionsVisible,
-    updateWorldInfoSeedDisplay,
-    updateWorldInfoSizeDisplay,
-    updateWorldInfoGenerationTypeDisplay,
-    setWorldGenerationType,
-    toggleMapEditor,
-    closeMapEditor,
-    setMapEditorTerrainKey,
-    setMapEditorStructureKey,
-    setMapEditorApplyTerrain,
-    setMapEditorApplyStructure,
-    setMapEditorBrushSize,
-    clearMapEditorStructure
-  });
-  function initialise() {
-    syncInputsWithSettings();
-    setupAudioControls();
-    setupSoundEffectControls();
-    ensureMapEditorState();
-    refreshMapEditorUI();
-    setupMapInteractions();
-    handleResize();
+  function ensureClanSelectOptions() {
+    if (elements.dwarfClanSelect) {
+      populateClanSelectFromOptions(dwarfOptions.clan);
+    }
   }
-  initialise();
-  function autoStartGameIfNeeded() {
-    showTitleScreen({ focusStartButton: true });
-  }
-  autoStartGameIfNeeded();
-  if (typeof document !== "undefined" && document.documentElement) {
+
+  function bootApplication() {
+    hydrateElements();
+    ensureClanSelectOptions();
+
+    attachEvents(elements, {
+      structureContextMenuState,
+      hideStructureContextMenu,
+      openOptionsScreen,
+      closeOptionsScreen,
+      hideStructureDetails,
+      showLocalViewAt,
+      showDwarfholdInterior,
+      showStructureDetails,
+      hideLocalView,
+      adjustLocalMapZoom,
+      resetLocalMapZoom,
+      closeDwarfholdInterior,
+      state,
+      refreshOverlayToggleButtons,
+      refreshStructureHighlightControls,
+      ensureStructureHighlightState,
+      drawWorld,
+      updateFrequencyDisplay,
+      sanitizeFrequencyValue,
+      defaultForestFrequency,
+      defaultMountainFrequency,
+      ensureSeedString,
+      getRandomWorldName,
+      getSanitisedChronologyFromInputs,
+      generateRandomChronology,
+      updateChronologyDisplay,
+      openDwarfCustomizer,
+      closeWorldInfoModal,
+      openWorldInfoModal,
+      applyMapSizePresetToState,
+      getMapSizePreset,
+      handleRegenerate,
+      changeActiveDwarf,
+      randomiseActiveDwarf,
+      playSoundEffect,
+      soundEffects,
+      ensureMusicStarted,
+      beginGame,
+      updateDwarfTrait,
+      setupTraitSliderControl,
+      isDwarfCustomizerVisible,
+      closeDwarfCustomizer,
+      structureDetailsState,
+      setActiveStructureDetailsTab,
+      isOptionsVisible: () => optionsVisible,
+      updateWorldInfoSeedDisplay,
+      updateWorldInfoSizeDisplay,
+      updateWorldInfoGenerationTypeDisplay,
+      setWorldGenerationType,
+      toggleMapEditor,
+      closeMapEditor,
+      setMapEditorTerrainKey,
+      setMapEditorStructureKey,
+      setMapEditorApplyTerrain,
+      setMapEditorApplyStructure,
+      setMapEditorBrushSize,
+      clearMapEditorStructure
+    });
+
+    initialise();
+    autoStartGameIfNeeded();
+
+    if (typeof document !== "undefined" && document.documentElement) {
+      try {
+        document.documentElement.setAttribute("data-app-initialised", "true");
+      } catch (_) {}
+    }
+
     try {
-      document.documentElement.setAttribute("data-app-initialised", "true");
-    } catch (_) {
-    }
+      if (typeof window !== "undefined" && typeof beginGame === "function") {
+        window.beginGame = beginGame;
+      }
+    } catch (_) {}
   }
-  try {
-    if (typeof window !== "undefined" && typeof beginGame === "function") {
-      window.beginGame = beginGame;
+
+  function startApplicationWhenReady() {
+    if (typeof document === "undefined") {
+      bootApplication();
+      return;
     }
-  } catch (_) {
+
+    if (document.readyState === "loading") {
+      const handleReady = () => {
+        document.removeEventListener("DOMContentLoaded", handleReady);
+        bootApplication();
+      };
+      document.addEventListener("DOMContentLoaded", handleReady);
+      return;
+    }
+
+    bootApplication();
   }
+
+  startApplicationWhenReady();
 })();
