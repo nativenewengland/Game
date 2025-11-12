@@ -11040,15 +11040,33 @@ function closeWorldInfoModal(options = {}) {
   }
   if (
     !keepTitleHidden &&
-    elements.titleScreen &&
     elements.gameContainer &&
     elements.gameContainer.classList.contains('hidden')
   ) {
-    elements.titleScreen.classList.remove('hidden');
+    showTitleScreen();
     state.settings.seedString = '';
   }
   if (returnFocus && elements.startButton) {
     elements.startButton.focus();
+  }
+}
+
+function showTitleScreen(options = {}) {
+  const { focusStartButton = false } = options;
+  if (elements.gameContainer) {
+    elements.gameContainer.classList.add('hidden');
+    elements.gameContainer.setAttribute('aria-hidden', 'true');
+  }
+  if (elements.titleScreen) {
+    elements.titleScreen.classList.remove('hidden');
+    elements.titleScreen.setAttribute('aria-hidden', 'false');
+  }
+  if (focusStartButton && elements.startButton && typeof elements.startButton.focus === 'function') {
+    try {
+      elements.startButton.focus({ preventScroll: true });
+    } catch (_) {
+      elements.startButton.focus();
+    }
   }
 }
 
@@ -30100,25 +30118,7 @@ function initialise() {
 initialise();
 
 function autoStartGameIfNeeded() {
-  const gameContainerHidden =
-    !elements.gameContainer || elements.gameContainer.classList.contains('hidden');
-  if (!gameContainerHidden) {
-    return;
-  }
-
-  if (state.currentWorld) {
-    beginGame();
-    ensureMusicStarted();
-    return;
-  }
-
-  if (elements.startButton && typeof elements.startButton.focus === 'function') {
-    try {
-      elements.startButton.focus({ preventScroll: true });
-    } catch (_) {
-      // Ignore focus errors in non-interactive environments.
-    }
-  }
+  showTitleScreen({ focusStartButton: true });
 }
 
 autoStartGameIfNeeded();
