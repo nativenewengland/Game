@@ -792,7 +792,6 @@
     dwarfTestArea: document.getElementById("dwarf-test-area"),
     dwarfTestCanvas: document.getElementById("dwarf-test-canvas"),
     dwarfTestButton: document.getElementById("dwarf-test"),
-    dwarfTestDungeonButton: document.getElementById("dwarf-test-dungeon"),
     dwarfTestInstructions: document.querySelector(".dwarf-test-instructions"),
     dwarfTraitSummary: document.getElementById("dwarf-trait-summary"),
     dwarfTraitAttributes: document.getElementById("dwarf-trait-attributes")
@@ -1624,11 +1623,6 @@
     if (elements2.dwarfTestButton) {
       elements2.dwarfTestButton.addEventListener("click", () => {
         toggleDwarfTest2("overworld", { trigger: elements2.dwarfTestButton });
-      });
-    }
-    if (elements2.dwarfTestDungeonButton) {
-      elements2.dwarfTestDungeonButton.addEventListener("click", () => {
-        toggleDwarfTest2("dungeon", { trigger: elements2.dwarfTestDungeonButton });
       });
     }
     if (elements2.dwarfNameInput) {
@@ -12131,11 +12125,6 @@
       ]),
       backgroundColor: "#10131c",
       instructions: defaultDwarfTestInstructionText
-    },
-    dungeon: {
-      mapPath: "maps/battlemap.tmj",
-      backgroundColor: "#050608",
-      instructions: "The dungeon proving grounds are a work in progress. Explore the current arena layout while we forge new encounters."
     }
   };
   var dwarfTestResourceCache = /* @__PURE__ */ new Map();
@@ -12147,17 +12136,8 @@
     return dwarfTestScenarios[key] || dwarfTestScenarios.overworld;
   }
   function normalizeDwarfTestMode(value) {
-    if (typeof value === "string") {
-      const lowered = value.toLowerCase();
-      if (lowered === "dungeon") {
-        return "dungeon";
-      }
-      if (lowered === "overworld") {
-        return "overworld";
-      }
-    }
-    if (value === true) {
-      return "dungeon";
+    if (typeof value === "string" && value.toLowerCase() === "overworld") {
+      return "overworld";
     }
     return "overworld";
   }
@@ -12222,10 +12202,6 @@
     if (elements.dwarfTestButton) {
       const pressed = isActive && dwarfTestState.mode === "overworld";
       elements.dwarfTestButton.setAttribute("aria-pressed", pressed ? "true" : "false");
-    }
-    if (elements.dwarfTestDungeonButton) {
-      const pressed = isActive && dwarfTestState.mode === "dungeon";
-      elements.dwarfTestDungeonButton.setAttribute("aria-pressed", pressed ? "true" : "false");
     }
   }
   async function ensureDwarfTestResources(mode) {

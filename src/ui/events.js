@@ -928,12 +928,6 @@ export function attachEvents(elements, deps) {
     });
   }
 
-  if (elements.dwarfTestDungeonButton) {
-    elements.dwarfTestDungeonButton.addEventListener('click', () => {
-      toggleDwarfTest('dungeon', { trigger: elements.dwarfTestDungeonButton });
-    });
-  }
-
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.addEventListener('input', (event) => {
       updateDwarfTrait('name', event.target.value);

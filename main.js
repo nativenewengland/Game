@@ -9390,12 +9390,6 @@ const dwarfTestScenarios = {
     ]),
     backgroundColor: '#10131c',
     instructions: defaultDwarfTestInstructionText
-  },
-  dungeon: {
-    mapPath: 'maps/battlemap.tmj',
-    backgroundColor: '#050608',
-    instructions:
-      'The dungeon proving grounds are a work in progress. Explore the current arena layout while we forge new encounters.'
   }
 };
 
@@ -9411,17 +9405,8 @@ function getDwarfTestScenario(key) {
 }
 
 function normalizeDwarfTestMode(value) {
-  if (typeof value === 'string') {
-    const lowered = value.toLowerCase();
-    if (lowered === 'dungeon') {
-      return 'dungeon';
-    }
-    if (lowered === 'overworld') {
-      return 'overworld';
-    }
-  }
-  if (value === true) {
-    return 'dungeon';
+  if (typeof value === 'string' && value.toLowerCase() === 'overworld') {
+    return 'overworld';
   }
   return 'overworld';
 }
@@ -9491,10 +9476,6 @@ function updateDwarfTestButtonState() {
   if (elements.dwarfTestButton) {
     const pressed = isActive && dwarfTestState.mode === 'overworld';
     elements.dwarfTestButton.setAttribute('aria-pressed', pressed ? 'true' : 'false');
-  }
-  if (elements.dwarfTestDungeonButton) {
-    const pressed = isActive && dwarfTestState.mode === 'dungeon';
-    elements.dwarfTestDungeonButton.setAttribute('aria-pressed', pressed ? 'true' : 'false');
   }
 }
 
