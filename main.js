@@ -9376,6 +9376,7 @@ function playSoundEffect(audio) {
   }
 }
 
+<<<<<<< ours
 const defaultDwarfTestInstructionText =
   elements.dwarfTestInstructions && typeof elements.dwarfTestInstructions.textContent === 'string'
     ? elements.dwarfTestInstructions.textContent.trim()
@@ -9811,6 +9812,8 @@ function handleDwarfTestResize() {
   }
 }
 
+=======
+>>>>>>> theirs
 function matchesHighlightGroupValue(value, group) {
   const normalized = normalizeHighlightValue(value);
   if (!normalized || !group) {
@@ -10991,11 +10994,10 @@ function updateCustomizerUI() {
 
   updateBeardFieldState(dwarf);
 
-  updateDwarfPortrait(dwarf, customizerDeps);
-  updateDwarfTraitSummary(customizerDeps);
-  updateRosterList(customizerDeps);
-  updateDwarfTestButtonState();
-}
+    updateDwarfPortrait(dwarf, customizerDeps);
+    updateDwarfTraitSummary(customizerDeps);
+    updateRosterList(customizerDeps);
+  }
 
 function setActiveDwarf(index) {
   ensureDwarfParty();
@@ -11116,7 +11118,6 @@ function openDwarfCustomizer(options = {}) {
 
 function closeDwarfCustomizer(options = {}) {
   const { keepWorldInfoHidden = false, returnFocus = false } = options;
-  closeDwarfTest();
   if (elements.dwarfCustomizer) {
     elements.dwarfCustomizer.classList.add('hidden');
   }
@@ -18234,7 +18235,6 @@ function resetView(worldWidth, worldHeight) {
 }
 
 function handleResize() {
-  handleDwarfTestResize();
   if (!elements.canvasWrapper) {
     return;
   }
@@ -30338,14 +30338,13 @@ function syncInputsWithSettings() {
     });
   }
 
-  if (elements.dwarfCustomizerForm) {
-    elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      closeDwarfTest();
-      beginGame();
-      ensureMusicStarted();
-    });
-  }
+    if (elements.dwarfCustomizerForm) {
+      elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        beginGame();
+        ensureMusicStarted();
+      });
+    }
 
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.addEventListener('input', (event) => {
@@ -30427,28 +30426,24 @@ function syncInputsWithSettings() {
     const isFormControl =
       activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
-    if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        changeActiveDwarf(-1);
-        return;
+      if (isDwarfCustomizerVisible() && !isFormControl) {
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          changeActiveDwarf(-1);
+          return;
+        }
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          changeActiveDwarf(1);
+          return;
+        }
       }
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        changeActiveDwarf(1);
-        return;
-      }
-    }
 
-    if (event.key === 'Escape') {
-      if (isDwarfTestActive()) {
-        closeDwarfTest({ returnFocus: true });
-        return;
-      }
-      if (state.localView && state.localView.active) {
-        hideLocalView();
-        return;
-      }
+      if (event.key === 'Escape') {
+        if (state.localView && state.localView.active) {
+          hideLocalView();
+          return;
+        }
       if (structureDetailsState.visible) {
         hideStructureDetails({ returnFocus: true });
         return;
@@ -30513,9 +30508,6 @@ attachEvents(elements, {
   setupTraitSliderControl,
   isDwarfCustomizerVisible,
   closeDwarfCustomizer,
-  toggleDwarfTest,
-  isDwarfTestActive,
-  closeDwarfTest,
   structureDetailsState,
   setActiveStructureDetailsTab,
   isOptionsVisible: () => optionsVisible,

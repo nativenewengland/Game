@@ -789,10 +789,13 @@
     dwarfPortrait: document.getElementById("dwarf-portrait"),
     dwarfPortraitCanvas: document.getElementById("dwarf-portrait-canvas"),
     dwarfBodyPortraitCanvas: document.getElementById("dwarf-body-portrait-canvas"),
+<<<<<<< ours
     dwarfTestArea: document.getElementById("dwarf-test-area"),
     dwarfTestCanvas: document.getElementById("dwarf-test-canvas"),
     dwarfTestButton: document.getElementById("dwarf-test"),
     dwarfTestInstructions: document.querySelector(".dwarf-test-instructions"),
+=======
+>>>>>>> theirs
     dwarfTraitSummary: document.getElementById("dwarf-trait-summary"),
     dwarfTraitAttributes: document.getElementById("dwarf-trait-attributes")
   };
@@ -850,9 +853,6 @@
       setupTraitSliderControl: setupTraitSliderControl2,
       isDwarfCustomizerVisible: isDwarfCustomizerVisible2,
       closeDwarfCustomizer: closeDwarfCustomizer2,
-      toggleDwarfTest: toggleDwarfTest2,
-      isDwarfTestActive: isDwarfTestActive2,
-      closeDwarfTest: closeDwarfTest2,
       structureDetailsState: structureDetailsState2,
       setActiveStructureDetailsTab: setActiveStructureDetailsTab2,
       isOptionsVisible,
@@ -1615,16 +1615,18 @@
     if (elements2.dwarfCustomizerForm) {
       elements2.dwarfCustomizerForm.addEventListener("submit", (event) => {
         event.preventDefault();
-        closeDwarfTest2();
         beginGame2();
         ensureMusicStarted2();
       });
     }
+<<<<<<< ours
     if (elements2.dwarfTestButton) {
       elements2.dwarfTestButton.addEventListener("click", () => {
         toggleDwarfTest2("overworld", { trigger: elements2.dwarfTestButton });
       });
     }
+=======
+>>>>>>> theirs
     if (elements2.dwarfNameInput) {
       elements2.dwarfNameInput.addEventListener("input", (event) => {
         updateDwarfTrait2("name", event.target.value);
@@ -1690,7 +1692,7 @@
     document.addEventListener("keydown", (event) => {
       const activeElement = document.activeElement;
       const isFormControl = activeElement && ["INPUT", "SELECT", "TEXTAREA"].includes(activeElement.tagName);
-      if (isDwarfCustomizerVisible2() && !isFormControl && !isDwarfTestActive2()) {
+      if (isDwarfCustomizerVisible2() && !isFormControl) {
         if (event.key === "ArrowLeft") {
           event.preventDefault();
           changeActiveDwarf2(-1);
@@ -1703,10 +1705,6 @@
         }
       }
       if (event.key === "Escape") {
-        if (isDwarfTestActive2()) {
-          closeDwarfTest2({ returnFocus: true });
-          return;
-        }
         if (state2.localView && state2.localView.active) {
           hideLocalView2({ returnFocus: true });
           return;
@@ -12115,6 +12113,7 @@
     } catch (error) {
     }
   }
+<<<<<<< ours
   var defaultDwarfTestInstructionText = elements.dwarfTestInstructions && typeof elements.dwarfTestInstructions.textContent === "string" ? elements.dwarfTestInstructions.textContent.trim() : "Use the arrow keys or WASD to move your dwarf around the proving grounds.";
   var dwarfTestScenarios = {
     overworld: {
@@ -12517,6 +12516,8 @@
       canvas.style.transformOrigin = "";
     }
   }
+=======
+>>>>>>> theirs
   function matchesHighlightGroupValue(value, group) {
     const normalized = normalizeHighlightValue(value);
     if (!normalized || !group) {
@@ -13595,7 +13596,6 @@
     updateDwarfPortrait(dwarf, customizerDeps);
     updateDwarfTraitSummary(customizerDeps);
     updateRosterList(customizerDeps);
-    updateDwarfTestButtonState();
   }
   function setActiveDwarf(index) {
     ensureDwarfParty();
@@ -13702,7 +13702,6 @@
   }
   function closeDwarfCustomizer(options = {}) {
     const { keepWorldInfoHidden = false, returnFocus = false } = options;
-    closeDwarfTest();
     if (elements.dwarfCustomizer) {
       elements.dwarfCustomizer.classList.add("hidden");
     }
@@ -19731,7 +19730,6 @@
     hideStructureContextMenu();
   }
   function handleResize() {
-    handleDwarfTestResize();
     if (!elements.canvasWrapper) {
       return;
     }
@@ -30555,8 +30553,7 @@
     if (elements.dwarfCustomizerForm) {
       elements.dwarfCustomizerForm.addEventListener("submit", (event) => {
         event.preventDefault();
-        closeDwarfTest();
-        beginGame();
+            beginGame();
         ensureMusicStarted();
       });
     }
@@ -30631,7 +30628,7 @@
     document.addEventListener("keydown", (event) => {
       const activeElement = document.activeElement;
       const isFormControl = activeElement && ["INPUT", "SELECT", "TEXTAREA"].includes(activeElement.tagName);
-      if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
+      if (isDwarfCustomizerVisible() && !isFormControl) {
         if (event.key === "ArrowLeft") {
           event.preventDefault();
           changeActiveDwarf(-1);
@@ -30644,10 +30641,6 @@
         }
       }
       if (event.key === "Escape") {
-        if (isDwarfTestActive()) {
-          closeDwarfTest({ returnFocus: true });
-          return;
-        }
         if (state.localView && state.localView.active) {
           hideLocalView();
           return;
@@ -30714,9 +30707,6 @@
     setupTraitSliderControl,
     isDwarfCustomizerVisible,
     closeDwarfCustomizer,
-    toggleDwarfTest,
-    isDwarfTestActive,
-    closeDwarfTest,
     structureDetailsState,
     setActiveStructureDetailsTab,
     isOptionsVisible: () => optionsVisible,
