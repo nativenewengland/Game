@@ -5661,7 +5661,6 @@ const defaultCultureColorByKey = {
   dryad: '#58b072',
   leshy: '#3f7a4d',
   tuskar: '#7e91a8',
-  bandits: '#a16207',
   others: '#9e9e9e'
 };
 
@@ -6068,10 +6067,10 @@ function getDefaultCulturalBreakdownForSettlement(settlement) {
   if (type === 'banditCamp') {
     return [
       {
-        key: 'bandits',
-        label: 'Bandits',
+        key: 'humans',
+        label: 'Humans',
         percentage: 100,
-        color: defaultCultureColorByKey.bandits
+        color: defaultCultureColorByKey.humans
       }
     ];
   }
