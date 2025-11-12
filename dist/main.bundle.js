@@ -15245,7 +15245,7 @@
       }
       const lower = trimmed.toLowerCase();
       const normalized = lower.replace(/[_-]+/g, " ");
-      const candidates = [lower, normalized, normalized.replace(/[Ã¢â‚¬â„¢']/g, "")];
+      const candidates = [lower, normalized, normalized.replace(/['']/g, "")];
       candidates.forEach((candidate) => {
         if (!candidate) {
           return;
