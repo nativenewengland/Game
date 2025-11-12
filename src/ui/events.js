@@ -27,23 +27,20 @@ export function attachEvents(elements, deps) {
     generateRandomChronology,
     updateChronologyDisplay,
     openDwarfCustomizer,
-    closeWorldInfoModal,
-    applyMapSizePresetToState,
-    getMapSizePreset,
-    handleRegenerate,
-    changeActiveDwarf,
-    randomiseActiveDwarf,
-    playSoundEffect,
-    soundEffects,
-    ensureMusicStarted,
-    beginGame,
-    updateDwarfTrait,
-    setupTraitSliderControl,
-    isDwarfCustomizerVisible,
-    closeDwarfCustomizer,
-    toggleDwarfTest,
-    isDwarfTestActive,
-    closeDwarfTest,
+      closeWorldInfoModal,
+      applyMapSizePresetToState,
+      getMapSizePreset,
+      handleRegenerate,
+      changeActiveDwarf,
+      randomiseActiveDwarf,
+      playSoundEffect,
+      soundEffects,
+      ensureMusicStarted,
+      beginGame,
+      updateDwarfTrait,
+      setupTraitSliderControl,
+      isDwarfCustomizerVisible,
+      closeDwarfCustomizer,
     structureDetailsState,
     setActiveStructureDetailsTab,
     isOptionsVisible,
@@ -916,21 +913,8 @@ export function attachEvents(elements, deps) {
   if (elements.dwarfCustomizerForm) {
     elements.dwarfCustomizerForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      closeDwarfTest();
       beginGame();
       ensureMusicStarted();
-    });
-  }
-
-  if (elements.dwarfTestButton) {
-    elements.dwarfTestButton.addEventListener('click', () => {
-      toggleDwarfTest('overworld', { trigger: elements.dwarfTestButton });
-    });
-  }
-
-  if (elements.dwarfTestDungeonButton) {
-    elements.dwarfTestDungeonButton.addEventListener('click', () => {
-      toggleDwarfTest('dungeon', { trigger: elements.dwarfTestDungeonButton });
     });
   }
 
@@ -1006,7 +990,7 @@ export function attachEvents(elements, deps) {
     const activeElement = document.activeElement;
     const isFormControl = activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
-    if (isDwarfCustomizerVisible() && !isFormControl && !isDwarfTestActive()) {
+    if (isDwarfCustomizerVisible() && !isFormControl) {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
         changeActiveDwarf(-1);
@@ -1020,10 +1004,6 @@ export function attachEvents(elements, deps) {
     }
 
     if (event.key === 'Escape') {
-      if (isDwarfTestActive()) {
-        closeDwarfTest({ returnFocus: true });
-        return;
-      }
       if (state.localView && state.localView.active) {
         hideLocalView({ returnFocus: true });
         return;
