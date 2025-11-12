@@ -55,7 +55,7 @@ async function loadDwarfholdGenerator() {
 
 const drawSize = 32;
 const defaultWorldGenerationType = 'normal';
-const defaultLoadingStatusMessage = 'Calculating terrain layers…';
+const defaultLoadingStatusMessage = 'Calculating terrain layersâ€¦';
 const icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
 
 registerTiles('base', baseTileCoords);
@@ -336,99 +336,99 @@ function pickFactionColor(index) {
 }
 
 const dwarfholdCuratedNames = [
-  'KhazadÃ»n Kharn',
-  'Dhurnomli BÃ»r',
+  'KhazadÃƒÂ»n Kharn',
+  'Dhurnomli BÃƒÂ»r',
   'Zarak-az-Garaz',
-  'BarÃ»n-karag',
-  'GundÃ»m Garmak',
+  'BarÃƒÂ»n-karag',
+  'GundÃƒÂ»m Garmak',
   'Azar-khazad',
-  'ThÃ»rdrim Duraz',
+  'ThÃƒÂ»rdrim Duraz',
   'Kazad-grimil',
-  'BÃªrdÃ»m Barak',
+  'BÃƒÂªrdÃƒÂ»m Barak',
   'Zirak-khazad',
   'Uzbad-az-Narg',
   'Karag Gor',
-  'DÃ»mthÃ»r MÃ®n',
-  'GÃ»ndÃ¢l Grum',
-  'ThrÃ¢ng-khazad',
-  'KhirÃ»n-karag',
-  'Gazad-az-BÃ´r',
-  'DÃ»rgrim DÃ»m',
-  'BazÃ¢r-durin',
+  'DÃƒÂ»mthÃƒÂ»r MÃƒÂ®n',
+  'GÃƒÂ»ndÃƒÂ¢l Grum',
+  'ThrÃƒÂ¢ng-khazad',
+  'KhirÃƒÂ»n-karag',
+  'Gazad-az-BÃƒÂ´r',
+  'DÃƒÂ»rgrim DÃƒÂ»m',
+  'BazÃƒÂ¢r-durin',
   'Kharak-khazad',
-  'ThÃ»rdÃ»n Thrum',
-  'GazÃ»l-dÃ»m',
-  'Gor DÃ»rgheled',
-  'KhÃ»rmak DÃ»m',
-  'Barak-dÃ»rÃ»n',
+  'ThÃƒÂ»rdÃƒÂ»n Thrum',
+  'GazÃƒÂ»l-dÃƒÂ»m',
+  'Gor DÃƒÂ»rgheled',
+  'KhÃƒÂ»rmak DÃƒÂ»m',
+  'Barak-dÃƒÂ»rÃƒÂ»n',
   'Gadrin-karag',
-  'MornÃ»l Khazad',
-  'TharÃ»m BarÃ»n',
-  'DÃ»r-az-Gor',
-  'KÃ»zad Thrang',
-  'Grumkhaz DÃ»m',
-  'NarÃ»m-barak',
-  'KhÃ»ldar Narg',
-  'AzÃ»l-az-Khazad',
-  'DÃ»mthrÃ»n Garaz',
-  'Grom-dÃ»rin',
-  'KhazdÃ»l Garm',
-  'Burin-dÃ»m',
-  'Zarak-nÃ¢l',
-  'ThuldÃ»n Karag',
-  'DurgrÃ»n Khazad',
-  'Garak-dÃ»m',
-  'Tharn-az-DÃ»r',
-  'KharÃ»m GrimdÃ»m',
-  'BalzÃ»r KarÃ»n',
-  'MÃ»rkhaz Barak',
-  'ThrÃ»m-az-Garaz',
-  'GundÃ»l-dÃ»m',
-  'BÃ¢rgrin Khazad',
-  'DÃ»mbar ThÃ»r',
-  'NÃ»rgrim Karag',
-  'ThÃ»lÃ»m DÃ»rÃ»n',
-  'Kharn-dÃ»m-nÃ¢l',
-  'Throgar-MÃ¢l',
-  'KrundÃ»n Barak',
-  'DÃ»rkhal Varrum',
-  'GhazdÃ»r Grimbar',
-  'KuldÃ»n-DÃ»r',
-  'BrakÃ»l Thrang',
-  'Zarnak-dÃ»m',
+  'MornÃƒÂ»l Khazad',
+  'TharÃƒÂ»m BarÃƒÂ»n',
+  'DÃƒÂ»r-az-Gor',
+  'KÃƒÂ»zad Thrang',
+  'Grumkhaz DÃƒÂ»m',
+  'NarÃƒÂ»m-barak',
+  'KhÃƒÂ»ldar Narg',
+  'AzÃƒÂ»l-az-Khazad',
+  'DÃƒÂ»mthrÃƒÂ»n Garaz',
+  'Grom-dÃƒÂ»rin',
+  'KhazdÃƒÂ»l Garm',
+  'Burin-dÃƒÂ»m',
+  'Zarak-nÃƒÂ¢l',
+  'ThuldÃƒÂ»n Karag',
+  'DurgrÃƒÂ»n Khazad',
+  'Garak-dÃƒÂ»m',
+  'Tharn-az-DÃƒÂ»r',
+  'KharÃƒÂ»m GrimdÃƒÂ»m',
+  'BalzÃƒÂ»r KarÃƒÂ»n',
+  'MÃƒÂ»rkhaz Barak',
+  'ThrÃƒÂ»m-az-Garaz',
+  'GundÃƒÂ»l-dÃƒÂ»m',
+  'BÃƒÂ¢rgrin Khazad',
+  'DÃƒÂ»mbar ThÃƒÂ»r',
+  'NÃƒÂ»rgrim Karag',
+  'ThÃƒÂ»lÃƒÂ»m DÃƒÂ»rÃƒÂ»n',
+  'Kharn-dÃƒÂ»m-nÃƒÂ¢l',
+  'Throgar-MÃƒÂ¢l',
+  'KrundÃƒÂ»n Barak',
+  'DÃƒÂ»rkhal Varrum',
+  'GhazdÃƒÂ»r Grimbar',
+  'KuldÃƒÂ»n-DÃƒÂ»r',
+  'BrakÃƒÂ»l Thrang',
+  'Zarnak-dÃƒÂ»m',
   'Throldar Kharn',
-  'MÃ»ldÃ»n Grakhaz',
-  'DurmÃ»r BarÃ»n',
-  'MerÃ»n Barin',
-  'DÃ»ldar HarnÃ»m',
-  'BronarÃ»m',
-  'KharalÃ»n DÃ»r',
-  'GarÃ»n-kaz',
-  'ThÃ»rli BarÃ»n',
-  'Balnar DÃ»m',
-  'OrÃ»n Khazal',
-  'DÃ»mren ThÃ»r',
-  'BeldÃ»r KarÃ»n',
-  'UldÃ»m Nargaz',
-  'KhardÃ»l BarzÃ»n',
-  'ThÃ»rkÃ»n-MÃ´r',
-  'ZuldarÃ»n',
-  'DÃ»rthang KharÃ»z',
-  'BrÃ»m-dÃ»l',
-  'GÃ»ldÃ»n Thazrak',
-  'KhazÃ»r-Dumli',
-  'ThrÃ»nÃ»l BarÃ»z',
-  'MÃ»rzan-DÃ»m',
-  'GrendÃ»l Varrin',
+  'MÃƒÂ»ldÃƒÂ»n Grakhaz',
+  'DurmÃƒÂ»r BarÃƒÂ»n',
+  'MerÃƒÂ»n Barin',
+  'DÃƒÂ»ldar HarnÃƒÂ»m',
+  'BronarÃƒÂ»m',
+  'KharalÃƒÂ»n DÃƒÂ»r',
+  'GarÃƒÂ»n-kaz',
+  'ThÃƒÂ»rli BarÃƒÂ»n',
+  'Balnar DÃƒÂ»m',
+  'OrÃƒÂ»n Khazal',
+  'DÃƒÂ»mren ThÃƒÂ»r',
+  'BeldÃƒÂ»r KarÃƒÂ»n',
+  'UldÃƒÂ»m Nargaz',
+  'KhardÃƒÂ»l BarzÃƒÂ»n',
+  'ThÃƒÂ»rkÃƒÂ»n-MÃƒÂ´r',
+  'ZuldarÃƒÂ»n',
+  'DÃƒÂ»rthang KharÃƒÂ»z',
+  'BrÃƒÂ»m-dÃƒÂ»l',
+  'GÃƒÂ»ldÃƒÂ»n Thazrak',
+  'KhazÃƒÂ»r-Dumli',
+  'ThrÃƒÂ»nÃƒÂ»l BarÃƒÂ»z',
+  'MÃƒÂ»rzan-DÃƒÂ»m',
+  'GrendÃƒÂ»l Varrin',
   'Kharnfell',
-  'DÃ»mholm',
+  'DÃƒÂ»mholm',
   'Barakdel',
-  'ThÃ»rdÃ»n Holdfast',
-  'Gromir KarÃ»n',
-  'KharÃ»m Tor',
+  'ThÃƒÂ»rdÃƒÂ»n Holdfast',
+  'Gromir KarÃƒÂ»n',
+  'KharÃƒÂ»m Tor',
   "Thulgar's Deep",
-  'BrumkeldÃ»m',
-  'DÃ»rmar Hollow',
+  'BrumkeldÃƒÂ»m',
+  'DÃƒÂ»rmar Hollow',
   'the Great Halls of Thorbardin'
 ];
 
@@ -3470,7 +3470,7 @@ function generateMineDetails(name, random, options = {}) {
       name: overseerName
     },
     foundedYearsAgo,
-    prominentGroup: `${crew} â€” Shift ${shiftCount}`,
+    prominentGroup: `${crew} Ã¢â‚¬â€ Shift ${shiftCount}`,
     prominentGroupLabel: 'Crew in Charge',
     majorGuilds,
     majorGuildsLabel: 'Guild Presence',
@@ -9339,7 +9339,7 @@ function updateFrequencyDisplay(element, value) {
     label = 'Very High';
   }
   if (element && typeof element.textContent !== 'undefined') {
-    element.textContent = `${percentage}% — ${label}`;
+    element.textContent = `${percentage}% â€” ${label}`;
   }
 }
 
@@ -9376,444 +9376,6 @@ function playSoundEffect(audio) {
   }
 }
 
-<<<<<<< ours
-const defaultDwarfTestInstructionText =
-  elements.dwarfTestInstructions && typeof elements.dwarfTestInstructions.textContent === 'string'
-    ? elements.dwarfTestInstructions.textContent.trim()
-    : 'Use the arrow keys or WASD to move your dwarf around the proving grounds.';
-
-const dwarfTestScenarios = {
-  overworld: {
-    mapPath: 'maps/map1.tmj',
-    tilesetFallbacks: new Map([
-      ['../../../../rpg-village-tileset v1.0 (wonderdot)/Tiled/Village_Tileset.tsx', 'Village_Tileset.tsx'],
-      ['Village_Tileset.tsx', 'Village_Tileset.tsx']
-    ]),
-    backgroundColor: '#10131c',
-    instructions: defaultDwarfTestInstructionText
-  }
-};
-
-const dwarfTestResourceCache = new Map();
-
-let dwarfTestState = {
-  active: false,
-  mode: 'overworld'
-};
-
-function getDwarfTestScenario(key) {
-  return dwarfTestScenarios[key] || dwarfTestScenarios.overworld;
-}
-
-function normalizeDwarfTestMode(value) {
-  if (typeof value === 'string' && value.toLowerCase() === 'overworld') {
-    return 'overworld';
-  }
-  return 'overworld';
-}
-
-function setDwarfTestInstructions(message, { isError = false } = {}) {
-  if (elements.dwarfTestInstructions) {
-    elements.dwarfTestInstructions.textContent = message;
-  }
-  if (elements.dwarfTestArea) {
-    if (isError) {
-      elements.dwarfTestArea.setAttribute('data-error', 'true');
-    } else {
-      elements.dwarfTestArea.removeAttribute('data-error');
-    }
-  }
-}
-
-function isDwarfTestActive() {
-  return Boolean(dwarfTestState.active);
-}
-
-function toggleDwarfTest(requestedMode = 'overworld') {
-  const mode = normalizeDwarfTestMode(requestedMode);
-  if (dwarfTestState.active && dwarfTestState.mode === mode) {
-    closeDwarfTest();
-    return;
-  }
-  closeDwarfTest();
-  dwarfTestState.active = true;
-  dwarfTestState.mode = mode;
-  if (elements.dwarfTestArea) {
-    elements.dwarfTestArea.classList.remove('hidden');
-    elements.dwarfTestArea.setAttribute('aria-hidden', 'false');
-  }
-  if (elements.dwarfTestCanvas) {
-    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'true');
-  }
-  updateDwarfTestButtonState();
-  startDwarfTestScenario(mode);
-}
-
-function closeDwarfTest(options = {}) {
-  const { returnFocus = false } = options;
-  if (!dwarfTestState.active) {
-    return;
-  }
-  dwarfTestState.active = false;
-  dwarfTestState.mode = 'overworld';
-  if (elements.dwarfTestArea) {
-    elements.dwarfTestArea.classList.add('hidden');
-    elements.dwarfTestArea.setAttribute('aria-hidden', 'true');
-  }
-  if (elements.dwarfTestCanvas) {
-    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'true');
-    elements.dwarfTestCanvas.style.transform = '';
-    elements.dwarfTestCanvas.style.transformOrigin = '';
-  }
-  setDwarfTestInstructions(defaultDwarfTestInstructionText);
-  updateDwarfTestButtonState();
-  if (returnFocus && elements.dwarfTestButton) {
-    elements.dwarfTestButton.focus();
-  }
-}
-
-function updateDwarfTestButtonState() {
-  const isActive = isDwarfTestActive();
-  if (elements.dwarfTestButton) {
-    const pressed = isActive && dwarfTestState.mode === 'overworld';
-    elements.dwarfTestButton.setAttribute('aria-pressed', pressed ? 'true' : 'false');
-  }
-}
-
-async function ensureDwarfTestResources(mode) {
-  if (typeof window === 'undefined' || typeof fetch !== 'function') {
-    throw new Error('Dwarf test resources cannot be loaded without browser fetch support.');
-  }
-  const key = normalizeDwarfTestMode(mode);
-  const cached = dwarfTestResourceCache.get(key);
-  if (cached) {
-    if (cached.data) {
-      return cached.data;
-    }
-    return cached.promise;
-  }
-  const scenario = getDwarfTestScenario(key);
-  const loadPromise = loadDwarfTestScenarioResources(scenario)
-    .then((data) => {
-      dwarfTestResourceCache.set(key, { data });
-      return data;
-    })
-    .catch((error) => {
-      dwarfTestResourceCache.delete(key);
-      throw error;
-    });
-  dwarfTestResourceCache.set(key, { promise: loadPromise });
-  return loadPromise;
-}
-
-async function startDwarfTestScenario(mode) {
-  const scenarioKey = normalizeDwarfTestMode(mode);
-  const scenario = getDwarfTestScenario(scenarioKey);
-  if (!elements.dwarfTestCanvas) {
-    setDwarfTestInstructions(scenario.instructions || defaultDwarfTestInstructionText);
-    return;
-  }
-  setDwarfTestInstructions('Loading test arena…');
-  try {
-    const resources = await ensureDwarfTestResources(scenarioKey);
-    drawDwarfTestScenario(elements.dwarfTestCanvas, resources, scenario);
-    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'false');
-    setDwarfTestInstructions(scenario.instructions || defaultDwarfTestInstructionText);
-  } catch (error) {
-    console.error(`Failed to load ${scenarioKey} dwarf test arena`, error);
-    elements.dwarfTestCanvas.setAttribute('aria-hidden', 'true');
-    setDwarfTestInstructions('Unable to load the test arena. Please try again later.', { isError: true });
-  } finally {
-    handleDwarfTestResize();
-  }
-}
-
-async function loadDwarfTestScenarioResources(scenario) {
-  const baseUrl = new URL(scenario.mapPath, window.location.href);
-  const response = await fetch(baseUrl.href);
-  if (!response.ok) {
-    throw new Error(`Failed to load map "${scenario.mapPath}" (status ${response.status})`);
-  }
-  const mapData = await response.json();
-  const tilesets = [];
-  if (Array.isArray(mapData.tilesets)) {
-    for (const tilesetRef of mapData.tilesets) {
-      try {
-        const descriptor = await loadDwarfTestTileset(tilesetRef, baseUrl, scenario, mapData);
-        if (descriptor) {
-          tilesets.push(descriptor);
-        }
-      } catch (error) {
-        console.warn('Unable to load dwarf test tileset', tilesetRef?.source || tilesetRef, error);
-      }
-    }
-  }
-  tilesets.sort((a, b) => a.firstgid - b.firstgid);
-  return { map: mapData, tilesets };
-}
-
-async function loadDwarfTestTileset(tilesetRef, mapUrl, scenario, mapData) {
-  if (!tilesetRef) {
-    return null;
-  }
-  const mapTileWidth = mapData?.tilewidth || 16;
-  const mapTileHeight = mapData?.tileheight || 16;
-  if (typeof tilesetRef.source === 'string' && tilesetRef.source.length > 0) {
-    return loadExternalDwarfTestTileset(tilesetRef, mapUrl, scenario, mapTileWidth, mapTileHeight);
-  }
-  if (typeof tilesetRef.image === 'string' && tilesetRef.image.length > 0) {
-    const imageUrl = new URL(tilesetRef.image, mapUrl);
-    const image = await loadImageAsset(imageUrl.href);
-    const tileWidth = tilesetRef.tilewidth || mapTileWidth;
-    const tileHeight = tilesetRef.tileheight || mapTileHeight;
-    const columns =
-      tilesetRef.columns || Math.max(1, Math.floor(image.width / Math.max(tileWidth, 1)));
-    const margin = tilesetRef.margin || 0;
-    const spacing = tilesetRef.spacing || 0;
-    return {
-      firstgid: tilesetRef.firstgid || 1,
-      tileWidth,
-      tileHeight,
-      columns,
-      margin,
-      spacing,
-      image
-    };
-  }
-  return null;
-}
-
-async function loadExternalDwarfTestTileset(tilesetRef, mapUrl, scenario, mapTileWidth, mapTileHeight) {
-  const fallbackPath = resolveTilesetFallback(scenario, tilesetRef.source);
-  const primaryUrl = new URL(tilesetRef.source, mapUrl);
-  const fallbackUrl = fallbackPath ? new URL(fallbackPath, mapUrl) : null;
-  const { text: tsxText, urlUsed } = await fetchTextWithFallback(primaryUrl.href, fallbackUrl ? fallbackUrl.href : null);
-  const parsed = parseTilesetXml(tsxText);
-  if (!parsed || !parsed.imageSource) {
-    throw new Error(`Tileset "${tilesetRef.source}" is missing an image definition.`);
-  }
-  const resolvedImageUrl = new URL(parsed.imageSource, urlUsed);
-  const image = await loadImageAsset(resolvedImageUrl.href);
-  const tileWidth = parsed.tileWidth || mapTileWidth;
-  const tileHeight = parsed.tileHeight || mapTileHeight;
-  const usableWidth = image.width - parsed.margin * 2 + parsed.spacing;
-  const columns =
-    parsed.columns || Math.max(1, Math.floor(usableWidth / Math.max(tileWidth + parsed.spacing, 1)));
-  return {
-    firstgid: tilesetRef.firstgid || 1,
-    tileWidth,
-    tileHeight,
-    columns,
-    margin: parsed.margin,
-    spacing: parsed.spacing,
-    image
-  };
-}
-
-async function fetchTextWithFallback(primaryUrl, fallbackUrl) {
-  try {
-    const response = await fetch(primaryUrl);
-    if (response.ok) {
-      return { text: await response.text(), urlUsed: primaryUrl };
-    }
-    if (!fallbackUrl) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-  } catch (error) {
-    if (!fallbackUrl) {
-      throw error;
-    }
-  }
-  if (!fallbackUrl) {
-    throw new Error(`Request to ${primaryUrl} failed and no fallback was provided.`);
-  }
-  const fallbackResponse = await fetch(fallbackUrl);
-  if (!fallbackResponse.ok) {
-    throw new Error(`Fallback request failed with status ${fallbackResponse.status}`);
-  }
-  return { text: await fallbackResponse.text(), urlUsed: fallbackUrl };
-}
-
-function normaliseTilesetPath(value) {
-  return typeof value === 'string' ? value.replace(/\\/g, '/').trim() : '';
-}
-
-function resolveTilesetFallback(scenario, source) {
-  if (!scenario || !scenario.tilesetFallbacks) {
-    return null;
-  }
-  const normalized = normaliseTilesetPath(source);
-  const basenameIndex = normalized.lastIndexOf('/');
-  const basename = basenameIndex >= 0 ? normalized.slice(basenameIndex + 1) : normalized;
-  const fallbacks = scenario.tilesetFallbacks;
-  if (fallbacks instanceof Map) {
-    if (fallbacks.has(source)) {
-      return fallbacks.get(source);
-    }
-    if (fallbacks.has(normalized)) {
-      return fallbacks.get(normalized);
-    }
-    if (fallbacks.has(basename)) {
-      return fallbacks.get(basename);
-    }
-    return null;
-  }
-  if (typeof fallbacks === 'object') {
-    return fallbacks[source] || fallbacks[normalized] || fallbacks[basename] || null;
-  }
-  return null;
-}
-
-function loadImageAsset(url) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`Failed to load image at ${url}`));
-    image.src = url;
-  });
-}
-
-function parseTilesetXml(xmlText) {
-  if (typeof DOMParser === 'undefined') {
-    throw new Error('DOMParser is not available to parse tileset data.');
-  }
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlText, 'application/xml');
-  if (doc.getElementsByTagName('parsererror').length > 0) {
-    throw new Error('Unable to parse tileset XML.');
-  }
-  const tilesetElement = doc.querySelector('tileset');
-  if (!tilesetElement) {
-    throw new Error('Tileset XML is missing the <tileset> element.');
-  }
-  const imageElement = tilesetElement.querySelector('image');
-  if (!imageElement) {
-    throw new Error('Tileset XML is missing the <image> element.');
-  }
-  const tileWidth = Number.parseInt(tilesetElement.getAttribute('tilewidth') || '', 10) || 0;
-  const tileHeight = Number.parseInt(tilesetElement.getAttribute('tileheight') || '', 10) || 0;
-  const margin = Number.parseInt(tilesetElement.getAttribute('margin') || '0', 10) || 0;
-  const spacing = Number.parseInt(tilesetElement.getAttribute('spacing') || '0', 10) || 0;
-  const columnsAttr = tilesetElement.getAttribute('columns');
-  const columns = columnsAttr ? Number.parseInt(columnsAttr, 10) : 0;
-  return {
-    tileWidth,
-    tileHeight,
-    margin,
-    spacing,
-    columns: Number.isFinite(columns) && columns > 0 ? columns : undefined,
-    imageSource: imageElement.getAttribute('source') || ''
-  };
-}
-
-function drawDwarfTestScenario(canvas, resources, scenario) {
-  const context = canvas.getContext('2d');
-  if (!context) {
-    return;
-  }
-  const map = resources?.map;
-  if (!map || !map.width || !map.height) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    return;
-  }
-  const tileWidth = map.tilewidth || 16;
-  const tileHeight = map.tileheight || 16;
-  const width = map.width * tileWidth;
-  const height = map.height * tileHeight;
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
-  context.clearRect(0, 0, width, height);
-  const background = map.backgroundcolor || scenario.backgroundColor;
-  if (background) {
-    context.fillStyle = background;
-    context.fillRect(0, 0, width, height);
-  }
-  const layers = Array.isArray(map.layers)
-    ? map.layers.filter((layer) => layer.type === 'tilelayer' && layer.visible !== false && Array.isArray(layer.data))
-    : [];
-  if (!layers.length) {
-    return;
-  }
-  const tilesets = Array.isArray(resources.tilesets) ? resources.tilesets : [];
-  const sortedTilesets = tilesets.slice().sort((a, b) => a.firstgid - b.firstgid);
-  layers.forEach((layer) => {
-    const { data } = layer;
-    for (let index = 0; index < data.length; index += 1) {
-      const gid = data[index];
-      if (!gid) {
-        continue;
-      }
-      const tileset = findTilesetForGid(sortedTilesets, gid);
-      if (!tileset || !tileset.image) {
-        continue;
-      }
-      const localId = gid - tileset.firstgid;
-      if (localId < 0) {
-        continue;
-      }
-      const columns = tileset.columns || 1;
-      const sx = tileset.margin + (localId % columns) * (tileset.tileWidth + tileset.spacing);
-      const sy = tileset.margin + Math.floor(localId / columns) * (tileset.tileHeight + tileset.spacing);
-      const dx = (index % map.width) * tileWidth;
-      const dy = Math.floor(index / map.width) * tileHeight;
-      context.drawImage(
-        tileset.image,
-        sx,
-        sy,
-        tileset.tileWidth,
-        tileset.tileHeight,
-        dx,
-        dy,
-        tileWidth,
-        tileHeight
-      );
-    }
-  });
-}
-
-function findTilesetForGid(tilesets, gid) {
-  for (let index = tilesets.length - 1; index >= 0; index -= 1) {
-    const tileset = tilesets[index];
-    if (gid >= tileset.firstgid) {
-      return tileset;
-    }
-  }
-  return null;
-}
-
-function handleDwarfTestResize() {
-  if (!dwarfTestState.active || !elements.dwarfTestArea || !elements.dwarfTestCanvas) {
-    return;
-  }
-  const canvas = elements.dwarfTestCanvas;
-  const area = elements.dwarfTestArea;
-  if (!canvas.width || !canvas.height) {
-    canvas.style.transform = '';
-    canvas.style.transformOrigin = '';
-    return;
-  }
-  const availableWidth = area.clientWidth;
-  const availableHeight = area.clientHeight;
-  if (!availableWidth || !availableHeight) {
-    canvas.style.transform = '';
-    canvas.style.transformOrigin = '';
-    return;
-  }
-  const scale = Math.min(availableWidth / canvas.width, availableHeight / canvas.height, 1);
-  if (Number.isFinite(scale) && scale > 0 && scale < 0.999) {
-    canvas.style.transform = `scale(${scale})`;
-    canvas.style.transformOrigin = 'top left';
-  } else {
-    canvas.style.transform = '';
-    canvas.style.transformOrigin = '';
-  }
-}
-
-=======
->>>>>>> theirs
 function matchesHighlightGroupValue(value, group) {
   const normalized = normalizeHighlightValue(value);
   if (!normalized || !group) {
@@ -9913,81 +9475,81 @@ const dwarfClanOptions = [
   { value: 'deepmantle', label: 'Deepmantle' },
   { value: 'ashmantle', label: 'Ashmantle' },
   { value: 'shadowhearth', label: 'Shadowhearth' },
-  { value: 'angrund', label: 'Angrund â€” royal clan of Karak Eight Peaks' },
-  { value: 'angrulok', label: 'Angrulok â€” royal clan of Karak Kadrin' },
-  { value: 'badrikk', label: 'Badrikk â€” Karak Azul; metalsmiths' },
-  { value: 'barruk', label: 'Barruk â€” North of Karag Dron; miners' },
-  { value: 'burrdrik', label: 'Burrdrik â€” Karak Azul; metalsmiths' },
-  { value: 'bronzebeards', label: 'Bronzebeards â€” Karak Norn; cannon-makers' },
-  { value: 'bronzefist', label: 'Bronzefist â€” Karak Eight Peaks; lode wardens' },
-  { value: 'copperback', label: 'Copperback â€” Karak Eight Peaks; miners' },
-  { value: 'cragbrow_barak_varr_engineers', label: 'Cragbrow â€” Barak Varr; engineers' },
-  { value: 'cragbrow_karak_azul_miners', label: 'Cragbrow â€” Karak Azul; miners' },
-  { value: 'craghand', label: 'Craghand â€” Karak Eight Peaks; miners' },
-  { value: 'cragtooth', label: 'Cragtooth â€” Karak Azgaraz; ?' },
-  { value: 'donarkhun', label: 'Donarkhun â€” royal clan of Karak Azul' },
-  { value: 'dourback', label: 'Dourback â€” Karak Eight Peaks; brewers' },
-  { value: 'dragonback', label: 'Dragonback â€” Ekrund; clan of Josef Bugman' },
-  { value: 'drakebeard', label: 'Drakebeard â€” royal clan of Karak Kadrin' },
-  { value: 'drazhkarak', label: 'Drazhkarak â€” royal clan of Karak Hirn' },
-  { value: 'dunrakin', label: 'Dunrakin â€” Karak Azul; brewers' },
-  { value: 'firehand', label: 'Firehand â€” Karak Azul; metalsmiths' },
-  { value: 'firehelm', label: 'Firehelm â€” Karak Eight Peaks; miners' },
-  { value: 'flintbeard', label: 'Flintbeard â€” Karak Azgaraz; ?' },
-  { value: 'flinthand_karak_azul_engineers', label: 'Flinthand â€” Karak Azul; engineers' },
-  { value: 'flinthand_k8p_miners', label: 'Flinthand â€” Karak Eight Peaks; miners' },
-  { value: 'flintheart', label: 'Flintheart â€” Karak Eight Peaks; metalsmiths' },
-  { value: 'fooger', label: 'Fooger â€” Expatriate; merchants' },
-  { value: 'forgehand', label: 'Forgehand â€” Karak Azul; runesmiths' },
-  { value: 'grimhelm', label: 'Grimhelm â€” Karak Azgaraz; ?' },
-  { value: 'grimstone', label: 'Grimstone â€” Karak Eight Peaks; prospectors' },
-  { value: 'growlsh', label: "Growlsh â€” infamous drinkers; disgraced after failing to protect High King Alrik Deathdealer's daughter" },
-  { value: 'gunnarsson', label: 'Gunnarsson â€” unknown; possibly Barak Varr' },
-  { value: 'gunnisson_first', label: 'Gunnisson (First contingent) â€” Karaz-a-Karak; warriors' },
-  { value: 'gunnisson_second', label: 'Gunnisson (Second contingent) â€” destroyed attempting to reclaim Mount Silverspear' },
-  { value: 'gunnisson_third', label: 'Gunnisson (Third contingent) â€” Itinerant; Orc-hunters' },
-  { value: 'guttrik', label: 'Guttrik â€” Karak Eight Peaks; rope-makers' },
-  { value: 'halgakrin', label: 'Halgakrin â€” Karak Azul; carpenters' },
-  { value: 'hammerback', label: 'Hammerback â€” Karak Azgaraz; miners' },
-  { value: 'helhein', label: 'Helhein â€” Karak Eight Peaks; warriors' },
-  { value: 'irebeard', label: 'Irebeard â€” Karak Azgaraz; ?' },
-  { value: 'ironbeard', label: 'Ironbeard â€” Karag Durak' },
-  { value: 'ironarm', label: 'Ironarm â€” Karak Azgaraz; ?' },
-  { value: 'ironback', label: 'Ironback â€” Karak Eight Peaks; miners' },
-  { value: 'ironfinger', label: 'Ironfinger â€” Karak Azul; from Eight Peaks; metalsmiths' },
-  { value: 'ironfist_cities', label: 'Ironfist â€” Metallschlacke, Neiderwind, Altdorf, Ubersreik' },
-  { value: 'ironforge', label: 'Ironforge â€” Karak Azul; runesmiths' },
-  { value: 'ironhammer', label: 'Ironhammer â€” Karak Azul; metalsmiths' },
-  { value: 'ironpick', label: 'Ironpick â€” royal clan of Karak Norn' },
-  { value: 'ironspike', label: 'Ironspike â€” Karak Eight Peaks; carpenters' },
-  { value: 'izorgrung', label: 'Izorgrung â€” royal clan of Karak Izor' },
-  { value: 'kaznagar', label: 'Kaznagar â€” Karak Azul; jewelsmiths' },
-  { value: 'magrest', label: 'Magrest â€” Karak Kadrin; miners (possibly)' },
-  { value: 'norgrimlings', label: 'Norgrimlings â€” Karak Eight Peaks; miners' },
-  { value: 'oakbarrel', label: 'Oakbarrel â€” Neiderwind, Altdorf; brewers' },
-  { value: 'redbeard', label: 'Redbeard â€” Karak Azul; runesmiths' },
-  { value: 'silverscar', label: 'Silverscar â€” Karak Azgaraz; engineers' },
-  { value: 'skorrun', label: 'Skorrun â€” Karak Azgal; foreign imports merchants' },
-  { value: 'steelcrag', label: 'Steelcrag â€” Karak Azgaraz; ?' },
-  { value: 'sternbeard', label: 'Sternbeard â€” Karak Azul' },
-  { value: 'stoneback', label: 'Stoneback â€” Karak Eight Peaks; masons' },
-  { value: 'stonebeard_k8p_engineers', label: 'Stonebeard â€” Karak Eight Peaks; engineers' },
-  { value: 'stonebeater', label: 'Stonebeater â€” Karak Azul; masons' },
-  { value: 'stonebreakers', label: 'Stonebreakers â€” Zhufbar; masons and miners' },
-  { value: 'stonehammer_cities', label: 'Stonehammer â€” Neiderwind, Altdorf' },
-  { value: 'stonehand', label: 'Stonehand â€” Karak Azul; masons' },
-  { value: 'stoneheart', label: 'Stoneheart â€” Karak Azul; masons' },
-  { value: 'stoutgirth', label: 'Stoutgirth â€” Karak Azul; brewers' },
-  { value: 'stoutpeak', label: 'Stoutpeak â€” Karak Azul; carpenters' },
-  { value: 'svengeln', label: 'Svengeln â€” Karak Azul; prospectors' },
-  { value: 'threkkson', label: 'Threkkson â€” Karak Azul; lode wardens' },
-  { value: 'thundergun', label: 'Thundergun â€” Metallschlacke, Altdorf' },
-  { value: 'thunderheart', label: 'Thunderheart â€” Karak Azul; jewelsmiths' },
-  { value: 'thunderstone', label: 'Thunderstone â€” Karak Azgaraz; runesmiths' },
-  { value: 'ullek', label: 'Ullek (the Ullekssons) â€” Karaz-a-Karak; warriors' },
-  { value: 'varnskan', label: 'Varnskan â€” Karak Azul; miners' },
-  { value: 'vorgrund', label: 'Vorgrund â€” unknown; possibly Karak Kadrin' },
-  { value: 'yinlinsson', label: 'Yinlinsson â€” Karaz-a-Karak; brewers' },
+  { value: 'angrund', label: 'Angrund Ã¢â‚¬â€ royal clan of Karak Eight Peaks' },
+  { value: 'angrulok', label: 'Angrulok Ã¢â‚¬â€ royal clan of Karak Kadrin' },
+  { value: 'badrikk', label: 'Badrikk Ã¢â‚¬â€ Karak Azul; metalsmiths' },
+  { value: 'barruk', label: 'Barruk Ã¢â‚¬â€ North of Karag Dron; miners' },
+  { value: 'burrdrik', label: 'Burrdrik Ã¢â‚¬â€ Karak Azul; metalsmiths' },
+  { value: 'bronzebeards', label: 'Bronzebeards Ã¢â‚¬â€ Karak Norn; cannon-makers' },
+  { value: 'bronzefist', label: 'Bronzefist Ã¢â‚¬â€ Karak Eight Peaks; lode wardens' },
+  { value: 'copperback', label: 'Copperback Ã¢â‚¬â€ Karak Eight Peaks; miners' },
+  { value: 'cragbrow_barak_varr_engineers', label: 'Cragbrow Ã¢â‚¬â€ Barak Varr; engineers' },
+  { value: 'cragbrow_karak_azul_miners', label: 'Cragbrow Ã¢â‚¬â€ Karak Azul; miners' },
+  { value: 'craghand', label: 'Craghand Ã¢â‚¬â€ Karak Eight Peaks; miners' },
+  { value: 'cragtooth', label: 'Cragtooth Ã¢â‚¬â€ Karak Azgaraz; ?' },
+  { value: 'donarkhun', label: 'Donarkhun Ã¢â‚¬â€ royal clan of Karak Azul' },
+  { value: 'dourback', label: 'Dourback Ã¢â‚¬â€ Karak Eight Peaks; brewers' },
+  { value: 'dragonback', label: 'Dragonback Ã¢â‚¬â€ Ekrund; clan of Josef Bugman' },
+  { value: 'drakebeard', label: 'Drakebeard Ã¢â‚¬â€ royal clan of Karak Kadrin' },
+  { value: 'drazhkarak', label: 'Drazhkarak Ã¢â‚¬â€ royal clan of Karak Hirn' },
+  { value: 'dunrakin', label: 'Dunrakin Ã¢â‚¬â€ Karak Azul; brewers' },
+  { value: 'firehand', label: 'Firehand Ã¢â‚¬â€ Karak Azul; metalsmiths' },
+  { value: 'firehelm', label: 'Firehelm Ã¢â‚¬â€ Karak Eight Peaks; miners' },
+  { value: 'flintbeard', label: 'Flintbeard Ã¢â‚¬â€ Karak Azgaraz; ?' },
+  { value: 'flinthand_karak_azul_engineers', label: 'Flinthand Ã¢â‚¬â€ Karak Azul; engineers' },
+  { value: 'flinthand_k8p_miners', label: 'Flinthand Ã¢â‚¬â€ Karak Eight Peaks; miners' },
+  { value: 'flintheart', label: 'Flintheart Ã¢â‚¬â€ Karak Eight Peaks; metalsmiths' },
+  { value: 'fooger', label: 'Fooger Ã¢â‚¬â€ Expatriate; merchants' },
+  { value: 'forgehand', label: 'Forgehand Ã¢â‚¬â€ Karak Azul; runesmiths' },
+  { value: 'grimhelm', label: 'Grimhelm Ã¢â‚¬â€ Karak Azgaraz; ?' },
+  { value: 'grimstone', label: 'Grimstone Ã¢â‚¬â€ Karak Eight Peaks; prospectors' },
+  { value: 'growlsh', label: "Growlsh Ã¢â‚¬â€ infamous drinkers; disgraced after failing to protect High King Alrik Deathdealer's daughter" },
+  { value: 'gunnarsson', label: 'Gunnarsson Ã¢â‚¬â€ unknown; possibly Barak Varr' },
+  { value: 'gunnisson_first', label: 'Gunnisson (First contingent) Ã¢â‚¬â€ Karaz-a-Karak; warriors' },
+  { value: 'gunnisson_second', label: 'Gunnisson (Second contingent) Ã¢â‚¬â€ destroyed attempting to reclaim Mount Silverspear' },
+  { value: 'gunnisson_third', label: 'Gunnisson (Third contingent) Ã¢â‚¬â€ Itinerant; Orc-hunters' },
+  { value: 'guttrik', label: 'Guttrik Ã¢â‚¬â€ Karak Eight Peaks; rope-makers' },
+  { value: 'halgakrin', label: 'Halgakrin Ã¢â‚¬â€ Karak Azul; carpenters' },
+  { value: 'hammerback', label: 'Hammerback Ã¢â‚¬â€ Karak Azgaraz; miners' },
+  { value: 'helhein', label: 'Helhein Ã¢â‚¬â€ Karak Eight Peaks; warriors' },
+  { value: 'irebeard', label: 'Irebeard Ã¢â‚¬â€ Karak Azgaraz; ?' },
+  { value: 'ironbeard', label: 'Ironbeard Ã¢â‚¬â€ Karag Durak' },
+  { value: 'ironarm', label: 'Ironarm Ã¢â‚¬â€ Karak Azgaraz; ?' },
+  { value: 'ironback', label: 'Ironback Ã¢â‚¬â€ Karak Eight Peaks; miners' },
+  { value: 'ironfinger', label: 'Ironfinger Ã¢â‚¬â€ Karak Azul; from Eight Peaks; metalsmiths' },
+  { value: 'ironfist_cities', label: 'Ironfist Ã¢â‚¬â€ Metallschlacke, Neiderwind, Altdorf, Ubersreik' },
+  { value: 'ironforge', label: 'Ironforge Ã¢â‚¬â€ Karak Azul; runesmiths' },
+  { value: 'ironhammer', label: 'Ironhammer Ã¢â‚¬â€ Karak Azul; metalsmiths' },
+  { value: 'ironpick', label: 'Ironpick Ã¢â‚¬â€ royal clan of Karak Norn' },
+  { value: 'ironspike', label: 'Ironspike Ã¢â‚¬â€ Karak Eight Peaks; carpenters' },
+  { value: 'izorgrung', label: 'Izorgrung Ã¢â‚¬â€ royal clan of Karak Izor' },
+  { value: 'kaznagar', label: 'Kaznagar Ã¢â‚¬â€ Karak Azul; jewelsmiths' },
+  { value: 'magrest', label: 'Magrest Ã¢â‚¬â€ Karak Kadrin; miners (possibly)' },
+  { value: 'norgrimlings', label: 'Norgrimlings Ã¢â‚¬â€ Karak Eight Peaks; miners' },
+  { value: 'oakbarrel', label: 'Oakbarrel Ã¢â‚¬â€ Neiderwind, Altdorf; brewers' },
+  { value: 'redbeard', label: 'Redbeard Ã¢â‚¬â€ Karak Azul; runesmiths' },
+  { value: 'silverscar', label: 'Silverscar Ã¢â‚¬â€ Karak Azgaraz; engineers' },
+  { value: 'skorrun', label: 'Skorrun Ã¢â‚¬â€ Karak Azgal; foreign imports merchants' },
+  { value: 'steelcrag', label: 'Steelcrag Ã¢â‚¬â€ Karak Azgaraz; ?' },
+  { value: 'sternbeard', label: 'Sternbeard Ã¢â‚¬â€ Karak Azul' },
+  { value: 'stoneback', label: 'Stoneback Ã¢â‚¬â€ Karak Eight Peaks; masons' },
+  { value: 'stonebeard_k8p_engineers', label: 'Stonebeard Ã¢â‚¬â€ Karak Eight Peaks; engineers' },
+  { value: 'stonebeater', label: 'Stonebeater Ã¢â‚¬â€ Karak Azul; masons' },
+  { value: 'stonebreakers', label: 'Stonebreakers Ã¢â‚¬â€ Zhufbar; masons and miners' },
+  { value: 'stonehammer_cities', label: 'Stonehammer Ã¢â‚¬â€ Neiderwind, Altdorf' },
+  { value: 'stonehand', label: 'Stonehand Ã¢â‚¬â€ Karak Azul; masons' },
+  { value: 'stoneheart', label: 'Stoneheart Ã¢â‚¬â€ Karak Azul; masons' },
+  { value: 'stoutgirth', label: 'Stoutgirth Ã¢â‚¬â€ Karak Azul; brewers' },
+  { value: 'stoutpeak', label: 'Stoutpeak Ã¢â‚¬â€ Karak Azul; carpenters' },
+  { value: 'svengeln', label: 'Svengeln Ã¢â‚¬â€ Karak Azul; prospectors' },
+  { value: 'threkkson', label: 'Threkkson Ã¢â‚¬â€ Karak Azul; lode wardens' },
+  { value: 'thundergun', label: 'Thundergun Ã¢â‚¬â€ Metallschlacke, Altdorf' },
+  { value: 'thunderheart', label: 'Thunderheart Ã¢â‚¬â€ Karak Azul; jewelsmiths' },
+  { value: 'thunderstone', label: 'Thunderstone Ã¢â‚¬â€ Karak Azgaraz; runesmiths' },
+  { value: 'ullek', label: 'Ullek (the Ullekssons) Ã¢â‚¬â€ Karaz-a-Karak; warriors' },
+  { value: 'varnskan', label: 'Varnskan Ã¢â‚¬â€ Karak Azul; miners' },
+  { value: 'vorgrund', label: 'Vorgrund Ã¢â‚¬â€ unknown; possibly Karak Kadrin' },
+  { value: 'yinlinsson', label: 'Yinlinsson Ã¢â‚¬â€ Karaz-a-Karak; brewers' },
   { value: 'ironfist', label: 'Ironfist' },
   { value: 'coppervein', label: 'Coppervein' },
   { value: 'graniteheart', label: 'Graniteheart' },
@@ -10346,97 +9908,97 @@ const dwarfHairStyles = {
     hideHairColorDescription: true
   },
   straight_shoulder: {
-    label: 'Straight â€” Shoulder Length',
+    label: 'Straight Ã¢â‚¬â€ Shoulder Length',
     description: 'shoulder-length straight',
     sheet: 'hair',
     rows: { default: 5 }
   },
   straight_short: {
-    label: 'Straight â€” Short Crop',
+    label: 'Straight Ã¢â‚¬â€ Short Crop',
     description: 'short straight',
     sheet: 'hair',
     rows: { default: 4 }
   },
   straight_braided: {
-    label: 'Straight â€” Braided Tail',
+    label: 'Straight Ã¢â‚¬â€ Braided Tail',
     description: 'braided straight',
     sheet: 'hair',
     rows: { default: 8 }
   },
   curly_stubble: {
-    label: 'Curly â€” Close Shave',
+    label: 'Curly Ã¢â‚¬â€ Close Shave',
     description: 'closely shorn curly',
     sheet: 'hairCurly',
     rows: { default: 0 }
   },
   curly_short_unkempt: {
-    label: 'Curly â€” Short & Tousled',
+    label: 'Curly Ã¢â‚¬â€ Short & Tousled',
     description: 'short unkempt curly',
     sheet: 'hairCurly',
     rows: { default: 1 }
   },
   curly_mid_unkempt: {
-    label: 'Curly â€” Mid-Length Tousled',
+    label: 'Curly Ã¢â‚¬â€ Mid-Length Tousled',
     description: 'mid-length unkempt curly',
     sheet: 'hairCurly',
     rows: { default: 2 }
   },
   curly_long_unkempt: {
-    label: 'Curly â€” Long & Tousled',
+    label: 'Curly Ã¢â‚¬â€ Long & Tousled',
     description: 'long unkempt curly',
     sheet: 'hairCurly',
     rows: { default: 3 }
   },
   curly_short_combed: {
-    label: 'Curly â€” Short Combed',
+    label: 'Curly Ã¢â‚¬â€ Short Combed',
     description: 'short combed curly',
     sheet: 'hairCurly',
     rows: { default: 4 }
   },
   curly_mid_combed: {
-    label: 'Curly â€” Mid-Length Combed',
+    label: 'Curly Ã¢â‚¬â€ Mid-Length Combed',
     description: 'mid-length combed curly',
     sheet: 'hairCurly',
     rows: { default: 5 }
   },
   curly_long_combed: {
-    label: 'Curly â€” Long Combed',
+    label: 'Curly Ã¢â‚¬â€ Long Combed',
     description: 'long combed curly',
     sheet: 'hairCurly',
     rows: { default: 6 }
   },
   curly_short_braided: {
-    label: 'Curly â€” Short Braids',
+    label: 'Curly Ã¢â‚¬â€ Short Braids',
     description: 'short braided curly',
     sheet: 'hairCurly',
     rows: { default: 7 }
   },
   curly_mid_braided: {
-    label: 'Curly â€” Mid Braids',
+    label: 'Curly Ã¢â‚¬â€ Mid Braids',
     description: 'mid-length braided curly',
     sheet: 'hairCurly',
     rows: { default: 8 }
   },
   curly_long_braided: {
-    label: 'Curly â€” Long Braids',
+    label: 'Curly Ã¢â‚¬â€ Long Braids',
     description: 'long braided curly',
     sheet: 'hairCurly',
     rows: { default: 9 }
   },
   curly_short_double_braids: {
-    label: 'Curly â€” Short Double Braids',
+    label: 'Curly Ã¢â‚¬â€ Short Double Braids',
     description: 'short double-braided curly',
     sheet: 'hairCurly',
     rows: { default: 10 }
   },
   curly_mid_double_braids: {
-    label: 'Curly â€” Mid Double Braids',
+    label: 'Curly Ã¢â‚¬â€ Mid Double Braids',
     description: 'mid-length double-braided curly',
     sheet: 'hairCurly',
     rows: { default: 11 }
   },
   curly_long_double_braids: {
-    label: 'Curly â€” Long Double Braids',
+    label: 'Curly Ã¢â‚¬â€ Long Double Braids',
     description: 'long double-braided curly',
     sheet: 'hairCurly',
     rows: { default: 12 }
@@ -10598,8 +10160,8 @@ const editableDwarfTraits = new Set([
 const dwarfNamePools = {
   female: [
     'Domas',
-    'RigÃ²th',
-    'KadÃ´l',
+    'RigÃƒÂ²th',
+    'KadÃƒÂ´l',
     'Meng',
     'Onol',
     'Rith',
@@ -10617,7 +10179,7 @@ const dwarfNamePools = {
     'Stukos',
     'Likot',
     'Datan',
-    'MÃ¶rul',
+    'MÃƒÂ¶rul',
     'Logem',
     'Rakust',
     'Thorin',
@@ -10715,7 +10277,7 @@ function updateTraitSliderDisplay(trait, sliderElement, valueElement, indexOverr
       }
       valueElement.dataset.traitValue = option.value;
     } else {
-      valueElement.textContent = 'â€”';
+      valueElement.textContent = 'Ã¢â‚¬â€';
       valueElement.style.removeProperty('--trait-color');
       valueElement.classList.remove('has-color');
       delete valueElement.dataset.traitValue;
@@ -11293,7 +10855,7 @@ function updateChronologyDisplay() {
     );
     return;
   }
-  elements.worldInfoChronology.textContent = 'â€”';
+  elements.worldInfoChronology.textContent = 'Ã¢â‚¬â€';
 }
 
 function updateWorldInfoSizeDisplay() {
@@ -12988,7 +12550,7 @@ const verticalGridLines = hasYearsData
     peakIndex === sanitizedPoints.length - 1 && peakPoint.population === endPoint.population
       ? 'Current peak'
       : 'Peak';
-  const peakHeading = peakLabel ? `${peakLabelText} â€¢ ${peakLabel}` : peakLabelText;
+  const peakHeading = peakLabel ? `${peakLabelText} Ã¢â‚¬Â¢ ${peakLabel}` : peakLabelText;
 
   return `
     <section class="structure-details-history-chart">
@@ -13162,10 +12724,10 @@ function enhancePopulationHistoryCharts(root) {
 
       const populationText = Number.isFinite(point.population)
         ? point.population.toLocaleString('en-US')
-        : 'â€”';
+        : 'Ã¢â‚¬â€';
       const timeLabel = typeof point.label === 'string' ? point.label : '';
       const descriptorText = descriptor ? ` ${descriptor}` : '';
-      tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` â€¢ ${timeLabel}` : ''}`;
+      tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` Ã¢â‚¬Â¢ ${timeLabel}` : ''}`;
       tooltip.hidden = false;
       tooltip.setAttribute('aria-hidden', 'false');
       tooltip.style.left = `${tooltipX}px`;
@@ -13407,7 +12969,7 @@ function gatherStructureDescriptorInfo(tile) {
     }
     const lower = trimmed.toLowerCase();
     const normalized = lower.replace(/[_-]+/g, ' ');
-    const candidates = [lower, normalized, normalized.replace(/[â€™']/g, '')];
+    const candidates = [lower, normalized, normalized.replace(/[Ã¢â‚¬â„¢']/g, '')];
     candidates.forEach((candidate) => {
       if (!candidate) {
         return;
@@ -14243,7 +13805,7 @@ function buildStructureTooltipContent(tile) {
       ? describeInfluenceStrength(tile.culturalInfluence.strength)
       : null;
     if (cultureLabel) {
-      const value = influenceDescription ? `${cultureLabel} â€” ${influenceDescription}` : cultureLabel;
+      const value = influenceDescription ? `${cultureLabel} Ã¢â‚¬â€ ${influenceDescription}` : cultureLabel;
       entries.push({ label: 'Cultural Tie', value });
     }
     const areaName = tile.areaName;
@@ -14380,7 +13942,7 @@ function buildStructureTooltipContent(tile) {
     if (dominantCulture) {
       const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
       const value = influenceDescription
-        ? `${dominantCulture.label} â€” ${influenceDescription}`
+        ? `${dominantCulture.label} Ã¢â‚¬â€ ${influenceDescription}`
         : dominantCulture.label;
       entries.push({ label: 'Cultural Influence', value });
     }
@@ -14500,7 +14062,7 @@ function buildStructureTooltipContent(tile) {
   if (dominantCulture) {
     const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
     const value = influenceDescription
-      ? `${dominantCulture.label} â€” ${influenceDescription}`
+      ? `${dominantCulture.label} Ã¢â‚¬â€ ${influenceDescription}`
       : dominantCulture.label;
     entries.push({ label: 'Cultural Influence', value });
   }
@@ -14639,7 +14201,7 @@ function resolveLocalSubtitle(tile) {
       subtitleParts.push(tile.biomeType.charAt(0).toUpperCase() + tile.biomeType.slice(1));
     }
   }
-  return subtitleParts.length > 0 ? subtitleParts.join(' â€¢ ') : 'Local terrain preview';
+  return subtitleParts.length > 0 ? subtitleParts.join(' Ã¢â‚¬Â¢ ') : 'Local terrain preview';
 }
 
 function renderDwarfholdScreen() {
@@ -14710,7 +14272,7 @@ function renderDwarfholdScreen() {
       const baseLabel = `World Tile ${view.tileX + 1}, ${view.tileY + 1}`;
       const sizeLabel =
         Number.isFinite(customMap.width) && Number.isFinite(customMap.height)
-          ? ` â€” ${customMap.width}Ã—${customMap.height} tiles`
+          ? ` Ã¢â‚¬â€ ${customMap.width}Ãƒâ€”${customMap.height} tiles`
           : '';
       elements.dwarfholdCoordinates.textContent = `${baseLabel}${sizeLabel}`;
     } else {
@@ -15233,10 +14795,10 @@ function refreshLocalMapPreview() {
     }
 
     if (elements.localMapCoordinates) {
-      const sourceLabel = `${patch.worldWidth}Ã—${patch.worldHeight}`;
-      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} â€” ${
+      const sourceLabel = `${patch.worldWidth}Ãƒâ€”${patch.worldHeight}`;
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} Ã¢â‚¬â€ ${
         patch.width
-      }Ã—${patch.height} tiles (sampled from ${sourceLabel})`;
+      }Ãƒâ€”${patch.height} tiles (sampled from ${sourceLabel})`;
     }
 
     if (elements.localMapDetails) {
@@ -15337,9 +14899,9 @@ function refreshLocalMapPreview() {
     }
 
     if (elements.localMapCoordinates) {
-      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} â€” ${
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} Ã¢â‚¬â€ ${
         mapWidth
-      }Ã—${mapHeight} tiles`;
+      }Ãƒâ€”${mapHeight} tiles`;
     }
 
     if (elements.localMapDetails) {
@@ -15530,9 +15092,9 @@ function refreshLocalMapPreview() {
   }
 
   if (elements.localMapCoordinates) {
-    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} â€” ${
+    elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} Ã¢â‚¬â€ ${
       tileWidth
-    }Ã—${tileHeight} tiles`;
+    }Ãƒâ€”${tileHeight} tiles`;
   }
 
   if (elements.localMapDetails) {
@@ -15589,7 +15151,7 @@ function refreshLocalMapPreview() {
     'aria-label',
     `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${
       localView.centerY + 1
-    } at approximately ${zoom.toFixed(2)}Ã— zoom.`
+    } at approximately ${zoom.toFixed(2)}Ãƒâ€” zoom.`
   );
   canvas.setAttribute('aria-hidden', 'false');
 
@@ -17637,7 +17199,7 @@ function buildRulerPortraitPanelSection(resolvedName, details) {
     figureLabelParts.push(secondaryLine);
   }
   const figureAriaLabel =
-    figureLabelParts.length > 0 ? figureLabelParts.join(' â€” ') : 'Ruler portrait';
+    figureLabelParts.length > 0 ? figureLabelParts.join(' Ã¢â‚¬â€ ') : 'Ruler portrait';
   const styleParts = [];
   if (theme.background) {
     styleParts.push(`--portrait-background:${theme.background}`);
@@ -17687,7 +17249,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   if (typeLabel) {
     subtitleParts.push(typeLabel);
   }
-  const subtitle = subtitleParts.join(' â€¢ ') || null;
+  const subtitle = subtitleParts.join(' Ã¢â‚¬Â¢ ') || null;
 
   const overviewEntries = [];
   const addOverviewEntry = (label, value) => {
@@ -17763,7 +17325,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   if (dominantCulture) {
     const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
     const value = influenceDescription
-      ? `${dominantCulture.label} â€” ${influenceDescription}`
+      ? `${dominantCulture.label} Ã¢â‚¬â€ ${influenceDescription}`
       : dominantCulture.label;
     addOverviewEntry('Cultural Influence', value);
   }
@@ -29553,7 +29115,7 @@ function drawWorld(world, options = {}) {
   const chronologyLabel = isChronologyValid(state.worldChronology)
     ? `${formatChronology(state.worldChronology.year, state.worldChronology.age)} | `
     : '';
-  elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}Ã—${height}`;
+  elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}Ãƒâ€”${height}`;
 }
 
 function updateLoadingProgress(value) {
@@ -29728,7 +29290,7 @@ function beginGame() {
     elements.gameContainer.setAttribute('aria-busy', 'true');
   }
   elements.seedDisplay.textContent = '';
-  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
+  runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your worldâ€¦' })
     .then(() => {
       if (elements.gameContainer) {
         elements.gameContainer.classList.remove('game-container--loading');
@@ -29788,16 +29350,16 @@ async function generateAndRender(seedOverride) {
   ensureLandMaskForProfile(state.settings.worldGenerationType);
   hideMapTooltip();
   hideLocalView({ suppressRedraw: true });
-  await updateLoadingProgressAndWait(5, 'Loading tile sheetsâ€¦');
+  await updateLoadingProgressAndWait(5, 'Loading tile sheetsÃ¢â‚¬Â¦');
   await loadTileSheetImages();
-  await updateLoadingProgressAndWait(12, 'Stabilizing ley linesâ€¦');
-  await updateLoadingProgressAndWait(28, 'Surveying continental platesâ€¦');
+  await updateLoadingProgressAndWait(12, 'Stabilizing ley linesÃ¢â‚¬Â¦');
+  await updateLoadingProgressAndWait(28, 'Surveying continental platesÃ¢â‚¬Â¦');
   const world = createWorld(seedToUse);
-  await updateLoadingProgressAndWait(68, 'Raising civilizationsâ€¦');
+  await updateLoadingProgressAndWait(68, 'Raising civilizationsÃ¢â‚¬Â¦');
   state.currentWorld = world;
-  await updateLoadingProgressAndWait(82, 'Rendering cartographyâ€¦');
+  await updateLoadingProgressAndWait(82, 'Rendering cartographyÃ¢â‚¬Â¦');
   drawWorld(world);
-  await updateLoadingProgressAndWait(92, 'Finalizing expedition briefsâ€¦', { force: true });
+  await updateLoadingProgressAndWait(92, 'Finalizing expedition briefsÃ¢â‚¬Â¦', { force: true });
   if (elements.seedInput) {
     elements.seedInput.value = world.seedString;
   }
@@ -29904,7 +29466,7 @@ function handleRegenerate() {
   updateWorldInfoSeedDisplay(randomSeed);
   return runWithLoadingScreen(
     () => generateAndRender(randomSeed),
-    { statusText: 'Forging a new world…' }
+    { statusText: 'Forging a new worldâ€¦' }
   ).catch((error) => {
     console.error('Failed to regenerate world.', error);
   });
@@ -30175,7 +29737,7 @@ function syncInputsWithSettings() {
       applyFormSettings();
       const previousSource = closeOptionsScreen();
       if (previousSource === 'game' && elements.gameContainer) {
-        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realmâ€¦' }).catch((error) => {
+        runWithLoadingScreen(() => generateAndRender(), { statusText: 'Updating the realmÃ¢â‚¬Â¦' }).catch((error) => {
           console.error('Failed to apply new world settings.', error);
         });
       }

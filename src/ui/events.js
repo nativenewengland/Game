@@ -918,15 +918,6 @@ export function attachEvents(elements, deps) {
     });
   }
 
-<<<<<<< ours
-  if (elements.dwarfTestButton) {
-    elements.dwarfTestButton.addEventListener('click', () => {
-      toggleDwarfTest('overworld', { trigger: elements.dwarfTestButton });
-    });
-  }
-
-=======
->>>>>>> theirs
   if (elements.dwarfNameInput) {
     elements.dwarfNameInput.addEventListener('input', (event) => {
       updateDwarfTrait('name', event.target.value);
