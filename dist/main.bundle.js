@@ -637,21 +637,18 @@
   }
 
   // src/ui/elements.js
-
   function getElementById(id) {
     if (typeof document === "undefined") {
       return null;
     }
     return document.getElementById(id);
   }
-
   function queryAll(selector) {
     if (typeof document === "undefined") {
       return [];
     }
     return Array.from(document.querySelectorAll(selector));
   }
-
   var elementInitialisers = {
     startButton: () => getElementById("start-button"),
     titleScreen: () => getElementById("title-screen"),
@@ -789,13 +786,11 @@
     dwarfTraitSummary: () => getElementById("dwarf-trait-summary"),
     dwarfTraitAttributes: () => getElementById("dwarf-trait-attributes")
   };
-
   var elements = {};
-
   function hydrateElements() {
-    Object.entries(elementInitialisers).forEach(([key, initialise]) => {
+    Object.entries(elementInitialisers).forEach(([key, initialise2]) => {
       try {
-        var value = initialise();
+        const value = initialise2();
         if (value === void 0) {
           elements[key] = key === "structureDetailsTabs" ? [] : null;
         } else {
@@ -807,17 +802,13 @@
     });
     return elements;
   }
-
   hydrateElements();
-
   function getMusicToggleElements() {
     return [elements.musicToggle, elements.musicToggleGame].filter(Boolean);
   }
-
   function getMusicVolumeInputs() {
     return [elements.musicVolume, elements.musicVolumeGame].filter(Boolean);
   }
-
   function getMusicNowPlayingDisplays() {
     return [elements.musicNowPlaying, elements.musicNowPlayingGame].filter(Boolean);
   }
@@ -3790,7 +3781,7 @@
   }
   var drawSize = 32;
   var defaultWorldGenerationType = "normal";
-  var defaultLoadingStatusMessage = "Calculating terrain layers\u2026";
+  var defaultLoadingStatusMessage = "Calculating terrain layers\xE2\u20AC\xA6";
   var icebergOverlayKeySet = new Set(Object.keys(icebergTileCoords || {}));
   registerTiles("base", baseTileCoords);
   registerTiles("worldDetails", riverTileCoords);
@@ -4028,99 +4019,99 @@
     return factionColorPalette[normalized];
   }
   var dwarfholdCuratedNames = [
-    "Khazad\xC3\xBBn Kharn",
-    "Dhurnomli B\xC3\xBBr",
+    "Khazad\xC3\u0192\xC2\xBBn Kharn",
+    "Dhurnomli B\xC3\u0192\xC2\xBBr",
     "Zarak-az-Garaz",
-    "Bar\xC3\xBBn-karag",
-    "Gund\xC3\xBBm Garmak",
+    "Bar\xC3\u0192\xC2\xBBn-karag",
+    "Gund\xC3\u0192\xC2\xBBm Garmak",
     "Azar-khazad",
-    "Th\xC3\xBBrdrim Duraz",
+    "Th\xC3\u0192\xC2\xBBrdrim Duraz",
     "Kazad-grimil",
-    "B\xC3\xAArd\xC3\xBBm Barak",
+    "B\xC3\u0192\xC2\xAArd\xC3\u0192\xC2\xBBm Barak",
     "Zirak-khazad",
     "Uzbad-az-Narg",
     "Karag Gor",
-    "D\xC3\xBBmth\xC3\xBBr M\xC3\xAEn",
-    "G\xC3\xBBnd\xC3\xA2l Grum",
-    "Thr\xC3\xA2ng-khazad",
-    "Khir\xC3\xBBn-karag",
-    "Gazad-az-B\xC3\xB4r",
-    "D\xC3\xBBrgrim D\xC3\xBBm",
-    "Baz\xC3\xA2r-durin",
+    "D\xC3\u0192\xC2\xBBmth\xC3\u0192\xC2\xBBr M\xC3\u0192\xC2\xAEn",
+    "G\xC3\u0192\xC2\xBBnd\xC3\u0192\xC2\xA2l Grum",
+    "Thr\xC3\u0192\xC2\xA2ng-khazad",
+    "Khir\xC3\u0192\xC2\xBBn-karag",
+    "Gazad-az-B\xC3\u0192\xC2\xB4r",
+    "D\xC3\u0192\xC2\xBBrgrim D\xC3\u0192\xC2\xBBm",
+    "Baz\xC3\u0192\xC2\xA2r-durin",
     "Kharak-khazad",
-    "Th\xC3\xBBrd\xC3\xBBn Thrum",
-    "Gaz\xC3\xBBl-d\xC3\xBBm",
-    "Gor D\xC3\xBBrgheled",
-    "Kh\xC3\xBBrmak D\xC3\xBBm",
-    "Barak-d\xC3\xBBr\xC3\xBBn",
+    "Th\xC3\u0192\xC2\xBBrd\xC3\u0192\xC2\xBBn Thrum",
+    "Gaz\xC3\u0192\xC2\xBBl-d\xC3\u0192\xC2\xBBm",
+    "Gor D\xC3\u0192\xC2\xBBrgheled",
+    "Kh\xC3\u0192\xC2\xBBrmak D\xC3\u0192\xC2\xBBm",
+    "Barak-d\xC3\u0192\xC2\xBBr\xC3\u0192\xC2\xBBn",
     "Gadrin-karag",
-    "Morn\xC3\xBBl Khazad",
-    "Thar\xC3\xBBm Bar\xC3\xBBn",
-    "D\xC3\xBBr-az-Gor",
-    "K\xC3\xBBzad Thrang",
-    "Grumkhaz D\xC3\xBBm",
-    "Nar\xC3\xBBm-barak",
-    "Kh\xC3\xBBldar Narg",
-    "Az\xC3\xBBl-az-Khazad",
-    "D\xC3\xBBmthr\xC3\xBBn Garaz",
-    "Grom-d\xC3\xBBrin",
-    "Khazd\xC3\xBBl Garm",
-    "Burin-d\xC3\xBBm",
-    "Zarak-n\xC3\xA2l",
-    "Thuld\xC3\xBBn Karag",
-    "Durgr\xC3\xBBn Khazad",
-    "Garak-d\xC3\xBBm",
-    "Tharn-az-D\xC3\xBBr",
-    "Khar\xC3\xBBm Grimd\xC3\xBBm",
-    "Balz\xC3\xBBr Kar\xC3\xBBn",
-    "M\xC3\xBBrkhaz Barak",
-    "Thr\xC3\xBBm-az-Garaz",
-    "Gund\xC3\xBBl-d\xC3\xBBm",
-    "B\xC3\xA2rgrin Khazad",
-    "D\xC3\xBBmbar Th\xC3\xBBr",
-    "N\xC3\xBBrgrim Karag",
-    "Th\xC3\xBBl\xC3\xBBm D\xC3\xBBr\xC3\xBBn",
-    "Kharn-d\xC3\xBBm-n\xC3\xA2l",
-    "Throgar-M\xC3\xA2l",
-    "Krund\xC3\xBBn Barak",
-    "D\xC3\xBBrkhal Varrum",
-    "Ghazd\xC3\xBBr Grimbar",
-    "Kuld\xC3\xBBn-D\xC3\xBBr",
-    "Brak\xC3\xBBl Thrang",
-    "Zarnak-d\xC3\xBBm",
+    "Morn\xC3\u0192\xC2\xBBl Khazad",
+    "Thar\xC3\u0192\xC2\xBBm Bar\xC3\u0192\xC2\xBBn",
+    "D\xC3\u0192\xC2\xBBr-az-Gor",
+    "K\xC3\u0192\xC2\xBBzad Thrang",
+    "Grumkhaz D\xC3\u0192\xC2\xBBm",
+    "Nar\xC3\u0192\xC2\xBBm-barak",
+    "Kh\xC3\u0192\xC2\xBBldar Narg",
+    "Az\xC3\u0192\xC2\xBBl-az-Khazad",
+    "D\xC3\u0192\xC2\xBBmthr\xC3\u0192\xC2\xBBn Garaz",
+    "Grom-d\xC3\u0192\xC2\xBBrin",
+    "Khazd\xC3\u0192\xC2\xBBl Garm",
+    "Burin-d\xC3\u0192\xC2\xBBm",
+    "Zarak-n\xC3\u0192\xC2\xA2l",
+    "Thuld\xC3\u0192\xC2\xBBn Karag",
+    "Durgr\xC3\u0192\xC2\xBBn Khazad",
+    "Garak-d\xC3\u0192\xC2\xBBm",
+    "Tharn-az-D\xC3\u0192\xC2\xBBr",
+    "Khar\xC3\u0192\xC2\xBBm Grimd\xC3\u0192\xC2\xBBm",
+    "Balz\xC3\u0192\xC2\xBBr Kar\xC3\u0192\xC2\xBBn",
+    "M\xC3\u0192\xC2\xBBrkhaz Barak",
+    "Thr\xC3\u0192\xC2\xBBm-az-Garaz",
+    "Gund\xC3\u0192\xC2\xBBl-d\xC3\u0192\xC2\xBBm",
+    "B\xC3\u0192\xC2\xA2rgrin Khazad",
+    "D\xC3\u0192\xC2\xBBmbar Th\xC3\u0192\xC2\xBBr",
+    "N\xC3\u0192\xC2\xBBrgrim Karag",
+    "Th\xC3\u0192\xC2\xBBl\xC3\u0192\xC2\xBBm D\xC3\u0192\xC2\xBBr\xC3\u0192\xC2\xBBn",
+    "Kharn-d\xC3\u0192\xC2\xBBm-n\xC3\u0192\xC2\xA2l",
+    "Throgar-M\xC3\u0192\xC2\xA2l",
+    "Krund\xC3\u0192\xC2\xBBn Barak",
+    "D\xC3\u0192\xC2\xBBrkhal Varrum",
+    "Ghazd\xC3\u0192\xC2\xBBr Grimbar",
+    "Kuld\xC3\u0192\xC2\xBBn-D\xC3\u0192\xC2\xBBr",
+    "Brak\xC3\u0192\xC2\xBBl Thrang",
+    "Zarnak-d\xC3\u0192\xC2\xBBm",
     "Throldar Kharn",
-    "M\xC3\xBBld\xC3\xBBn Grakhaz",
-    "Durm\xC3\xBBr Bar\xC3\xBBn",
-    "Mer\xC3\xBBn Barin",
-    "D\xC3\xBBldar Harn\xC3\xBBm",
-    "Bronar\xC3\xBBm",
-    "Kharal\xC3\xBBn D\xC3\xBBr",
-    "Gar\xC3\xBBn-kaz",
-    "Th\xC3\xBBrli Bar\xC3\xBBn",
-    "Balnar D\xC3\xBBm",
-    "Or\xC3\xBBn Khazal",
-    "D\xC3\xBBmren Th\xC3\xBBr",
-    "Beld\xC3\xBBr Kar\xC3\xBBn",
-    "Uld\xC3\xBBm Nargaz",
-    "Khard\xC3\xBBl Barz\xC3\xBBn",
-    "Th\xC3\xBBrk\xC3\xBBn-M\xC3\xB4r",
-    "Zuldar\xC3\xBBn",
-    "D\xC3\xBBrthang Khar\xC3\xBBz",
-    "Br\xC3\xBBm-d\xC3\xBBl",
-    "G\xC3\xBBld\xC3\xBBn Thazrak",
-    "Khaz\xC3\xBBr-Dumli",
-    "Thr\xC3\xBBn\xC3\xBBl Bar\xC3\xBBz",
-    "M\xC3\xBBrzan-D\xC3\xBBm",
-    "Grend\xC3\xBBl Varrin",
+    "M\xC3\u0192\xC2\xBBld\xC3\u0192\xC2\xBBn Grakhaz",
+    "Durm\xC3\u0192\xC2\xBBr Bar\xC3\u0192\xC2\xBBn",
+    "Mer\xC3\u0192\xC2\xBBn Barin",
+    "D\xC3\u0192\xC2\xBBldar Harn\xC3\u0192\xC2\xBBm",
+    "Bronar\xC3\u0192\xC2\xBBm",
+    "Kharal\xC3\u0192\xC2\xBBn D\xC3\u0192\xC2\xBBr",
+    "Gar\xC3\u0192\xC2\xBBn-kaz",
+    "Th\xC3\u0192\xC2\xBBrli Bar\xC3\u0192\xC2\xBBn",
+    "Balnar D\xC3\u0192\xC2\xBBm",
+    "Or\xC3\u0192\xC2\xBBn Khazal",
+    "D\xC3\u0192\xC2\xBBmren Th\xC3\u0192\xC2\xBBr",
+    "Beld\xC3\u0192\xC2\xBBr Kar\xC3\u0192\xC2\xBBn",
+    "Uld\xC3\u0192\xC2\xBBm Nargaz",
+    "Khard\xC3\u0192\xC2\xBBl Barz\xC3\u0192\xC2\xBBn",
+    "Th\xC3\u0192\xC2\xBBrk\xC3\u0192\xC2\xBBn-M\xC3\u0192\xC2\xB4r",
+    "Zuldar\xC3\u0192\xC2\xBBn",
+    "D\xC3\u0192\xC2\xBBrthang Khar\xC3\u0192\xC2\xBBz",
+    "Br\xC3\u0192\xC2\xBBm-d\xC3\u0192\xC2\xBBl",
+    "G\xC3\u0192\xC2\xBBld\xC3\u0192\xC2\xBBn Thazrak",
+    "Khaz\xC3\u0192\xC2\xBBr-Dumli",
+    "Thr\xC3\u0192\xC2\xBBn\xC3\u0192\xC2\xBBl Bar\xC3\u0192\xC2\xBBz",
+    "M\xC3\u0192\xC2\xBBrzan-D\xC3\u0192\xC2\xBBm",
+    "Grend\xC3\u0192\xC2\xBBl Varrin",
     "Kharnfell",
-    "D\xC3\xBBmholm",
+    "D\xC3\u0192\xC2\xBBmholm",
     "Barakdel",
-    "Th\xC3\xBBrd\xC3\xBBn Holdfast",
-    "Gromir Kar\xC3\xBBn",
-    "Khar\xC3\xBBm Tor",
+    "Th\xC3\u0192\xC2\xBBrd\xC3\u0192\xC2\xBBn Holdfast",
+    "Gromir Kar\xC3\u0192\xC2\xBBn",
+    "Khar\xC3\u0192\xC2\xBBm Tor",
     "Thulgar's Deep",
-    "Brumkeld\xC3\xBBm",
-    "D\xC3\xBBrmar Hollow",
+    "Brumkeld\xC3\u0192\xC2\xBBm",
+    "D\xC3\u0192\xC2\xBBrmar Hollow",
     "the Great Halls of Thorbardin"
   ];
   var dwarfholdNamePrefixes = [
@@ -6886,7 +6877,7 @@
         name: overseerName
       },
       foundedYearsAgo,
-      prominentGroup: `${crew} \xE2\u20AC\u201D Shift ${shiftCount}`,
+      prominentGroup: `${crew} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Shift ${shiftCount}`,
       prominentGroupLabel: "Crew in Charge",
       majorGuilds,
       majorGuildsLabel: "Guild Presence",
@@ -12088,7 +12079,7 @@
       label = "Very High";
     }
     if (element && typeof element.textContent !== "undefined") {
-      element.textContent = `${percentage}% \u2014 ${label}`;
+      element.textContent = `${percentage}% \xE2\u20AC\u201D ${label}`;
     }
   }
   var audioState = {
@@ -12199,81 +12190,81 @@
     { value: "deepmantle", label: "Deepmantle" },
     { value: "ashmantle", label: "Ashmantle" },
     { value: "shadowhearth", label: "Shadowhearth" },
-    { value: "angrund", label: "Angrund \xE2\u20AC\u201D royal clan of Karak Eight Peaks" },
-    { value: "angrulok", label: "Angrulok \xE2\u20AC\u201D royal clan of Karak Kadrin" },
-    { value: "badrikk", label: "Badrikk \xE2\u20AC\u201D Karak Azul; metalsmiths" },
-    { value: "barruk", label: "Barruk \xE2\u20AC\u201D North of Karag Dron; miners" },
-    { value: "burrdrik", label: "Burrdrik \xE2\u20AC\u201D Karak Azul; metalsmiths" },
-    { value: "bronzebeards", label: "Bronzebeards \xE2\u20AC\u201D Karak Norn; cannon-makers" },
-    { value: "bronzefist", label: "Bronzefist \xE2\u20AC\u201D Karak Eight Peaks; lode wardens" },
-    { value: "copperback", label: "Copperback \xE2\u20AC\u201D Karak Eight Peaks; miners" },
-    { value: "cragbrow_barak_varr_engineers", label: "Cragbrow \xE2\u20AC\u201D Barak Varr; engineers" },
-    { value: "cragbrow_karak_azul_miners", label: "Cragbrow \xE2\u20AC\u201D Karak Azul; miners" },
-    { value: "craghand", label: "Craghand \xE2\u20AC\u201D Karak Eight Peaks; miners" },
-    { value: "cragtooth", label: "Cragtooth \xE2\u20AC\u201D Karak Azgaraz; ?" },
-    { value: "donarkhun", label: "Donarkhun \xE2\u20AC\u201D royal clan of Karak Azul" },
-    { value: "dourback", label: "Dourback \xE2\u20AC\u201D Karak Eight Peaks; brewers" },
-    { value: "dragonback", label: "Dragonback \xE2\u20AC\u201D Ekrund; clan of Josef Bugman" },
-    { value: "drakebeard", label: "Drakebeard \xE2\u20AC\u201D royal clan of Karak Kadrin" },
-    { value: "drazhkarak", label: "Drazhkarak \xE2\u20AC\u201D royal clan of Karak Hirn" },
-    { value: "dunrakin", label: "Dunrakin \xE2\u20AC\u201D Karak Azul; brewers" },
-    { value: "firehand", label: "Firehand \xE2\u20AC\u201D Karak Azul; metalsmiths" },
-    { value: "firehelm", label: "Firehelm \xE2\u20AC\u201D Karak Eight Peaks; miners" },
-    { value: "flintbeard", label: "Flintbeard \xE2\u20AC\u201D Karak Azgaraz; ?" },
-    { value: "flinthand_karak_azul_engineers", label: "Flinthand \xE2\u20AC\u201D Karak Azul; engineers" },
-    { value: "flinthand_k8p_miners", label: "Flinthand \xE2\u20AC\u201D Karak Eight Peaks; miners" },
-    { value: "flintheart", label: "Flintheart \xE2\u20AC\u201D Karak Eight Peaks; metalsmiths" },
-    { value: "fooger", label: "Fooger \xE2\u20AC\u201D Expatriate; merchants" },
-    { value: "forgehand", label: "Forgehand \xE2\u20AC\u201D Karak Azul; runesmiths" },
-    { value: "grimhelm", label: "Grimhelm \xE2\u20AC\u201D Karak Azgaraz; ?" },
-    { value: "grimstone", label: "Grimstone \xE2\u20AC\u201D Karak Eight Peaks; prospectors" },
-    { value: "growlsh", label: "Growlsh \xE2\u20AC\u201D infamous drinkers; disgraced after failing to protect High King Alrik Deathdealer's daughter" },
-    { value: "gunnarsson", label: "Gunnarsson \xE2\u20AC\u201D unknown; possibly Barak Varr" },
-    { value: "gunnisson_first", label: "Gunnisson (First contingent) \xE2\u20AC\u201D Karaz-a-Karak; warriors" },
-    { value: "gunnisson_second", label: "Gunnisson (Second contingent) \xE2\u20AC\u201D destroyed attempting to reclaim Mount Silverspear" },
-    { value: "gunnisson_third", label: "Gunnisson (Third contingent) \xE2\u20AC\u201D Itinerant; Orc-hunters" },
-    { value: "guttrik", label: "Guttrik \xE2\u20AC\u201D Karak Eight Peaks; rope-makers" },
-    { value: "halgakrin", label: "Halgakrin \xE2\u20AC\u201D Karak Azul; carpenters" },
-    { value: "hammerback", label: "Hammerback \xE2\u20AC\u201D Karak Azgaraz; miners" },
-    { value: "helhein", label: "Helhein \xE2\u20AC\u201D Karak Eight Peaks; warriors" },
-    { value: "irebeard", label: "Irebeard \xE2\u20AC\u201D Karak Azgaraz; ?" },
-    { value: "ironbeard", label: "Ironbeard \xE2\u20AC\u201D Karag Durak" },
-    { value: "ironarm", label: "Ironarm \xE2\u20AC\u201D Karak Azgaraz; ?" },
-    { value: "ironback", label: "Ironback \xE2\u20AC\u201D Karak Eight Peaks; miners" },
-    { value: "ironfinger", label: "Ironfinger \xE2\u20AC\u201D Karak Azul; from Eight Peaks; metalsmiths" },
-    { value: "ironfist_cities", label: "Ironfist \xE2\u20AC\u201D Metallschlacke, Neiderwind, Altdorf, Ubersreik" },
-    { value: "ironforge", label: "Ironforge \xE2\u20AC\u201D Karak Azul; runesmiths" },
-    { value: "ironhammer", label: "Ironhammer \xE2\u20AC\u201D Karak Azul; metalsmiths" },
-    { value: "ironpick", label: "Ironpick \xE2\u20AC\u201D royal clan of Karak Norn" },
-    { value: "ironspike", label: "Ironspike \xE2\u20AC\u201D Karak Eight Peaks; carpenters" },
-    { value: "izorgrung", label: "Izorgrung \xE2\u20AC\u201D royal clan of Karak Izor" },
-    { value: "kaznagar", label: "Kaznagar \xE2\u20AC\u201D Karak Azul; jewelsmiths" },
-    { value: "magrest", label: "Magrest \xE2\u20AC\u201D Karak Kadrin; miners (possibly)" },
-    { value: "norgrimlings", label: "Norgrimlings \xE2\u20AC\u201D Karak Eight Peaks; miners" },
-    { value: "oakbarrel", label: "Oakbarrel \xE2\u20AC\u201D Neiderwind, Altdorf; brewers" },
-    { value: "redbeard", label: "Redbeard \xE2\u20AC\u201D Karak Azul; runesmiths" },
-    { value: "silverscar", label: "Silverscar \xE2\u20AC\u201D Karak Azgaraz; engineers" },
-    { value: "skorrun", label: "Skorrun \xE2\u20AC\u201D Karak Azgal; foreign imports merchants" },
-    { value: "steelcrag", label: "Steelcrag \xE2\u20AC\u201D Karak Azgaraz; ?" },
-    { value: "sternbeard", label: "Sternbeard \xE2\u20AC\u201D Karak Azul" },
-    { value: "stoneback", label: "Stoneback \xE2\u20AC\u201D Karak Eight Peaks; masons" },
-    { value: "stonebeard_k8p_engineers", label: "Stonebeard \xE2\u20AC\u201D Karak Eight Peaks; engineers" },
-    { value: "stonebeater", label: "Stonebeater \xE2\u20AC\u201D Karak Azul; masons" },
-    { value: "stonebreakers", label: "Stonebreakers \xE2\u20AC\u201D Zhufbar; masons and miners" },
-    { value: "stonehammer_cities", label: "Stonehammer \xE2\u20AC\u201D Neiderwind, Altdorf" },
-    { value: "stonehand", label: "Stonehand \xE2\u20AC\u201D Karak Azul; masons" },
-    { value: "stoneheart", label: "Stoneheart \xE2\u20AC\u201D Karak Azul; masons" },
-    { value: "stoutgirth", label: "Stoutgirth \xE2\u20AC\u201D Karak Azul; brewers" },
-    { value: "stoutpeak", label: "Stoutpeak \xE2\u20AC\u201D Karak Azul; carpenters" },
-    { value: "svengeln", label: "Svengeln \xE2\u20AC\u201D Karak Azul; prospectors" },
-    { value: "threkkson", label: "Threkkson \xE2\u20AC\u201D Karak Azul; lode wardens" },
-    { value: "thundergun", label: "Thundergun \xE2\u20AC\u201D Metallschlacke, Altdorf" },
-    { value: "thunderheart", label: "Thunderheart \xE2\u20AC\u201D Karak Azul; jewelsmiths" },
-    { value: "thunderstone", label: "Thunderstone \xE2\u20AC\u201D Karak Azgaraz; runesmiths" },
-    { value: "ullek", label: "Ullek (the Ullekssons) \xE2\u20AC\u201D Karaz-a-Karak; warriors" },
-    { value: "varnskan", label: "Varnskan \xE2\u20AC\u201D Karak Azul; miners" },
-    { value: "vorgrund", label: "Vorgrund \xE2\u20AC\u201D unknown; possibly Karak Kadrin" },
-    { value: "yinlinsson", label: "Yinlinsson \xE2\u20AC\u201D Karaz-a-Karak; brewers" },
+    { value: "angrund", label: "Angrund \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D royal clan of Karak Eight Peaks" },
+    { value: "angrulok", label: "Angrulok \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D royal clan of Karak Kadrin" },
+    { value: "badrikk", label: "Badrikk \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; metalsmiths" },
+    { value: "barruk", label: "Barruk \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D North of Karag Dron; miners" },
+    { value: "burrdrik", label: "Burrdrik \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; metalsmiths" },
+    { value: "bronzebeards", label: "Bronzebeards \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Norn; cannon-makers" },
+    { value: "bronzefist", label: "Bronzefist \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; lode wardens" },
+    { value: "copperback", label: "Copperback \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; miners" },
+    { value: "cragbrow_barak_varr_engineers", label: "Cragbrow \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Barak Varr; engineers" },
+    { value: "cragbrow_karak_azul_miners", label: "Cragbrow \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; miners" },
+    { value: "craghand", label: "Craghand \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; miners" },
+    { value: "cragtooth", label: "Cragtooth \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; ?" },
+    { value: "donarkhun", label: "Donarkhun \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D royal clan of Karak Azul" },
+    { value: "dourback", label: "Dourback \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; brewers" },
+    { value: "dragonback", label: "Dragonback \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Ekrund; clan of Josef Bugman" },
+    { value: "drakebeard", label: "Drakebeard \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D royal clan of Karak Kadrin" },
+    { value: "drazhkarak", label: "Drazhkarak \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D royal clan of Karak Hirn" },
+    { value: "dunrakin", label: "Dunrakin \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; brewers" },
+    { value: "firehand", label: "Firehand \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; metalsmiths" },
+    { value: "firehelm", label: "Firehelm \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; miners" },
+    { value: "flintbeard", label: "Flintbeard \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; ?" },
+    { value: "flinthand_karak_azul_engineers", label: "Flinthand \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; engineers" },
+    { value: "flinthand_k8p_miners", label: "Flinthand \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; miners" },
+    { value: "flintheart", label: "Flintheart \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; metalsmiths" },
+    { value: "fooger", label: "Fooger \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Expatriate; merchants" },
+    { value: "forgehand", label: "Forgehand \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; runesmiths" },
+    { value: "grimhelm", label: "Grimhelm \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; ?" },
+    { value: "grimstone", label: "Grimstone \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; prospectors" },
+    { value: "growlsh", label: "Growlsh \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D infamous drinkers; disgraced after failing to protect High King Alrik Deathdealer's daughter" },
+    { value: "gunnarsson", label: "Gunnarsson \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D unknown; possibly Barak Varr" },
+    { value: "gunnisson_first", label: "Gunnisson (First contingent) \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karaz-a-Karak; warriors" },
+    { value: "gunnisson_second", label: "Gunnisson (Second contingent) \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D destroyed attempting to reclaim Mount Silverspear" },
+    { value: "gunnisson_third", label: "Gunnisson (Third contingent) \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Itinerant; Orc-hunters" },
+    { value: "guttrik", label: "Guttrik \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; rope-makers" },
+    { value: "halgakrin", label: "Halgakrin \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; carpenters" },
+    { value: "hammerback", label: "Hammerback \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; miners" },
+    { value: "helhein", label: "Helhein \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; warriors" },
+    { value: "irebeard", label: "Irebeard \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; ?" },
+    { value: "ironbeard", label: "Ironbeard \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karag Durak" },
+    { value: "ironarm", label: "Ironarm \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; ?" },
+    { value: "ironback", label: "Ironback \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; miners" },
+    { value: "ironfinger", label: "Ironfinger \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; from Eight Peaks; metalsmiths" },
+    { value: "ironfist_cities", label: "Ironfist \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Metallschlacke, Neiderwind, Altdorf, Ubersreik" },
+    { value: "ironforge", label: "Ironforge \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; runesmiths" },
+    { value: "ironhammer", label: "Ironhammer \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; metalsmiths" },
+    { value: "ironpick", label: "Ironpick \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D royal clan of Karak Norn" },
+    { value: "ironspike", label: "Ironspike \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; carpenters" },
+    { value: "izorgrung", label: "Izorgrung \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D royal clan of Karak Izor" },
+    { value: "kaznagar", label: "Kaznagar \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; jewelsmiths" },
+    { value: "magrest", label: "Magrest \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Kadrin; miners (possibly)" },
+    { value: "norgrimlings", label: "Norgrimlings \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; miners" },
+    { value: "oakbarrel", label: "Oakbarrel \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Neiderwind, Altdorf; brewers" },
+    { value: "redbeard", label: "Redbeard \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; runesmiths" },
+    { value: "silverscar", label: "Silverscar \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; engineers" },
+    { value: "skorrun", label: "Skorrun \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgal; foreign imports merchants" },
+    { value: "steelcrag", label: "Steelcrag \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; ?" },
+    { value: "sternbeard", label: "Sternbeard \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul" },
+    { value: "stoneback", label: "Stoneback \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; masons" },
+    { value: "stonebeard_k8p_engineers", label: "Stonebeard \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Eight Peaks; engineers" },
+    { value: "stonebeater", label: "Stonebeater \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; masons" },
+    { value: "stonebreakers", label: "Stonebreakers \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Zhufbar; masons and miners" },
+    { value: "stonehammer_cities", label: "Stonehammer \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Neiderwind, Altdorf" },
+    { value: "stonehand", label: "Stonehand \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; masons" },
+    { value: "stoneheart", label: "Stoneheart \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; masons" },
+    { value: "stoutgirth", label: "Stoutgirth \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; brewers" },
+    { value: "stoutpeak", label: "Stoutpeak \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; carpenters" },
+    { value: "svengeln", label: "Svengeln \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; prospectors" },
+    { value: "threkkson", label: "Threkkson \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; lode wardens" },
+    { value: "thundergun", label: "Thundergun \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Metallschlacke, Altdorf" },
+    { value: "thunderheart", label: "Thunderheart \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; jewelsmiths" },
+    { value: "thunderstone", label: "Thunderstone \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azgaraz; runesmiths" },
+    { value: "ullek", label: "Ullek (the Ullekssons) \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karaz-a-Karak; warriors" },
+    { value: "varnskan", label: "Varnskan \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karak Azul; miners" },
+    { value: "vorgrund", label: "Vorgrund \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D unknown; possibly Karak Kadrin" },
+    { value: "yinlinsson", label: "Yinlinsson \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Karaz-a-Karak; brewers" },
     { value: "ironfist", label: "Ironfist" },
     { value: "coppervein", label: "Coppervein" },
     { value: "graniteheart", label: "Graniteheart" },
@@ -12613,97 +12604,97 @@
       hideHairColorDescription: true
     },
     straight_shoulder: {
-      label: "Straight \xE2\u20AC\u201D Shoulder Length",
+      label: "Straight \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Shoulder Length",
       description: "shoulder-length straight",
       sheet: "hair",
       rows: { default: 5 }
     },
     straight_short: {
-      label: "Straight \xE2\u20AC\u201D Short Crop",
+      label: "Straight \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Short Crop",
       description: "short straight",
       sheet: "hair",
       rows: { default: 4 }
     },
     straight_braided: {
-      label: "Straight \xE2\u20AC\u201D Braided Tail",
+      label: "Straight \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Braided Tail",
       description: "braided straight",
       sheet: "hair",
       rows: { default: 8 }
     },
     curly_stubble: {
-      label: "Curly \xE2\u20AC\u201D Close Shave",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Close Shave",
       description: "closely shorn curly",
       sheet: "hairCurly",
       rows: { default: 0 }
     },
     curly_short_unkempt: {
-      label: "Curly \xE2\u20AC\u201D Short & Tousled",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Short & Tousled",
       description: "short unkempt curly",
       sheet: "hairCurly",
       rows: { default: 1 }
     },
     curly_mid_unkempt: {
-      label: "Curly \xE2\u20AC\u201D Mid-Length Tousled",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Mid-Length Tousled",
       description: "mid-length unkempt curly",
       sheet: "hairCurly",
       rows: { default: 2 }
     },
     curly_long_unkempt: {
-      label: "Curly \xE2\u20AC\u201D Long & Tousled",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Long & Tousled",
       description: "long unkempt curly",
       sheet: "hairCurly",
       rows: { default: 3 }
     },
     curly_short_combed: {
-      label: "Curly \xE2\u20AC\u201D Short Combed",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Short Combed",
       description: "short combed curly",
       sheet: "hairCurly",
       rows: { default: 4 }
     },
     curly_mid_combed: {
-      label: "Curly \xE2\u20AC\u201D Mid-Length Combed",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Mid-Length Combed",
       description: "mid-length combed curly",
       sheet: "hairCurly",
       rows: { default: 5 }
     },
     curly_long_combed: {
-      label: "Curly \xE2\u20AC\u201D Long Combed",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Long Combed",
       description: "long combed curly",
       sheet: "hairCurly",
       rows: { default: 6 }
     },
     curly_short_braided: {
-      label: "Curly \xE2\u20AC\u201D Short Braids",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Short Braids",
       description: "short braided curly",
       sheet: "hairCurly",
       rows: { default: 7 }
     },
     curly_mid_braided: {
-      label: "Curly \xE2\u20AC\u201D Mid Braids",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Mid Braids",
       description: "mid-length braided curly",
       sheet: "hairCurly",
       rows: { default: 8 }
     },
     curly_long_braided: {
-      label: "Curly \xE2\u20AC\u201D Long Braids",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Long Braids",
       description: "long braided curly",
       sheet: "hairCurly",
       rows: { default: 9 }
     },
     curly_short_double_braids: {
-      label: "Curly \xE2\u20AC\u201D Short Double Braids",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Short Double Braids",
       description: "short double-braided curly",
       sheet: "hairCurly",
       rows: { default: 10 }
     },
     curly_mid_double_braids: {
-      label: "Curly \xE2\u20AC\u201D Mid Double Braids",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Mid Double Braids",
       description: "mid-length double-braided curly",
       sheet: "hairCurly",
       rows: { default: 11 }
     },
     curly_long_double_braids: {
-      label: "Curly \xE2\u20AC\u201D Long Double Braids",
+      label: "Curly \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D Long Double Braids",
       description: "long double-braided curly",
       sheet: "hairCurly",
       rows: { default: 12 }
@@ -12847,8 +12838,8 @@
   var dwarfNamePools = {
     female: [
       "Domas",
-      "Rig\xC3\xB2th",
-      "Kad\xC3\xB4l",
+      "Rig\xC3\u0192\xC2\xB2th",
+      "Kad\xC3\u0192\xC2\xB4l",
       "Meng",
       "Onol",
       "Rith",
@@ -12866,7 +12857,7 @@
       "Stukos",
       "Likot",
       "Datan",
-      "M\xC3\xB6rul",
+      "M\xC3\u0192\xC2\xB6rul",
       "Logem",
       "Rakust",
       "Thorin",
@@ -12949,7 +12940,7 @@
         }
         valueElement.dataset.traitValue = option.value;
       } else {
-        valueElement.textContent = "\xE2\u20AC\u201D";
+        valueElement.textContent = "\xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D";
         valueElement.style.removeProperty("--trait-color");
         valueElement.classList.remove("has-color");
         delete valueElement.dataset.traitValue;
@@ -13441,7 +13432,7 @@
       );
       return;
     }
-    elements.worldInfoChronology.textContent = "\xE2\u20AC\u201D";
+    elements.worldInfoChronology.textContent = "\xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D";
   }
   function updateWorldInfoSizeDisplay() {
     if (!elements.worldInfoSize) {
@@ -14881,7 +14872,7 @@
     );
     const summaryText = summarySegments.join(" ");
     const peakLabelText = peakIndex === sanitizedPoints.length - 1 && peakPoint.population === endPoint.population ? "Current peak" : "Peak";
-    const peakHeading = peakLabel ? `${peakLabelText} \xE2\u20AC\xA2 ${peakLabel}` : peakLabelText;
+    const peakHeading = peakLabel ? `${peakLabelText} \xC3\xA2\xE2\u201A\xAC\xC2\xA2 ${peakLabel}` : peakLabelText;
     return `
     <section class="structure-details-history-chart">
       <header class="structure-details-history-chart__header">
@@ -15036,10 +15027,10 @@
           tooltipX = clamp(pointX / chartWidth * figureRect.width, 12, Math.max(12, figureRect.width - 12));
           tooltipY = clamp(pointY / chartHeight * figureRect.height, 16, Math.max(16, figureRect.height - 16));
         }
-        const populationText = Number.isFinite(point.population) ? point.population.toLocaleString("en-US") : "\xE2\u20AC\u201D";
+        const populationText = Number.isFinite(point.population) ? point.population.toLocaleString("en-US") : "\xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D";
         const timeLabel = typeof point.label === "string" ? point.label : "";
         const descriptorText = descriptor ? ` ${descriptor}` : "";
-        tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` \xE2\u20AC\xA2 ${timeLabel}` : ""}`;
+        tooltip.textContent = `${populationText}${descriptorText}${timeLabel ? ` \xC3\xA2\xE2\u201A\xAC\xC2\xA2 ${timeLabel}` : ""}`;
         tooltip.hidden = false;
         tooltip.setAttribute("aria-hidden", "false");
         tooltip.style.left = `${tooltipX}px`;
@@ -15934,7 +15925,7 @@
       const cultureLabel = ambientStructure.cultureLabel || ((_a = tile.culturalInfluence) == null ? void 0 : _a.label) || null;
       const influenceDescription = tile.culturalInfluence ? describeInfluenceStrength(tile.culturalInfluence.strength) : null;
       if (cultureLabel) {
-        const value = influenceDescription ? `${cultureLabel} \xE2\u20AC\u201D ${influenceDescription}` : cultureLabel;
+        const value = influenceDescription ? `${cultureLabel} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${influenceDescription}` : cultureLabel;
         entries2.push({ label: "Cultural Tie", value });
       }
       const areaName = tile.areaName;
@@ -16053,7 +16044,7 @@
       const dominantCulture2 = getDominantCulturalInfluence(tile);
       if (dominantCulture2) {
         const influenceDescription = describeInfluenceStrength(dominantCulture2.strength);
-        const value = influenceDescription ? `${dominantCulture2.label} \xE2\u20AC\u201D ${influenceDescription}` : dominantCulture2.label;
+        const value = influenceDescription ? `${dominantCulture2.label} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${influenceDescription}` : dominantCulture2.label;
         entries2.push({ label: "Cultural Influence", value });
       }
       if (details.classification) {
@@ -16150,7 +16141,7 @@
     const dominantCulture = getDominantCulturalInfluence(tile);
     if (dominantCulture) {
       const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
-      const value = influenceDescription ? `${dominantCulture.label} \xE2\u20AC\u201D ${influenceDescription}` : dominantCulture.label;
+      const value = influenceDescription ? `${dominantCulture.label} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${influenceDescription}` : dominantCulture.label;
       entries.push({ label: "Cultural Influence", value });
     }
     if (details) {
@@ -16280,7 +16271,7 @@
         subtitleParts.push(tile.biomeType.charAt(0).toUpperCase() + tile.biomeType.slice(1));
       }
     }
-    return subtitleParts.length > 0 ? subtitleParts.join(" \xE2\u20AC\xA2 ") : "Local terrain preview";
+    return subtitleParts.length > 0 ? subtitleParts.join(" \xC3\xA2\xE2\u201A\xAC\xC2\xA2 ") : "Local terrain preview";
   }
   function renderDwarfholdScreen() {
     var _a, _b;
@@ -16337,7 +16328,7 @@
     if (elements.dwarfholdCoordinates) {
       if (Number.isFinite(view.tileX) && Number.isFinite(view.tileY)) {
         const baseLabel = `World Tile ${view.tileX + 1}, ${view.tileY + 1}`;
-        const sizeLabel = Number.isFinite(customMap.width) && Number.isFinite(customMap.height) ? ` \xE2\u20AC\u201D ${customMap.width}\xC3\u2014${customMap.height} tiles` : "";
+        const sizeLabel = Number.isFinite(customMap.width) && Number.isFinite(customMap.height) ? ` \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${customMap.width}\xC3\u0192\xE2\u20AC\u201D${customMap.height} tiles` : "";
         elements.dwarfholdCoordinates.textContent = `${baseLabel}${sizeLabel}`;
       } else {
         elements.dwarfholdCoordinates.textContent = "";
@@ -16807,8 +16798,8 @@
         elements.localMapSubtitle.textContent = "High-resolution terrain sample";
       }
       if (elements.localMapCoordinates) {
-        const sourceLabel = `${patch.worldWidth}\xC3\u2014${patch.worldHeight}`;
-        elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} \xE2\u20AC\u201D ${patch.width}\xC3\u2014${patch.height} tiles (sampled from ${sourceLabel})`;
+        const sourceLabel = `${patch.worldWidth}\xC3\u0192\xE2\u20AC\u201D${patch.worldHeight}`;
+        elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${patch.width}\xC3\u0192\xE2\u20AC\u201D${patch.height} tiles (sampled from ${sourceLabel})`;
       }
       if (elements.localMapDetails) {
         const tooltipContent = buildStructureTooltipContent(focusTile);
@@ -16883,7 +16874,7 @@
         elements.localMapSubtitle.textContent = subtitle;
       }
       if (elements.localMapCoordinates) {
-        elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} \xE2\u20AC\u201D ${mapWidth}\xC3\u2014${mapHeight} tiles`;
+        elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${mapWidth}\xC3\u0192\xE2\u20AC\u201D${mapHeight} tiles`;
       }
       if (elements.localMapDetails) {
         const sections = [];
@@ -17049,7 +17040,7 @@
       elements.localMapSubtitle.textContent = resolveLocalSubtitle(focusTile);
     }
     if (elements.localMapCoordinates) {
-      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} \xE2\u20AC\u201D ${tileWidth}\xC3\u2014${tileHeight} tiles`;
+      elements.localMapCoordinates.textContent = `World Tile ${localView.centerX + 1}, ${localView.centerY + 1} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${tileWidth}\xC3\u0192\xE2\u20AC\u201D${tileHeight} tiles`;
     }
     if (elements.localMapDetails) {
       const tooltipContent = buildStructureTooltipContent(focusTile);
@@ -17098,7 +17089,7 @@
     canvas.style.height = "auto";
     canvas.setAttribute(
       "aria-label",
-      `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${localView.centerY + 1} at approximately ${zoom.toFixed(2)}\xC3\u2014 zoom.`
+      `Local preview covering ${tileWidth} by ${tileHeight} tiles around world tile ${localView.centerX + 1}, ${localView.centerY + 1} at approximately ${zoom.toFixed(2)}\xC3\u0192\xE2\u20AC\u201D zoom.`
     );
     canvas.setAttribute("aria-hidden", "false");
     context.imageSmoothingEnabled = false;
@@ -18836,7 +18827,7 @@
     if (secondaryLine) {
       figureLabelParts.push(secondaryLine);
     }
-    const figureAriaLabel = figureLabelParts.length > 0 ? figureLabelParts.join(" \xE2\u20AC\u201D ") : "Ruler portrait";
+    const figureAriaLabel = figureLabelParts.length > 0 ? figureLabelParts.join(" \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ") : "Ruler portrait";
     const styleParts = [];
     if (theme.background) {
       styleParts.push(`--portrait-background:${theme.background}`);
@@ -18883,7 +18874,7 @@
     if (typeLabel) {
       subtitleParts.push(typeLabel);
     }
-    const subtitle = subtitleParts.join(" \xE2\u20AC\xA2 ") || null;
+    const subtitle = subtitleParts.join(" \xC3\xA2\xE2\u201A\xAC\xC2\xA2 ") || null;
     const overviewEntries = [];
     const addOverviewEntry = (label, value) => {
       if (value === null || value === void 0) {
@@ -18946,7 +18937,7 @@
     const dominantCulture = getDominantCulturalInfluence(tile);
     if (dominantCulture) {
       const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
-      const value = influenceDescription ? `${dominantCulture.label} \xE2\u20AC\u201D ${influenceDescription}` : dominantCulture.label;
+      const value = influenceDescription ? `${dominantCulture.label} \xC3\xA2\xE2\u201A\xAC\xE2\u20AC\x9D ${influenceDescription}` : dominantCulture.label;
       addOverviewEntry("Cultural Influence", value);
     }
     if (details.population !== null && details.population !== void 0) {
@@ -29471,7 +29462,7 @@
     updateWorldInfoSizeDisplay();
     const worldLabel = state.worldName ? `World: ${state.worldName} | ` : "";
     const chronologyLabel = isChronologyValid(state.worldChronology) ? `${formatChronology(state.worldChronology.year, state.worldChronology.age)} | ` : "";
-    elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}\xC3\u2014${height}`;
+    elements.seedDisplay.textContent = `${worldLabel}${chronologyLabel}Seed: ${seedString} | ${width}\xC3\u0192\xE2\u20AC\u201D${height}`;
   }
   function updateLoadingProgress(value) {
     const numericValue = Number.isFinite(value) ? value : 0;
@@ -29630,7 +29621,7 @@
       elements.gameContainer.setAttribute("aria-busy", "true");
     }
     elements.seedDisplay.textContent = "";
-    runWithLoadingScreen(() => generateAndRender(), { statusText: "Forging your world\u2026" }).then(() => {
+    runWithLoadingScreen(() => generateAndRender(), { statusText: "Forging your world\xE2\u20AC\xA6" }).then(() => {
       if (elements.gameContainer) {
         elements.gameContainer.classList.remove("game-container--loading");
         elements.gameContainer.removeAttribute("aria-busy");
@@ -29682,16 +29673,16 @@
     ensureLandMaskForProfile(state.settings.worldGenerationType);
     hideMapTooltip();
     hideLocalView({ suppressRedraw: true });
-    await updateLoadingProgressAndWait(5, "Loading tile sheets\xE2\u20AC\xA6");
+    await updateLoadingProgressAndWait(5, "Loading tile sheets\xC3\xA2\xE2\u201A\xAC\xC2\xA6");
     await loadTileSheetImages();
-    await updateLoadingProgressAndWait(12, "Stabilizing ley lines\xE2\u20AC\xA6");
-    await updateLoadingProgressAndWait(28, "Surveying continental plates\xE2\u20AC\xA6");
+    await updateLoadingProgressAndWait(12, "Stabilizing ley lines\xC3\xA2\xE2\u201A\xAC\xC2\xA6");
+    await updateLoadingProgressAndWait(28, "Surveying continental plates\xC3\xA2\xE2\u201A\xAC\xC2\xA6");
     const world = createWorld(seedToUse);
-    await updateLoadingProgressAndWait(68, "Raising civilizations\xE2\u20AC\xA6");
+    await updateLoadingProgressAndWait(68, "Raising civilizations\xC3\xA2\xE2\u201A\xAC\xC2\xA6");
     state.currentWorld = world;
-    await updateLoadingProgressAndWait(82, "Rendering cartography\xE2\u20AC\xA6");
+    await updateLoadingProgressAndWait(82, "Rendering cartography\xC3\xA2\xE2\u201A\xAC\xC2\xA6");
     drawWorld(world);
-    await updateLoadingProgressAndWait(92, "Finalizing expedition briefs\xE2\u20AC\xA6", { force: true });
+    await updateLoadingProgressAndWait(92, "Finalizing expedition briefs\xC3\xA2\xE2\u201A\xAC\xC2\xA6", { force: true });
     if (elements.seedInput) {
       elements.seedInput.value = world.seedString;
     }
@@ -29791,7 +29782,7 @@
     updateWorldInfoSeedDisplay(randomSeed);
     return runWithLoadingScreen(
       () => generateAndRender(randomSeed),
-      { statusText: "Forging a new world\u2026" }
+      { statusText: "Forging a new world\xE2\u20AC\xA6" }
     ).catch((error) => {
       console.error("Failed to regenerate world.", error);
     });
@@ -30023,7 +30014,7 @@
         applyFormSettings();
         const previousSource = closeOptionsScreen();
         if (previousSource === "game" && elements.gameContainer) {
-          runWithLoadingScreen(() => generateAndRender(), { statusText: "Updating the realm\xE2\u20AC\xA6" }).catch((error) => {
+          runWithLoadingScreen(() => generateAndRender(), { statusText: "Updating the realm\xC3\xA2\xE2\u201A\xAC\xC2\xA6" }).catch((error) => {
             console.error("Failed to apply new world settings.", error);
           });
         }
@@ -30168,7 +30159,7 @@
     if (elements.dwarfCustomizerForm) {
       elements.dwarfCustomizerForm.addEventListener("submit", (event) => {
         event.preventDefault();
-            beginGame();
+        beginGame();
         ensureMusicStarted();
       });
     }
@@ -30279,16 +30270,26 @@
     });
     refreshOverlayToggleButtons();
   }
+  function initialise() {
+    syncInputsWithSettings();
+    setupAudioControls();
+    setupSoundEffectControls();
+    ensureMapEditorState();
+    refreshMapEditorUI();
+    setupMapInteractions();
+    handleResize();
+  }
+  function autoStartGameIfNeeded() {
+    showTitleScreen({ focusStartButton: true });
+  }
   function ensureClanSelectOptions() {
     if (elements.dwarfClanSelect) {
       populateClanSelectFromOptions(dwarfOptions.clan);
     }
   }
-
   function bootApplication() {
     hydrateElements();
     ensureClanSelectOptions();
-
     attachEvents(elements, {
       structureContextMenuState,
       hideStructureContextMenu,
@@ -30348,29 +30349,26 @@
       setMapEditorBrushSize,
       clearMapEditorStructure
     });
-
     initialise();
     autoStartGameIfNeeded();
-
     if (typeof document !== "undefined" && document.documentElement) {
       try {
         document.documentElement.setAttribute("data-app-initialised", "true");
-      } catch (_) {}
+      } catch (_) {
+      }
     }
-
     try {
       if (typeof window !== "undefined" && typeof beginGame === "function") {
         window.beginGame = beginGame;
       }
-    } catch (_) {}
+    } catch (_) {
+    }
   }
-
   function startApplicationWhenReady() {
     if (typeof document === "undefined") {
       bootApplication();
       return;
     }
-
     if (document.readyState === "loading") {
       const handleReady = () => {
         document.removeEventListener("DOMContentLoaded", handleReady);
@@ -30379,9 +30377,7 @@
       document.addEventListener("DOMContentLoaded", handleReady);
       return;
     }
-
     bootApplication();
   }
-
   startApplicationWhenReady();
 })();
