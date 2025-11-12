@@ -30540,25 +30540,22 @@ initialise();
 function autoStartGameIfNeeded() {
   const gameContainerHidden =
     !elements.gameContainer || elements.gameContainer.classList.contains('hidden');
-  if (state.currentWorld || !gameContainerHidden) {
+  if (!gameContainerHidden) {
     return;
   }
 
-  openWorldInfoModal();
-
-  if (elements.worldInfoForm) {
-    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-    elements.worldInfoForm.dispatchEvent(submitEvent);
-  } else {
-    openDwarfCustomizer({ resetParty: true });
-  }
-
-  if (elements.dwarfCustomizerForm) {
-    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-    elements.dwarfCustomizerForm.dispatchEvent(submitEvent);
-  } else {
+  if (state.currentWorld) {
     beginGame();
     ensureMusicStarted();
+    return;
+  }
+
+  if (elements.startButton && typeof elements.startButton.focus === 'function') {
+    try {
+      elements.startButton.focus({ preventScroll: true });
+    } catch (_) {
+      // Ignore focus errors in non-interactive environments.
+    }
   }
 }
 
