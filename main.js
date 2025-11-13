@@ -39,6 +39,7 @@ import {
 } from './src/world/structures.js';
 import { updateDwarfPortrait, updateDwarfTraitSummary, updateRosterList } from './src/dwarves/customizer.js';
 import { populateClanSelectFromOptions } from './src/main/clan-select.js';
+import { populateProfessionSelectFromOptions } from './src/main/profession-select.js';
 import {
   applyMapSizePresetToState,
   defaultForestFrequency,
@@ -30103,9 +30104,16 @@ function ensureClanSelectOptions() {
   }
 }
 
+function ensureProfessionSelectOptions() {
+  if (elements.dwarfProfessionSelect) {
+    populateProfessionSelectFromOptions(dwarfOptions.profession);
+  }
+}
+
 function bootApplication() {
   hydrateElements();
   ensureClanSelectOptions();
+  ensureProfessionSelectOptions();
 
   attachEvents(elements, {
     structureContextMenuState,
