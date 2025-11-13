@@ -9723,7 +9723,26 @@ function generateProfessionsFromGuilds(guildOptions, existingOptions = []) {
   const professions = [];
   const seenValues = new Set(existingOptions.map((p) => p.value));
 
+  const addProfession = (value, label) => {
+    if (!seenValues.has(value)) {
+      professions.push({ value, label });
+      seenValues.add(value);
+    }
+  };
+
   guildOptions.forEach(guild => {
+    // Handle multi-discipline guilds that should spawn multiple professions
+    if (guild.value === 'armourers-weaponsmiths-guild') {
+      addProfession('armourer', 'Armourer');
+      addProfession('weaponsmith', 'Weaponsmith');
+      return;
+    }
+    if (guild.value === 'farmers-herders-guild') {
+      addProfession('farmer', 'Farmer');
+      addProfession('herder', 'Herder');
+      return;
+    }
+
     let label = guild.label;
     let value = guild.value;
 
@@ -9732,13 +9751,7 @@ function generateProfessionsFromGuilds(guildOptions, existingOptions = []) {
     value = value.replace(/-guild(of-)?/i, '').replace(/s$/, '');
 
     // Special cases or common transformations
-    if (label.includes('Armourer') && label.includes('Weaponsmith')) {
-      label = 'Armourer & Weaponsmith';
-      value = 'armourer-weaponsmith';
-    } else if (label.includes('Farmer') && label.includes('Herder')) {
-      label = 'Farmer & Herder';
-      value = 'farmer-herder';
-    } else if (label.includes('Cartwright') && label.includes('Wheelwright')) {
+    if (label.includes('Cartwright') && label.includes('Wheelwright')) {
       label = 'Cartwright & Wheelwright';
       value = 'cartwright-wheelwright';
     } else if (label === 'Alchemist') {
@@ -9879,10 +9892,7 @@ function generateProfessionsFromGuilds(guildOptions, existingOptions = []) {
     }
 
 
-    if (!seenValues.has(value)) {
-      professions.push({ value, label });
-      seenValues.add(value);
-    }
+    addProfession(value, label);
   });
 
   return professions;
@@ -9901,7 +9911,8 @@ const baseDwarfProfessionOptions = [
   { value: 'banker', label: 'Banker' },
   { value: 'cooper', label: 'Cooper' },
   { value: 'merchant', label: 'Merchant' },
-  { value: 'armourer-weaponsmith', label: 'Armourer & Weaponsmith' },
+  { value: 'armourer', label: 'Armourer' },
+  { value: 'weaponsmith', label: 'Weaponsmith' },
   { value: 'artisan', label: 'Artisan' },
   { value: 'baker', label: 'Baker' },
   { value: 'brewer-guild', label: 'Brewer' },
@@ -9911,7 +9922,8 @@ const baseDwarfProfessionOptions = [
   { value: 'distiller', label: 'Distiller' },
   { value: 'dyer', label: 'Dyer' },
   { value: 'engineer-guild', label: 'Engineer' },
-  { value: 'farmer-herder', label: 'Farmer & Herder' },
+  { value: 'farmer', label: 'Farmer' },
+  { value: 'herder', label: 'Herder' },
   { value: 'goldsmith', label: 'Goldsmith' },
   { value: 'alchemist', label: 'Alchemist' },
   { value: 'jewelsmith', label: 'Jewelsmith' },
