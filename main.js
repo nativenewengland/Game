@@ -17294,12 +17294,23 @@ function buildRulerPortraitPanelSection(resolvedName, details) {
 }
 
 function buildStructureDetailsPanelContent(tile, context = {}) {
-  if (!tile || !tile.structureName) {
+  if (!tile) {
     return null;
   }
 
   const details = tile.structureDetails || {};
-  const resolvedName = details.name || tile.structureName;
+  const resolvedName =
+    (typeof tile.structureName === 'string' && tile.structureName) ||
+    (typeof details.name === 'string' && details.name) ||
+    null;
+
+  if (!resolvedName) {
+    return null;
+  }
+
+  if (tile.structureName !== resolvedName) {
+    tile = { ...tile, structureName: resolvedName };
+  }
   const subtitleParts = [];
   if (details.classification) {
     subtitleParts.push(details.classification);
