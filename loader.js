@@ -3,17 +3,22 @@
     return;
   }
 
-  function loadModule() {
-    var moduleScript = document.createElement('script');
-    moduleScript.type = 'module';
-    moduleScript.src = './main.js';
-    moduleScript.defer = true;
-    moduleScript.addEventListener('error', function () {
-      console.error('Failed to load the module script for Dwarfhold.');
+  function loadScript(src, type) {
+    var script = document.createElement('script');
+    if (type) {
+      script.type = type;
+    }
+    script.defer = true;
+    script.src = src;
+    script.addEventListener('error', function () {
+      console.error('Failed to load the script for Dwarfhold:', src);
     });
-
-    document.head.appendChild(moduleScript);
+    document.head.appendChild(script);
   }
 
-  loadModule();
+  if (window.location.protocol === 'file:') {
+    loadScript('./bundle.js');
+  } else {
+    loadScript('./main.js', 'module');
+  }
 })();
