@@ -14393,39 +14393,13 @@ function renderDwarfholdScreen() {
 
       const swatch = document.createElement('span');
       swatch.className = 'dwarfhold-legend-swatch';
-      const sprite = definition.sprite && typeof definition.sprite === 'object' ? definition.sprite : null;
-      const spriteSheet = sprite?.sheet ? state.tileSheets?.[sprite.sheet] : null;
-      const spriteSheetUrl = spriteSheet?.image?.src || spriteSheet?.path || null;
-      if (sprite && spriteSheet && spriteSheetUrl) {
-        const tileSize = Number.isFinite(sprite.size)
-          ? sprite.size
-          : Number.isFinite(spriteSheet.tileSize)
-            ? spriteSheet.tileSize
-            : 32;
-        const spriteCol = Number.isFinite(sprite.col) ? sprite.col : 0;
-        const spriteRow = Number.isFinite(sprite.row) ? sprite.row : 0;
-        const spriteSx = Number.isFinite(sprite.sx) ? sprite.sx : spriteCol * tileSize;
-        const spriteSy = Number.isFinite(sprite.sy) ? sprite.sy : spriteRow * tileSize;
-        swatch.style.backgroundColor = definition.color || '#1f2937';
-        swatch.style.backgroundImage = `url(${spriteSheetUrl})`;
-        swatch.style.backgroundRepeat = 'no-repeat';
-        swatch.style.backgroundPosition = `${-spriteSx}px ${-spriteSy}px`;
-        if (spriteSheet.image && spriteSheet.image.width && spriteSheet.image.height) {
-          swatch.style.backgroundSize = `${spriteSheet.image.width}px ${spriteSheet.image.height}px`;
-        } else {
-          swatch.style.backgroundSize = 'auto';
-        }
-        swatch.style.borderColor = definition.borderColor || 'rgba(255, 255, 255, 0.18)';
-        swatch.style.imageRendering = 'pixelated';
-      } else {
-        swatch.style.backgroundColor = definition.color || '#1f2937';
-        swatch.style.backgroundImage = 'none';
-        swatch.style.backgroundSize = '';
-        swatch.style.borderColor = definition.borderColor || 'rgba(255, 255, 255, 0.18)';
-        if (definition.texture === 'speckled' && definition.accent) {
-          swatch.style.backgroundImage = `radial-gradient(${definition.accent} 18%, transparent 20%)`;
-          swatch.style.backgroundSize = '12px 12px';
-        }
+      swatch.style.backgroundColor = definition.color || '#1f2937';
+      swatch.style.backgroundImage = 'none';
+      swatch.style.backgroundSize = '';
+      swatch.style.borderColor = definition.borderColor || 'rgba(255, 255, 255, 0.18)';
+      if (definition.texture === 'speckled' && definition.accent) {
+        swatch.style.backgroundImage = `radial-gradient(${definition.accent} 18%, transparent 20%)`;
+        swatch.style.backgroundSize = '12px 12px';
       }
 
       const text = document.createElement('div');
@@ -14504,71 +14478,27 @@ function renderDwarfholdScreen() {
         const cell = row[x];
         const type = typeof cell === 'string' ? cell : typeof cell?.type === 'string' ? cell.type : 'rock';
         const definition = palette[type] || palette.rock || { color: '#1f2937' };
-        const sprite = definition.sprite && typeof definition.sprite === 'object' ? definition.sprite : null;
-        let drewSprite = false;
-        if (sprite && sprite.sheet) {
-          const sheet = state.tileSheets?.[sprite.sheet];
-          const baseTileSize = Number.isFinite(sprite.size)
-            ? sprite.size
-            : Number.isFinite(sheet?.tileSize)
-              ? sheet.tileSize
-              : null;
-          if (sheet && sheet.image && Number.isFinite(baseTileSize) && baseTileSize > 0) {
-            const spriteCol = Number.isFinite(sprite.col) ? sprite.col : 0;
-            const spriteRow = Number.isFinite(sprite.row) ? sprite.row : 0;
-            const spriteSx = Number.isFinite(sprite.sx) ? sprite.sx : spriteCol * baseTileSize;
-            const spriteSy = Number.isFinite(sprite.sy) ? sprite.sy : spriteRow * baseTileSize;
-            const spriteSw = Number.isFinite(sprite.sw) ? sprite.sw : baseTileSize;
-            const spriteSh = Number.isFinite(sprite.sh) ? sprite.sh : baseTileSize;
-            context.drawImage(
-              sheet.image,
-              spriteSx,
-              spriteSy,
-              spriteSw,
-              spriteSh,
-              x * tilePixelSize,
-              y * tilePixelSize,
-              tilePixelSize,
-              tilePixelSize
-            );
-            drewSprite = true;
+        context.fillStyle = definition.color || '#1f2937';
+        context.fillRect(x * tilePixelSize, y * tilePixelSize, tilePixelSize, tilePixelSize);
+
+        if (definition.texture === 'speckled') {
+          context.save();
+          context.fillStyle = definition.accent || 'rgba(255, 255, 255, 0.08)';
+          const dot = Math.max(1, Math.round(tilePixelSize * 0.18));
+          for (let offsetY = dot; offsetY < tilePixelSize; offsetY += dot * 2) {
+            for (let offsetX = dot; offsetX < tilePixelSize; offsetX += dot * 2) {
+              context.fillRect(
+                x * tilePixelSize + offsetX - dot / 2,
+                y * tilePixelSize + offsetY - dot / 2,
+                dot,
+                dot
+              );
+            }
           }
+          context.restore();
         }
 
-        if (!drewSprite) {
-          context.fillStyle = definition.color || '#1f2937';
-          context.fillRect(x * tilePixelSize, y * tilePixelSize, tilePixelSize, tilePixelSize);
-
-          if (definition.texture === 'speckled') {
-            context.save();
-            context.fillStyle = definition.accent || 'rgba(255, 255, 255, 0.08)';
-            const dot = Math.max(1, Math.round(tilePixelSize * 0.18));
-            for (let offsetY = dot; offsetY < tilePixelSize; offsetY += dot * 2) {
-              for (let offsetX = dot; offsetX < tilePixelSize; offsetX += dot * 2) {
-                context.fillRect(
-                  x * tilePixelSize + offsetX - dot / 2,
-                  y * tilePixelSize + offsetY - dot / 2,
-                  dot,
-                  dot
-                );
-              }
-            }
-            context.restore();
-          }
-
-          if (definition.borderColor) {
-            context.save();
-            context.strokeStyle = definition.borderColor;
-            context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
-            context.strokeRect(
-              x * tilePixelSize + context.lineWidth / 2,
-              y * tilePixelSize + context.lineWidth / 2,
-              tilePixelSize - context.lineWidth,
-              tilePixelSize - context.lineWidth
-            );
-            context.restore();
-          }
-        } else if (definition.borderColor && definition.applyBorderOnSprite) {
+        if (definition.borderColor) {
           context.save();
           context.strokeStyle = definition.borderColor;
           context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
