@@ -8,20 +8,20 @@ const structureTypeLabels = {
 };
 
 const interiorTileSprites = {
-  rock: { sheet: 'dwarfholdInterior', row: 0, col: 0 },
-  corridor: { sheet: 'dwarfholdInterior', row: 0, col: 1 },
-  entrance: { sheet: 'dwarfholdInterior', row: 0, col: 2 },
-  hall: { sheet: 'dwarfholdInterior', row: 0, col: 3 },
-  forge: { sheet: 'dwarfholdInterior', row: 1, col: 0 },
-  market: { sheet: 'dwarfholdInterior', row: 1, col: 1 },
-  dormitory: { sheet: 'dwarfholdInterior', row: 1, col: 2 },
-  brewery: { sheet: 'dwarfholdInterior', row: 1, col: 3 },
-  garden: { sheet: 'dwarfholdInterior', row: 2, col: 0 },
-  water: { sheet: 'dwarfholdInterior', row: 2, col: 1 },
-  shrine: { sheet: 'dwarfholdInterior', row: 2, col: 2 },
-  throne: { sheet: 'dwarfholdInterior', row: 2, col: 3 },
-  stairs: { sheet: 'dwarfholdInterior', row: 3, col: 0 },
-  storage: { sheet: 'dwarfholdInterior', row: 3, col: 1 }
+  rock: { sheet: 'dwarfholdInterior', row: 0, col: 19, size: 32 },
+  corridor: { sheet: 'dwarfholdInterior', row: 0, col: 18, size: 32 },
+  entrance: { sheet: 'dwarfholdInterior', row: 0, col: 16, size: 32 },
+  hall: { sheet: 'dwarfholdInterior', row: 1, col: 15, size: 32 },
+  forge: { sheet: 'dwarfholdInterior', row: 10, col: 10, size: 32 },
+  market: { sheet: 'dwarfholdInterior', row: 7, col: 8, size: 32 },
+  dormitory: { sheet: 'dwarfholdInterior', row: 5, col: 7, size: 32 },
+  brewery: { sheet: 'dwarfholdInterior', row: 8, col: 6, size: 32 },
+  garden: { sheet: 'dwarfholdInterior', row: 4, col: 8, size: 32 },
+  water: { sheet: 'dwarfholdInterior', row: 8, col: 9, size: 32 },
+  shrine: { sheet: 'dwarfholdInterior', row: 8, col: 11, size: 32 },
+  throne: { sheet: 'dwarfholdInterior', row: 7, col: 13, size: 32 },
+  stairs: { sheet: 'dwarfholdInterior', row: 6, col: 9, size: 32 },
+  storage: { sheet: 'dwarfholdInterior', row: 5, col: 5, size: 32 }
 };
 
 const baseLegend = {

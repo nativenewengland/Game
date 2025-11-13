@@ -9,7 +9,7 @@ export const tileSheets = {
   },
   dwarfholdInterior: {
     key: 'dwarfholdInterior',
-    path: 'maps/Interior_Tileset.png',
+    path: 'tilesheet/Interior_Tileset.png',
     tileSize: 32,
     image: null
   },
