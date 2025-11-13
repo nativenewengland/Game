@@ -13,6 +13,18 @@ export const tileSheets = {
     tileSize: 32,
     image: null
   },
+  dwarfholdWalls: {
+    key: 'dwarfholdWalls',
+    path: 'tilesheet/Tiled_files/walls_floor.png',
+    tileSize: 16,
+    image: null
+  },
+  dwarfholdObjects: {
+    key: 'dwarfholdObjects',
+    path: 'tilesheet/Tiled_files/Objects.png',
+    tileSize: 16,
+    image: null
+  },
   worldDetails: {
     key: 'worldDetails',
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',

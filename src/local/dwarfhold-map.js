@@ -8,146 +8,183 @@ const structureTypeLabels = {
 };
 
 const interiorTileSprites = {
-  cobblestone_floor1: { sheet: 'dwarfholdInterior', row: 1, col: 0, size: 16 },
-  cobblestone_floor2: { sheet: 'dwarfholdInterior', row: 2, col: 0, size: 16 },
-  cobblestone_floor3: { sheet: 'dwarfholdInterior', row: 3, col: 0, size: 16 },
-  cobblestone_floor4: { sheet: 'dwarfholdInterior', row: 4, col: 0, size: 16 },
-  cobblestone_floor5: { sheet: 'dwarfholdInterior', row: 0, col: 1, size: 16 },    
-  cobblestone_floor6: { sheet: 'dwarfholdInterior', row: 0, col: 2, size: 16 },   
-  cobblestone_floor7: { sheet: 'dwarfholdInterior', row: 0, col: 3, size: 16 },   
-  cobblestone_floor8: { sheet: 'dwarfholdInterior', row: 0, col: 4, size: 16 },   
-  cobblestone_floor9: { sheet: 'dwarfholdInterior', row: 1, col: 1, size: 16 },   
-  cobblestone_floor10: { sheet: 'dwarfholdInterior', row: 1, col: 2, size: 16 },   
-  cobblestone_floor11: { sheet: 'dwarfholdInterior', row: 1, col: 3, size: 16 },   
-  cobblestone_floor12: { sheet: 'dwarfholdInterior', row: 1, col: 4, size: 16 },   
-  wallcorner1: { sheet: 'dwarfholdInterior', row: 0, col: 4, size: 16 },
-  wallcorner2: { sheet: 'dwarfholdInterior', row: 1, col: 4, size: 16 },
-  wallcorner3: { sheet: 'dwarfholdInterior', row: 2, col: 4, size: 16 },
-  wallcorner4: { sheet: 'dwarfholdInterior', row: 3, col: 4, size: 16 },
-  door: { sheet: 'dwarfholdInterior', row: 4, col: 3, size: 16 },
-  table: { sheet: 'dwarfholdInterior', row: 1, col: 15, size: 16 },
-  forge: { sheet: 'dwarfholdInterior', row: 10, col: 10, size: 16 },
-  barrel: { sheet: 'dwarfholdInterior', row: 1, col: 14, size: 16 },
-  bed: { sheet: 'dwarfholdInterior', row: 5, col: 7, size: 16 },
-  keg: { sheet: 'dwarfholdInterior', row: 8, col: 6, size: 16 },
-  worktable: { sheet: 'dwarfholdInterior', row: 4, col: 8, size: 16 },
-  redcarpertopleft: { sheet: 'dwarfholdInterior', row: 12, col: 0, size: 16 },
-  redcarpertopmiddle: { sheet: 'dwarfholdInterior', row: 13, col: 0, size: 16 },
-  redcarpertopright: { sheet: 'dwarfholdInterior', row: 14, col: 0, size: 16 },
-  redcarpertmiddleleft: { sheet: 'dwarfholdInterior', row: 12, col: 1, size: 16 },
-  redcarpetmiddlemiddle: { sheet: 'dwarfholdInterior', row: 13, col: 1, size: 16 },
-  redcarpetmiddleright: { sheet: 'dwarfholdInterior', row: 14, col: 1, size: 16 },
-  redcarpetbottomleft: { sheet: 'dwarfholdInterior', row: 12, col: 2, size: 16 },
-  redcarpetbottommiddle: { sheet: 'dwarfholdInterior', row: 13, col: 2, size: 16 },
-  redcarpetbottomirght: { sheet: 'dwarfholdInterior', row: 14, col: 2, size: 16 },
-  pot: { sheet: 'dwarfholdInterior', row: 17, col: 21, size: 16 },
-  pottedplant1: { sheet: 'dwarfholdInterior', row: 16, col: 12, size: 16 },
-  pottedplant2: { sheet: 'dwarfholdInterior', row: 16, col: 13, size: 16 },
-  pottedplant3: { sheet: 'dwarfholdInterior', row: 16, col: 14, size: 16 },
-  stool: { sheet: 'dwarfholdInterior', row: 14, col: 2, size: 16 }
+  rock: [
+    { sheet: 'dwarfholdWalls', row: 4, col: 5, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 4, col: 6, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 4, col: 7, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 1, col: 5, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 1, col: 7, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 1, col: 9, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 3, col: 5, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 3, col: 7, size: 16 }
+  ],
+  carvedFloor: [
+    { sheet: 'dwarfholdWalls', row: 7, col: 11, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 6, col: 10, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 6, col: 11, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 7, col: 5, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 7, col: 6, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 7, col: 7, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 9, col: 5, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 9, col: 7, size: 16 }
+  ],
+  polishedFloor: [
+    { sheet: 'dwarfholdWalls', row: 10, col: 10, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 10, col: 11, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 11, col: 8, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 11, col: 9, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 13, col: 7, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 13, col: 8, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 14, col: 7, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 14, col: 8, size: 16 }
+  ],
+  workFloor: [
+    { sheet: 'dwarfholdWalls', row: 15, col: 11, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 15, col: 12, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 15, col: 13, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 15, col: 14, size: 16 }
+  ],
+  dampFloor: [
+    { sheet: 'dwarfholdWalls', row: 13, col: 10, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 13, col: 11, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 13, col: 13, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 14, col: 9, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 14, col: 10, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 14, col: 11, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 14, col: 12, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 14, col: 13, size: 16 }
+  ],
+  water: [
+    { sheet: 'dwarfholdWalls', row: 8, col: 2, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 7, col: 1, size: 16 }
+  ],
+  moss: [
+    { sheet: 'dwarfholdWalls', row: 13, col: 1, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 13, col: 2, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 13, col: 3, size: 16 },
+    { sheet: 'dwarfholdWalls', row: 13, col: 4, size: 16 }
+  ],
+  overlays: {
+    entrance: [{ sheet: 'dwarfholdObjects', row: 2, col: 2, size: 16, scale: 0.92 }],
+    forge: [{ sheet: 'dwarfholdObjects', row: 1, col: 15, size: 16, scale: 0.9 }],
+    market: [{ sheet: 'dwarfholdObjects', row: 3, col: 3, size: 16, scale: 0.9 }],
+    dormitory: [{ sheet: 'dwarfholdObjects', row: 2, col: 5, size: 16, scale: 0.9 }],
+    brewery: [{ sheet: 'dwarfholdObjects', row: 3, col: 6, size: 16, scale: 0.9 }],
+    garden: [{ sheet: 'dwarfholdObjects', row: 7, col: 6, size: 16, scale: 0.92 }],
+    water: [{ sheet: 'dwarfholdObjects', row: 7, col: 9, size: 16, scale: 0.88 }],
+    shrine: [{ sheet: 'dwarfholdObjects', row: 3, col: 1, size: 16, scale: 0.88 }],
+    throne: [{ sheet: 'dwarfholdObjects', row: 1, col: 13, size: 16, scale: 0.94 }],
+    stairs: [{ sheet: 'dwarfholdObjects', row: 3, col: 4, size: 16, scale: 0.9 }],
+    storage: [{ sheet: 'dwarfholdObjects', row: 3, col: 5, size: 16, scale: 0.9 }]
+  }
 };
+
+const tileVariantPools = {
+  rock: { base: interiorTileSprites.rock },
+  corridor: { base: interiorTileSprites.carvedFloor },
+  entrance: { base: interiorTileSprites.carvedFloor, overlays: interiorTileSprites.overlays.entrance },
+  hall: { base: interiorTileSprites.polishedFloor },
+  forge: { base: interiorTileSprites.workFloor, overlays: interiorTileSprites.overlays.forge },
+  market: { base: interiorTileSprites.polishedFloor, overlays: interiorTileSprites.overlays.market },
+  dormitory: { base: interiorTileSprites.dampFloor, overlays: interiorTileSprites.overlays.dormitory },
+  brewery: { base: interiorTileSprites.workFloor, overlays: interiorTileSprites.overlays.brewery },
+  garden: { base: interiorTileSprites.moss, overlays: interiorTileSprites.overlays.garden },
+  water: { base: interiorTileSprites.water, overlays: interiorTileSprites.overlays.water },
+  shrine: { base: interiorTileSprites.polishedFloor, overlays: interiorTileSprites.overlays.shrine },
+  throne: { base: interiorTileSprites.polishedFloor, overlays: interiorTileSprites.overlays.throne },
+  stairs: { base: interiorTileSprites.carvedFloor, overlays: interiorTileSprites.overlays.stairs },
+  storage: { base: interiorTileSprites.workFloor, overlays: interiorTileSprites.overlays.storage }
+};
+
+tileVariantPools.default = { base: interiorTileSprites.carvedFloor };
 
 const baseLegend = {
   rock: {
     color: '#111827',
     label: 'Carved stone',
-    description: 'Unworked mountain rock surrounding the hold.',
-    sprite: interiorTileSprites.rock
+    description: 'Unworked mountain rock surrounding the hold.'
   },
   corridor: {
     color: '#6b7280',
     label: 'Worked corridors',
     description: 'Main arteries linking districts and quarters.',
     texture: 'speckled',
-    accent: 'rgba(17, 24, 39, 0.25)',
-    sprite: interiorTileSprites.corridor
+    accent: 'rgba(17, 24, 39, 0.25)'
   },
   entrance: {
     color: '#9ca3af',
     label: 'Gatehouse',
     description: 'Fortified approaches with portcullises and embrasures.',
-    borderColor: '#d1d5db',
-    sprite: interiorTileSprites.entrance
+    borderColor: '#d1d5db'
   },
   hall: {
     color: '#fcd34d',
     label: 'Great hall',
     description: 'Feasting and assembly chamber beneath vaulted arches.',
-    borderColor: '#f59e0b',
-    sprite: interiorTileSprites.hall
+    borderColor: '#f59e0b'
   },
   forge: {
     color: '#ea580c',
     label: 'Great forge',
     description: 'Smithies, smelters, and crucibles blazing with industry.',
-    borderColor: '#b45309',
-    sprite: interiorTileSprites.forge
+    borderColor: '#b45309'
   },
   market: {
     color: '#f59e0b',
     label: 'Deep market',
     description: 'Bazaar arcades trading gemstones, metals, and surface wares.',
     texture: 'speckled',
-    accent: 'rgba(250, 204, 21, 0.24)',
-    sprite: interiorTileSprites.market
+    accent: 'rgba(250, 204, 21, 0.24)'
   },
   dormitory: {
     color: '#60a5fa',
     label: 'Barracks and bunks',
     description: 'Sleeping quarters and messes for clan cohorts.',
-    borderColor: '#2563eb',
-    sprite: interiorTileSprites.dormitory
+    borderColor: '#2563eb'
   },
   brewery: {
     color: '#c08457',
     label: 'Brewery caverns',
     description: 'Stills and barrel racks for the hold’s famed ales.',
     texture: 'speckled',
-    accent: 'rgba(248, 250, 252, 0.16)',
-    sprite: interiorTileSprites.brewery
+    accent: 'rgba(248, 250, 252, 0.16)'
   },
   garden: {
     color: '#4ade80',
     label: 'Mushroom gardens',
     description: 'Glowcap terraces and fungal beds feeding the populace.',
     texture: 'speckled',
-    accent: 'rgba(74, 222, 128, 0.35)',
-    sprite: interiorTileSprites.garden
+    accent: 'rgba(74, 222, 128, 0.35)'
   },
   water: {
     color: '#2563eb',
     label: 'Reservoir',
     description: 'Subterranean cistern fed by seepage and aquifer flow.',
-    borderColor: '#1d4ed8',
-    sprite: interiorTileSprites.water
+    borderColor: '#1d4ed8'
   },
   shrine: {
     color: '#e5e7eb',
     label: 'Ancestor shrine',
     description: 'Runic alcoves honoring revered thanes and founders.',
-    borderColor: '#cbd5f5',
-    sprite: interiorTileSprites.shrine
+    borderColor: '#cbd5f5'
   },
   throne: {
     color: '#fde68a',
     label: 'Throne dais',
     description: 'Seat of the ruling thane overlooking the grand hall.',
-    borderColor: '#f59e0b',
-    sprite: interiorTileSprites.throne
+    borderColor: '#f59e0b'
   },
   stairs: {
     color: '#a855f7',
     label: 'Deep stairs',
     description: 'Spiral descent toward mines and lower districts.',
-    borderColor: '#7c3aed',
-    sprite: interiorTileSprites.stairs
+    borderColor: '#7c3aed'
   },
   storage: {
     color: '#d8b4fe',
     label: 'Vaulted stores',
     description: 'Reinforced vaults protecting supplies and ingots.',
-    borderColor: '#a855f7',
-    sprite: interiorTileSprites.storage
+    borderColor: '#a855f7'
   }
 };
 
@@ -259,6 +296,119 @@ function shuffle(array, randomFn) {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+}
+
+function cloneSpriteDefinition(sprite) {
+  if (!sprite || typeof sprite !== 'object') {
+    return null;
+  }
+  const {
+    sheet,
+    row,
+    col,
+    size,
+    sx,
+    sy,
+    sw,
+    sh,
+    scale,
+    scaleY,
+    offsetX,
+    offsetY
+  } = sprite;
+  const copy = { sheet: sheet || null };
+  if (Number.isFinite(row)) {
+    copy.row = row;
+  }
+  if (Number.isFinite(col)) {
+    copy.col = col;
+  }
+  if (Number.isFinite(size)) {
+    copy.size = size;
+  }
+  if (Number.isFinite(sx)) {
+    copy.sx = sx;
+  }
+  if (Number.isFinite(sy)) {
+    copy.sy = sy;
+  }
+  if (Number.isFinite(sw)) {
+    copy.sw = sw;
+  }
+  if (Number.isFinite(sh)) {
+    copy.sh = sh;
+  }
+  if (Number.isFinite(scale)) {
+    copy.scale = scale;
+  }
+  if (Number.isFinite(scaleY)) {
+    copy.scaleY = scaleY;
+  }
+  if (Number.isFinite(offsetX)) {
+    copy.offsetX = offsetX;
+  }
+  if (Number.isFinite(offsetY)) {
+    copy.offsetY = offsetY;
+  }
+  return copy;
+}
+
+function pickVariantFromPool(variants, seedValue) {
+  if (!Array.isArray(variants) || variants.length === 0) {
+    return null;
+  }
+  const rng = createRng(seedValue);
+  const index = variants.length === 1 ? 0 : clamp(Math.floor(rng() * variants.length), 0, variants.length - 1);
+  const variant = variants[index] || variants[0];
+  return cloneSpriteDefinition(variant);
+}
+
+function assignTileSpritesToGrid(tiles, baseSeed) {
+  if (!Array.isArray(tiles)) {
+    return;
+  }
+  for (let y = 0; y < tiles.length; y += 1) {
+    const row = tiles[y];
+    if (!Array.isArray(row)) {
+      continue;
+    }
+    for (let x = 0; x < row.length; x += 1) {
+      const cell = row[x];
+      const type =
+        typeof cell?.type === 'string' && cell.type
+          ? cell.type
+          : typeof cell === 'string'
+            ? cell
+            : 'rock';
+      const pool = tileVariantPools[type] || tileVariantPools.default;
+      if (!pool) {
+        continue;
+      }
+      const baseSeedValue = hashString(`${baseSeed}:${type}:${x},${y}:base`);
+      const overlaySeedValue = hashString(`${baseSeed}:${type}:${x},${y}:overlay`);
+      const nextCell = cell && typeof cell === 'object' ? cell : { type };
+      if (Array.isArray(pool.base) && pool.base.length > 0) {
+        const sprite = pickVariantFromPool(pool.base, baseSeedValue);
+        if (sprite) {
+          nextCell.sprite = sprite;
+        }
+      }
+      if (Array.isArray(pool.overlays) && pool.overlays.length > 0) {
+        const overlaySprite = pickVariantFromPool(pool.overlays, overlaySeedValue);
+        if (overlaySprite) {
+          if (Array.isArray(nextCell.overlays)) {
+            nextCell.overlays = [...nextCell.overlays, overlaySprite];
+          } else if (nextCell.overlay && !Array.isArray(nextCell.overlay)) {
+            nextCell.overlays = [nextCell.overlay, overlaySprite].filter(Boolean);
+            delete nextCell.overlay;
+          } else {
+            nextCell.overlays = [overlaySprite];
+          }
+        }
+      }
+      row[x] = nextCell;
+    }
+  }
 }
 
 function ensureOdd(value, min, max) {
@@ -553,6 +703,8 @@ export function generateDwarfholdMap(options = {}) {
     }
   }
 
+  assignTileSpritesToGrid(tiles, seedValue);
+
   const legend = {};
   usedTypes.forEach((type) => {
     const definition = baseLegend[type];
@@ -564,6 +716,17 @@ export function generateDwarfholdMap(options = {}) {
         label: type.charAt(0).toUpperCase() + type.slice(1),
         description: 'Chamber'
       };
+    }
+  });
+
+  Object.keys(legend).forEach((type) => {
+    const pool = tileVariantPools[type];
+    if (!pool) {
+      return;
+    }
+    const spriteSource = pool.legendSprite || (Array.isArray(pool.base) ? pool.base[0] : null);
+    if (spriteSource && !legend[type].sprite) {
+      legend[type].sprite = cloneSpriteDefinition(spriteSource);
     }
   });
 
