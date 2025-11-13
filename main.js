@@ -10999,6 +10999,111 @@ function updateWorldInfoSeedDisplay(seedValue) {
   elements.worldInfoSeed.textContent = trimmed || 'Random';
 }
 
+function applyFormSettings() {
+  const sliderInputHandlers = [
+    {
+      input: elements.forestFrequencyInput,
+      valueElement: elements.forestFrequencyValue,
+      defaultValue: defaultForestFrequency,
+      key: 'forestFrequency'
+    },
+    {
+      input: elements.mountainFrequencyInput,
+      valueElement: elements.mountainFrequencyValue,
+      defaultValue: defaultMountainFrequency,
+      key: 'mountainFrequency'
+    },
+    {
+      input: elements.riverFrequencyInput,
+      valueElement: elements.riverFrequencyValue,
+      defaultValue: 50,
+      key: 'riverFrequency'
+    },
+    {
+      input: elements.humanSettlementFrequencyInput,
+      valueElement: elements.humanSettlementFrequencyValue,
+      defaultValue: 50,
+      key: 'humanSettlementFrequency'
+    },
+    {
+      input: elements.dwarfSettlementFrequencyInput,
+      valueElement: elements.dwarfSettlementFrequencyValue,
+      defaultValue: 50,
+      key: 'dwarfSettlementFrequency'
+    },
+    {
+      input: elements.woodElfSettlementFrequencyInput,
+      valueElement: elements.woodElfSettlementFrequencyValue,
+      defaultValue: 50,
+      key: 'woodElfSettlementFrequency'
+    },
+    {
+      input: elements.lizardmenSettlementFrequencyInput,
+      valueElement: elements.lizardmenSettlementFrequencyValue,
+      defaultValue: 50,
+      key: 'lizardmenSettlementFrequency'
+    }
+  ];
+
+  sliderInputHandlers.forEach(({ input, valueElement, defaultValue, key }) => {
+    if (!input) {
+      return;
+    }
+    const rawValue = Number.parseInt(input.value, 10);
+    const sanitisedValue = sanitizeFrequencyValue(
+      Number.isNaN(rawValue) ? state.settings[key] : rawValue,
+      defaultValue
+    );
+    state.settings[key] = sanitisedValue;
+    if (input.value !== sanitisedValue.toString()) {
+      input.value = sanitisedValue.toString();
+    }
+    updateFrequencyDisplay(valueElement, sanitisedValue);
+  });
+
+  const selectedMapSizeKey = elements.mapSizeSelect
+    ? elements.mapSizeSelect.value
+    : state.settings.mapSize;
+  const mapSizePreset = getMapSizePreset(selectedMapSizeKey);
+  applyMapSizePresetToState(state, mapSizePreset);
+  if (elements.mapSizeSelect) {
+    elements.mapSizeSelect.value = state.settings.mapSize;
+  }
+  if (elements.worldMapSizeSelect) {
+    elements.worldMapSizeSelect.value = state.settings.mapSize;
+  }
+  updateWorldInfoSizeDisplay();
+
+  const selectedGenerationType = elements.worldGenerationTypeSelect
+    ? elements.worldGenerationTypeSelect.value
+    : state.settings.worldGenerationType;
+  setWorldGenerationType(selectedGenerationType);
+
+  const seedInputValue = elements.seedInput ? elements.seedInput.value.trim() : '';
+  if (elements.seedInput && seedInputValue !== elements.seedInput.value) {
+    elements.seedInput.value = seedInputValue;
+  }
+  state.settings.seedString = seedInputValue;
+  let finalSeed = seedInputValue;
+  if (!finalSeed) {
+    finalSeed = ensureSeedString();
+    if (elements.seedInput) {
+      elements.seedInput.value = finalSeed;
+    }
+  }
+  state.settings.lastSeedString = finalSeed;
+  updateWorldInfoSeedDisplay(finalSeed);
+  if (elements.worldSeedInput && elements.worldSeedInput !== elements.seedInput) {
+    elements.worldSeedInput.value = finalSeed;
+  }
+
+  return {
+    mapSize: state.settings.mapSize,
+    worldGenerationType: state.settings.worldGenerationType,
+    seed: finalSeed
+  };
+}
+
 function ensureSeedString() {
   const trimmed = (state.settings.seedString || '').trim();
   if (trimmed) {
