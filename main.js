@@ -39,6 +39,7 @@ import {
 } from './src/world/structures.js';
 import { updateDwarfPortrait, updateDwarfTraitSummary, updateRosterList } from './src/dwarves/customizer.js';
 import { populateClanSelectFromOptions } from './src/main/clan-select.js';
+import { populateProfessionSelectFromOptions } from './src/main/profession-select.js';
 import {
   applyMapSizePresetToState,
   defaultForestFrequency,
@@ -9900,13 +9901,13 @@ function generateProfessionsFromGuilds(guildOptions, existingOptions = []) {
 
 const baseDwarfProfessionOptions = [
   { value: 'miner', label: 'Miner' },
-  { value: 'mason', label: 'Master Mason' },
-  { value: 'smith', label: 'Master Smith' },
+  { value: 'mason', label: 'Mason' },
+  { value: 'smith', label: 'Smith' },
   { value: 'brewer', label: 'Brewmaster' },
-  { value: 'engineer', label: 'Chief Engineer' },
-  { value: 'scholar', label: 'Lore Scholar' },
-  { value: 'ranger', label: 'Ranger Captain' },
-  { value: 'carpenter', label: 'Master Carpenter' },
+  { value: 'engineer', label: 'Engineer' },
+  { value: 'scholar', label: 'Scholar' },
+  { value: 'ranger', label: 'Ranger' },
+  { value: 'carpenter', label: 'Carpenter' },
   { value: 'gemcutter', label: 'Gemcutter' },
   { value: 'banker', label: 'Banker' },
   { value: 'cooper', label: 'Cooper' },
@@ -17305,12 +17306,23 @@ function buildRulerPortraitPanelSection(resolvedName, details) {
 }
 
 function buildStructureDetailsPanelContent(tile, context = {}) {
-  if (!tile || !tile.structureName) {
+  if (!tile) {
     return null;
   }
 
   const details = tile.structureDetails || {};
-  const resolvedName = details.name || tile.structureName;
+  const resolvedName =
+    (typeof tile.structureName === 'string' && tile.structureName) ||
+    (typeof details.name === 'string' && details.name) ||
+    null;
+
+  if (!resolvedName) {
+    return null;
+  }
+
+  if (tile.structureName !== resolvedName) {
+    tile = { ...tile, structureName: resolvedName };
+  }
   const subtitleParts = [];
   if (details.classification) {
     subtitleParts.push(details.classification);
@@ -30115,9 +30127,16 @@ function ensureClanSelectOptions() {
   }
 }
 
+function ensureProfessionSelectOptions() {
+  if (elements.dwarfProfessionSelect) {
+    populateProfessionSelectFromOptions(dwarfOptions.profession);
+  }
+}
+
 function bootApplication() {
   hydrateElements();
   ensureClanSelectOptions();
+  ensureProfessionSelectOptions();
 
   attachEvents(elements, {
     structureContextMenuState,
