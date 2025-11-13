@@ -654,17 +654,18 @@ export function generateDwarfholdMap(options = {}) {
     : Number.isFinite(options.populationMax)
     ? Math.max(0, Math.round(options.populationMax))
     : null;
-  const baseCapacity = 120;
+  const baseCapacity = 100;
   const dwarvesToAccommodate =
-    resolvedPopulation !== null ? Math.max(20, Math.round(resolvedPopulation / 10)) : baseCapacity;
-  const normalizedPopulation = Math.max(1, dwarvesToAccommodate / baseCapacity);
-  const populationScale = clamp(Math.pow(normalizedPopulation, 0.58), 0.95, 6.5);
-  const heightScale = clamp(populationScale * 0.9, 0.95, 5.6);
+    resolvedPopulation !== null ? Math.max(10, Math.round(resolvedPopulation / 10)) : null;
+  const scaleFactorRaw =
+    dwarvesToAccommodate !== null ? Math.sqrt(dwarvesToAccommodate / baseCapacity) : 1;
+  const scaleFactor = clamp(scaleFactorRaw, 0.85, 3);
+  const heightScaleFactor = clamp(scaleFactor * 1.05, 0.9, 3.4);
 
-  const widthBase = Math.max(1, Math.round((160 + randomInt(randomFn, 0, 24)) * populationScale));
-  const heightBase = Math.max(1, Math.round((110 + randomInt(randomFn, 0, 20)) * heightScale));
-  const width = ensureOdd(widthBase, 121, 801);
-  const height = ensureOdd(heightBase, 91, 601);
+  const widthBase = Math.max(1, Math.round((34 + randomInt(randomFn, 0, 4)) * scaleFactor));
+  const heightBase = Math.max(1, Math.round((22 + randomInt(randomFn, 0, 4)) * heightScaleFactor));
+  const width = ensureOdd(widthBase, 29, 95);
+  const height = ensureOdd(heightBase, 21, 75);
   const usedTypes = new Set();
   const tiles = createEmptyGrid(width, height, usedTypes);
   const features = [];
@@ -688,7 +689,7 @@ export function generateDwarfholdMap(options = {}) {
     shadowColor: 'rgba(148, 163, 184, 0.45)'
   });
 
-  const normalizedScale = clamp(populationScale * 1.4, 1.4, 9);
+  const normalizedScale = scaleFactor;
   const hallWidth = ensureOdd(
     Math.floor(width * clamp(0.52 + normalizedScale * 0.1, 0.52, 0.72)),
     13,
@@ -729,8 +730,8 @@ export function generateDwarfholdMap(options = {}) {
   const rightRoomX = clamp(rightCorridorX + 2, 1, width - roomWidth - 2);
   const baseNorthY = clamp(hallStartY - roomHeight + 1, 1, height - roomHeight - 2);
   const baseSouthY = clamp(hallEndY - roomHeight + 1, 1, height - roomHeight - 2);
-  const desiredNorthRooms = Math.max(2, Math.round(normalizedScale));
-  const desiredSouthRooms = Math.max(2, Math.round(normalizedScale + 0.5));
+  const desiredNorthRooms = Math.max(1, Math.round(normalizedScale));
+  const desiredSouthRooms = Math.max(1, Math.round(normalizedScale + 0.4));
   const leftNorthYs = buildRoomPositions(baseNorthY, -1, desiredNorthRooms, roomHeight, height);
   const leftSouthYs = buildRoomPositions(baseSouthY, 1, desiredSouthRooms, roomHeight, height);
   const rightNorthSeed = clamp(baseNorthY + randomInt(randomFn, -1, 1), 1, height - roomHeight - 2);
