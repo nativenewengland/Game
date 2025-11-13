@@ -11257,7 +11257,8 @@ const viewState = {
 const dwarfholdScreenConfig = {
   baseTileSize: 28,
   minTileSize: 8,
-  maxCanvasSize: 960
+  maxCanvasSize: 960,
+  viewportPadding: 48
 };
 
 const localMapDefaultMessage = 'Click the world map to open a local preview.';
@@ -14570,24 +14571,84 @@ function renderDwarfholdScreen() {
       return;
     }
 
-    let tilePixelSize = dwarfholdScreenConfig.baseTileSize;
-    const maxSize = dwarfholdScreenConfig.maxCanvasSize;
-    while (
-      (mapWidth * tilePixelSize > maxSize || mapHeight * tilePixelSize > maxSize) &&
-      tilePixelSize > dwarfholdScreenConfig.minTileSize
-    ) {
-      tilePixelSize -= 2;
-    }
-    if (!Number.isFinite(tilePixelSize) || tilePixelSize < dwarfholdScreenConfig.minTileSize) {
-      tilePixelSize = dwarfholdScreenConfig.minTileSize;
+    const baseTileSize = Number.isFinite(dwarfholdScreenConfig.baseTileSize)
+      ? dwarfholdScreenConfig.baseTileSize
+      : 28;
+    const minTileSize = Number.isFinite(dwarfholdScreenConfig.minTileSize)
+      ? dwarfholdScreenConfig.minTileSize
+      : 4;
+    const fallbackMaxSize = Number.isFinite(dwarfholdScreenConfig.maxCanvasSize)
+      ? Math.max(1, dwarfholdScreenConfig.maxCanvasSize)
+      : 960;
+    const viewportPadding = Number.isFinite(dwarfholdScreenConfig.viewportPadding)
+      ? Math.max(0, dwarfholdScreenConfig.viewportPadding)
+      : 0;
+
+    const parentElement = canvas.parentElement;
+    const parentRect =
+      parentElement && typeof parentElement.getBoundingClientRect === 'function'
+        ? parentElement.getBoundingClientRect()
+        : null;
+    const viewportWidth =
+      typeof window !== 'undefined' && Number.isFinite(window.innerWidth) ? window.innerWidth : fallbackMaxSize;
+    const viewportHeight =
+      typeof window !== 'undefined' && Number.isFinite(window.innerHeight) ? window.innerHeight : fallbackMaxSize;
+
+    const resolveAvailableDimension = (rectValue, clientValue, viewportValue) => {
+      const raw =
+        Number.isFinite(rectValue) && rectValue > 0
+          ? rectValue
+          : Number.isFinite(clientValue) && clientValue > 0
+          ? clientValue
+          : viewportValue;
+      const padded = Math.max(1, Math.floor(raw - viewportPadding * 2));
+      return Math.max(1, Math.min(fallbackMaxSize, padded));
+    };
+
+    const availableWidth = resolveAvailableDimension(
+      parentRect?.width,
+      parentElement?.clientWidth,
+      viewportWidth
+    );
+    const availableHeight = resolveAvailableDimension(
+      parentRect?.height,
+      parentElement?.clientHeight,
+      viewportHeight
+    );
+
+    const maxTileSizeFromWidth = Math.max(1, Math.floor(availableWidth / mapWidth));
+    const maxTileSizeFromHeight = Math.max(1, Math.floor(availableHeight / mapHeight));
+
+    let tilePixelSize = Math.min(baseTileSize, maxTileSizeFromWidth, maxTileSizeFromHeight);
+
+    if (!Number.isFinite(tilePixelSize) || tilePixelSize <= 0) {
+      tilePixelSize = minTileSize;
     }
 
-    const destWidth = Math.max(1, Math.round(mapWidth * tilePixelSize));
-    const destHeight = Math.max(1, Math.round(mapHeight * tilePixelSize));
+    if (tilePixelSize < minTileSize) {
+      tilePixelSize = Math.max(1, Math.min(maxTileSizeFromWidth, maxTileSizeFromHeight));
+    }
+
+    if (!Number.isFinite(tilePixelSize) || tilePixelSize <= 0) {
+      tilePixelSize = 1;
+    }
+
+    let destWidth = Math.max(1, Math.round(mapWidth * tilePixelSize));
+    let destHeight = Math.max(1, Math.round(mapHeight * tilePixelSize));
+
+    if (destWidth > availableWidth || destHeight > availableHeight) {
+      const fitTileSize = Math.max(1, Math.min(maxTileSizeFromWidth, maxTileSizeFromHeight));
+      tilePixelSize = fitTileSize;
+      destWidth = Math.max(1, Math.round(mapWidth * tilePixelSize));
+      destHeight = Math.max(1, Math.round(mapHeight * tilePixelSize));
+    }
+
     canvas.width = destWidth;
     canvas.height = destHeight;
-    canvas.style.width = '100%';
-    canvas.style.height = 'auto';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
+    canvas.style.width = `${destWidth}px`;
+    canvas.style.height = `${destHeight}px`;
     canvas.setAttribute(
       'aria-label',
       `Interior map for ${customMap.title || 'the dwarfhold'} covering ${mapWidth} by ${mapHeight} tiles.`
