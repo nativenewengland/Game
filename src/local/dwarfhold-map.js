@@ -1,4 +1,5 @@
 import { clamp } from '../utils/math.js';
+import { dwarfholdInteriorTiles, dwarfholdInteriorAliases } from './dwarfhold-tiles.js';
 
 const structureTypeLabels = {
   GREAT_DWARFHOLD: 'Great Dwarfhold',
@@ -7,24 +8,49 @@ const structureTypeLabels = {
   DWARFHOLD: 'Dwarven Hold'
 };
 
-const interiorTileSprites = {
-  rock: { sheet: 'dwarfholdInterior', row: 0, col: 19, size: 32 },
-  corridor: { sheet: 'dwarfholdInterior', row: 0, col: 18, size: 32 },
-  entrance: { sheet: 'dwarfholdInterior', row: 0, col: 16, size: 32 },
-  hall: { sheet: 'dwarfholdInterior', row: 1, col: 15, size: 32 },
-  forge: { sheet: 'dwarfholdInterior', row: 10, col: 10, size: 32 },
-  market: { sheet: 'dwarfholdInterior', row: 7, col: 8, size: 32 },
-  dormitory: { sheet: 'dwarfholdInterior', row: 5, col: 7, size: 32 },
-  brewery: { sheet: 'dwarfholdInterior', row: 8, col: 6, size: 32 },
-  garden: { sheet: 'dwarfholdInterior', row: 4, col: 8, size: 32 },
-  water: { sheet: 'dwarfholdInterior', row: 8, col: 9, size: 32 },
-  shrine: { sheet: 'dwarfholdInterior', row: 8, col: 11, size: 32 },
-  throne: { sheet: 'dwarfholdInterior', row: 7, col: 13, size: 32 },
-  stairs: { sheet: 'dwarfholdInterior', row: 6, col: 9, size: 32 },
-  storage: { sheet: 'dwarfholdInterior', row: 5, col: 5, size: 32 }
-};
+const interiorTileSprites = createInteriorTileSprites(
+  dwarfholdInteriorTiles,
+  dwarfholdInteriorAliases
+);
+
+function createInteriorTileSprites(tiles, aliases) {
+  const entries = {};
+
+  tiles.forEach((tile) => {
+    entries[tile.name] = {
+      sheet: 'dwarfholdInterior',
+      row: tile.row,
+      col: tile.col,
+      size: 16,
+      category: tile.category,
+      palette: tile.palette,
+      tags: [...(tile.tags || [])],
+      coverage: tile.coverage,
+      meanY: tile.meanY
+    };
+  });
+
+  Object.entries(aliases || {}).forEach(([alias, reference]) => {
+    const resolvedName = reference?.name;
+    if (!resolvedName) {
+      return;
+    }
+    const base = entries[resolvedName];
+    if (base) {
+      entries[alias] = { ...base, aliasOf: resolvedName };
+    }
+  });
+
+  return entries;
+}
 
 const baseLegend = {
+  grass: {
+    color: '#4ade80',
+    label: 'Moss beds',
+    description: 'Soft moss carpets laid over smoothed stone.',
+    sprite: interiorTileSprites.grass
+  },
   rock: {
     color: '#111827',
     label: 'Carved stone',
@@ -45,6 +71,13 @@ const baseLegend = {
     description: 'Fortified approaches with portcullises and embrasures.',
     borderColor: '#d1d5db',
     sprite: interiorTileSprites.entrance
+  },
+  door: {
+    color: '#94a3b8',
+    label: 'Runed door',
+    description: 'Heavy stone doors traced with faintly glowing sigils.',
+    borderColor: '#cbd5f5',
+    sprite: interiorTileSprites.door
   },
   hall: {
     color: '#fcd34d',
