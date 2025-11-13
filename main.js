@@ -16972,6 +16972,12 @@ async function showDwarfholdInterior(tile, tileX, tileY) {
 
   try {
     const generateDwarfholdMap = await loadDwarfholdGenerator();
+    const structurePopulation = Number.isFinite(tile?.structureDetails?.population)
+      ? tile.structureDetails.population
+      : null;
+    const structurePopulationMax = Number.isFinite(tile?.structureDetails?.populationMax)
+      ? tile.structureDetails.populationMax
+      : null;
     const customMap = generateDwarfholdMap({
       structureKey: typeof tile?.structure === 'string' ? tile.structure : null,
       structureName:
@@ -16983,7 +16989,9 @@ async function showDwarfholdInterior(tile, tileX, tileY) {
       faction: tile?.structureDetails?.owner || tile?.factionId || null,
       tileX: clampedX,
       tileY: clampedY,
-      worldSeed: resolvedSeed
+      worldSeed: resolvedSeed,
+      population: structurePopulation,
+      populationMax: structurePopulationMax
     });
 
     state.localView.active = true;
