@@ -353,6 +353,109 @@ function cloneSpriteDefinition(sprite) {
   return copy;
 }
 
+function buildRoomPositions(baseY, direction, count, roomHeight, mapHeight) {
+  if (!Number.isFinite(baseY) || !Number.isFinite(direction) || count <= 0) {
+    return [];
+  }
+  const minY = 1;
+  const maxY = Math.max(minY, mapHeight - roomHeight - 2);
+  let current = clamp(Math.round(baseY), minY, maxY);
+  const positions = [];
+  for (let i = 0; i < count; i += 1) {
+    if (current < minY || current > maxY) {
+      break;
+    }
+    positions.push(current);
+    current = clamp(
+      direction < 0 ? current - (roomHeight + 2) : current + (roomHeight + 2),
+      minY,
+      maxY
+    );
+  }
+  return direction < 0 ? positions.sort((a, b) => a - b) : positions;
+}
+
+function uniqueSorted(values) {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+  const deduped = Array.from(new Set(values.filter((value) => Number.isFinite(value))));
+  return deduped.sort((a, b) => a - b);
+}
+
+function buildSideRoomSlots(
+  roomX,
+  corridorX,
+  roomYs,
+  corridorWidth,
+  hallMidY,
+  roomWidth,
+  roomHeight,
+  side
+) {
+  const slots = [];
+  if (!Array.isArray(roomYs) || roomYs.length === 0) {
+    return slots;
+  }
+  const doorX = side === 'left' ? corridorX - 1 : corridorX + 1;
+  for (let i = 0; i < roomYs.length; i += 1) {
+    const y = roomYs[i];
+    const doorY = clamp(y + Math.floor(roomHeight / 2), y, y + roomHeight - 1);
+    const distanceFromHall = Math.abs(doorY - hallMidY);
+    slots.push({
+      x: roomX,
+      y,
+      doorX,
+      doorY,
+      side,
+      distanceFromHall
+    });
+  }
+  return slots;
+}
+
+function buildRoomTypePlan(slotCount, scaleFactor, randomFn) {
+  const plan = [];
+  if (!Number.isFinite(slotCount) || slotCount <= 0) {
+    return plan;
+  }
+  const normalizedScale = Number.isFinite(scaleFactor) ? scaleFactor : 1;
+  const coreTypes = ['forge', 'dormitory', 'market', 'brewery'];
+  for (let i = 0; i < coreTypes.length && plan.length < slotCount; i += 1) {
+    plan.push(coreTypes[i]);
+  }
+  const countOf = (type) => plan.filter((entry) => entry === type).length;
+  while (plan.length < slotCount) {
+    const dormTarget = Math.max(Math.ceil(slotCount * 0.5), Math.ceil(normalizedScale * 2));
+    if (countOf('dormitory') < dormTarget) {
+      plan.push('dormitory');
+      continue;
+    }
+    const storageTarget = Math.max(0, Math.floor(normalizedScale));
+    if (countOf('storage') < storageTarget) {
+      plan.push('storage');
+      continue;
+    }
+    const forgeTarget = Math.max(1, Math.ceil(normalizedScale * 1.2));
+    if (countOf('forge') < forgeTarget) {
+      plan.push('forge');
+      continue;
+    }
+    const marketTarget = Math.max(1, Math.ceil(normalizedScale));
+    if (countOf('market') < marketTarget) {
+      plan.push('market');
+      continue;
+    }
+    const breweryTarget = Math.max(1, Math.ceil(normalizedScale));
+    if (countOf('brewery') < breweryTarget) {
+      plan.push('brewery');
+      continue;
+    }
+    plan.push(randomFn() < 0.5 ? 'dormitory' : 'storage');
+  }
+  return plan;
+}
+
 function pickVariantFromPool(variants, seedValue) {
   if (!Array.isArray(variants) || variants.length === 0) {
     return null;
@@ -546,10 +649,23 @@ export function generateDwarfholdMap(options = {}) {
   const worldSeed = typeof options.worldSeed === 'string' ? options.worldSeed : 'dwarfhold';
   const seedValue = hashString(`${worldSeed}:${structureKey}:${structureName}:${tileX}:${tileY}`);
   const randomFn = createRng(seedValue);
-  const widthBase = 34 + randomInt(randomFn, 0, 4);
-  const heightBase = 22 + randomInt(randomFn, 0, 4);
-  const width = ensureOdd(widthBase, 29, 41);
-  const height = ensureOdd(heightBase, 21, 33);
+  const resolvedPopulation = Number.isFinite(options.population)
+    ? Math.max(0, Math.round(options.population))
+    : Number.isFinite(options.populationMax)
+    ? Math.max(0, Math.round(options.populationMax))
+    : null;
+  const baseCapacity = 100;
+  const dwarvesToAccommodate =
+    resolvedPopulation !== null ? Math.max(10, Math.round(resolvedPopulation / 10)) : null;
+  const scaleFactorRaw =
+    dwarvesToAccommodate !== null ? Math.sqrt(dwarvesToAccommodate / baseCapacity) : 1;
+  const scaleFactor = clamp(scaleFactorRaw, 0.85, 3);
+  const heightScaleFactor = clamp(scaleFactor * 1.05, 0.9, 3.4);
+
+  const widthBase = Math.max(1, Math.round((34 + randomInt(randomFn, 0, 4)) * scaleFactor));
+  const heightBase = Math.max(1, Math.round((22 + randomInt(randomFn, 0, 4)) * heightScaleFactor));
+  const width = ensureOdd(widthBase, 29, 95);
+  const height = ensureOdd(heightBase, 21, 75);
   const usedTypes = new Set();
   const tiles = createEmptyGrid(width, height, usedTypes);
   const features = [];
@@ -573,10 +689,25 @@ export function generateDwarfholdMap(options = {}) {
     shadowColor: 'rgba(148, 163, 184, 0.45)'
   });
 
-  const hallWidth = ensureOdd(Math.floor(width * 0.6), 13, width - 5);
-  const hallHeight = ensureOdd(8 + randomInt(randomFn, 0, 2), 7, Math.max(7, height - 10));
+  const normalizedScale = scaleFactor;
+  const hallWidth = ensureOdd(
+    Math.floor(width * clamp(0.52 + normalizedScale * 0.1, 0.52, 0.72)),
+    13,
+    width - 5
+  );
+  const hallHeightBase = 8 + randomInt(randomFn, 0, 2);
+  const hallHeight = ensureOdd(
+    Math.max(7, Math.round(hallHeightBase * clamp(normalizedScale, 1, 1.6))),
+    7,
+    Math.max(7, height - 10)
+  );
   const hallStartX = clamp(Math.floor((width - hallWidth) / 2), 2, Math.max(2, width - hallWidth - 2));
-  const hallStartY = clamp(4 + randomInt(randomFn, 0, 2), 3, Math.max(3, height - hallHeight - 6));
+  const hallVerticalOffset = clamp(Math.round((normalizedScale - 1) * 2), -2, 4);
+  const hallStartY = clamp(
+    4 + randomInt(randomFn, 0, 2) + hallVerticalOffset,
+    3,
+    Math.max(3, height - hallHeight - 6)
+  );
   fillRect(tiles, hallStartX, hallStartY, hallWidth, hallHeight, 'hall', usedTypes);
 
   const hallEndY = hallStartY + hallHeight - 1;
@@ -590,55 +721,118 @@ export function generateDwarfholdMap(options = {}) {
 
   const leftCorridorX = clamp(hallStartX - 4, 2, hallStartX - 2);
   const rightCorridorX = clamp(hallStartX + hallWidth + 3, hallStartX + hallWidth + 1, width - 3);
-  carveCorridorVertical(tiles, leftCorridorX, hallStartY - 2, hallEndY + 2, corridorWidth, 'corridor', usedTypes);
-  carveCorridorVertical(tiles, rightCorridorX, hallStartY - 2, hallEndY + 2, corridorWidth, 'corridor', usedTypes);
-  carveCorridorHorizontal(tiles, hallMidY, leftCorridorX, hallStartX, corridorWidth, 'corridor', usedTypes);
-  carveCorridorHorizontal(tiles, hallMidY, hallStartX + hallWidth - 1, rightCorridorX, corridorWidth, 'corridor', usedTypes);
   addFeatureNote('corridor', features, featureSet, randomFn);
-  const roomWidth = 6;
-  const roomHeight = 6;
+  const maxRoomWidth = Math.max(6, Math.floor(width / 2) - 4);
+  const maxRoomHeight = Math.max(5, Math.floor(height / 2) - 4);
+  const roomWidth = clamp(Math.round(6 * clamp(normalizedScale * 0.95, 1, 2.2)), 6, maxRoomWidth);
+  const roomHeight = clamp(Math.round(6 * clamp(normalizedScale * 0.85, 1, 2)), 5, maxRoomHeight);
   const leftRoomX = clamp(leftCorridorX - roomWidth - 2, 1, width - roomWidth - 2);
-  const leftUpperY = clamp(hallStartY - roomHeight + 1, 1, height - roomHeight - 2);
-  const leftLowerY = clamp(hallEndY - roomHeight + 1, 1, height - roomHeight - 2);
   const rightRoomX = clamp(rightCorridorX + 2, 1, width - roomWidth - 2);
-  const rightUpperY = clamp(hallStartY - roomHeight + 1, 1, height - roomHeight - 2);
-  const rightLowerY = clamp(hallEndY - roomHeight + 1, 1, height - roomHeight - 2);
+  const baseNorthY = clamp(hallStartY - roomHeight + 1, 1, height - roomHeight - 2);
+  const baseSouthY = clamp(hallEndY - roomHeight + 1, 1, height - roomHeight - 2);
+  const desiredNorthRooms = Math.max(1, Math.round(normalizedScale));
+  const desiredSouthRooms = Math.max(1, Math.round(normalizedScale + 0.4));
+  const leftNorthYs = buildRoomPositions(baseNorthY, -1, desiredNorthRooms, roomHeight, height);
+  const leftSouthYs = buildRoomPositions(baseSouthY, 1, desiredSouthRooms, roomHeight, height);
+  const rightNorthSeed = clamp(baseNorthY + randomInt(randomFn, -1, 1), 1, height - roomHeight - 2);
+  const rightSouthSeed = clamp(baseSouthY + randomInt(randomFn, -1, 1), 1, height - roomHeight - 2);
+  const rightNorthYs = buildRoomPositions(rightNorthSeed, -1, desiredNorthRooms, roomHeight, height);
+  const rightSouthYs = buildRoomPositions(rightSouthSeed, 1, desiredSouthRooms, roomHeight, height);
+  let leftRoomYs = uniqueSorted([...leftNorthYs, ...leftSouthYs]);
+  let rightRoomYs = uniqueSorted([...rightNorthYs, ...rightSouthYs]);
+  if (leftRoomYs.length === 0) {
+    leftRoomYs = [baseNorthY];
+  }
+  if (rightRoomYs.length === 0) {
+    rightRoomYs = [baseNorthY];
+  }
+  const leftCorridorTop = Math.max(1, Math.min(hallStartY - 2, leftRoomYs[0]) - 1);
+  const leftCorridorBottom = Math.min(
+    height - 2,
+    Math.max(hallEndY + 2, leftRoomYs[leftRoomYs.length - 1] + roomHeight - 1) + 1
+  );
+  const rightCorridorTop = Math.max(1, Math.min(hallStartY - 2, rightRoomYs[0]) - 1);
+  const rightCorridorBottom = Math.min(
+    height - 2,
+    Math.max(hallEndY + 2, rightRoomYs[rightRoomYs.length - 1] + roomHeight - 1) + 1
+  );
+  carveCorridorVertical(tiles, leftCorridorX, leftCorridorTop, leftCorridorBottom, corridorWidth, 'corridor', usedTypes);
+  carveCorridorVertical(
+    tiles,
+    rightCorridorX,
+    rightCorridorTop,
+    rightCorridorBottom,
+    corridorWidth,
+    'corridor',
+    usedTypes
+  );
+  carveCorridorHorizontal(tiles, hallMidY, leftCorridorX, hallStartX, corridorWidth, 'corridor', usedTypes);
+  carveCorridorHorizontal(
+    tiles,
+    hallMidY,
+    hallStartX + hallWidth - 1,
+    rightCorridorX,
+    corridorWidth,
+    'corridor',
+    usedTypes
+  );
 
-  const leftUpperType = 'forge';
-  const rightUpperType = 'market';
-  const extraPool = shuffle(['dormitory', 'storage', 'brewery'], randomFn);
-  const leftLowerType = extraPool.shift() || 'dormitory';
-  const rightLowerType = extraPool.shift() || 'brewery';
+  const leftSlots = buildSideRoomSlots(
+    leftRoomX,
+    leftCorridorX,
+    leftRoomYs,
+    corridorWidth,
+    hallMidY,
+    roomWidth,
+    roomHeight,
+    'left'
+  );
+  const rightSlots = buildSideRoomSlots(
+    rightRoomX,
+    rightCorridorX,
+    rightRoomYs,
+    corridorWidth,
+    hallMidY,
+    roomWidth,
+    roomHeight,
+    'right'
+  );
+  const roomSlots = [...leftSlots, ...rightSlots];
+  roomSlots.sort((a, b) => {
+    if (a.distanceFromHall === b.distanceFromHall) {
+      if (a.side === b.side) {
+        return a.y - b.y;
+      }
+      return a.side === 'left' ? -1 : 1;
+    }
+    return a.distanceFromHall - b.distanceFromHall;
+  });
+  const roomPlan = buildRoomTypePlan(roomSlots.length, normalizedScale, randomFn);
+  for (let i = 0; i < roomSlots.length; i += 1) {
+    const slot = roomSlots[i];
+    const type = roomPlan[i] || 'dormitory';
+    fillRect(tiles, slot.x, slot.y, roomWidth, roomHeight, type, usedTypes);
+    setCell(tiles, slot.doorX, slot.doorY, 'corridor', usedTypes);
+    addFeatureNote(type, features, featureSet, randomFn);
+  }
 
-  fillRect(tiles, leftRoomX, leftUpperY, roomWidth, roomHeight, leftUpperType, usedTypes);
-  const leftUpperDoorY = clamp(leftUpperY + Math.floor(roomHeight / 2), leftUpperY, leftUpperY + roomHeight - 1);
-  setCell(tiles, leftCorridorX - 1, leftUpperDoorY, 'corridor', usedTypes);
-  addFeatureNote(leftUpperType, features, featureSet, randomFn);
-
-  fillRect(tiles, leftRoomX, leftLowerY, roomWidth, roomHeight, leftLowerType, usedTypes);
-  const leftLowerDoorY = clamp(leftLowerY + Math.floor(roomHeight / 2), leftLowerY, leftLowerY + roomHeight - 1);
-  setCell(tiles, leftCorridorX - 1, leftLowerDoorY, 'corridor', usedTypes);
-  addFeatureNote(leftLowerType, features, featureSet, randomFn);
-
-  fillRect(tiles, rightRoomX, rightUpperY, roomWidth, roomHeight, rightUpperType, usedTypes);
-  const rightUpperDoorY = clamp(rightUpperY + Math.floor(roomHeight / 2), rightUpperY, rightUpperY + roomHeight - 1);
-  setCell(tiles, rightCorridorX + 1, rightUpperDoorY, 'corridor', usedTypes);
-  addFeatureNote(rightUpperType, features, featureSet, randomFn);
-
-  fillRect(tiles, rightRoomX, rightLowerY, roomWidth, roomHeight, rightLowerType, usedTypes);
-  const rightLowerDoorY = clamp(rightLowerY + Math.floor(roomHeight / 2), rightLowerY, rightLowerY + roomHeight - 1);
-  setCell(tiles, rightCorridorX + 1, rightLowerDoorY, 'corridor', usedTypes);
-  addFeatureNote(rightLowerType, features, featureSet, randomFn);
-
-  const shrineWidth = 5;
-  const shrineHeight = 3;
+  const shrineWidth = clamp(
+    Math.round(5 * clamp(normalizedScale, 1, 1.3)),
+    5,
+    Math.max(3, hallWidth - 4)
+  );
+  const shrineHeight = clamp(
+    Math.round(3 * clamp(normalizedScale, 1, 1.2)),
+    3,
+    Math.max(3, hallHeight - 6)
+  );
   const shrineX = hallStartX + Math.floor((hallWidth - shrineWidth) / 2);
   const shrineY = clamp(hallStartY + 1, hallStartY + 1, hallEndY - shrineHeight - 2);
   fillRect(tiles, shrineX, shrineY, shrineWidth, shrineHeight, 'shrine', usedTypes);
   addFeatureNote('shrine', features, featureSet, randomFn);
 
-  const throneWidth = 3;
-  const throneHeight = 3;
+  const throneWidth = clamp(Math.round(3 * clamp(normalizedScale, 1, 1.1)), 3, Math.max(3, Math.floor(hallWidth / 3)));
+  const throneHeight = clamp(Math.round(3 * clamp(normalizedScale, 1, 1.05)), 3, Math.max(3, Math.floor(hallHeight / 3)));
   const throneX = hallStartX + Math.floor((hallWidth - throneWidth) / 2);
   const throneY = clamp(hallEndY - throneHeight - 1, hallStartY + 1, hallEndY - throneHeight);
   fillRect(tiles, throneX, throneY, throneWidth, throneHeight, 'throne', usedTypes);
@@ -650,8 +844,16 @@ export function generateDwarfholdMap(options = {}) {
     shadowColor: 'rgba(250, 204, 21, 0.45)'
   });
 
-  const gardenWidth = Math.max(6, hallWidth - 6);
-  const gardenHeight = clamp(4 + randomInt(randomFn, 0, 1), 3, Math.max(3, height - hallEndY - 7));
+  const gardenWidth = clamp(
+    Math.round((hallWidth - 6) * clamp(normalizedScale, 1, 1.4)),
+    6,
+    Math.max(6, hallWidth - 2)
+  );
+  const gardenHeight = clamp(
+    Math.round((4 + randomInt(randomFn, 0, 1)) * clamp(normalizedScale, 1, 1.35)),
+    3,
+    Math.max(3, height - hallEndY - 7)
+  );
   const gardenStartX = hallStartX + Math.floor((hallWidth - gardenWidth) / 2);
   const gardenStartY = clamp(hallEndY + 2, hallEndY + 2, height - gardenHeight - 6);
   if (gardenWidth > 4 && gardenStartY + gardenHeight < height - 3) {
