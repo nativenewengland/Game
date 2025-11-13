@@ -14600,6 +14600,53 @@ function renderDwarfholdScreen() {
     context.fillRect(0, 0, destWidth, destHeight);
 
     const palette = customMap.legend || {};
+    const drawInteriorSprite = (spriteDefinition, destX, destY, destSize) => {
+      if (!spriteDefinition || typeof spriteDefinition !== 'object') {
+        return false;
+      }
+      const sheetKey = spriteDefinition.sheet;
+      if (!sheetKey) {
+        return false;
+      }
+      const sheet = state.tileSheets?.[sheetKey];
+      const baseTileSize = Number.isFinite(spriteDefinition.size)
+        ? spriteDefinition.size
+        : Number.isFinite(sheet?.tileSize)
+          ? sheet.tileSize
+          : null;
+      if (!sheet || !sheet.image || !Number.isFinite(baseTileSize) || baseTileSize <= 0) {
+        return false;
+      }
+      const spriteCol = Number.isFinite(spriteDefinition.col) ? spriteDefinition.col : 0;
+      const spriteRow = Number.isFinite(spriteDefinition.row) ? spriteDefinition.row : 0;
+      const spriteSx = Number.isFinite(spriteDefinition.sx) ? spriteDefinition.sx : spriteCol * baseTileSize;
+      const spriteSy = Number.isFinite(spriteDefinition.sy) ? spriteDefinition.sy : spriteRow * baseTileSize;
+      const spriteSw = Number.isFinite(spriteDefinition.sw) ? spriteDefinition.sw : baseTileSize;
+      const spriteSh = Number.isFinite(spriteDefinition.sh) ? spriteDefinition.sh : baseTileSize;
+      const scale = Number.isFinite(spriteDefinition.scale) ? spriteDefinition.scale : 1;
+      const scaleY = Number.isFinite(spriteDefinition.scaleY) ? spriteDefinition.scaleY : scale;
+      const width = Math.max(1, destSize * (scale || 1));
+      const height = Math.max(1, destSize * (scaleY || 1));
+      const offsetX = Number.isFinite(spriteDefinition.offsetX)
+        ? spriteDefinition.offsetX * destSize
+        : (destSize - width) / 2;
+      const offsetY = Number.isFinite(spriteDefinition.offsetY)
+        ? spriteDefinition.offsetY * destSize
+        : (destSize - height) / 2;
+      context.drawImage(
+        sheet.image,
+        spriteSx,
+        spriteSy,
+        spriteSw,
+        spriteSh,
+        destX + offsetX,
+        destY + offsetY,
+        width,
+        height
+      );
+      return true;
+    };
+
     for (let y = 0; y < mapHeight; y += 1) {
       const row = Array.isArray(tiles[y]) ? tiles[y] : null;
       if (!row) {
@@ -14609,40 +14656,21 @@ function renderDwarfholdScreen() {
         const cell = row[x];
         const type = typeof cell === 'string' ? cell : typeof cell?.type === 'string' ? cell.type : 'rock';
         const definition = palette[type] || palette.rock || { color: '#1f2937' };
-        const sprite = definition.sprite && typeof definition.sprite === 'object' ? definition.sprite : null;
+        const cellSprite = cell && typeof cell === 'object' && typeof cell.sprite === 'object' ? cell.sprite : null;
+        const definitionSprite = definition.sprite && typeof definition.sprite === 'object' ? definition.sprite : null;
+        const destX = x * tilePixelSize;
+        const destY = y * tilePixelSize;
         let drewSprite = false;
-        if (sprite && sprite.sheet) {
-          const sheet = state.tileSheets?.[sprite.sheet];
-          const baseTileSize = Number.isFinite(sprite.size)
-            ? sprite.size
-            : Number.isFinite(sheet?.tileSize)
-              ? sheet.tileSize
-              : null;
-          if (sheet && sheet.image && Number.isFinite(baseTileSize) && baseTileSize > 0) {
-            const spriteCol = Number.isFinite(sprite.col) ? sprite.col : 0;
-            const spriteRow = Number.isFinite(sprite.row) ? sprite.row : 0;
-            const spriteSx = Number.isFinite(sprite.sx) ? sprite.sx : spriteCol * baseTileSize;
-            const spriteSy = Number.isFinite(sprite.sy) ? sprite.sy : spriteRow * baseTileSize;
-            const spriteSw = Number.isFinite(sprite.sw) ? sprite.sw : baseTileSize;
-            const spriteSh = Number.isFinite(sprite.sh) ? sprite.sh : baseTileSize;
-            context.drawImage(
-              sheet.image,
-              spriteSx,
-              spriteSy,
-              spriteSw,
-              spriteSh,
-              x * tilePixelSize,
-              y * tilePixelSize,
-              tilePixelSize,
-              tilePixelSize
-            );
-            drewSprite = true;
-          }
+        if (cellSprite) {
+          drewSprite = drawInteriorSprite(cellSprite, destX, destY, tilePixelSize);
+        }
+        if (!drewSprite && definitionSprite) {
+          drewSprite = drawInteriorSprite(definitionSprite, destX, destY, tilePixelSize);
         }
 
         if (!drewSprite) {
           context.fillStyle = definition.color || '#1f2937';
-          context.fillRect(x * tilePixelSize, y * tilePixelSize, tilePixelSize, tilePixelSize);
+          context.fillRect(destX, destY, tilePixelSize, tilePixelSize);
 
           if (definition.texture === 'speckled') {
             context.save();
@@ -14650,12 +14678,7 @@ function renderDwarfholdScreen() {
             const dot = Math.max(1, Math.round(tilePixelSize * 0.18));
             for (let offsetY = dot; offsetY < tilePixelSize; offsetY += dot * 2) {
               for (let offsetX = dot; offsetX < tilePixelSize; offsetX += dot * 2) {
-                context.fillRect(
-                  x * tilePixelSize + offsetX - dot / 2,
-                  y * tilePixelSize + offsetY - dot / 2,
-                  dot,
-                  dot
-                );
+                context.fillRect(destX + offsetX - dot / 2, destY + offsetY - dot / 2, dot, dot);
               }
             }
             context.restore();
@@ -14666,8 +14689,8 @@ function renderDwarfholdScreen() {
             context.strokeStyle = definition.borderColor;
             context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
             context.strokeRect(
-              x * tilePixelSize + context.lineWidth / 2,
-              y * tilePixelSize + context.lineWidth / 2,
+              destX + context.lineWidth / 2,
+              destY + context.lineWidth / 2,
               tilePixelSize - context.lineWidth,
               tilePixelSize - context.lineWidth
             );
@@ -14678,13 +14701,25 @@ function renderDwarfholdScreen() {
           context.strokeStyle = definition.borderColor;
           context.lineWidth = Math.max(1, Math.round(tilePixelSize * 0.08));
           context.strokeRect(
-            x * tilePixelSize + context.lineWidth / 2,
-            y * tilePixelSize + context.lineWidth / 2,
+            destX + context.lineWidth / 2,
+            destY + context.lineWidth / 2,
             tilePixelSize - context.lineWidth,
             tilePixelSize - context.lineWidth
           );
           context.restore();
         }
+
+        const overlaySprites =
+          cell && typeof cell === 'object'
+            ? Array.isArray(cell.overlays)
+              ? cell.overlays
+              : cell.overlay && typeof cell.overlay === 'object'
+                ? [cell.overlay]
+                : []
+            : [];
+        overlaySprites.forEach((overlaySprite) => {
+          drawInteriorSprite(overlaySprite, destX, destY, tilePixelSize);
+        });
       }
     }
 
