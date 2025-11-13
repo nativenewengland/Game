@@ -7,124 +7,93 @@ const structureTypeLabels = {
   DWARFHOLD: 'Dwarven Hold'
 };
 
-const interiorTileSprites = {
-  rock: { sheet: 'dwarfholdInterior', row: 0, col: 0 },
-  corridor: { sheet: 'dwarfholdInterior', row: 0, col: 1 },
-  entrance: { sheet: 'dwarfholdInterior', row: 0, col: 2 },
-  hall: { sheet: 'dwarfholdInterior', row: 0, col: 3 },
-  forge: { sheet: 'dwarfholdInterior', row: 1, col: 0 },
-  market: { sheet: 'dwarfholdInterior', row: 1, col: 1 },
-  dormitory: { sheet: 'dwarfholdInterior', row: 1, col: 2 },
-  brewery: { sheet: 'dwarfholdInterior', row: 1, col: 3 },
-  garden: { sheet: 'dwarfholdInterior', row: 2, col: 0 },
-  water: { sheet: 'dwarfholdInterior', row: 2, col: 1 },
-  shrine: { sheet: 'dwarfholdInterior', row: 2, col: 2 },
-  throne: { sheet: 'dwarfholdInterior', row: 2, col: 3 },
-  stairs: { sheet: 'dwarfholdInterior', row: 3, col: 0 },
-  storage: { sheet: 'dwarfholdInterior', row: 3, col: 1 }
-};
-
 const baseLegend = {
   rock: {
     color: '#111827',
     label: 'Carved stone',
-    description: 'Unworked mountain rock surrounding the hold.',
-    sprite: interiorTileSprites.rock
+    description: 'Unworked mountain rock surrounding the hold.'
   },
   corridor: {
     color: '#6b7280',
     label: 'Worked corridors',
     description: 'Main arteries linking districts and quarters.',
     texture: 'speckled',
-    accent: 'rgba(17, 24, 39, 0.25)',
-    sprite: interiorTileSprites.corridor
+    accent: 'rgba(17, 24, 39, 0.25)'
   },
   entrance: {
     color: '#9ca3af',
     label: 'Gatehouse',
     description: 'Fortified approaches with portcullises and embrasures.',
-    borderColor: '#d1d5db',
-    sprite: interiorTileSprites.entrance
+    borderColor: '#d1d5db'
   },
   hall: {
     color: '#fcd34d',
     label: 'Great hall',
     description: 'Feasting and assembly chamber beneath vaulted arches.',
-    borderColor: '#f59e0b',
-    sprite: interiorTileSprites.hall
+    borderColor: '#f59e0b'
   },
   forge: {
     color: '#ea580c',
     label: 'Great forge',
     description: 'Smithies, smelters, and crucibles blazing with industry.',
-    borderColor: '#b45309',
-    sprite: interiorTileSprites.forge
+    borderColor: '#b45309'
   },
   market: {
     color: '#f59e0b',
     label: 'Deep market',
     description: 'Bazaar arcades trading gemstones, metals, and surface wares.',
     texture: 'speckled',
-    accent: 'rgba(250, 204, 21, 0.24)',
-    sprite: interiorTileSprites.market
+    accent: 'rgba(250, 204, 21, 0.24)'
   },
   dormitory: {
     color: '#60a5fa',
     label: 'Barracks and bunks',
     description: 'Sleeping quarters and messes for clan cohorts.',
-    borderColor: '#2563eb',
-    sprite: interiorTileSprites.dormitory
+    borderColor: '#2563eb'
   },
   brewery: {
     color: '#c08457',
     label: 'Brewery caverns',
     description: 'Stills and barrel racks for the hold’s famed ales.',
     texture: 'speckled',
-    accent: 'rgba(248, 250, 252, 0.16)',
-    sprite: interiorTileSprites.brewery
+    accent: 'rgba(248, 250, 252, 0.16)'
   },
   garden: {
     color: '#4ade80',
     label: 'Mushroom gardens',
     description: 'Glowcap terraces and fungal beds feeding the populace.',
     texture: 'speckled',
-    accent: 'rgba(74, 222, 128, 0.35)',
-    sprite: interiorTileSprites.garden
+    accent: 'rgba(74, 222, 128, 0.35)'
   },
   water: {
     color: '#2563eb',
     label: 'Reservoir',
     description: 'Subterranean cistern fed by seepage and aquifer flow.',
-    borderColor: '#1d4ed8',
-    sprite: interiorTileSprites.water
+    borderColor: '#1d4ed8'
   },
   shrine: {
     color: '#e5e7eb',
     label: 'Ancestor shrine',
     description: 'Runic alcoves honoring revered thanes and founders.',
-    borderColor: '#cbd5f5',
-    sprite: interiorTileSprites.shrine
+    borderColor: '#cbd5f5'
   },
   throne: {
     color: '#fde68a',
     label: 'Throne dais',
     description: 'Seat of the ruling thane overlooking the grand hall.',
-    borderColor: '#f59e0b',
-    sprite: interiorTileSprites.throne
+    borderColor: '#f59e0b'
   },
   stairs: {
     color: '#a855f7',
     label: 'Deep stairs',
     description: 'Spiral descent toward mines and lower districts.',
-    borderColor: '#7c3aed',
-    sprite: interiorTileSprites.stairs
+    borderColor: '#7c3aed'
   },
   storage: {
     color: '#d8b4fe',
     label: 'Vaulted stores',
     description: 'Reinforced vaults protecting supplies and ingots.',
-    borderColor: '#a855f7',
-    sprite: interiorTileSprites.storage
+    borderColor: '#a855f7'
   }
 };
 

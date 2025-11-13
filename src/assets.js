@@ -7,12 +7,6 @@ export const tileSheets = {
     tileSize: 32,
     image: null
   },
-  dwarfholdInterior: {
-    key: 'dwarfholdInterior',
-    path: 'maps/Interior_Tileset.png',
-    tileSize: 32,
-    image: null
-  },
   worldDetails: {
     key: 'worldDetails',
     path: 'Dwarf.Fortress/data/vanilla/vanilla_world_map/graphics/images/world_map_details.png',
