@@ -1758,27 +1758,43 @@ function assignTileSpritesToGrid(tiles, baseSeed) {
   }
 }
 
-function ensureOdd(value, min, max) {
-  let result = clamp(Math.round(value), min, max);
+function ensureOdd(value, min, max = null) {
+  const hasMax = Number.isFinite(max);
+  let result = Math.round(value);
+
+  if (hasMax) {
+    result = clamp(result, min, max);
+  } else {
+    result = Math.max(min, result);
+  }
+
   if (result % 2 === 0) {
-    if (result + 1 <= max) {
+    if (!hasMax || result + 1 <= max) {
       result += 1;
     } else if (result - 1 >= min) {
       result -= 1;
     }
   }
+
   if (result % 2 === 0) {
-    const lowerOdd = min % 2 === 0 ? min + 1 : min;
-    result = clamp(lowerOdd, min, max);
+    // If we still somehow have an even result (e.g. min and max are both even),
+    // fall back to the closest odd value within bounds.
+    if (!hasMax) {
+      result += 1;
+    } else {
+      const lowerOdd = min % 2 === 0 ? min + 1 : min;
+      const upperOdd = max % 2 === 0 ? max - 1 : max;
+      result = clamp(lowerOdd, min, max);
+      if (result % 2 === 0) {
+        result = clamp(upperOdd, min, max);
+      }
+      if (result % 2 === 0) {
+        result = Math.max(min, Math.min(max, result | 1));
+      }
+    }
   }
-  if (result % 2 === 0) {
-    const upperOdd = max % 2 === 0 ? max - 1 : max;
-    result = clamp(upperOdd, min, max);
-  }
-  if (result % 2 === 0) {
-    result = Math.max(min, Math.min(max, result | 1));
-  }
-  return clamp(result, min, max);
+
+  return hasMax ? clamp(result, min, max) : Math.max(min, result);
 }
 
 function createEmptyGrid(width, height, usedTypes) {
@@ -1908,8 +1924,8 @@ export function generateDwarfholdMap(options = {}) {
 
   const widthBase = Math.max(1, Math.round((32 + randomInt(randomFn, 0, 6)) * scaleFactor));
   const heightBase = Math.max(1, Math.round((24 + randomInt(randomFn, 0, 6)) * heightScaleFactor));
-  const width = ensureOdd(widthBase, 29, 95);
-  const height = ensureOdd(heightBase, 21, 75);
+  const width = ensureOdd(widthBase, 290, 950);
+  const height = ensureOdd(heightBase, 210, 750);
   const usedTypes = new Set();
   const tiles = createEmptyGrid(width, height, usedTypes);
   const features = [];
