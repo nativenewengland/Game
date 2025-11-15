@@ -1171,7 +1171,8 @@ button {
 }
 
 .create-button {
-  width: min(251px, 100%);
+  width: clamp(150px, 18vw, 210px);
+  max-width: 100%;
   aspect-ratio: 251 / 153;
   padding: 0;
   border: none;
