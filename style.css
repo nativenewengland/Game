@@ -2254,7 +2254,7 @@ button:hover:not(:disabled) {
 }
 
 .customizer-sidebar__name.pixel-bar {
-  display: none;
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: clamp(0.35rem, 1vw, 0.6rem);
