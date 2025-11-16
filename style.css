@@ -3227,8 +3227,6 @@ button:hover:not(:disabled) {
   background: none;
   position: relative;
   cursor: pointer;
-  width: 88px;
-  height: 88px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3236,9 +3234,8 @@ button:hover:not(:disabled) {
 
 .gender-toggle-button img {
   display: block;
-  width: 88px;
-  height: 88px;
-  max-width: 100%;
+  width: auto;
+  height: auto;
   border-radius: 14px;
   filter: brightness(0.85);
   transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
