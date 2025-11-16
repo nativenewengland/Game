@@ -525,6 +525,23 @@ const dwarfholdNameRegions = [
   'the Brass Line'
 ];
 
+function getPrimaryClanName(label, fallback = '') {
+  const source = typeof label === 'string' && label.trim().length > 0 ? label : fallback;
+  if (!source) {
+    return '';
+  }
+  const primary = source.split('—')[0] || source;
+  return primary.trim();
+}
+
+function getClanFamilyNames(clanValue) {
+  if (!clanValue) {
+    return [];
+  }
+  const familyNames = dwarfClanFamilyNames.get(clanValue);
+  return Array.isArray(familyNames) ? familyNames : [];
+}
+
 function generateAdditionalDwarfClanNames(count, randomFn) {
   const names = new Set();
   while (names.size < count) {
@@ -9464,7 +9481,7 @@ function drawStructureHighlightOverlay(ctx, tileX, tileY, tileSize, group) {
 const defaultDwarfCount = 1;
 const defaultHairStyleValue = 'straight_shoulder';
 
-const dwarfClanOptions = [
+const baseDwarfClanOptions = [
   { value: 'stonebeard', label: 'Stonebeard' },
   { value: 'barrelbrow', label: 'Barrelbrow' },
   { value: 'oathhammer', label: 'Oathhammer' },
@@ -9629,6 +9646,8 @@ const dwarfClanOptions = [
   { value: 'ludwakazar', label: 'Ludwakazar' },
   { value: 'madbeards', label: 'Madbeards' },
   { value: 'mcknuckles', label: 'McKnuckles' },
+  { value: 'mcduff', label: 'McDuff' },
+  { value: 'mcgruff', label: 'McGruff' },
   { value: 'mcruff', label: 'McRuff' },
   { value: 'melairkyn', label: 'Melairkyn' },
   { value: 'orcsmasher', label: 'Orcsmasher' },
@@ -9673,7 +9692,299 @@ const dwarfClanOptions = [
   { value: 'llyrnillach', label: 'Llyrnillach' },
   { value: 'highhelm', label: 'Highhelm' },
   { value: 'tolorr', label: 'Tolorr' }
-].concat(generateAdditionalDwarfClanNames(50, Math.random));
+];
+
+const dwarfClanCategories = new Map([
+  ['stonebeard', ['Hill Dwarf', 'Dark Dwarf', 'Grey Dwarf', 'Mountain Dwarf']],
+  ['angrund', ['Hill Dwarf', 'Dark Dwarf', 'Grey Dwarf', 'Mountain Dwarf']],
+  ['ironfist', ['Hill Dwarf', 'Dark Dwarf', 'Grey Dwarf', 'Mountain Dwarf']],
+  ['oakenshield', ['Hill Dwarf', 'Dark Dwarf', 'Grey Dwarf', 'Mountain Dwarf']],
+  ['runebinder', ['Hill Dwarf', 'Dark Dwarf', 'Grey Dwarf', 'Mountain Dwarf']],
+  ['barrelbrow', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['hearthhammer', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['hammerback', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stoneback', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stonehand', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stoneheart', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stonebeater', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stonebreakers', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stonehammer_cities', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stonebeard_k8p_engineers', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['stonefist', ['Hill Dwarf', 'Mountain Dwarf']],
+  ['mcduff', ['Hill Dwarf']],
+  ['mcgruff', ['Hill Dwarf']],
+  ['mcruff', ['Hill Dwarf']],
+  ['oakbarrel', ['Hill Dwarf']],
+  ['hillborn', ['Hill Dwarf']],
+  ['hillsafar', ['Hill Dwarf']],
+  ['bitterroot', ['Hill Dwarf']],
+  ['stonebridge', ['Hill Dwarf']],
+  ['stonehollow', ['Hill Dwarf']],
+  ['stoutgirth', ['Hill Dwarf']],
+  ['stoutpeak', ['Hill Dwarf']],
+  ['aleswiller', ['Hill Dwarf']],
+  ['aghar', ['Hill Dwarf']],
+  ['pwent', ['Hill Dwarf']],
+  ['blackdelve', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['duskhollow', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['ashmantle', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['blackfire', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['bloodstone', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['boulderscorch', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['rustfire', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['shattered_stone', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['grimlock', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['growlsh', ['Dark Dwarf', 'Mountain Dwarf']],
+  ['shadowhearth', ['Dark Dwarf']],
+  ['sunblight', ['Dark Dwarf']],
+  ['duergar', ['Grey Dwarf', 'Dark Dwarf']],
+  ['daergar', ['Grey Dwarf', 'Dark Dwarf']],
+  ['theiwar', ['Grey Dwarf', 'Dark Dwarf']],
+  ['grimhelm', ['Grey Dwarf', 'Dark Dwarf']],
+  ['grimstone', ['Grey Dwarf', 'Dark Dwarf']],
+  ['melairkyn', ['Grey Dwarf', 'Dark Dwarf']],
+  ['daewar', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['ironbeard', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['ironpick', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['silverhair', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['tolorr', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['emberstone', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['silverhollow', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['ironhammer', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['ironheart', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['goldvein', ['Grey Dwarf', 'Mountain Dwarf']],
+  ['thunderstone', ['Grey Dwarf', 'Mountain Dwarf']]
+]);
+
+function getClanCategories(clanValue) {
+  if (!clanValue) {
+    return ['Mountain Dwarf'];
+  }
+  const categories = dwarfClanCategories.get(clanValue);
+  return Array.isArray(categories) && categories.length > 0 ? categories : ['Mountain Dwarf'];
+}
+
+function addCategoriesToDwarfClanOptions(options) {
+  if (!Array.isArray(options)) {
+    return [];
+  }
+  return options.map((option) => ({
+    ...option,
+    categories: getClanCategories(option?.value)
+  }));
+}
+
+const dwarfClanOptions = addCategoriesToDwarfClanOptions(
+  baseDwarfClanOptions.concat(generateAdditionalDwarfClanNames(50, Math.random))
+);
+
+const dwarfClanFamilyNames = new Map([
+  ['stonebeard', ['AshStone', 'StoneHold', 'BarBeard', 'StoneWatch', 'StormBeard']],
+  ['barrelbrow', ['BarrelGrudge', 'StoneBrow', 'BrowPeak', 'BarrelStone', 'BarrelHall']],
+  ['oathhammer', ['ThunderOath', 'OathGate', 'OathThrong', 'HammerMantle', 'AshHammer']],
+  ['stormshield', ['ShieldStorm', 'ShieldWard', 'ShieldBridge', 'ShieldHold', 'StormSdottir']],
+  ['granitebrow', ['BrowScar', 'FrostGranite', 'BrowKeep', 'GraniteThrong', 'AshBrow']],
+  ['emberstone', ['DeepStone', 'StoneBraid', 'StoneEmber', 'GrimStone', 'EmberBinder']],
+  ['blackdelve', ['ShadowDelve', 'DelveBane', 'DelveBridge', 'DeepDelve', 'DeepBlack']],
+  ['hearthhammer', ['CoalHammer', 'HammerVault', 'HearthSson', 'HammerScar', 'HammerBridge']],
+  ['mithrilbeard', ['MithrilThrong', 'BeardThrong', 'MithrilBlood', 'ThunderMithril', 'MithrilVault']],
+  ['shieldbreaker', ['BreakerGate', 'ShieldSson', 'BreakerBinder', 'BreakerBraid', 'ShieldWatch']],
+  ['deepcrag', ['GrimDeep', 'FrostDeep', 'CragBraid', 'CragStone', 'SilverCrag']],
+  ['duskhollow', ['DuskSdottir', 'DeepDusk', 'DuskHold', 'DuskVault', 'BlackDusk']],
+  ['hammerdeep', ['ShadowDeep', 'DeepBraid', 'StormHammer', 'HammerSson', 'DeepMantle']],
+  ['deepmantle', ['MantleWatch', 'MantleScar', 'RuneDeep', 'BronzeDeep', 'GrimDeep']],
+  ['ashmantle', ['BlackMantle', 'MantleBorn', 'StormMantle', 'MantleStone', 'MantleBane']],
+  ['shadowhearth', ['SilverHearth', 'FrostHearth', 'ShadowMantle', 'SteelHearth', 'SilverShadow']],
+  ['angrund', ['DeepAn', 'AnHammer', 'GrundFist', 'AnKin', 'AnHall']],
+  ['angrulok', ['AngrulokSong', 'AngrulokForge', 'ThunderAngrulok', 'AngrulokBane', 'AshAngrulok']],
+  ['badrikk', ['BadrikkKeep', 'SteelBadrikk', 'BadrikkSong', 'BadrikkBorn', 'AnvilBadrikk']],
+  ['barruk', ['CoalBarruk', 'BarrukGuard', 'StormBarruk', 'BarrukBraid', 'BarrukBorn']],
+  ['burrdrik', ['BurrGate', 'BurrHammer', 'BurrMantle', 'DrikBurr', 'AmberBurr']],
+  ['bronzebeards', ['IronBronze', 'BronzeBraid', 'BronzeBridge', 'BeardsWatch', 'BeardsSson']],
+  ['bronzefist', ['BronzeDelve', 'BronzeMantle', 'BronzeSdottir', 'FistBronze', 'FistScar']],
+  ['copperback', ['BackVein', 'BackGuard', 'BackWard', 'BackBorn', 'BackBraid']],
+  ['cragbrow_barak_varr_engineers', ['CragHammer', 'BrowKin', 'GraniteCrag', 'BrowForge', 'BrowHall']],
+  ['cragbrow_karak_azul_miners', ['CragPeak', 'IronCrag', 'RuneBrow', 'StoneBrow', 'CragMaul']],
+  ['craghand', ['HandHall', 'EmberCrag', 'CragStone', 'CragThane', 'HandBorn']],
+  ['cragtooth', ['ToothBinder', 'EmberTooth', 'ToothHammer', 'CragSdottir', 'StormCrag']],
+  ['donarkhun', ['DonarkhunPeak', 'DonarkhunKeep', 'DonarkhunVein', 'AnvilDonarkhun', 'ShadowDonarkhun']],
+  ['dourback', ['BackRunes', 'GrimBack', 'ThunderDour', 'BackGuard', 'DourFist']],
+  ['dragonback', ['IronDragon', 'BackHearth', 'BackRunes', 'SilverDragon', 'BackDelver']],
+  ['drakebeard', ['DrakeKin', 'DrakeVein', 'DrakeWard', 'FrostBeard', 'DrakeSong']],
+  ['drazhkarak', ['GraniteDrazhkarak', 'DrazhkarakBane', 'DeepDrazhkarak', 'GrimDrazhkarak', 'DrazhkarakForge']],
+  ['dunrakin', ['StormKin', 'ThunderDunra', 'DunraThane', 'BarDunra', 'KinBorn']],
+  ['firehand', ['ShadowHand', 'IronHand', 'AmberHand', 'HandGuard', 'AmberFire']],
+  ['firehelm', ['HelmDelve', 'GloomHelm', 'FireKeep', 'FireRunes', 'HelmBane']],
+  ['flintbeard', ['DeepBeard', 'BeardBorn', 'FlintBinder', 'FlintKin', 'FlintThrong']],
+  ['flinthand_karak_azul_engineers', ['FlintSson', 'FlintWatch', 'AmberFlint', 'IronHand', 'FlintThane']],
+  ['flinthand_k8p_miners', ['SteelFlint', 'FlintBorn', 'BronzeFlint', 'BronzeHand', 'StoneFlint']],
+  ['flintheart', ['ThunderHeart', 'AshHeart', 'HeartVein', 'FlintHearth', 'HeartFist']],
+  ['fooger', ['FoogerDelve', 'BarFooger', 'FoogerBreaker', 'CoalFooger', 'GraniteFooger']],
+  ['forgehand', ['HandHearth', 'HandVault', 'StormHand', 'HandBlood', 'HandKeep']],
+  ['grimhelm', ['HelmVein', 'CoalGrim', 'GrimDelver', 'BlackHelm', 'HelmBlood']],
+  ['grimstone', ['FrostGrim', 'BlackStone', 'IronGrim', 'ThunderStone', 'StoneForge']],
+  ['growlsh', ['GrowlshHall', 'GrowlshWard', 'GrowlshSson', 'GrowlshFist', 'GrimGrowlsh']],
+  ['gunnarsson', ['GunnarssonBraid', 'GunnarssonHammer', 'GunnarssonWard', 'GunnarssonSdottir', 'GunnarssonRunes']],
+  ['gunnisson_first', ['BarGunnisson', 'ContingentKeep', 'ContingentThrong', 'ContingentThane', 'IronFirst']],
+  ['gunnisson_second', ['SecondBlood', 'GrimContingent', 'StoneGunnisson', 'RuneSecond', 'BlackSecond']],
+  ['gunnisson_third', ['ThirdBraid', 'ThirdMantle', 'ContingentMaul', 'ContingentBraid', 'GunnissonMaul']],
+  ['guttrik', ['GuttrikGrudge', 'GuttrikFist', 'RuneGuttrik', 'StoneGuttrik', 'GuttrikBreaker']],
+  ['halgakrin', ['HalgakrinHold', 'IronHalgakrin', 'HalgakrinGuard', 'HalgakrinVein', 'HalgakrinBane']],
+  ['hammerback', ['CoalBack', 'BackGate', 'BackRunes', 'BarBack', 'BackBinder']],
+  ['helhein', ['HelheinHall', 'HelheinThrong', 'HelheinWatch', 'HelheinSong', 'GrimHelhein']],
+  ['irebeard', ['BronzeBeard', 'ThunderBeard', 'IreBane', 'BeardPeak', 'EmberBeard']],
+  ['ironbeard', ['StormIron', 'BeardVein', 'BeardHammer', 'BeardKeep', 'DeepIron']],
+  ['ironarm', ['GloomArm', 'ArmMantle', 'IronBridge', 'ArmSson', 'CoalIron']],
+  ['ironback', ['BackKin', 'SilverIron', 'SilverBack', 'BackBraid', 'IronBridge']],
+  ['ironfinger', ['ThunderIron', 'FingerDelve', 'IronKeep', 'FrostFinger', 'CoalFinger']],
+  ['ironfist_cities', ['IronDelver', 'FistBlood', 'IronGrudge', 'IronShield', 'IronWatch']],
+  ['ironforge', ['FrostForge', 'StormIron', 'SilverForge', 'IronScar', 'FrostIron']],
+  ['ironhammer', ['IronMaul', 'IronGrudge', 'HammerBorn', 'IronRunes', 'StormHammer']],
+  ['ironpick', ['PickBraid', 'SteelIron', 'StonePick', 'IronHall', 'IronVault']],
+  ['ironspike', ['IronStone', 'AshSpike', 'SpikeForge', 'RuneIron', 'AnvilIron']],
+  ['izorgrung', ['IzorgrungDelve', 'RuneIzorgrung', 'IzorgrungDelver', 'EmberIzorgrung', 'IzorgrungWard']],
+  ['kaznagar', ['KaznagarBinder', 'KaznagarDelver', 'KaznagarVault', 'KaznagarSong', 'SilverKaznagar']],
+  ['magrest', ['MagrestRunes', 'MagrestForge', 'RuneMagrest', 'MagrestSdottir', 'GloomMagrest']],
+  ['norgrimlings', ['NorgrimlingsPeak', 'NorgrimlingsBorn', 'NorgrimlingsRunes', 'NorgrimlingsDelve', 'ShadowNorgrimlings']],
+  ['oakbarrel', ['OakSdottir', 'OakSson', 'BarrelMaul', 'ShadowOak', 'OakKin']],
+  ['redbeard', ['CoalBeard', 'RedBlood', 'BeardGate', 'RedBinder', 'BeardFist']],
+  ['silverscar', ['ScarRunes', 'ScarVein', 'ScarPeak', 'ScarBorn', 'ScarSson']],
+  ['skorrun', ['RunDelver', 'RunBridge', 'AshRun', 'SkorBinder', 'AnvilSkor']],
+  ['steelcrag', ['AshSteel', 'CragForge', 'CragBraid', 'RuneSteel', 'StormSteel']],
+  ['sternbeard', ['BeardGrudge', 'SternHearth', 'BeardRunes', 'SternBreaker', 'BeardBlood']],
+  ['stoneback', ['BackDelve', 'AnvilStone', 'BackStone', 'CoalStone', 'SteelStone']],
+  ['stonebeard_k8p_engineers', ['FrostBeard', 'EmberBeard', 'StormBeard', 'BeardShield', 'GraniteStone']],
+  ['stonebeater', ['BeaterHearth', 'BarBeater', 'ShadowStone', 'BeaterHall', 'AnvilBeater']],
+  ['stonebreakers', ['EmberBreakers', 'StoneShield', 'BreakersMaul', 'AnvilStone', 'AshBreakers']],
+  ['stonehammer_cities', ['StoneRunes', 'GrimStone', 'HammerVault', 'BarStone', 'EmberStone']],
+  ['stonehand', ['StoneMantle', 'HandBreaker', 'HandWard', 'StoneKeep', 'StoneBorn']],
+  ['stoneheart', ['SilverHeart', 'BarHeart', 'HeartPeak', 'HeartBinder', 'HeartWatch']],
+  ['stoutgirth', ['EmberStoutgirth', 'StoutgirthBraid', 'StoutgirthWatch', 'StoutgirthHold', 'StoutgirthDelver']],
+  ['stoutpeak', ['PeakSong', 'PeakStone', 'PeakHold', 'CoalStout', 'PeakRunes']],
+  ['svengeln', ['StormSvengeln', 'SvengelnSdottir', 'SvengelnBreaker', 'SvengelnThrong', 'ShadowSvengeln']],
+  ['threkkson', ['ThrekksonShield', 'ShadowThrekkson', 'ThrekksonVein', 'ThrekksonBridge', 'BronzeThrekkson']],
+  ['thundergun', ['BronzeThunder', 'BronzeGun', 'StormGun', 'ThunderHold', 'GunHall']],
+  ['thunderheart', ['HeartRunes', 'ThunderMantle', 'GrimHeart', 'HeartThrong', 'HeartBridge']],
+  ['thunderstone', ['AnvilStone', 'AshThunder', 'ThunderBridge', 'StoneBinder', 'GrimStone']],
+  ['ullek', ['UllekMantle', 'DeepUllekssons', 'FrostUllekssons', 'UllekssonsThe', 'GraniteUllekssons']],
+  ['varnskan', ['VarnskanGate', 'VarnskanForge', 'ShadowVarnskan', 'AshVarnskan', 'VarnskanGuard']],
+  ['vorgrund', ['GrundBreaker', 'StoneGrund', 'GrundVor', 'VorScar', 'ShadowVor']],
+  ['yinlinsson', ['AshYinlinsson', 'AnvilYinlinsson', 'YinlinssonStone', 'YinlinssonGuard', 'YinlinssonGrudge']],
+  ['ironfist', ['FistGuard', 'IronWatch', 'FistWatch', 'IronKin', 'FistIron']],
+  ['coppervein', ['CopperveinGuard', 'GraniteCoppervein', 'CopperveinFist', 'CopperveinKin', 'CopperveinDelver']],
+  ['graniteheart', ['GraniteKeep', 'BronzeHeart', 'GraniteWatch', 'HeartForge', 'HeartStone']],
+  ['deepdelver', ['DelverBraid', 'DelverGate', 'DeepBreaker', 'GrimDeep', 'DeepStone']],
+  ['amberpick', ['PickHold', 'PickFist', 'AmberFist', 'PickRunes', 'PickBinder']],
+  ['oakenshield', ['RuneOaken', 'OakenGuard', 'OakenMantle', 'BlackOaken', 'OakenFist']],
+  ['frosthammer', ['HammerGrudge', 'FrostPeak', 'HammerHold', 'SteelHammer', 'FrostHall']],
+  ['berylbraid', ['BerylbraidFist', 'BerylbraidRunes', 'DeepBerylbraid', 'BerylbraidVein', 'BerylbraidThrong']],
+  ['silverhollow', ['AnvilHollow', 'AmberHollow', 'HollowDelve', 'BronzeSilver', 'HollowBinder']],
+  ['brazenaxe', ['ShadowBrazenaxe', 'BrazenaxeBlood', 'BrazenaxeWard', 'BrazenaxeDelve', 'BrazenaxeSdottir']],
+  ['stormhammer', ['EmberHammer', 'HammerGate', 'StormDelver', 'StormBane', 'HammerFist']],
+  ['deeprock', ['RockScar', 'ShadowDeep', 'DeepFist', 'ShadowRock', 'DeepForge']],
+  ['goldvein', ['VeinGold', 'VeinHearth', 'SteelGold', 'SteelVein', 'StormVein']],
+  ['runesmith', ['RuneDelve', 'ThunderRune', 'SmithMantle', 'AnvilRune', 'SmithScar']],
+  ['aleswiller', ['AleswillerHearth', 'AleswillerBraid', 'AleswillerBreaker', 'RuneAleswiller', 'ThunderAleswiller']],
+  ['argent_hand', ['ArgentGate', 'ArgentVein', 'ArgentBlood', 'BronzeArgent', 'ArgentPeak']],
+  ['axebreaker', ['AxeMaul', 'BreakerAxe', 'AxeBorn', 'SteelAxe', 'AxeBinder']],
+  ['blackfire', ['BlackGuard', 'BlackPeak', 'FireWatch', 'DeepFire', 'BlackDelve']],
+  ['bloodstone', ['BloodHold', 'SteelBlood', 'GloomBlood', 'BloodDelve', 'StoneKeep']],
+  ['boulderscorch', ['AnvilBoulderscorch', 'BoulderscorchDelve', 'BoulderscorchShield', 'BoulderscorchBlood', 'BoulderscorchBraid']],
+  ['duergar', ['SilverDuergar', 'DuergarWatch', 'DuergarKin', 'DuergarBridge', 'RuneDuergar']],
+  ['fiania', ['FianiaBinder', 'FianiaBane', 'FianiaKin', 'AshFiania', 'BarFiania']],
+  ['goldenforge', ['GoldenDelver', 'BarForge', 'ForgeMantle', 'ForgeGrudge', 'ForgeSson']],
+  ['gordemuncher', ['GordemuncherFist', 'GordemuncherWatch', 'GordemuncherHearth', 'GordemuncherGrudge', 'GrimGordemuncher']],
+  ['hammerhead', ['GraniteHammer', 'HammerForge', 'HeadBlood', 'GrimHammer', 'HammerThane']],
+  ['ironson', ['IronHammer', 'IronBridge', 'SonGate', 'SonFist', 'IronGuard']],
+  ['kazak_uruk', ['KazakGuard', 'ThunderUruk', 'KazakThrong', 'KazakMaul', 'KazakWatch']],
+  ['orcsplitter', ['OrcsplitterHammer', 'OrcsplitterShield', 'AshOrcsplitter', 'OrcsplitterBlood', 'OrcsplitterThane']],
+  ['rockcrawler', ['IronRockcrawler', 'RockcrawlerKeep', 'RockcrawlerPeak', 'RockcrawlerGate', 'RockcrawlerBinder']],
+  ['shattered_stone', ['RuneRed', 'StoneHall', 'GraniteShatte', 'ShadowStone', 'IronShatte']],
+  ['bronzebeard', ['BeardHammer', 'IronBronze', 'BeardThane', 'BronzeKin', 'BronzeBinder']],
+  ['stormpike', ['StormSong', 'GloomPike', 'PikeGrudge', 'AshPike', 'SilverStorm']],
+  ['stonefist', ['StoneSson', 'StoneScar', 'BronzeFist', 'GrimStone', 'FistWard']],
+  ['hylar', ['HylarWard', 'HylarStone', 'GloomHylar', 'BronzeHylar', 'HylarBorn']],
+  ['daergar', ['DaergarDelver', 'DaergarGate', 'GloomDaergar', 'DaergarFist', 'DaergarSong']],
+  ['daewar', ['DaewarMaul', 'DaewarBinder', 'DaewarGrudge', 'DaewarThrong', 'DaewarSson']],
+  ['theiwar', ['TheiwarStone', 'ShadowTheiwar', 'BronzeTheiwar', 'TheiwarMaul', 'AshTheiwar']],
+  ['aghar', ['AgharBane', 'AgharDelve', 'BronzeAghar', 'AgharSson', 'FrostAghar']],
+  ['battlehammer', ['BattleThrong', 'BattleVault', 'HammerForge', 'BattleBorn', 'HammerWard']],
+  ['bitterroot', ['GraniteBitterroot', 'BitterrootWatch', 'CoalBitterroot', 'FrostBitterroot', 'BitterrootGuard']],
+  ['black_axe', ['ShadowAxe', 'AxeHall', 'BlackGrudge', 'AxeBreaker', 'StormAxe']],
+  ['boldenbar', ['BoldenbarVein', 'AmberBoldenbar', 'BoldenbarBraid', 'BoldenbarFist', 'BoldenbarBane']],
+  ['bouldershoulder', ['BouldershoulderGate', 'BouldershoulderWard', 'AnvilBouldershoulder', 'BlackBouldershoulder', 'RuneBouldershoulder']],
+  ['brawnanvil', ['BrawnanvilGuard', 'BrawnanvilThrong', 'BlackBrawnanvil', 'ShadowBrawnanvil', 'BrawnanvilKeep']],
+  ['brightblade', ['BrightbladeRunes', 'BrightbladeHearth', 'BrightbladeThrong', 'BarBrightblade', 'ThunderBrightblade']],
+  ['brighthelm', ['GrimHelm', 'AshBright', 'BrightBreaker', 'HelmBorn', 'HelmVein']],
+  ['broodhull', ['BroodhullGuard', 'BroodhullBraid', 'BroodhullKeep', 'StoneBroodhull', 'BroodhullThane']],
+  ['bruenghor', ['GraniteBruenghor', 'BruenghorVein', 'BruenghorStone', 'BruenghorGate', 'BruenghorHammer']],
+  ['bukbukken', ['BukbukkenScar', 'SilverBukbukken', 'BukbukkenGate', 'BukbukkenKin', 'BukbukkenBreaker']],
+  ['chistlesmith', ['AmberChistlesmith', 'ChistlesmithHearth', 'SteelChistlesmith', 'ChistlesmithShield', 'AnvilChistlesmith']],
+  ['eaglecleft', ['EaglecleftBorn', 'EaglecleftBinder', 'RuneEaglecleft', 'BlackEaglecleft', 'EaglecleftFist']],
+  ['flameshade', ['FlameshadePeak', 'FlameshadeKeep', 'FlameshadeThrong', 'BarFlameshade', 'RuneFlameshade']],
+  ['muzgardt', ['MuzgardtVault', 'MuzgardtPeak', 'MuzgardtStone', 'MuzgardtGrudge', 'IronMuzgardt']],
+  ['stoneshaft', ['GraniteShaft', 'StoneVault', 'ShaftBlood', 'ShaftHearth', 'StoneHearth']],
+  ['ticklebeard', ['BeardBlood', 'BeardVault', 'TickleBorn', 'TickleHold', 'AshTickle']],
+  ['dankil', ['BronzeDankil', 'DankilWatch', 'AmberDankil', 'BlackDankil', 'DankilSson']],
+  ['daraz', ['GraniteDaraz', 'DarazHold', 'StormDaraz', 'DarazHearth', 'DarazFist']],
+  ['forgebar', ['ForgebarSdottir', 'BlackForgebar', 'ForgebarWatch', 'ForgebarScar', 'ForgebarHammer']],
+  ['gemcrypt', ['GemcryptHall', 'GemcryptMaul', 'GemcryptSong', 'ShadowGemcrypt', 'GemcryptThrong']],
+  ['girdaur', ['RuneGirdaur', 'GrimGirdaur', 'SilverGirdaur', 'GirdaurBinder', 'GraniteGirdaur']],
+  ['hammerhand', ['StormHand', 'CoalHand', 'HandBreaker', 'HandHold', 'HammerGrudge']],
+  ['hardhammer', ['ThunderHammer', 'DeepHard', 'HammerDelver', 'BarHard', 'RuneHard']],
+  ['herlinga', ['HerlingaMantle', 'HerlingaGuard', 'ShadowHerlinga', 'HerlingaBridge', 'BlackHerlinga']],
+  ['hillborn', ['HillbornDelver', 'HillbornStone', 'HillbornRunes', 'StoneHillborn', 'AshHillborn']],
+  ['hillsafar', ['BarHillsafar', 'HillsafarShield', 'HillsafarBorn', 'AnvilHillsafar', 'HillsafarThrong']],
+  ['horn', ['IronHorn', 'FrostHorn', 'HornBraid', 'HornFist', 'HornDelver']],
+  ['icehammer', ['HammerHold', 'CoalHammer', 'SteelHammer', 'HammerBreaker', 'GraniteIce']],
+  ['ironeater', ['SilverEater', 'IronBorn', 'EaterHammer', 'IronWatch', 'IronThrong']],
+  ['ironstar', ['StarIron', 'IronDelver', 'StarDelver', 'StarWatch', 'IronBlood']],
+  ['licehair', ['AshLicehair', 'LicehairMantle', 'GloomLicehair', 'CoalLicehair', 'LicehairSong']],
+  ['ludwakazar', ['CoalLudwakazar', 'GrimLudwakazar', 'LudwakazarStone', 'GraniteLudwakazar', 'EmberLudwakazar']],
+  ['madbeards', ['MadbeardsBane', 'CoalMadbeards', 'MadbeardsGrudge', 'MadbeardsWard', 'MadbeardsDelve']],
+  ['mcduff', ['McDuffGate', 'McDuffStone', 'McDuffBrew', 'McDuffWard', 'McDuffHearth']],
+  ['mcgruff', ['McGruffShield', 'McGruffHammer', 'McGruffDelve', 'McGruffWatch', 'McGruffHall']],
+  ['mcknuckles', ['McknucklesStone', 'McknucklesHall', 'McknucklesGrudge', 'BarMcknuckles', 'GloomMcknuckles']],
+  ['mcruff', ['McruffRunes', 'McruffSong', 'McruffWatch', 'McruffScar', 'McruffVault']],
+  ['melairkyn', ['MelairkynScar', 'MelairkynBridge', 'MelairkynThrong', 'StormMelairkyn', 'MelairkynVein']],
+  ['orcsmasher', ['OrcsmasherHearth', 'OrcsmasherForge', 'OrcsmasherMaul', 'OrcsmasherBlood', 'GraniteOrcsmasher']],
+  ['orothiar', ['OrothiarShield', 'OrothiarGrudge', 'GrimOrothiar', 'AshOrothiar', 'OrothiarStone']],
+  ['pwent', ['PwentBane', 'PwentBinder', 'PwentDelve', 'PwentBridge', 'PwentKin']],
+  ['rockjaw', ['BlackRockjaw', 'RockjawMaul', 'BronzeRockjaw', 'GloomRockjaw', 'FrostRockjaw']],
+  ['rookoath', ['OathShield', 'AmberRook', 'RookForge', 'OathMaul', 'GraniteRook']],
+  ['rustfire', ['EmberRust', 'StoneFire', 'FireDelve', 'AshFire', 'RustKeep']],
+  ['sandbeards', ['BronzeSandbeards', 'SandbeardsMantle', 'CoalSandbeards', 'SandbeardsForge', 'SteelSandbeards']],
+  ['shattershield', ['ShieldHall', 'ShatterHammer', 'AmberShatter', 'ShieldGate', 'ShatterKeep']],
+  ['stonebridge', ['BridgeForge', 'GrimStone', 'StoneBinder', 'RuneBridge', 'BridgeShield']],
+  ['stonehand', ['StoneMantle', 'HandBreaker', 'HandWard', 'StoneKeep', 'StoneBorn']],
+  ['stoneshoulder', ['ShoulderRunes', 'StoneMaul', 'StoneKin', 'ShoulderBreaker', 'StoneVein']],
+  ['stouthammer', ['BlackHammer', 'IronHammer', 'SteelHammer', 'SilverStout', 'HammerScar']],
+  ['sunblight', ['SunblightSdottir', 'SunblightThane', 'SunblightForge', 'ThunderSunblight', 'GloomSunblight']],
+  ['undurr', ['UndurrBorn', 'UndurrWatch', 'UndurrKeep', 'SteelUndurr', 'AshUndurr']],
+  ['grimlock', ['BronzeGrim', 'GrimGuard', 'LockHold', 'LockMantle', 'SteelLock']],
+  ['maccloud', ['CoalMaccloud', 'MaccloudWatch', 'MaccloudBlood', 'FrostMaccloud', 'MaccloudGate']],
+  ['thundermore', ['ThunderWard', 'ThunderDelver', 'ThunderVein', 'MoreBridge', 'GrimThunder']],
+  ['enogtorad', ['EnogtoradForge', 'EnogtoradMaul', 'EnogtoradGrudge', 'AmberEnogtorad', 'GloomEnogtorad']],
+  ['drummond', ['DrummondBorn', 'DrummondBlood', 'DrummondThrong', 'DrummondStone', 'DrummondMaul']],
+  ['tolorr', ['RuneTolorr', 'BlackTolorr', 'CoalTolorr', 'AshTolorr', 'TolorrFist']],
+  ['vanderholl', ['VanderhollBraid', 'VanderhollVein', 'VanderhollShield', 'VanderhollRunes', 'VanderhollWard']],
+  ['stonefist', ['StoneSson', 'StoneScar', 'BronzeFist', 'GrimStone', 'FistWard']],
+  ['aringeld', ['BronzeAringeld', 'GloomAringeld', 'AringeldSdottir', 'AringeldForge', 'AringeldWatch']],
+  ['gelderon', ['GelderonDelver', 'GelderonSong', 'AshGelderon', 'GelderonThrong', 'GelderonThane']],
+  ['grimmark', ['MarkWard', 'MarkStone', 'MarkHammer', 'EmberGrim', 'GrimFist']],
+  ['shalefoot', ['EmberShalefoot', 'ShalefootShield', 'ShalefootMantle', 'ShalefootKin', 'ShalefootBorn']],
+  ['silverhair', ['SilverBridge', 'AmberSilver', 'SilverStone', 'HairHearth', 'HairBraid']],
+  ['copperlung_stonescar', ['StonePeak', 'ScarSdottir', 'ScarPeak', 'CoalCopperlung', 'StoneVault']],
+  ['stouthammer', ['BlackHammer', 'IronHammer', 'SteelHammer', 'SilverStout', 'HammerScar']],
+  ['flintbristle', ['FlintbristleSson', 'CoalFlintbristle', 'FlintbristleThane', 'FlintbristleDelve', 'FlintbristleShield']],
+  ['spire_crag', ['SpireHall', 'CragKeep', 'SilverSpire', 'SpireThrong', 'SpireWard']],
+  ['stonehollow', ['StoneHall', 'HollowDelve', 'StoneVein', 'HollowHearth', 'DeepStone']],
+  ['silverpick', ['PickBane', 'PickHearth', 'SilverThane', 'DeepSilver', 'SilverKin']],
+  ['ironheart', ['IronGate', 'IronKin', 'AshHeart', 'SteelIron', 'CoalIron']],
+  ['weoughld', ['WeoughldBane', 'WeoughldVein', 'WeoughldKin', 'StoneWeoughld', 'WeoughldSdottir']],
+  ['llyrnillach', ['LlyrnillachBridge', 'LlyrnillachHall', 'LlyrnillachPeak', 'LlyrnillachThane', 'LlyrnillachHold']],
+  ['highhelm', ['HighSong', 'HighBraid', 'ShadowHigh', 'FrostHigh', 'HighMaul']],
+]);
 
 const dwarfGuildOptions = [
   { value: 'miners-guild', label: 'Miners Guild' },
@@ -10468,7 +10779,13 @@ function generateDwarfName(gender, clan) {
   if (!clanLabel) {
     return firstName;
   }
-  return `${firstName} ${clanLabel}`;
+  const baseSurname = getPrimaryClanName(clanLabel, clan) || clanLabel;
+  const clanFamilyNames = getClanFamilyNames(clan);
+  const surnameOptions = Array.isArray(clanFamilyNames) && clanFamilyNames.length > 0
+    ? [baseSurname, ...clanFamilyNames]
+    : [baseSurname];
+  const surname = pickRandomFrom(surnameOptions, Math.random) || baseSurname;
+  return `${firstName} ${surname}`;
 }
 
 function createRandomDwarf() {
