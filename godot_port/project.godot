@@ -1,0 +1,11 @@
+; Engine configuration file.
+; Manual Godot 4 stub for browser game porting.
+
+config_version=5
+
+[application]
+config/name="DwarfBrowserPort"
+run/main_scene="res://scenes/Main.tscn"
+
+[rendering]
+renderer/rendering_method="forward_plus"
