@@ -3224,7 +3224,7 @@ button:hover:not(:disabled) {
 .gender-toggle {
   display: flex;
   gap: 1.1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-start;
   justify-content: flex-start;
 }
@@ -3232,7 +3232,7 @@ button:hover:not(:disabled) {
 .gender-toggle-wrapper {
   display: flex;
   gap: 1.1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-start;
   justify-content: flex-start;
   margin-top: clamp(0.2rem, 0.8vw, 0.45rem);
