@@ -498,6 +498,11 @@ export function attachEvents(elements, deps) {
         return;
       }
 
+      if (isDwarfholdStructureTile(resolvedTile)) {
+        showStructureDetails(resolvedTile, { tileX, tileY });
+        return;
+      }
+
       const resolvedName =
         typeof resolvedTile.structureName === 'string' && resolvedTile.structureName
           ? resolvedTile.structureName
