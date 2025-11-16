@@ -1060,12 +1060,17 @@ button {
 }
 
 .gender-toggle-randomise {
+  --randomise-scale: 0.82;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: clamp(80px, calc(15vw * 0.672), 120px);
+  width: clamp(
+    calc(80px * var(--randomise-scale)),
+    calc(15vw * 0.672 * var(--randomise-scale)),
+    calc(120px * var(--randomise-scale))
+  );
   max-width: 100%;
   aspect-ratio: 150 / 136;
   padding: 0;
