@@ -598,12 +598,12 @@ const createTraitAttributeElement = (attribute) => {
   }
 
   const content = doc.createElement('div');
-  content.className = 'trait-attribute__content';
+  content.className = 'trait-attribute__tooltip';
   const title = doc.createElement('p');
-  title.className = 'trait-attribute__title';
+  title.className = 'trait-attribute__tooltip-title';
   title.textContent = attribute.label;
   const description = doc.createElement('p');
-  description.className = 'trait-attribute__description';
+  description.className = 'trait-attribute__tooltip-description';
   description.textContent = attribute.description;
   content.appendChild(title);
   content.appendChild(description);
