@@ -3227,12 +3227,17 @@ button:hover:not(:disabled) {
   background: none;
   position: relative;
   cursor: pointer;
+  width: 88px;
+  height: 88px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .gender-toggle-button img {
   display: block;
-  width: 87px;
-  height: auto;
+  width: 88px;
+  height: 88px;
   max-width: 100%;
   border-radius: 14px;
   filter: brightness(0.85);
