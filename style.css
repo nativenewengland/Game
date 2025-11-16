@@ -1112,7 +1112,7 @@ button {
 
 .gender-toggle-randomise .randomise-button__dice {
   display: block;
-  width: 72%;
+  width: 100%;
   aspect-ratio: 704 / 469;
   background-image: url('tilesheet/dice.png');
   background-repeat: no-repeat;
