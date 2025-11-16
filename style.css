@@ -3285,7 +3285,8 @@ button:hover:not(:disabled) {
 
 /* Visible, shaped focus ring that follows the image's rounded rect shape */
 .gender-toggle-button:focus-visible img {
-  box-shadow: 0 0 0 4px rgba(240, 198, 116, 0.85);
+  /* Use an inset ring so it doesn't extend past the PNG's bounds */
+  box-shadow: inset 0 0 0 4px rgba(240, 198, 116, 0.85);
   border-radius: 14px;
 }
 
