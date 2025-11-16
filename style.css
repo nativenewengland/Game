@@ -3235,12 +3235,16 @@ button:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 87px;
+  height: 88px;
 }
 
 .gender-toggle-button img {
   display: block;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
   border-radius: 14px;
   filter: brightness(0.85);
   transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
