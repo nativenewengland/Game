@@ -1060,7 +1060,7 @@ button {
 }
 
 .gender-toggle-randomise {
-  --randomise-scale: 0.82;
+  --randomise-scale: 0.72;
   position: relative;
   display: flex;
   align-items: center;
