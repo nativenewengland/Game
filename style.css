@@ -1060,12 +1060,17 @@ button {
 }
 
 .gender-toggle-randomise {
+  --randomise-scale: 0.72;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: clamp(80px, calc(15vw * 0.672), 120px);
+  width: clamp(
+    calc(80px * var(--randomise-scale)),
+    calc(15vw * 0.672 * var(--randomise-scale)),
+    calc(120px * var(--randomise-scale))
+  );
   max-width: 100%;
   aspect-ratio: 150 / 136;
   padding: 0;
@@ -1112,7 +1117,8 @@ button {
   background-image: url('tilesheet/dice.png');
   background-repeat: no-repeat;
   background-position: center;
-  background-size: contain;
+  /* Slightly zoom the dice artwork without altering the frame footprint */
+  background-size: 112% auto;
   image-rendering: pixelated;
   transition: transform 140ms ease, filter 140ms ease;
 
@@ -2225,6 +2231,8 @@ button:hover:not(:disabled) {
   gap: clamp(0.85rem, 2.3vw, 1.45rem);
   align-items: flex-end;
   justify-self: end;
+  margin-top: clamp(0.75rem, 2vh, 1.5rem);
+  margin-left: clamp(-1.75rem, -1.1vw, -0.5rem);
 }
 
 #dwarf-customizer .customizer-sidebar {
@@ -2232,6 +2240,16 @@ button:hover:not(:disabled) {
     calc(0.85rem * var(--customizer-scale)),
     calc(2.3vw * var(--customizer-scale)),
     calc(1.45rem * var(--customizer-scale))
+  );
+  margin-top: clamp(
+    calc(0.75rem * var(--customizer-scale)),
+    calc(2vh * var(--customizer-scale)),
+    calc(1.5rem * var(--customizer-scale))
+  );
+  margin-left: clamp(
+    calc(-1.75rem * var(--customizer-scale)),
+    calc(-1.1vw * var(--customizer-scale)),
+    calc(-0.5rem * var(--customizer-scale))
   );
 }
 
@@ -3227,18 +3245,19 @@ button:hover:not(:disabled) {
   background: none;
   position: relative;
   cursor: pointer;
-  width: 88px;
-  height: 88px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 87px;
+  height: 88px;
 }
 
 .gender-toggle-button img {
   display: block;
-  width: 88px;
-  height: 88px;
-  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
   border-radius: 14px;
   filter: brightness(0.85);
   transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
