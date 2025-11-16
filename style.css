@@ -1117,8 +1117,8 @@ button {
   background-image: url('tilesheet/dice.png');
   background-repeat: no-repeat;
   background-position: center;
-  /* Slightly zoom the dice artwork without altering the frame footprint */
-  background-size: 112% auto;
+  /* Fit the dice artwork completely inside the frame so it isn't cropped */
+  background-size: contain;
   image-rendering: pixelated;
   transition: transform 140ms ease, filter 140ms ease;
 
