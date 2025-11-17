@@ -2274,10 +2274,8 @@ button:hover:not(:disabled) {
     calc(0.6rem * var(--customizer-scale))
   );
   border-radius: calc(18px * var(--customizer-scale));
-  box-shadow: inset 0 0 0 calc(1px * var(--customizer-scale))
-      rgba(240, 198, 116, 0.18),
-    0 calc(0.55rem * var(--customizer-scale))
-      calc(1.1rem * var(--customizer-scale)) rgba(0, 0, 0, 0.35);
+  background: transparent;
+  box-shadow: none;
 }
 
 .customizer-sidebar__name .dwarf-slot-info {
@@ -2572,21 +2570,7 @@ button:hover:not(:disabled) {
 }
 
 .dwarf-name-field::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: calc(70px * var(--nameplate-scale));
-  transform: translateY(-50%);
-  transform-origin: left center;
-  background-image: url('tilesheet/nametype.png');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 100% 100%;
-  image-rendering: pixelated;
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 @media (min-width: 1025px) {
