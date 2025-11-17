@@ -15025,7 +15025,14 @@ function renderDwarfholdScreen() {
       }
       for (let x = 0; x < mapWidth; x += 1) {
         const cell = row[x];
+        if (cell === null || cell === undefined) {
+          continue;
+        }
+
         const type = typeof cell === 'string' ? cell : typeof cell?.type === 'string' ? cell.type : 'rock';
+        if (type === 'void') {
+          continue;
+        }
         const definition = palette[type] || palette.rock || { color: '#1f2937' };
         const cellSprite = cell && typeof cell === 'object' && typeof cell.sprite === 'object' ? cell.sprite : null;
         const definitionSprite = definition.sprite && typeof definition.sprite === 'object' ? definition.sprite : null;
