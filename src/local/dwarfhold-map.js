@@ -1918,56 +1918,111 @@ export function generateDwarfholdMap(options = {}) {
   const seedValue = hashString(`${worldSeed}:${structureKey}:${structureName}:${tileX}:${tileY}`);
   const randomFn = createRng(seedValue);
 
-  const mapWidth = ensureOdd(Math.max(11, randomInt(randomFn, 24, 46)), 11, 151);
-  const mapHeight = ensureOdd(Math.max(11, randomInt(randomFn, 18, 34)), 11, 151);
+  const population = Number.isFinite(options.population) ? options.population : null;
+  const populationMax = Number.isFinite(options.populationMax) ? options.populationMax : null;
+  const typeScale =
+    structureKey === 'GREAT_DWARFHOLD' ? 1.65 : structureKey === 'HILLHOLD' ? 0.85 : structureKey === 'ABANDONED_DWARFHOLD' ? 1.2 : 1;
+  const populationScale = populationMax
+    ? clamp(population / Math.max(1, populationMax), 0.45, 1.6)
+    : population
+      ? clamp(population / 160, 0.6, 1.4)
+      : 1;
+  const scaleFactor = clamp(typeScale * (0.9 + populationScale * 0.45), 0.85, 2.35);
 
-  const floorPaddingX = Math.max(2, Math.round(mapWidth * 0.15));
-  const floorPaddingY = Math.max(2, Math.round(mapHeight * 0.15));
-  const floorWidth = Math.max(5, mapWidth - floorPaddingX * 2);
-  const floorHeight = Math.max(5, mapHeight - floorPaddingY * 2);
-  const startX = Math.max(1, Math.floor((mapWidth - floorWidth) / 2));
-  const startY = Math.max(1, Math.floor((mapHeight - floorHeight) / 2));
+  const baseWidth = randomInt(randomFn, 28, 54);
+  const baseHeight = randomInt(randomFn, 22, 42);
+  const mapWidth = ensureOdd(Math.round(baseWidth * scaleFactor), 19, 151);
+  const mapHeight = ensureOdd(Math.round(baseHeight * scaleFactor * 0.92), 19, 151);
 
-  const tiles = Array.from({ length: mapHeight }, () => Array.from({ length: mapWidth }, () => null));
-  const floorVariants = interiorTileSprites.polishedFloor || interiorTileSprites.carvedFloor || [];
+  const usedTypes = new Set();
+  const tiles = createEmptyGrid(mapWidth, mapHeight, usedTypes);
+  const features = [];
+  const featureSet = new Set();
+  const markers = [];
 
-  for (let y = 0; y < floorHeight; y += 1) {
-    for (let x = 0; x < floorWidth; x += 1) {
-      const worldX = startX + x;
-      const worldY = startY + y;
-      const spriteSeed = hashString(`${seedValue}:${worldX},${worldY}:floor`);
-      const sprite = pickVariantFromPool(floorVariants, spriteSeed);
-      tiles[worldY][worldX] = {
-        type: 'floor',
-        sprite
-      };
-    }
-  }
+  const roadNetwork = growRoadNetwork({
+    tiles,
+    usedTypes,
+    randomFn,
+    width: mapWidth,
+    height: mapHeight,
+    scaleFactor,
+    features,
+    featureSet,
+    markers
+  });
+
+  const districts = extractDistrictLots({
+    tiles,
+    roadNetwork,
+    randomFn,
+    minLotArea: clamp(Math.round(18 * scaleFactor), 12, 42)
+  });
+
+  assignDistrictStages(districts, roadNetwork.center, randomFn);
+  placeDistrictStructures({
+    districts,
+    roadNetwork,
+    tiles,
+    usedTypes,
+    randomFn,
+    features,
+    featureSet,
+    markers,
+    scaleFactor
+  });
+
+  const npcs = generateNpcRoster({
+    districts,
+    randomFn,
+    resolvedPopulation: population,
+    scaleFactor
+  });
+
+  assignTileSpritesToGrid(tiles, seedValue);
 
   const structureLabel = structureTypeLabels[structureKey] || 'Dwarven Hold';
   const levelName = pick(levelNames, randomFn) || 'Upper Halls';
   const stone = pick(stoneDescriptors, randomFn) || 'granite';
   const resolvedName = structureName || structureLabel;
+  const hallDescriptor =
+    structureKey === 'ABANDONED_DWARFHOLD'
+      ? pick(ruinedHallDescriptors, randomFn) || 'a cracked hall reclaimed by silence'
+      : pick(activeHallDescriptors, randomFn) || 'a rune-lit grand hall ringed with banners';
 
-  let description = `${resolvedName} opens into a broad stone floor of ${stone}, freshly swept for new works.`;
+  const structureScaleLabel = scaleFactor >= 1.55 ? 'vast' : scaleFactor > 1.15 ? 'expansive' : 'compact';
+  let description = `${resolvedName} is a ${structureScaleLabel} hold carved through ${stone}, anchored by ${hallDescriptor}.`;
   if (factionLabel) {
-    description += ` Standards of ${factionLabel} are stacked nearby, awaiting their place along future pillars.`;
-  } else {
-    description += ' Quiet echoes hint at the halls yet to be carved beyond this empty space.';
+    description += ` Banners of ${factionLabel} mark clan claims on pillars and gatehouses.`;
   }
 
-  const features = [
-    'A clear expanse of polished bedrock ready for dwarven planners.',
-    `Canvas extent — ${mapWidth}×${mapHeight} tiles with an open floor at the center.`
-  ];
+  const districtSummary = districts.length > 0 ? `${districts.length} carved districts radiate from the main arteries.` : 'New corridors await carving into the mountain.';
+  addFeatureNote('entrance', features, featureSet, randomFn, 'Gatehouse — reinforced portals guard the surface approach.');
+  features.push(`Canvas extent — ${mapWidth}×${mapHeight} tiles of vaulted chambers.`);
+  features.push(districtSummary);
 
-  const floorLegendSprite = cloneSpriteDefinition(floorVariants[0] || null);
-  const legend = {
-    floor: {
-      ...baseLegend.floor,
-      sprite: floorLegendSprite
+  if (Array.isArray(roadNetwork?.stageSummaries)) {
+    roadNetwork.stageSummaries.forEach((stage) => {
+      const label = stage?.name || `Stage ${stage.stageIndex + 1}`;
+      const areaText = stage?.area ? `${stage.area} tiles of corridors` : 'corridors';
+      features.push(`${label} — ${areaText} reinforce the spine of the hold.`);
+    });
+  }
+
+  if (npcs.length > 0) {
+    features.push(`Notables — ${npcs.length} dwarves with homes, workposts, and leisure haunts are mapped.`);
+  }
+
+  const legend = {};
+  usedTypes.forEach((type) => {
+    const base = baseLegend[type];
+    if (!base) {
+      return;
     }
-  };
+    const spritePool = tileVariantPools[type]?.base;
+    const sprite = Array.isArray(spritePool) && spritePool.length > 0 ? cloneSpriteDefinition(spritePool[0]) : null;
+    legend[type] = sprite ? { ...base, sprite } : { ...base };
+  });
 
   const title = resolvedName || structureLabel;
   const subtitle = `${levelName} — ${structureLabel}`;
@@ -1981,7 +2036,7 @@ export function generateDwarfholdMap(options = {}) {
     subtitle,
     description,
     features,
-    markers: [],
-    npcs: []
+    markers,
+    npcs
   };
 }
