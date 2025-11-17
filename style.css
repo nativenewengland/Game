@@ -2274,10 +2274,8 @@ button:hover:not(:disabled) {
     calc(0.6rem * var(--customizer-scale))
   );
   border-radius: calc(18px * var(--customizer-scale));
-  box-shadow: inset 0 0 0 calc(1px * var(--customizer-scale))
-      rgba(240, 198, 116, 0.18),
-    0 calc(0.55rem * var(--customizer-scale))
-      calc(1.1rem * var(--customizer-scale)) rgba(0, 0, 0, 0.35);
+  background: transparent;
+  box-shadow: none;
 }
 
 .customizer-sidebar__name .dwarf-slot-info {
