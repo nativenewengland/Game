@@ -2570,7 +2570,21 @@ button:hover:not(:disabled) {
 }
 
 .dwarf-name-field::before {
-  display: none;
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: calc(70px * var(--nameplate-scale));
+  transform: translateY(-50%);
+  transform-origin: left center;
+  background-image: url('tilesheet/nametype.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 0;
 }
 
 @media (min-width: 1025px) {
