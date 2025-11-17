@@ -1818,6 +1818,13 @@ function createEmptyGrid(width, height, usedTypes) {
   return tiles;
 }
 
+function setVoidCell(tiles, x, y) {
+  if (!tiles || !Array.isArray(tiles[y]) || x < 0 || x >= tiles[y].length) {
+    return;
+  }
+  tiles[y][x] = { type: 'void' };
+}
+
 function setCell(tiles, x, y, type, usedTypes, extras = {}) {
   if (!tiles || y < 0 || y >= tiles.length) {
     return;
@@ -1881,6 +1888,47 @@ function addFeatureNote(type, features, featureSet, randomFn, fallback) {
   if (note && !featureSet.has(note)) {
     featureSet.add(note);
     features.push(note);
+  }
+}
+
+function applyVoidMask(tiles, randomFn) {
+  if (!Array.isArray(tiles) || tiles.length === 0) {
+    return;
+  }
+  const height = tiles.length;
+  const width = tiles[0].length;
+  const centerX = (width - 1) / 2;
+  const centerY = (height - 1) / 2;
+  const radiusX = Math.max(4, width / 2 - 2);
+  const radiusY = Math.max(4, height / 2 - 2);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const nx = (x - centerX) / radiusX;
+      const ny = (y - centerY) / radiusY;
+      const distance = Math.sqrt(nx * nx + ny * ny);
+      const edgeNoise = (randomFn() - 0.5) * 0.22;
+      if (distance + edgeNoise > 1 && tiles[y][x]?.type === 'rock') {
+        setVoidCell(tiles, x, y);
+      }
+    }
+  }
+
+  const pocketCount = Math.max(1, Math.round((width * height) / 160));
+  for (let i = 0; i < pocketCount; i += 1) {
+    const pocketRadius = clamp(Math.round(1 + randomFn() * 3), 1, 4);
+    const px = clamp(Math.floor(centerX + (randomFn() - 0.5) * width * 0.85), 1, width - 2);
+    const py = clamp(Math.floor(centerY + (randomFn() - 0.5) * height * 0.85), 1, height - 2);
+    for (let dy = -pocketRadius; dy <= pocketRadius; dy += 1) {
+      for (let dx = -pocketRadius; dx <= pocketRadius; dx += 1) {
+        const tx = px + dx;
+        const ty = py + dy;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance <= pocketRadius && tiles?.[ty]?.[tx]?.type === 'rock') {
+          setVoidCell(tiles, tx, ty);
+        }
+      }
+    }
   }
 }
 
@@ -1978,6 +2026,8 @@ export function generateDwarfholdMap(options = {}) {
     resolvedPopulation: population,
     scaleFactor
   });
+
+  applyVoidMask(tiles, randomFn);
 
   assignTileSpritesToGrid(tiles, seedValue);
 
