@@ -80,6 +80,7 @@ const interiorTileSprites = {
 };
 
 const tileVariantPools = {
+  floor: { base: interiorTileSprites.polishedFloor },
   rock: { base: interiorTileSprites.rock },
   corridor: { base: interiorTileSprites.carvedFloor },
   entrance: { base: interiorTileSprites.carvedFloor, overlays: interiorTileSprites.overlays.entrance },
@@ -99,6 +100,13 @@ const tileVariantPools = {
 tileVariantPools.default = { base: interiorTileSprites.carvedFloor };
 
 const baseLegend = {
+  floor: {
+    color: '#9ca3af',
+    label: 'Stone floor',
+    description: 'Freshly swept bedrock ready for carving.',
+    borderColor: '#6b7280',
+    applyBorderOnSprite: true
+  },
   rock: {
     color: '#111827',
     label: 'Carved stone',
@@ -1909,153 +1917,71 @@ export function generateDwarfholdMap(options = {}) {
   const worldSeed = typeof options.worldSeed === 'string' ? options.worldSeed : 'dwarfhold';
   const seedValue = hashString(`${worldSeed}:${structureKey}:${structureName}:${tileX}:${tileY}`);
   const randomFn = createRng(seedValue);
-  const resolvedPopulation = Number.isFinite(options.population)
-    ? Math.max(0, Math.round(options.population))
-    : Number.isFinite(options.populationMax)
-    ? Math.max(0, Math.round(options.populationMax))
-    : null;
-  const baseCapacity = 100;
-  const dwarvesToAccommodate =
-    resolvedPopulation !== null ? Math.max(10, Math.round(resolvedPopulation / 10)) : null;
-  const scaleFactorRaw =
-    dwarvesToAccommodate !== null ? Math.sqrt(dwarvesToAccommodate / baseCapacity) : 1;
-  const scaleFactor = clamp(scaleFactorRaw, 0.85, 3);
-  const heightScaleFactor = clamp(scaleFactor * 1.05, 0.9, 3.4);
 
-  const widthBase = Math.max(1, Math.round((32 + randomInt(randomFn, 0, 6)) * scaleFactor));
-  const heightBase = Math.max(1, Math.round((24 + randomInt(randomFn, 0, 6)) * heightScaleFactor));
-  const width = ensureOdd(widthBase, 290, 950);
-  const height = ensureOdd(heightBase, 210, 750);
-  const usedTypes = new Set();
-  const tiles = createEmptyGrid(width, height, usedTypes);
-  const features = [];
-  const featureSet = new Set();
-  const markers = [];
+  const mapWidth = ensureOdd(Math.max(11, randomInt(randomFn, 24, 46)), 11, 151);
+  const mapHeight = ensureOdd(Math.max(11, randomInt(randomFn, 18, 34)), 11, 151);
 
-  const roadNetwork = growRoadNetwork({
-    tiles,
-    usedTypes,
-    randomFn,
-    width,
-    height,
-    scaleFactor,
-    features,
-    featureSet,
-    markers
-  });
+  const floorPaddingX = Math.max(2, Math.round(mapWidth * 0.15));
+  const floorPaddingY = Math.max(2, Math.round(mapHeight * 0.15));
+  const floorWidth = Math.max(5, mapWidth - floorPaddingX * 2);
+  const floorHeight = Math.max(5, mapHeight - floorPaddingY * 2);
+  const startX = Math.max(1, Math.floor((mapWidth - floorWidth) / 2));
+  const startY = Math.max(1, Math.floor((mapHeight - floorHeight) / 2));
 
-  const districts = extractDistrictLots({
-    tiles,
-    roadNetwork,
-    randomFn,
-    minLotArea: Math.max(14, Math.round(scaleFactor * 12))
-  });
-  assignDistrictStages(districts, roadNetwork.center, randomFn);
-  placeDistrictStructures({
-    districts,
-    roadNetwork,
-    tiles,
-    usedTypes,
-    randomFn,
-    features,
-    featureSet,
-    markers,
-    scaleFactor
-  });
+  const tiles = Array.from({ length: mapHeight }, () => Array.from({ length: mapWidth }, () => null));
+  const floorVariants = interiorTileSprites.polishedFloor || interiorTileSprites.carvedFloor || [];
 
-  const npcs = generateNpcRoster({ districts, randomFn, resolvedPopulation, scaleFactor });
-  if (npcs.length > 0) {
-    const censusNote = `Census — ${npcs.length} named dwarves rotate through the hold's shifts.`;
-    if (!featureSet.has(censusNote)) {
-      featureSet.add(censusNote);
-      features.push(censusNote);
+  for (let y = 0; y < floorHeight; y += 1) {
+    for (let x = 0; x < floorWidth; x += 1) {
+      const worldX = startX + x;
+      const worldY = startY + y;
+      const spriteSeed = hashString(`${seedValue}:${worldX},${worldY}:floor`);
+      const sprite = pickVariantFromPool(floorVariants, spriteSeed);
+      tiles[worldY][worldX] = {
+        type: 'floor',
+        sprite
+      };
     }
   }
 
   const structureLabel = structureTypeLabels[structureKey] || 'Dwarven Hold';
   const levelName = pick(levelNames, randomFn) || 'Upper Halls';
   const stone = pick(stoneDescriptors, randomFn) || 'granite';
-  const isRuined = structureKey === 'ABANDONED_DWARFHOLD';
-  const hallDescriptor = pick(isRuined ? ruinedHallDescriptors : activeHallDescriptors, randomFn) ||
-    (isRuined ? 'a silent hall' : 'a vaulted hall');
   const resolvedName = structureName || structureLabel;
 
-  let description = `${resolvedName} opens into ${hallDescriptor}, hewn from ${stone}.`;
-  if (isRuined) {
-    description += ' Dust motes swirl through the stale air while distant drips echo from unseen caverns.';
-  } else if (factionLabel) {
-    description += ` Standards of ${factionLabel} hang between the pillars, their colors reflecting off polished stone.`;
+  let description = `${resolvedName} opens into a broad stone floor of ${stone}, freshly swept for new works.`;
+  if (factionLabel) {
+    description += ` Standards of ${factionLabel} are stacked nearby, awaiting their place along future pillars.`;
   } else {
-    description += ' Clan standards sway between the pillars, and amber braziers cast long, warm shadows across the stone.';
+    description += ' Quiet echoes hint at the halls yet to be carved beyond this empty space.';
   }
 
-  const stageLabels = roadNetwork.stageSummaries
-    .map((stage) => {
-      switch (stage.name) {
-        case 'coreSpine':
-          return 'core arteries';
-        case 'ringRoutes':
-          return 'ring galleries';
-        case 'lowerSpurs':
-          return 'lower spurs';
-        default:
-          return stage.name;
-      }
-    })
-    .filter(Boolean);
-  if (stageLabels.length > 0) {
-    description += ` Wayfinding follows ${stageLabels.join(', ')} branching from the mountain heart.`;
-  }
+  const features = [
+    'A clear expanse of polished bedrock ready for dwarven planners.',
+    `Canvas extent — ${mapWidth}×${mapHeight} tiles with an open floor at the center.`
+  ];
 
-  description += ` ${districts.length} districts host the forges, markets, vaults, and quarters of the hold.`;
-  const walledCount = districts.filter((district) => district.walled).length;
-  if (walledCount > 0) {
-    description += ` ${walledCount} inner wards remain sealed behind rune-locked gates.`;
-  }
-  if (npcs.length > 0 && !isRuined) {
-    description += ` Ledger stones record ${npcs.length} notable dwarves tending the hold across daily shifts.`;
-  }
-
-  assignTileSpritesToGrid(tiles, seedValue);
-
-  const legend = {};
-  usedTypes.forEach((type) => {
-    const definition = baseLegend[type];
-    if (definition) {
-      legend[type] = { ...definition };
-    } else {
-      legend[type] = {
-        color: '#1f2937',
-        label: type.charAt(0).toUpperCase() + type.slice(1),
-        description: 'Chamber'
-      };
+  const floorLegendSprite = cloneSpriteDefinition(floorVariants[0] || null);
+  const legend = {
+    floor: {
+      ...baseLegend.floor,
+      sprite: floorLegendSprite
     }
-  });
-
-  Object.keys(legend).forEach((type) => {
-    const pool = tileVariantPools[type];
-    if (!pool) {
-      return;
-    }
-    const spriteSource = pool.legendSprite || (Array.isArray(pool.base) ? pool.base[0] : null);
-    if (spriteSource && !legend[type].sprite) {
-      legend[type].sprite = cloneSpriteDefinition(spriteSource);
-    }
-  });
+  };
 
   const title = resolvedName || structureLabel;
   const subtitle = `${levelName} — ${structureLabel}`;
 
   return {
-    width,
-    height,
+    width: mapWidth,
+    height: mapHeight,
     tiles,
     legend,
     title,
     subtitle,
     description,
     features,
-    markers,
-    npcs
+    markers: [],
+    npcs: []
   };
 }
