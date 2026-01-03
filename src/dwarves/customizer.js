@@ -202,9 +202,17 @@ const drawTintedSprite = (ctx, sheetKey, frame, baseX, baseY, scale, tint, deps 
   const destW = sw * (scale || 1);
   const destH = sh * (scale || 1);
 
-  const offscreen = document.createElement('canvas');
-  offscreen.width = sw;
-  offscreen.height = sh;
+  const doc = ensureDocument();
+  let offscreen = null;
+  if (doc?.createElement) {
+    offscreen = doc.createElement('canvas');
+    offscreen.width = sw;
+    offscreen.height = sh;
+  } else if (typeof OffscreenCanvas !== 'undefined') {
+    offscreen = new OffscreenCanvas(sw, sh);
+  } else {
+    return;
+  }
   const offscreenCtx = offscreen.getContext('2d');
   if (!offscreenCtx) {
     return;
