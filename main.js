@@ -52,6 +52,7 @@ import { getRandomWorldName } from './src/main/world-names.js';
 import { generateDwarfholdMap } from './src/local/dwarfhold-map.js';
 
 let cachedDwarfholdGeneratorPromise = null;
+let detachUiEvents = null;
 
 async function loadDwarfholdGenerator() {
   if (!cachedDwarfholdGeneratorPromise) {
@@ -30736,7 +30737,12 @@ function bootApplication() {
   ensureClanSelectOptions();
   ensureProfessionSelectOptions();
 
-  attachEvents(elements, {
+  if (detachUiEvents) {
+    detachUiEvents();
+    detachUiEvents = null;
+  }
+
+  detachUiEvents = attachEvents(elements, {
     structureContextMenuState,
     hideStructureContextMenu,
     openOptionsScreen,
@@ -30831,7 +30837,5 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
-
 
 

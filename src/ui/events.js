@@ -121,17 +121,19 @@ export function attachEvents(elements, deps) {
     closeStructureHighlightMenu({ returnFocus: true });
   };
 
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') {
+      hideStructureContextMenu();
+      closeStructureHighlightMenu();
+    }
+  };
+
   if (typeof document !== 'undefined') {
     document.addEventListener('pointerdown', dismissContextMenuOnPointerDown, true);
     document.addEventListener('pointerdown', handleStructureHighlightPointerDown, true);
     document.addEventListener('keydown', dismissContextMenuOnKeyDown, true);
     document.addEventListener('keydown', handleStructureHighlightKeyDown, true);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        hideStructureContextMenu();
-        closeStructureHighlightMenu();
-      }
-    });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
   }
 
   if (typeof window !== 'undefined') {
@@ -916,7 +918,7 @@ export function attachEvents(elements, deps) {
   setupTraitSliderControl('hair', elements.dwarfHairSlider, elements.dwarfHairSliderValue);
   setupTraitSliderControl('beard', elements.dwarfBeardSlider, elements.dwarfBeardSliderValue);
 
-  document.addEventListener('keydown', (event) => {
+  const handleGlobalKeyDown = (event) => {
     const activeElement = document.activeElement;
     const isFormControl = activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
@@ -954,7 +956,26 @@ export function attachEvents(elements, deps) {
         closeOptionsScreen();
       }
     }
-  });
+  };
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('keydown', handleGlobalKeyDown);
+  }
 
   refreshOverlayToggleButtons();
+
+  return () => {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('pointerdown', dismissContextMenuOnPointerDown, true);
+      document.removeEventListener('pointerdown', handleStructureHighlightPointerDown, true);
+      document.removeEventListener('keydown', dismissContextMenuOnKeyDown, true);
+      document.removeEventListener('keydown', handleStructureHighlightKeyDown, true);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('scroll', dismissContextMenuOnScroll, true);
+      window.removeEventListener('blur', dismissContextMenuOnScroll);
+    }
+  };
 }
