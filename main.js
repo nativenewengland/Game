@@ -18539,6 +18539,15 @@ function setupMapInteractions() {
     if (!rect) {
       return;
     }
+    const delta =
+      (Number.isFinite(event.deltaY) && event.deltaY !== 0 && event.deltaY) ||
+      (Number.isFinite(event.deltaX) && event.deltaX !== 0 && event.deltaX) ||
+      (Number.isFinite(event.wheelDelta) && event.wheelDelta !== 0 && -event.wheelDelta) ||
+      (Number.isFinite(event.detail) && event.detail !== 0 && event.detail) ||
+      0;
+    if (!delta) {
+      return;
+    }
     hideMapTooltip();
     hideStructureContextMenu();
     hideStructureDetails();
@@ -18546,7 +18555,7 @@ function setupMapInteractions() {
     const pointerX = event.clientX - rect.left;
     const pointerY = event.clientY - rect.top;
     const zoomIntensity = 0.1;
-    const direction = event.deltaY > 0 ? -1 : 1;
+    const direction = delta > 0 ? -1 : 1;
     const scaleFactor = 1 + zoomIntensity * direction;
     const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
     const originX = (pointerX - viewState.translateX) / viewState.scale;
@@ -30831,5 +30840,4 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
 
