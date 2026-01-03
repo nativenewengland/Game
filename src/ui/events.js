@@ -17,6 +17,9 @@ export function attachEvents(elements, deps) {
     refreshStructureHighlightControls,
     ensureStructureHighlightState,
     drawWorld,
+    zoomWorldMapIn,
+    zoomWorldMapOut,
+    resetWorldMapZoom,
     updateFrequencyDisplay,
     sanitizeFrequencyValue,
     defaultForestFrequency,
@@ -395,6 +398,24 @@ export function attachEvents(elements, deps) {
       } catch (_err) {
         // ignore
       }
+    });
+  }
+
+  if (elements.worldMapZoomIn) {
+    elements.worldMapZoomIn.addEventListener('click', () => {
+      zoomWorldMapIn();
+    });
+  }
+
+  if (elements.worldMapZoomOut) {
+    elements.worldMapZoomOut.addEventListener('click', () => {
+      zoomWorldMapOut();
+    });
+  }
+
+  if (elements.worldMapZoomReset) {
+    elements.worldMapZoomReset.addEventListener('click', () => {
+      resetWorldMapZoom();
     });
   }
 
