@@ -79,6 +79,11 @@ const dwarfBodyPortraitState = {
   ctx: null
 };
 
+const tintedSpriteBufferState = {
+  canvas: null,
+  ctx: null
+};
+
 const dwarfTraitAttributeDefinitions = [
   {
     key: 'beardless',
@@ -123,6 +128,43 @@ const dwarfTraitAttributeDefinitions = [
 ];
 
 const ensureDocument = () => (typeof document !== 'undefined' ? document : null);
+
+const ensureTintedSpriteBuffer = (width, height) => {
+  if (!tintedSpriteBufferState.canvas) {
+    if (typeof OffscreenCanvas !== 'undefined') {
+      tintedSpriteBufferState.canvas = new OffscreenCanvas(width, height);
+    } else {
+      const doc = ensureDocument();
+      if (!doc) {
+        return null;
+      }
+      tintedSpriteBufferState.canvas = doc.createElement('canvas');
+    }
+  }
+
+  if (
+    tintedSpriteBufferState.canvas.width !== width ||
+    tintedSpriteBufferState.canvas.height !== height
+  ) {
+    tintedSpriteBufferState.canvas.width = width;
+    tintedSpriteBufferState.canvas.height = height;
+  }
+
+  if (!tintedSpriteBufferState.ctx) {
+    const context = tintedSpriteBufferState.canvas.getContext('2d');
+    if (!context) {
+      tintedSpriteBufferState.canvas = null;
+      return null;
+    }
+    context.imageSmoothingEnabled = false;
+    tintedSpriteBufferState.ctx = context;
+  }
+
+  tintedSpriteBufferState.ctx.clearRect(0, 0, width, height);
+  tintedSpriteBufferState.ctx.globalCompositeOperation = 'source-over';
+  tintedSpriteBufferState.ctx.globalAlpha = 1;
+  return tintedSpriteBufferState.ctx;
+};
 
 const getOption = (resolver, category, value) =>
   typeof resolver === 'function' ? resolver(category, value) : null;
@@ -202,14 +244,10 @@ const drawTintedSprite = (ctx, sheetKey, frame, baseX, baseY, scale, tint, deps 
   const destW = sw * (scale || 1);
   const destH = sh * (scale || 1);
 
-  const offscreen = document.createElement('canvas');
-  offscreen.width = sw;
-  offscreen.height = sh;
-  const offscreenCtx = offscreen.getContext('2d');
+  const offscreenCtx = ensureTintedSpriteBuffer(sw, sh);
   if (!offscreenCtx) {
     return;
   }
-  offscreenCtx.imageSmoothingEnabled = false;
   offscreenCtx.drawImage(sheet.image, sx, sy, sw, sh, 0, 0, sw, sh);
   if (tint) {
     offscreenCtx.globalCompositeOperation = 'source-atop';
@@ -219,7 +257,17 @@ const drawTintedSprite = (ctx, sheetKey, frame, baseX, baseY, scale, tint, deps 
     offscreenCtx.globalAlpha = 1;
     offscreenCtx.globalCompositeOperation = 'source-over';
   }
-  ctx.drawImage(offscreen, 0, 0, sw, sh, destX, destY, destW, destH);
+  ctx.drawImage(
+    tintedSpriteBufferState.canvas,
+    0,
+    0,
+    sw,
+    sh,
+    destX,
+    destY,
+    destW,
+    destH
+  );
 };
 
 const getHeadFrame = (dwarf, headValue, deps = {}) => {
