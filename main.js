@@ -13834,11 +13834,9 @@ function updateStructureContextMenuActions(tile) {
     tile && (tile.structureName || (tile.structureDetails && tile.structureDetails.name))
   );
   if (hasStructureDetails) {
-    moreInfoButton.classList.remove('hidden');
     moreInfoButton.disabled = false;
     moreInfoButton.setAttribute('aria-disabled', 'false');
   } else {
-    moreInfoButton.classList.add('hidden');
     moreInfoButton.disabled = true;
     moreInfoButton.setAttribute('aria-disabled', 'true');
   }
@@ -30831,6 +30829,7 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
+
 
 
 
