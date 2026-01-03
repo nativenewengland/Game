@@ -13791,7 +13791,9 @@ function applyViewTransform() {
   if (!elements.canvas) {
     return;
   }
-  elements.canvas.style.transform = `translate(${viewState.translateX}px, ${viewState.translateY}px) scale(${viewState.scale})`;
+  const snappedTranslateX = Math.round(viewState.translateX);
+  const snappedTranslateY = Math.round(viewState.translateY);
+  elements.canvas.style.transform = `translate3d(${snappedTranslateX}px, ${snappedTranslateY}px, 0) scale(${viewState.scale})`;
 }
 
 function zoomWorldMapAt(pointerX, pointerY, scaleFactor) {
