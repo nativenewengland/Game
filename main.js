@@ -30851,6 +30851,11 @@ function bootApplication() {
     setMapEditorBrushSize,
     clearMapEditorStructure
   });
+  try {
+    if (typeof window !== 'undefined') {
+      window.__gameUiWired = true;
+    }
+  } catch (_) {}
 
   initialise();
   autoStartGameIfNeeded();
