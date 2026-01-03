@@ -18590,12 +18590,15 @@ function setupMapInteractions() {
     if (!rect) {
       return;
     }
-    const delta =
-      (Number.isFinite(event.deltaY) && event.deltaY !== 0 && event.deltaY) ||
-      (Number.isFinite(event.deltaX) && event.deltaX !== 0 && event.deltaX) ||
-      (Number.isFinite(event.wheelDelta) && event.wheelDelta !== 0 && -event.wheelDelta) ||
-      (Number.isFinite(event.detail) && event.detail !== 0 && event.detail) ||
-      0;
+    const deltaX = Number.isFinite(event.deltaX) ? event.deltaX : 0;
+    const deltaY = Number.isFinite(event.deltaY) ? event.deltaY : 0;
+    let delta = Math.abs(deltaY) >= Math.abs(deltaX) ? deltaY : deltaX;
+    if (!delta) {
+      delta =
+        (Number.isFinite(event.wheelDelta) && event.wheelDelta !== 0 && -event.wheelDelta) ||
+        (Number.isFinite(event.detail) && event.detail !== 0 && event.detail) ||
+        0;
+    }
     if (!delta) {
       return;
     }
@@ -18758,6 +18761,19 @@ function setupMapInteractions() {
     return true;
   };
 
+  const isSecondaryPointer = (event, isTouchPointer) => {
+    if (event.button === 2) {
+      return true;
+    }
+    if (typeof event.buttons === 'number' && (event.buttons & 2) === 2) {
+      return true;
+    }
+    if (!isTouchPointer && event.button === 0 && event.ctrlKey && isMacLikePlatform) {
+      return true;
+    }
+    return false;
+  };
+
   const handlePointerDown = (event) => {
     if (activePointerId !== null || activePaintPointerId !== null) {
       return;
@@ -18769,13 +18785,7 @@ function setupMapInteractions() {
     }
     const pointerType = event.pointerType || 'mouse';
     const isTouchPointer = pointerType === 'touch';
-    const isNonPrimaryButton = event.button !== undefined && event.button !== 0;
-    const isMacCtrlClick =
-      !isTouchPointer &&
-      event.button === 0 &&
-      event.ctrlKey &&
-      isMacLikePlatform;
-    const isContextMenuClick = !isTouchPointer && (isNonPrimaryButton || isMacCtrlClick);
+    const isContextMenuClick = !isTouchPointer && isSecondaryPointer(event, isTouchPointer);
     const isPrimaryPointer = !isContextMenuClick;
     hideStructureDetails();
     hideStructureContextMenu();
