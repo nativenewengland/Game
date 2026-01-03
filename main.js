@@ -13794,6 +13794,57 @@ function applyViewTransform() {
   elements.canvas.style.transform = `translate(${viewState.translateX}px, ${viewState.translateY}px) scale(${viewState.scale})`;
 }
 
+function zoomWorldMapAt(pointerX, pointerY, scaleFactor) {
+  if (!viewState.worldSize.width || !viewState.worldSize.height) {
+    return;
+  }
+  if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) {
+    return;
+  }
+  if (!Number.isFinite(scaleFactor) || scaleFactor === 0) {
+    return;
+  }
+  const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
+  const originX = (pointerX - viewState.translateX) / viewState.scale;
+  const originY = (pointerY - viewState.translateY) / viewState.scale;
+  viewState.scale = targetScale;
+  viewState.translateX = pointerX - originX * viewState.scale;
+  viewState.translateY = pointerY - originY * viewState.scale;
+  viewState.hasInteracted = true;
+  applyViewTransform();
+}
+
+function zoomWorldMap(direction) {
+  const rectSource = elements.canvasWrapper || elements.canvas;
+  if (!rectSource || typeof rectSource.getBoundingClientRect !== 'function') {
+    return;
+  }
+  const rect = rectSource.getBoundingClientRect();
+  if (!rect) {
+    return;
+  }
+  const zoomIntensity = 0.1;
+  const scaleFactor = 1 + zoomIntensity * direction;
+  const pointerX = rect.width / 2;
+  const pointerY = rect.height / 2;
+  zoomWorldMapAt(pointerX, pointerY, scaleFactor);
+}
+
+function zoomWorldMapIn() {
+  zoomWorldMap(1);
+}
+
+function zoomWorldMapOut() {
+  zoomWorldMap(-1);
+}
+
+function resetWorldMapZoom() {
+  if (!viewState.worldSize.width || !viewState.worldSize.height) {
+    return;
+  }
+  resetView(viewState.worldSize.width, viewState.worldSize.height);
+}
+
 function hideMapTooltip() {
   if (!elements.mapTooltip) {
     return;
@@ -18554,17 +18605,10 @@ function setupMapInteractions() {
     event.preventDefault();
     const pointerX = event.clientX - rect.left;
     const pointerY = event.clientY - rect.top;
-    const zoomIntensity = 0.1;
     const direction = delta > 0 ? -1 : 1;
+    const zoomIntensity = 0.1;
     const scaleFactor = 1 + zoomIntensity * direction;
-    const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
-    const originX = (pointerX - viewState.translateX) / viewState.scale;
-    const originY = (pointerY - viewState.translateY) / viewState.scale;
-    viewState.scale = targetScale;
-    viewState.translateX = pointerX - originX * viewState.scale;
-    viewState.translateY = pointerY - originY * viewState.scale;
-    viewState.hasInteracted = true;
-    applyViewTransform();
+    zoomWorldMapAt(pointerX, pointerY, scaleFactor);
   };
 
   if (!elements.canvasWrapper) {
@@ -30763,6 +30807,9 @@ function bootApplication() {
     refreshStructureHighlightControls,
     ensureStructureHighlightState,
     drawWorld,
+    zoomWorldMapIn,
+    zoomWorldMapOut,
+    resetWorldMapZoom,
     updateFrequencyDisplay,
     sanitizeFrequencyValue,
     defaultForestFrequency,
@@ -30840,4 +30887,3 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
