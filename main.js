@@ -29934,28 +29934,21 @@ async function updateLoadingProgressAndWait(value, statusText, options) {
 function runWithLoadingScreen(action, { statusText } = {}) {
   showLoadingScreen(statusText);
   return new Promise((resolve, reject) => {
-    const execute = () => {
-      let result;
+    const execute = async () => {
       try {
-        result = action();
+        const result = await action();
+        await completeLoadingScreen();
+        resolve(result);
       } catch (error) {
         hideLoadingScreen();
         reject(error);
-        return;
+      } finally {
+        if (elements.loadingScreen) {
+          elements.loadingScreen.classList.add('hidden');
+          elements.loadingScreen.setAttribute('aria-hidden', 'true');
+          elements.loadingScreen.removeAttribute('aria-busy');
+        }
       }
-      const finalize = (resolvedResult) => {
-        completeLoadingScreen().then(() => resolve(resolvedResult));
-      };
-      if (result && typeof result.then === 'function') {
-        result
-          .then((asyncResult) => finalize(asyncResult))
-          .catch((error) => {
-            hideLoadingScreen();
-            reject(error);
-          });
-        return;
-      }
-      finalize(result);
     };
 
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
@@ -29982,22 +29975,18 @@ function beginGame() {
   }
   elements.seedDisplay.textContent = '';
   runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
-    .then(() => {
-      if (elements.gameContainer) {
-        elements.gameContainer.classList.remove('game-container--loading');
-        elements.gameContainer.removeAttribute('aria-busy');
-      }
-    })
     .catch((error) => {
       console.error('Failed to generate world.', error);
-      if (elements.gameContainer) {
-        elements.gameContainer.classList.remove('game-container--loading');
-        elements.gameContainer.removeAttribute('aria-busy');
-      }
       if (elements.titleScreen) {
         elements.titleScreen.classList.remove('hidden');
       }
       openDwarfCustomizer();
+    })
+    .finally(() => {
+      if (elements.gameContainer) {
+        elements.gameContainer.classList.remove('game-container--loading');
+        elements.gameContainer.removeAttribute('aria-busy');
+      }
     });
 }
 
@@ -30842,6 +30831,5 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
 
 
