@@ -14327,6 +14327,43 @@ function derivePopulationGroupsFromCulture(tile) {
   };
 }
 
+function buildHoverInfoContent(tile) {
+  if (!tile) {
+    return null;
+  }
+
+  const biomeType = tile.biomeType;
+  const definition = biomeType ? biomeTypeDefinitions[biomeType] : null;
+  let biomeLabel = definition && definition.label ? definition.label : null;
+  if (!biomeLabel && typeof biomeType === 'string' && biomeType.length > 0) {
+    biomeLabel = biomeType.charAt(0).toUpperCase() + biomeType.slice(1);
+  }
+
+  const detailsName = tile.structureDetails?.name;
+  let resolvedName =
+    detailsName ||
+    tile.structureName ||
+    tile.areaName ||
+    formatStructureDetailLabel(tile.structure || tile.overlay || tile.hillOverlay || tile.base);
+
+  if (!resolvedName && biomeLabel) {
+    resolvedName = `Unnamed ${biomeLabel}`;
+  }
+
+  if (!resolvedName && !biomeLabel) {
+    return null;
+  }
+
+  const sections = [];
+  if (resolvedName) {
+    sections.push(`<div class="tooltip-title">${escapeHtml(resolvedName)}</div>`);
+  }
+  if (biomeLabel) {
+    sections.push(`<div class="tooltip-note">Biome: ${escapeHtml(biomeLabel)}</div>`);
+  }
+  return sections.join('');
+}
+
 function buildStructureTooltipContent(tile) {
   if (!tile) {
     return null;
@@ -18749,7 +18786,7 @@ function setupMapInteractions() {
       hideMapTooltip();
       return;
     }
-    const tooltipContent = buildStructureTooltipContent(resolved.tile);
+    const tooltipContent = buildHoverInfoContent(resolved.tile);
     if (!tooltipContent) {
       hideMapTooltip();
       return;
