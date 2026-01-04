@@ -18879,7 +18879,9 @@ function setupMapInteractions() {
     initialPosition.x = event.clientX;
     initialPosition.y = event.clientY;
     pointerMovedDuringPan = false;
-    elements.canvasWrapper.setPointerCapture(event.pointerId);
+    if (elements.canvasWrapper && typeof elements.canvasWrapper.setPointerCapture === 'function') {
+      elements.canvasWrapper.setPointerCapture(event.pointerId);
+    }
   };
 
   const handlePointerMove = (event) => {
@@ -18933,7 +18935,9 @@ function setupMapInteractions() {
     }
     const wasActivePointer = event.pointerId === activePointerId;
     if (wasActivePointer) {
-      elements.canvasWrapper.releasePointerCapture(event.pointerId);
+      if (elements.canvasWrapper && typeof elements.canvasWrapper.releasePointerCapture === 'function') {
+        elements.canvasWrapper.releasePointerCapture(event.pointerId);
+      }
       isPanning = false;
       activePointerId = null;
       if (!pointerMovedDuringPan) {
@@ -19016,9 +19020,83 @@ function setupMapInteractions() {
     elements.canvasWrapper.addEventListener('pointerenter', updateHover);
     elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
   } else {
-    elements.canvasWrapper.addEventListener('mousemove', updateHover);
+    const normalizeMouseEvent = (event) => ({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      pointerId: 1,
+      pointerType: 'mouse',
+      button: event.button,
+      buttons: event.buttons,
+      ctrlKey: event.ctrlKey,
+      target: event.target,
+      preventDefault: () => event.preventDefault(),
+      stopPropagation: () => event.stopPropagation(),
+    });
+
+    const getPrimaryTouch = (event) =>
+      (event.changedTouches && event.changedTouches[0]) || (event.touches && event.touches[0]);
+
+    const normalizeTouchEvent = (event) => {
+      const touch = getPrimaryTouch(event);
+      if (!touch) {
+        return null;
+      }
+      return {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        pointerId: touch.identifier,
+        pointerType: 'touch',
+        button: 0,
+        buttons: 1,
+        ctrlKey: false,
+        target: event.target,
+        preventDefault: () => event.preventDefault(),
+        stopPropagation: () => event.stopPropagation(),
+      };
+    };
+
+    const handleMouseDown = (event) => {
+      handlePointerDown(normalizeMouseEvent(event));
+    };
+
+    const handleMouseMove = (event) => {
+      handlePointerMove(normalizeMouseEvent(event));
+    };
+
+    const handleMouseUp = (event) => {
+      handlePointerUp(normalizeMouseEvent(event));
+    };
+
+    const handleTouchStart = (event) => {
+      const normalized = normalizeTouchEvent(event);
+      if (normalized) {
+        handlePointerDown(normalized);
+      }
+    };
+
+    const handleTouchMove = (event) => {
+      const normalized = normalizeTouchEvent(event);
+      if (normalized) {
+        handlePointerMove(normalized);
+      }
+    };
+
+    const handleTouchEnd = (event) => {
+      const normalized = normalizeTouchEvent(event);
+      if (normalized) {
+        handlePointerUp(normalized);
+      }
+    };
+
+    elements.canvasWrapper.addEventListener('mousedown', handleMouseDown);
+    elements.canvasWrapper.addEventListener('mousemove', handleMouseMove);
+    elements.canvasWrapper.addEventListener('mouseup', handleMouseUp);
     elements.canvasWrapper.addEventListener('mouseenter', updateHover);
     elements.canvasWrapper.addEventListener('mouseleave', handlePointerLeave);
+    elements.canvasWrapper.addEventListener('touchstart', handleTouchStart, { passive: false });
+    elements.canvasWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+    elements.canvasWrapper.addEventListener('touchend', handleTouchEnd);
+    elements.canvasWrapper.addEventListener('touchcancel', handleTouchEnd);
   }
   window.addEventListener('resize', handleResize);
 }
