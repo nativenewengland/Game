@@ -3633,6 +3633,7 @@ button:hover:not(:disabled) {
   box-shadow: none;
   background: #0e0f16;
   z-index: 0;
+  touch-action: none;
 }
 
 .canvas-wrapper--illustrated {
