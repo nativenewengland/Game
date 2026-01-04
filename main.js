@@ -14404,7 +14404,55 @@ function buildStructureTooltipContent(tile) {
       return ambientContent;
     }
     if (!biomeType && !areaName) {
-      return null;
+      const fallbackKey = tile.structure || tile.overlay || tile.hillOverlay || tile.base;
+      const fallbackLabel = formatStructureDetailLabel(fallbackKey);
+      if (!fallbackLabel) {
+        return null;
+      }
+      const sections = [`<div class="tooltip-title">${escapeHtml(fallbackLabel)}</div>`];
+      const entries = [];
+      const baseLabel = formatStructureDetailLabel(tile.base);
+      if (baseLabel && baseLabel !== fallbackLabel) {
+        entries.push({ label: 'Terrain', value: baseLabel });
+      }
+      const overlayLabel = formatStructureDetailLabel(tile.overlay || tile.hillOverlay);
+      if (overlayLabel && overlayLabel !== fallbackLabel) {
+        entries.push({ label: 'Feature', value: overlayLabel });
+      }
+      const structureLabel = formatStructureDetailLabel(tile.structure);
+      if (structureLabel && structureLabel !== fallbackLabel) {
+        entries.push({ label: 'Site', value: structureLabel });
+      }
+      const climateDescription = describeTileClimate(tile);
+      if (climateDescription) {
+        entries.push({ label: 'Climate', value: climateDescription });
+      }
+      const resourceSummary = summarizeTileResources(tile);
+      if (resourceSummary.length > 0) {
+        const formattedResources = formatListWithConjunction(resourceSummary);
+        if (formattedResources) {
+          entries.push({ label: 'Resources', value: formattedResources });
+        }
+      }
+      const populationGroups = derivePopulationGroupsFromCulture(tile);
+      if (populationGroups.major) {
+        entries.push({ label: 'Major Population Groups', value: populationGroups.major });
+      }
+      if (populationGroups.minor) {
+        entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
+      }
+      if (entries.length > 0) {
+        const listItems = entries
+          .map(
+            ({ label, value }) =>
+              `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+                value
+              )}</span></li>`
+          )
+          .join('');
+        sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+      }
+      return sections.join('');
     }
     const definition = biomeType ? biomeTypeDefinitions[biomeType] : null;
     let biomeLabel = definition && definition.label ? definition.label : null;
