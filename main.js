@@ -18620,6 +18620,10 @@ function handleResize() {
 }
 
 function setupMapInteractions() {
+  if (!elements.canvasWrapper) {
+    return;
+  }
+
   let isPanning = false;
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
@@ -18627,50 +18631,6 @@ function setupMapInteractions() {
   let pointerMovedDuringPan = false;
   let activePaintPointerId = null;
   const paintedTileCoords = new Set();
-  const supportsPointerEvents = typeof window !== 'undefined' && 'PointerEvent' in window;
-
-  const handleWheel = (event) => {
-    if (!elements.canvas) {
-      return;
-    }
-    const rectSource = elements.canvasWrapper || elements.canvas;
-    if (!rectSource || typeof rectSource.getBoundingClientRect !== 'function') {
-      return;
-    }
-    const rect = rectSource.getBoundingClientRect();
-    if (!rect) {
-      return;
-    }
-    const deltaX = Number.isFinite(event.deltaX) ? event.deltaX : 0;
-    const deltaY = Number.isFinite(event.deltaY) ? event.deltaY : 0;
-    let delta = Math.abs(deltaY) >= Math.abs(deltaX) ? deltaY : deltaX;
-    if (!delta) {
-      delta =
-        (Number.isFinite(event.wheelDelta) && event.wheelDelta !== 0 && -event.wheelDelta) ||
-        (Number.isFinite(event.detail) && event.detail !== 0 && event.detail) ||
-        0;
-    }
-    if (!delta) {
-      return;
-    }
-    hideMapTooltip();
-    hideStructureContextMenu();
-    hideStructureDetails();
-    event.preventDefault();
-    const pointerX = event.clientX - rect.left;
-    const pointerY = event.clientY - rect.top;
-    const direction = delta > 0 ? -1 : 1;
-    const zoomIntensity = 0.1;
-    const scaleFactor = 1 + zoomIntensity * direction;
-    zoomWorldMapAt(pointerX, pointerY, scaleFactor);
-  };
-
-  if (!elements.canvasWrapper) {
-    if (elements.canvas) {
-      elements.canvas.addEventListener('wheel', handleWheel, { passive: false });
-    }
-    return;
-  }
 
   const shouldUseMapEditor = () => {
     const mapEditor = ensureMapEditorState();
@@ -18797,6 +18757,30 @@ function setupMapInteractions() {
     showMapTooltip(tooltipContent, resolved.pointerX, resolved.pointerY, resolved.rect);
   };
 
+  const handleWheel = (event) => {
+    if (!elements.canvas) {
+      return;
+    }
+    hideMapTooltip();
+    hideStructureContextMenu();
+    hideStructureDetails();
+    event.preventDefault();
+    const rect = elements.canvasWrapper.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    const zoomIntensity = 0.1;
+    const direction = event.deltaY > 0 ? -1 : 1;
+    const scaleFactor = 1 + zoomIntensity * direction;
+    const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
+    const originX = (pointerX - viewState.translateX) / viewState.scale;
+    const originY = (pointerY - viewState.translateY) / viewState.scale;
+    viewState.scale = targetScale;
+    viewState.translateX = pointerX - originX * viewState.scale;
+    viewState.translateY = pointerY - originY * viewState.scale;
+    viewState.hasInteracted = true;
+    applyViewTransform();
+  };
+
   const isMacLikePlatform =
     typeof navigator !== 'undefined' &&
     /Mac|iP(?:ad|hone|od)/.test((navigator.platform || navigator.userAgent || '').toString());
@@ -18812,35 +18796,6 @@ function setupMapInteractions() {
     return true;
   };
 
-  const cancelActivePan = () => {
-    if (!isPanning || activePointerId === null) {
-      return;
-    }
-    if (elements.canvasWrapper && typeof elements.canvasWrapper.releasePointerCapture === 'function') {
-      try {
-        elements.canvasWrapper.releasePointerCapture(activePointerId);
-      } catch (error) {
-        // Ignore errors if the pointer capture has already been released.
-      }
-    }
-    isPanning = false;
-    activePointerId = null;
-    pointerMovedDuringPan = false;
-  };
-
-  const isSecondaryPointer = (event, isTouchPointer) => {
-    if (event.button === 2) {
-      return true;
-    }
-    if (typeof event.buttons === 'number' && (event.buttons & 2) === 2) {
-      return true;
-    }
-    if (!isTouchPointer && event.button === 0 && event.ctrlKey && isMacLikePlatform) {
-      return true;
-    }
-    return false;
-  };
-
   const handlePointerDown = (event) => {
     if (activePointerId !== null || activePaintPointerId !== null) {
       return;
@@ -18852,7 +18807,13 @@ function setupMapInteractions() {
     }
     const pointerType = event.pointerType || 'mouse';
     const isTouchPointer = pointerType === 'touch';
-    const isContextMenuClick = !isTouchPointer && isSecondaryPointer(event, isTouchPointer);
+    const isNonPrimaryButton = event.button !== undefined && event.button !== 0;
+    const isMacCtrlClick =
+      !isTouchPointer &&
+      event.button === 0 &&
+      event.ctrlKey &&
+      isMacLikePlatform;
+    const isContextMenuClick = !isTouchPointer && (isNonPrimaryButton || isMacCtrlClick);
     const isPrimaryPointer = !isContextMenuClick;
     hideStructureDetails();
     hideStructureContextMenu();
@@ -18879,13 +18840,7 @@ function setupMapInteractions() {
     initialPosition.x = event.clientX;
     initialPosition.y = event.clientY;
     pointerMovedDuringPan = false;
-    if (
-      elements.canvasWrapper &&
-      typeof elements.canvasWrapper.setPointerCapture === 'function' &&
-      typeof event.pointerId === 'number'
-    ) {
-      elements.canvasWrapper.setPointerCapture(event.pointerId);
-    }
+    elements.canvasWrapper.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event) => {
@@ -18926,26 +18881,9 @@ function setupMapInteractions() {
       stopPainting(event);
       return;
     }
-    const pointerType = event.pointerType || 'mouse';
-    const isTouchPointer = pointerType === 'touch';
-    const isContextMenuClick = !isTouchPointer && isSecondaryPointer(event, isTouchPointer);
-    if (isContextMenuClick && !structureContextMenuState.visible) {
-      cancelActivePan();
-      hideStructureDetails();
-      if (openStructureContextMenu(event)) {
-        event.preventDefault();
-      }
-      return;
-    }
     const wasActivePointer = event.pointerId === activePointerId;
     if (wasActivePointer) {
-      if (
-        elements.canvasWrapper &&
-        typeof elements.canvasWrapper.releasePointerCapture === 'function' &&
-        typeof event.pointerId === 'number'
-      ) {
-        elements.canvasWrapper.releasePointerCapture(event.pointerId);
-      }
+      elements.canvasWrapper.releasePointerCapture(event.pointerId);
       isPanning = false;
       activePointerId = null;
       if (!pointerMovedDuringPan) {
@@ -19008,138 +18946,20 @@ function setupMapInteractions() {
     resetView(viewState.worldSize.width, viewState.worldSize.height);
   };
 
-  const normalizePointerEvent = (event, overrides) => ({
-    target: event.target,
-    currentTarget: event.currentTarget,
-    preventDefault: () => event.preventDefault(),
-    stopPropagation: () => event.stopPropagation(),
-    button: typeof event.button === 'number' ? event.button : 0,
-    buttons: typeof event.buttons === 'number' ? event.buttons : 0,
-    ctrlKey: Boolean(event.ctrlKey),
-    ...overrides,
-  });
-
-  const getTouchById = (touchList, identifier) => {
-    if (!touchList) {
-      return null;
-    }
-    for (let index = 0; index < touchList.length; index += 1) {
-      const touch = touchList[index];
-      if (touch.identifier === identifier) {
-        return touch;
-      }
-    }
-    return null;
-  };
-
   const handleContextMenu = (event) => {
     event.preventDefault();
-    cancelActivePan();
     openStructureContextMenu(event);
   };
 
   elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
-  if (elements.canvas) {
-    elements.canvas.addEventListener('wheel', handleWheel, { passive: false });
-  }
+  elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
+  elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
+  elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
+  elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
+  elements.canvasWrapper.addEventListener('pointerenter', updateHover);
+  elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
   elements.canvasWrapper.addEventListener('contextmenu', handleContextMenu);
   elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
-  if (supportsPointerEvents) {
-    elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
-    elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
-    elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
-    elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
-    elements.canvasWrapper.addEventListener('pointerenter', updateHover);
-    elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
-  } else {
-    const handleMouseDown = (event) => {
-      handlePointerDown(
-        normalizePointerEvent(event, {
-          pointerType: 'mouse',
-          pointerId: 1,
-          clientX: event.clientX,
-          clientY: event.clientY,
-        }),
-      );
-    };
-
-    const handleMouseMove = (event) => {
-      handlePointerMove(
-        normalizePointerEvent(event, {
-          pointerType: 'mouse',
-          pointerId: 1,
-          clientX: event.clientX,
-          clientY: event.clientY,
-        }),
-      );
-    };
-
-    const handleMouseUp = (event) => {
-      handlePointerUp(
-        normalizePointerEvent(event, {
-          pointerType: 'mouse',
-          pointerId: 1,
-          clientX: event.clientX,
-          clientY: event.clientY,
-        }),
-      );
-    };
-
-    const handleTouchStart = (event) => {
-      if (!event.changedTouches || event.changedTouches.length === 0) {
-        return;
-      }
-      const touch = event.changedTouches[0];
-      handlePointerDown(
-        normalizePointerEvent(event, {
-          pointerType: 'touch',
-          pointerId: touch.identifier,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-        }),
-      );
-    };
-
-    const handleTouchMove = (event) => {
-      if (!event.touches || event.touches.length === 0) {
-        return;
-      }
-      const touch = getTouchById(event.touches, activePointerId) || event.touches[0];
-      handlePointerMove(
-        normalizePointerEvent(event, {
-          pointerType: 'touch',
-          pointerId: touch.identifier,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-        }),
-      );
-    };
-
-    const handleTouchEnd = (event) => {
-      if (!event.changedTouches || event.changedTouches.length === 0) {
-        return;
-      }
-      const touch = getTouchById(event.changedTouches, activePointerId) || event.changedTouches[0];
-      handlePointerUp(
-        normalizePointerEvent(event, {
-          pointerType: 'touch',
-          pointerId: touch.identifier,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-        }),
-      );
-    };
-
-    elements.canvasWrapper.addEventListener('mousedown', handleMouseDown);
-    elements.canvasWrapper.addEventListener('mousemove', handleMouseMove);
-    elements.canvasWrapper.addEventListener('mouseup', handleMouseUp);
-    elements.canvasWrapper.addEventListener('touchstart', handleTouchStart, { passive: false });
-    elements.canvasWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
-    elements.canvasWrapper.addEventListener('touchend', handleTouchEnd);
-    elements.canvasWrapper.addEventListener('touchcancel', handleTouchEnd);
-    elements.canvasWrapper.addEventListener('mouseenter', updateHover);
-    elements.canvasWrapper.addEventListener('mouseleave', handlePointerLeave);
-  }
   window.addEventListener('resize', handleResize);
 }
 
