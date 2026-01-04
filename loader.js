@@ -25,7 +25,11 @@
 
   var legacyWarningShown = false;
   function showLegacyWarning() {
-    if (legacyWarningShown || !document.body) {
+    if (legacyWarningShown) {
+      return;
+    }
+    if (!document.body) {
+      window.addEventListener('DOMContentLoaded', showLegacyWarning);
       return;
     }
     legacyWarningShown = true;
