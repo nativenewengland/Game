@@ -3091,11 +3091,12 @@ button:hover:not(:disabled) {
   padding: 0.75rem;
   font-size: 0.85rem;
   line-height: 1.4;
+  text-align: center;
   color: #f5f0e6;
-  background: rgba(18, 22, 33, 0.95);
-  border: 1px solid rgba(255, 236, 179, 0.35);
-  border-radius: 10px;
-  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.4);
+  background: rgba(255, 235, 156, 0.25);
+  border: 1px solid rgba(255, 214, 102, 0.45);
+  border-radius: 6px;
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.25);
   opacity: 0;
   visibility: hidden;
   transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
@@ -3127,9 +3128,9 @@ button:hover:not(:disabled) {
   min-width: calc(400px * var(--customizer-scale));
   padding: calc(0.75rem * var(--customizer-scale));
   font-size: calc(0.85rem * var(--customizer-scale));
-  border-radius: calc(10px * var(--customizer-scale));
+  border-radius: calc(6px * var(--customizer-scale));
   box-shadow: 0 calc(0.75rem * var(--customizer-scale))
-    calc(1.5rem * var(--customizer-scale)) rgba(0, 0, 0, 0.4);
+    calc(1.5rem * var(--customizer-scale)) rgba(0, 0, 0, 0.25);
 }
 
 #dwarf-customizer .trait-attribute__tooltip-title {
@@ -3149,7 +3150,7 @@ button:hover:not(:disabled) {
   transform: translateX(-50%);
   border-width: 8px;
   border-style: solid;
-  border-color: rgba(18, 22, 33, 0.95) transparent transparent transparent;
+  border-color: rgba(255, 235, 156, 0.25) transparent transparent transparent;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
 }
 
