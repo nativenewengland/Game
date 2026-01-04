@@ -419,6 +419,37 @@ export function attachEvents(elements, deps) {
     });
   }
 
+  const handleWorldMapWheel = (event) => {
+    if (!state.currentWorld) {
+      return;
+    }
+    const primaryDelta = event.deltaY || event.deltaX;
+    const delta =
+      Number.isFinite(primaryDelta) && primaryDelta !== 0
+        ? primaryDelta
+        : Number.isFinite(event.wheelDelta) && event.wheelDelta !== 0
+        ? -event.wheelDelta
+        : event.detail;
+    if (!Number.isFinite(delta) || delta === 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (delta < 0) {
+      zoomWorldMapIn();
+    } else if (delta > 0) {
+      zoomWorldMapOut();
+    }
+  };
+
+  const worldMapWheelTargets = [elements.canvasWrapper, elements.canvas].filter(
+    (target, index, collection) => target && collection.indexOf(target) === index
+  );
+
+  worldMapWheelTargets.forEach((target) => {
+    target.addEventListener('wheel', handleWorldMapWheel, { passive: false });
+  });
+
   if (elements.structureContextMenuBegin) {
     elements.structureContextMenuBegin.addEventListener('click', () => {
       const { tile, tileX, tileY } = structureContextMenuState;
