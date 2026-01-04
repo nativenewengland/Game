@@ -18579,6 +18579,7 @@ function setupMapInteractions() {
   let pointerMovedDuringPan = false;
   let activePaintPointerId = null;
   const paintedTileCoords = new Set();
+  const supportsPointerEvents = typeof window !== 'undefined' && 'PointerEvent' in window;
 
   const handleWheel = (event) => {
     if (!elements.canvas) {
@@ -18929,14 +18930,20 @@ function setupMapInteractions() {
   if (elements.canvas) {
     elements.canvas.addEventListener('wheel', handleWheel, { passive: false });
   }
-  elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
-  elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
-  elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
-  elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
-  elements.canvasWrapper.addEventListener('pointerenter', updateHover);
-  elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
   elements.canvasWrapper.addEventListener('contextmenu', handleContextMenu);
   elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
+  if (supportsPointerEvents) {
+    elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
+    elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
+    elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
+    elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
+    elements.canvasWrapper.addEventListener('pointerenter', updateHover);
+    elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
+  } else {
+    elements.canvasWrapper.addEventListener('mousemove', updateHover);
+    elements.canvasWrapper.addEventListener('mouseenter', updateHover);
+    elements.canvasWrapper.addEventListener('mouseleave', handlePointerLeave);
+  }
   window.addEventListener('resize', handleResize);
 }
 
