@@ -18764,6 +18764,22 @@ function setupMapInteractions() {
     return true;
   };
 
+  const cancelActivePan = () => {
+    if (!isPanning || activePointerId === null) {
+      return;
+    }
+    if (elements.canvasWrapper && typeof elements.canvasWrapper.releasePointerCapture === 'function') {
+      try {
+        elements.canvasWrapper.releasePointerCapture(activePointerId);
+      } catch (error) {
+        // Ignore errors if the pointer capture has already been released.
+      }
+    }
+    isPanning = false;
+    activePointerId = null;
+    pointerMovedDuringPan = false;
+  };
+
   const isSecondaryPointer = (event, isTouchPointer) => {
     if (event.button === 2) {
       return true;
@@ -18856,6 +18872,17 @@ function setupMapInteractions() {
       stopPainting(event);
       return;
     }
+    const pointerType = event.pointerType || 'mouse';
+    const isTouchPointer = pointerType === 'touch';
+    const isContextMenuClick = !isTouchPointer && isSecondaryPointer(event, isTouchPointer);
+    if (isContextMenuClick && !structureContextMenuState.visible) {
+      cancelActivePan();
+      hideStructureDetails();
+      if (openStructureContextMenu(event)) {
+        event.preventDefault();
+      }
+      return;
+    }
     const wasActivePointer = event.pointerId === activePointerId;
     if (wasActivePointer) {
       elements.canvasWrapper.releasePointerCapture(event.pointerId);
@@ -18923,6 +18950,7 @@ function setupMapInteractions() {
 
   const handleContextMenu = (event) => {
     event.preventDefault();
+    cancelActivePan();
     openStructureContextMenu(event);
   };
 
