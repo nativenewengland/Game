@@ -29411,17 +29411,17 @@ function drawLocationLabels(ctx, world, options = {}) {
     const halfHeight = textHeight / 2 + paddingY;
     const anchorX = entry.x * drawSizeValue + drawSizeValue / 2;
     const anchorY = entry.y * drawSizeValue + drawSizeValue / 2;
-    const offsetDistance = Math.max(drawSizeValue * 0.9, style.offsetDistance || style.fontSize * 2.2);
+    const offsetDistance = Math.max(drawSizeValue * 0.6, style.offsetDistance || style.fontSize * 1.6);
     const candidateOffsets = style.offsets || [
-      [0, -offsetDistance * 0.75],
-      [0, offsetDistance * 0.75],
+      [0, -offsetDistance * 0.65],
+      [0, offsetDistance * 0.65],
       [offsetDistance, 0],
       [-offsetDistance, 0],
       [offsetDistance * 0.85, -offsetDistance * 0.45],
       [-offsetDistance * 0.85, -offsetDistance * 0.45],
       [offsetDistance * 0.85, offsetDistance * 0.45],
       [-offsetDistance * 0.85, offsetDistance * 0.45],
-      [0, -offsetDistance * 1.35]
+      [0, -offsetDistance * 1.15]
     ];
 
     let placement = null;
@@ -30829,7 +30829,6 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
 
 
 
