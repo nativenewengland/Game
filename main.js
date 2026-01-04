@@ -13791,7 +13791,60 @@ function applyViewTransform() {
   if (!elements.canvas) {
     return;
   }
-  elements.canvas.style.transform = `translate(${viewState.translateX}px, ${viewState.translateY}px) scale(${viewState.scale})`;
+  const snappedTranslateX = Math.round(viewState.translateX);
+  const snappedTranslateY = Math.round(viewState.translateY);
+  elements.canvas.style.transform = `translate3d(${snappedTranslateX}px, ${snappedTranslateY}px, 0) scale(${viewState.scale})`;
+}
+
+function zoomWorldMapAt(pointerX, pointerY, scaleFactor) {
+  if (!viewState.worldSize.width || !viewState.worldSize.height) {
+    return;
+  }
+  if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) {
+    return;
+  }
+  if (!Number.isFinite(scaleFactor) || scaleFactor === 0) {
+    return;
+  }
+  const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
+  const originX = (pointerX - viewState.translateX) / viewState.scale;
+  const originY = (pointerY - viewState.translateY) / viewState.scale;
+  viewState.scale = targetScale;
+  viewState.translateX = pointerX - originX * viewState.scale;
+  viewState.translateY = pointerY - originY * viewState.scale;
+  viewState.hasInteracted = true;
+  applyViewTransform();
+}
+
+function zoomWorldMap(direction) {
+  const rectSource = elements.canvasWrapper || elements.canvas;
+  if (!rectSource || typeof rectSource.getBoundingClientRect !== 'function') {
+    return;
+  }
+  const rect = rectSource.getBoundingClientRect();
+  if (!rect) {
+    return;
+  }
+  const zoomIntensity = 0.1;
+  const scaleFactor = 1 + zoomIntensity * direction;
+  const pointerX = rect.width / 2;
+  const pointerY = rect.height / 2;
+  zoomWorldMapAt(pointerX, pointerY, scaleFactor);
+}
+
+function zoomWorldMapIn() {
+  zoomWorldMap(1);
+}
+
+function zoomWorldMapOut() {
+  zoomWorldMap(-1);
+}
+
+function resetWorldMapZoom() {
+  if (!viewState.worldSize.width || !viewState.worldSize.height) {
+    return;
+  }
+  resetView(viewState.worldSize.width, viewState.worldSize.height);
 }
 
 function hideMapTooltip() {
@@ -14351,7 +14404,55 @@ function buildStructureTooltipContent(tile) {
       return ambientContent;
     }
     if (!biomeType && !areaName) {
-      return null;
+      const fallbackKey = tile.structure || tile.overlay || tile.hillOverlay || tile.base;
+      const fallbackLabel = formatStructureDetailLabel(fallbackKey);
+      if (!fallbackLabel) {
+        return null;
+      }
+      const sections = [`<div class="tooltip-title">${escapeHtml(fallbackLabel)}</div>`];
+      const entries = [];
+      const baseLabel = formatStructureDetailLabel(tile.base);
+      if (baseLabel && baseLabel !== fallbackLabel) {
+        entries.push({ label: 'Terrain', value: baseLabel });
+      }
+      const overlayLabel = formatStructureDetailLabel(tile.overlay || tile.hillOverlay);
+      if (overlayLabel && overlayLabel !== fallbackLabel) {
+        entries.push({ label: 'Feature', value: overlayLabel });
+      }
+      const structureLabel = formatStructureDetailLabel(tile.structure);
+      if (structureLabel && structureLabel !== fallbackLabel) {
+        entries.push({ label: 'Site', value: structureLabel });
+      }
+      const climateDescription = describeTileClimate(tile);
+      if (climateDescription) {
+        entries.push({ label: 'Climate', value: climateDescription });
+      }
+      const resourceSummary = summarizeTileResources(tile);
+      if (resourceSummary.length > 0) {
+        const formattedResources = formatListWithConjunction(resourceSummary);
+        if (formattedResources) {
+          entries.push({ label: 'Resources', value: formattedResources });
+        }
+      }
+      const populationGroups = derivePopulationGroupsFromCulture(tile);
+      if (populationGroups.major) {
+        entries.push({ label: 'Major Population Groups', value: populationGroups.major });
+      }
+      if (populationGroups.minor) {
+        entries.push({ label: 'Minor Population Groups', value: populationGroups.minor });
+      }
+      if (entries.length > 0) {
+        const listItems = entries
+          .map(
+            ({ label, value }) =>
+              `<li><span class="tooltip-term">${escapeHtml(label)}</span><span class="tooltip-value">${escapeHtml(
+                value
+              )}</span></li>`
+          )
+          .join('');
+        sections.push(`<ul class="tooltip-list">${listItems}</ul>`);
+      }
+      return sections.join('');
     }
     const definition = biomeType ? biomeTypeDefinitions[biomeType] : null;
     let biomeLabel = definition && definition.label ? definition.label : null;
@@ -18519,10 +18620,6 @@ function handleResize() {
 }
 
 function setupMapInteractions() {
-  if (!elements.canvasWrapper) {
-    return;
-  }
-
   let isPanning = false;
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
@@ -18530,6 +18627,50 @@ function setupMapInteractions() {
   let pointerMovedDuringPan = false;
   let activePaintPointerId = null;
   const paintedTileCoords = new Set();
+  const supportsPointerEvents = typeof window !== 'undefined' && 'PointerEvent' in window;
+
+  const handleWheel = (event) => {
+    if (!elements.canvas) {
+      return;
+    }
+    const rectSource = elements.canvasWrapper || elements.canvas;
+    if (!rectSource || typeof rectSource.getBoundingClientRect !== 'function') {
+      return;
+    }
+    const rect = rectSource.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+    const deltaX = Number.isFinite(event.deltaX) ? event.deltaX : 0;
+    const deltaY = Number.isFinite(event.deltaY) ? event.deltaY : 0;
+    let delta = Math.abs(deltaY) >= Math.abs(deltaX) ? deltaY : deltaX;
+    if (!delta) {
+      delta =
+        (Number.isFinite(event.wheelDelta) && event.wheelDelta !== 0 && -event.wheelDelta) ||
+        (Number.isFinite(event.detail) && event.detail !== 0 && event.detail) ||
+        0;
+    }
+    if (!delta) {
+      return;
+    }
+    hideMapTooltip();
+    hideStructureContextMenu();
+    hideStructureDetails();
+    event.preventDefault();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    const direction = delta > 0 ? -1 : 1;
+    const zoomIntensity = 0.1;
+    const scaleFactor = 1 + zoomIntensity * direction;
+    zoomWorldMapAt(pointerX, pointerY, scaleFactor);
+  };
+
+  if (!elements.canvasWrapper) {
+    if (elements.canvas) {
+      elements.canvas.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    return;
+  }
 
   const shouldUseMapEditor = () => {
     const mapEditor = ensureMapEditorState();
@@ -18656,30 +18797,6 @@ function setupMapInteractions() {
     showMapTooltip(tooltipContent, resolved.pointerX, resolved.pointerY, resolved.rect);
   };
 
-  const handleWheel = (event) => {
-    if (!elements.canvas) {
-      return;
-    }
-    hideMapTooltip();
-    hideStructureContextMenu();
-    hideStructureDetails();
-    event.preventDefault();
-    const rect = elements.canvasWrapper.getBoundingClientRect();
-    const pointerX = event.clientX - rect.left;
-    const pointerY = event.clientY - rect.top;
-    const zoomIntensity = 0.1;
-    const direction = event.deltaY > 0 ? -1 : 1;
-    const scaleFactor = 1 + zoomIntensity * direction;
-    const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
-    const originX = (pointerX - viewState.translateX) / viewState.scale;
-    const originY = (pointerY - viewState.translateY) / viewState.scale;
-    viewState.scale = targetScale;
-    viewState.translateX = pointerX - originX * viewState.scale;
-    viewState.translateY = pointerY - originY * viewState.scale;
-    viewState.hasInteracted = true;
-    applyViewTransform();
-  };
-
   const isMacLikePlatform =
     typeof navigator !== 'undefined' &&
     /Mac|iP(?:ad|hone|od)/.test((navigator.platform || navigator.userAgent || '').toString());
@@ -18695,6 +18812,35 @@ function setupMapInteractions() {
     return true;
   };
 
+  const cancelActivePan = () => {
+    if (!isPanning || activePointerId === null) {
+      return;
+    }
+    if (elements.canvasWrapper && typeof elements.canvasWrapper.releasePointerCapture === 'function') {
+      try {
+        elements.canvasWrapper.releasePointerCapture(activePointerId);
+      } catch (error) {
+        // Ignore errors if the pointer capture has already been released.
+      }
+    }
+    isPanning = false;
+    activePointerId = null;
+    pointerMovedDuringPan = false;
+  };
+
+  const isSecondaryPointer = (event, isTouchPointer) => {
+    if (event.button === 2) {
+      return true;
+    }
+    if (typeof event.buttons === 'number' && (event.buttons & 2) === 2) {
+      return true;
+    }
+    if (!isTouchPointer && event.button === 0 && event.ctrlKey && isMacLikePlatform) {
+      return true;
+    }
+    return false;
+  };
+
   const handlePointerDown = (event) => {
     if (activePointerId !== null || activePaintPointerId !== null) {
       return;
@@ -18706,13 +18852,7 @@ function setupMapInteractions() {
     }
     const pointerType = event.pointerType || 'mouse';
     const isTouchPointer = pointerType === 'touch';
-    const isNonPrimaryButton = event.button !== undefined && event.button !== 0;
-    const isMacCtrlClick =
-      !isTouchPointer &&
-      event.button === 0 &&
-      event.ctrlKey &&
-      isMacLikePlatform;
-    const isContextMenuClick = !isTouchPointer && (isNonPrimaryButton || isMacCtrlClick);
+    const isContextMenuClick = !isTouchPointer && isSecondaryPointer(event, isTouchPointer);
     const isPrimaryPointer = !isContextMenuClick;
     hideStructureDetails();
     hideStructureContextMenu();
@@ -18739,7 +18879,9 @@ function setupMapInteractions() {
     initialPosition.x = event.clientX;
     initialPosition.y = event.clientY;
     pointerMovedDuringPan = false;
-    elements.canvasWrapper.setPointerCapture(event.pointerId);
+    if (elements.canvasWrapper && typeof elements.canvasWrapper.setPointerCapture === 'function') {
+      elements.canvasWrapper.setPointerCapture(event.pointerId);
+    }
   };
 
   const handlePointerMove = (event) => {
@@ -18780,9 +18922,22 @@ function setupMapInteractions() {
       stopPainting(event);
       return;
     }
+    const pointerType = event.pointerType || 'mouse';
+    const isTouchPointer = pointerType === 'touch';
+    const isContextMenuClick = !isTouchPointer && isSecondaryPointer(event, isTouchPointer);
+    if (isContextMenuClick && !structureContextMenuState.visible) {
+      cancelActivePan();
+      hideStructureDetails();
+      if (openStructureContextMenu(event)) {
+        event.preventDefault();
+      }
+      return;
+    }
     const wasActivePointer = event.pointerId === activePointerId;
     if (wasActivePointer) {
-      elements.canvasWrapper.releasePointerCapture(event.pointerId);
+      if (elements.canvasWrapper && typeof elements.canvasWrapper.releasePointerCapture === 'function') {
+        elements.canvasWrapper.releasePointerCapture(event.pointerId);
+      }
       isPanning = false;
       activePointerId = null;
       if (!pointerMovedDuringPan) {
@@ -18847,18 +19002,102 @@ function setupMapInteractions() {
 
   const handleContextMenu = (event) => {
     event.preventDefault();
+    cancelActivePan();
     openStructureContextMenu(event);
   };
 
   elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
-  elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
-  elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
-  elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
-  elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
-  elements.canvasWrapper.addEventListener('pointerenter', updateHover);
-  elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
+  if (elements.canvas) {
+    elements.canvas.addEventListener('wheel', handleWheel, { passive: false });
+  }
   elements.canvasWrapper.addEventListener('contextmenu', handleContextMenu);
   elements.canvasWrapper.addEventListener('dblclick', handleDoubleClick);
+  if (supportsPointerEvents) {
+    elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
+    elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
+    elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
+    elements.canvasWrapper.addEventListener('pointercancel', handlePointerUp);
+    elements.canvasWrapper.addEventListener('pointerenter', updateHover);
+    elements.canvasWrapper.addEventListener('pointerleave', handlePointerLeave);
+  } else {
+    const normalizeMouseEvent = (event) => ({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      pointerId: 1,
+      pointerType: 'mouse',
+      button: event.button,
+      buttons: event.buttons,
+      ctrlKey: event.ctrlKey,
+      target: event.target,
+      preventDefault: () => event.preventDefault(),
+      stopPropagation: () => event.stopPropagation(),
+    });
+
+    const getPrimaryTouch = (event) =>
+      (event.changedTouches && event.changedTouches[0]) || (event.touches && event.touches[0]);
+
+    const normalizeTouchEvent = (event) => {
+      const touch = getPrimaryTouch(event);
+      if (!touch) {
+        return null;
+      }
+      return {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        pointerId: touch.identifier,
+        pointerType: 'touch',
+        button: 0,
+        buttons: 1,
+        ctrlKey: false,
+        target: event.target,
+        preventDefault: () => event.preventDefault(),
+        stopPropagation: () => event.stopPropagation(),
+      };
+    };
+
+    const handleMouseDown = (event) => {
+      handlePointerDown(normalizeMouseEvent(event));
+    };
+
+    const handleMouseMove = (event) => {
+      handlePointerMove(normalizeMouseEvent(event));
+    };
+
+    const handleMouseUp = (event) => {
+      handlePointerUp(normalizeMouseEvent(event));
+    };
+
+    const handleTouchStart = (event) => {
+      const normalized = normalizeTouchEvent(event);
+      if (normalized) {
+        handlePointerDown(normalized);
+      }
+    };
+
+    const handleTouchMove = (event) => {
+      const normalized = normalizeTouchEvent(event);
+      if (normalized) {
+        handlePointerMove(normalized);
+      }
+    };
+
+    const handleTouchEnd = (event) => {
+      const normalized = normalizeTouchEvent(event);
+      if (normalized) {
+        handlePointerUp(normalized);
+      }
+    };
+
+    elements.canvasWrapper.addEventListener('mousedown', handleMouseDown);
+    elements.canvasWrapper.addEventListener('mousemove', handleMouseMove);
+    elements.canvasWrapper.addEventListener('mouseup', handleMouseUp);
+    elements.canvasWrapper.addEventListener('mouseenter', updateHover);
+    elements.canvasWrapper.addEventListener('mouseleave', handlePointerLeave);
+    elements.canvasWrapper.addEventListener('touchstart', handleTouchStart, { passive: false });
+    elements.canvasWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+    elements.canvasWrapper.addEventListener('touchend', handleTouchEnd);
+    elements.canvasWrapper.addEventListener('touchcancel', handleTouchEnd);
+  }
   window.addEventListener('resize', handleResize);
 }
 
@@ -29921,28 +30160,21 @@ async function updateLoadingProgressAndWait(value, statusText, options) {
 function runWithLoadingScreen(action, { statusText } = {}) {
   showLoadingScreen(statusText);
   return new Promise((resolve, reject) => {
-    const execute = () => {
-      let result;
+    const execute = async () => {
       try {
-        result = action();
+        const result = await action();
+        await completeLoadingScreen();
+        resolve(result);
       } catch (error) {
         hideLoadingScreen();
         reject(error);
-        return;
+      } finally {
+        if (elements.loadingScreen) {
+          elements.loadingScreen.classList.add('hidden');
+          elements.loadingScreen.setAttribute('aria-hidden', 'true');
+          elements.loadingScreen.removeAttribute('aria-busy');
+        }
       }
-      const finalize = (resolvedResult) => {
-        completeLoadingScreen().then(() => resolve(resolvedResult));
-      };
-      if (result && typeof result.then === 'function') {
-        result
-          .then((asyncResult) => finalize(asyncResult))
-          .catch((error) => {
-            hideLoadingScreen();
-            reject(error);
-          });
-        return;
-      }
-      finalize(result);
     };
 
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
@@ -29969,22 +30201,18 @@ function beginGame() {
   }
   elements.seedDisplay.textContent = '';
   runWithLoadingScreen(() => generateAndRender(), { statusText: 'Forging your world…' })
-    .then(() => {
-      if (elements.gameContainer) {
-        elements.gameContainer.classList.remove('game-container--loading');
-        elements.gameContainer.removeAttribute('aria-busy');
-      }
-    })
     .catch((error) => {
       console.error('Failed to generate world.', error);
-      if (elements.gameContainer) {
-        elements.gameContainer.classList.remove('game-container--loading');
-        elements.gameContainer.removeAttribute('aria-busy');
-      }
       if (elements.titleScreen) {
         elements.titleScreen.classList.remove('hidden');
       }
       openDwarfCustomizer();
+    })
+    .finally(() => {
+      if (elements.gameContainer) {
+        elements.gameContainer.classList.remove('game-container--loading');
+        elements.gameContainer.removeAttribute('aria-busy');
+      }
     });
 }
 
@@ -30752,6 +30980,9 @@ function bootApplication() {
     refreshStructureHighlightControls,
     ensureStructureHighlightState,
     drawWorld,
+    zoomWorldMapIn,
+    zoomWorldMapOut,
+    resetWorldMapZoom,
     updateFrequencyDisplay,
     sanitizeFrequencyValue,
     defaultForestFrequency,
@@ -30793,6 +31024,11 @@ function bootApplication() {
     setMapEditorBrushSize,
     clearMapEditorStructure
   });
+  try {
+    if (typeof window !== 'undefined') {
+      window.__gameUiWired = true;
+    }
+  } catch (_) {}
 
   initialise();
   autoStartGameIfNeeded();
@@ -30829,8 +31065,3 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
-
-
-
-

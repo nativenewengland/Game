@@ -17,6 +17,9 @@ export function attachEvents(elements, deps) {
     refreshStructureHighlightControls,
     ensureStructureHighlightState,
     drawWorld,
+    zoomWorldMapIn,
+    zoomWorldMapOut,
+    resetWorldMapZoom,
     updateFrequencyDisplay,
     sanitizeFrequencyValue,
     defaultForestFrequency,
@@ -398,6 +401,24 @@ export function attachEvents(elements, deps) {
     });
   }
 
+  if (elements.worldMapZoomIn) {
+    elements.worldMapZoomIn.addEventListener('click', () => {
+      zoomWorldMapIn();
+    });
+  }
+
+  if (elements.worldMapZoomOut) {
+    elements.worldMapZoomOut.addEventListener('click', () => {
+      zoomWorldMapOut();
+    });
+  }
+
+  if (elements.worldMapZoomReset) {
+    elements.worldMapZoomReset.addEventListener('click', () => {
+      resetWorldMapZoom();
+    });
+  }
+
   if (elements.structureContextMenuBegin) {
     elements.structureContextMenuBegin.addEventListener('click', () => {
       const { tile, tileX, tileY } = structureContextMenuState;
@@ -476,13 +497,15 @@ export function attachEvents(elements, deps) {
         if (!state.localView || !state.localView.active) {
           return;
         }
-        if (event.ctrlKey || event.metaKey) {
+        const delta = event.deltaY || event.deltaX;
+        if (!Number.isFinite(delta) || delta === 0) {
           return;
         }
         event.preventDefault();
-        if (event.deltaY < 0) {
+        event.stopPropagation();
+        if (delta < 0) {
           adjustLocalMapZoom('in');
-        } else if (event.deltaY > 0) {
+        } else if (delta > 0) {
           adjustLocalMapZoom('out');
         }
       },
