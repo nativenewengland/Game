@@ -9710,7 +9710,6 @@ const baseDwarfClanOptions = [
   { value: 'sandbeards', label: 'Sandbeards' },
   { value: 'shattershield', label: 'Shattershield' },
   { value: 'stonebridge', label: 'Stonebridge' },
-  { value: 'stonehand', label: 'Stonehand' },
   { value: 'stoneshoulder', label: 'Stoneshoulder' },
   { value: 'stouthammer', label: 'Stouthammer' },
   { value: 'sunblight', label: 'Sunblight' },
@@ -9722,7 +9721,6 @@ const baseDwarfClanOptions = [
   { value: 'drummond', label: 'Drummond' },
   { value: 'tolorr', label: 'Tolorr' },
   { value: 'vanderholl', label: 'Vanderholl' },
-  { value: 'stonefist', label: 'Stonefist' },
   { value: 'aringeld', label: 'Aringeld' },
   { value: 'firecask', label: 'Firecask', description: 'Brewers and distillers.' },
   { value: 'gelderon', label: 'Gelderon' },
@@ -9733,7 +9731,6 @@ const baseDwarfClanOptions = [
   { value: 'shalefoot', label: 'Shalefoot' },
   { value: 'silverhair', label: 'Silverhair' },
   { value: 'copperlung_stonescar', label: 'Copperlung Stonescar' },
-  { value: 'stouthammer', label: 'Stouthammer' },
   { value: 'flintbristle', label: 'Flintbristle' },
   { value: 'spire_crag', label: 'Spire-Crag' },
   { value: 'stonehollow', label: 'Stonehollow' },
@@ -9741,8 +9738,7 @@ const baseDwarfClanOptions = [
   { value: 'ironheart', label: 'Ironheart' },
   { value: 'weoughld', label: 'Weoughld' },
   { value: 'llyrnillach', label: 'Llyrnillach' },
-  { value: 'highhelm', label: 'Highhelm' },
-  { value: 'tolorr', label: 'Tolorr' }
+  { value: 'highhelm', label: 'Highhelm' }
 ];
 
 const dwarfClanCategories = new Map([
@@ -30882,7 +30878,5 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
-
 
 
