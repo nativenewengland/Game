@@ -627,7 +627,8 @@ select,
   padding: clamp(1.2rem, 3.15vw, 2.5rem) clamp(1.15rem, 3.6vw, 2.7rem);
   border-radius: 26px;
   backdrop-filter: blur(18px);
-  background: url("tilesheet/Title-Background.png") center/cover no-repeat;
+  background:
+    url("tilesheet/Title-Background.png") center/cover no-repeat;
   border: 2px solid rgba(138, 100, 46, 0.75);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1.5rem 3.5rem rgba(0, 0, 0, 0.55);
   width: min(70vw, 414px);
