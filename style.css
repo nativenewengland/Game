@@ -575,7 +575,8 @@ select,
 .title-background {
   position: absolute;
   inset: 0;
-  background: none;
+  background: url("tilesheet/Title-Background.png") center/cover no-repeat;
+  background-repeat: no-repeat;
   filter: saturate(70%);
   transform: none;
 }
@@ -589,18 +590,15 @@ select,
 
 .title-background::before {
   background:
-      url("titlescreen/smith.gif") left center / 50% 100% no-repeat,
-      url("titlescreen/title.gif") right center / 50% 100% no-repeat;
-  z-index: 0;
+      radial-gradient(circle at 24% 18%, rgba(36, 32, 44, 0.4), transparent 58%),
+      radial-gradient(circle at 78% 24%, rgba(54, 36, 22, 0.32), transparent 62%),
+      linear-gradient(172deg, rgba(6, 8, 16, 0.48), rgba(8, 9, 15, 0.52));
 }
 
 .title-background::after {
   background:
-      url("tilesheet/Title-Background.png") center / cover no-repeat,
-      radial-gradient(circle at 24% 18%, rgba(36, 32, 44, 0.4), transparent 58%),
-      radial-gradient(circle at 78% 24%, rgba(54, 36, 22, 0.32), transparent 62%),
-      linear-gradient(172deg, rgba(6, 8, 16, 0.48), rgba(8, 9, 15, 0.52));
-  z-index: 1;
+      url("titlescreen/smith.gif") left center / 50% 100% no-repeat,
+      url("titlescreen/title.gif") right center / 50% 100% no-repeat;
 }
 
 @keyframes panDown {
