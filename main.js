@@ -1953,7 +1953,7 @@ const woodElfGroveExports = [
 ];
 
 const woodElfGrovePopulationRoleOptions = [
-  { key: 'elves', label: 'Wood Elves', color: '#6ecf85' },
+  { key: 'wood-elves', label: 'Wood Elves', color: '#6ecf85' },
   { key: 'satyrs', label: 'Satyrs', color: '#c18c5d' },
   { key: 'nymphs', label: 'Nymphs', color: '#9bd4a9' },
   { key: 'ents', label: 'Ents', color: '#8bbbcf' }
