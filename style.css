@@ -575,17 +575,30 @@ select,
 .title-background {
   position: absolute;
   inset: 0;
-  background:
-      radial-gradient(circle at 24% 18%, rgba(36, 32, 44, 0.4), transparent 58%),
-      radial-gradient(circle at 78% 24%, rgba(54, 36, 22, 0.32), transparent 62%),
-      linear-gradient(172deg, rgba(6, 8, 16, 0.48), rgba(8, 9, 15, 0.52)),
-      url("titlescreen/smith.gif"),
-      url("titlescreen/title.gif");
-  background-position: 24% 18%, 78% 24%, center, left center, right center;
-  background-size: auto, auto, cover, 50% 100%, 50% 100%;
+  background: url("tilesheet/Title-Background.png") center/cover no-repeat;
   background-repeat: no-repeat;
   filter: saturate(70%);
   transform: none;
+}
+
+.title-background::before,
+.title-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.title-background::before {
+  background:
+      radial-gradient(circle at 24% 18%, rgba(36, 32, 44, 0.4), transparent 58%),
+      radial-gradient(circle at 78% 24%, rgba(54, 36, 22, 0.32), transparent 62%),
+      linear-gradient(172deg, rgba(6, 8, 16, 0.48), rgba(8, 9, 15, 0.52));
+}
+
+.title-background::after {
+  background:
+      url("titlescreen/smith.gif") left center / 50% 100% no-repeat,
+      url("titlescreen/title.gif") right center / 50% 100% no-repeat;
 }
 
 @keyframes panDown {
@@ -625,41 +638,39 @@ select,
   text-align: center;
   gap: clamp(0.75rem, 1.8vw, 0.99rem);
   padding: clamp(1.2rem, 3.15vw, 2.5rem) clamp(1.15rem, 3.6vw, 2.7rem);
-  border-radius: 26px;
-  backdrop-filter: blur(18px);
-  background: linear-gradient(160deg, rgba(12, 8, 4, 0.78), rgba(6, 8, 16, 0.82));
-  border: 2px solid rgba(138, 100, 46, 0.75);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1.5rem 3.5rem rgba(0, 0, 0, 0.55);
-  width: min(70vw, 414px);
+  border-radius: 0;
+  backdrop-filter: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: min(70vw, 420px);
+  isolation: isolate;
+}
+
+.title-overlay > * {
+  position: relative;
+  z-index: 1;
 }
 
 .title-overlay::before,
 .title-overlay::after {
   content: "";
   position: absolute;
-  border-radius: 34px;
+  inset: -20px;
+  border-radius: 18px;
   pointer-events: none;
 }
 
 .title-overlay::before {
-  inset: clamp(-22px, -4vw, -14px);
-  border-radius: 40px;
-  background:
-    linear-gradient(90deg, rgba(240, 198, 116, 0.55), rgba(142, 101, 46, 0.4)) top/100% 3px no-repeat,
-    linear-gradient(90deg, rgba(240, 198, 116, 0.55), rgba(142, 101, 46, 0.4)) bottom/100% 3px no-repeat,
-    linear-gradient(180deg, rgba(240, 198, 116, 0.55), rgba(142, 101, 46, 0.4)) left/3px 100% no-repeat,
-    linear-gradient(180deg, rgba(240, 198, 116, 0.55), rgba(142, 101, 46, 0.4)) right/3px 100% no-repeat,
-    radial-gradient(circle at 34px 34px, rgba(240, 198, 116, 0.35), transparent 68%),
-    radial-gradient(circle at calc(100% - 34px) 34px, rgba(240, 198, 116, 0.35), transparent 68%),
-    radial-gradient(circle at 34px calc(100% - 34px), rgba(240, 198, 116, 0.35), transparent 68%),
-    radial-gradient(circle at calc(100% - 34px) calc(100% - 34px), rgba(240, 198, 116, 0.35), transparent 68%);
-  box-shadow: 0 0 45px rgba(0, 0, 0, 0.65);
+  background: url("tilesheet/Title-Background.png") center/cover no-repeat;
+  filter: saturate(80%);
+  z-index: 0;
 }
 
 .title-overlay::after {
-  inset: clamp(-10px, -2vw, -6px);
-  border: 1px solid rgba(240, 198, 116, 0.4);
-  box-shadow: 0 0 24px rgba(240, 198, 116, 0.18);
+  background: linear-gradient(180deg, rgba(9, 10, 18, 0.25), rgba(9, 10, 18, 0.6));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  z-index: 0;
 }
 
 .options-screen {
@@ -1010,6 +1021,46 @@ button {
   color: #f6e6c6;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1.1rem 2.8rem rgba(0, 0, 0, 0.55);
   transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+
+.title-buttons .title-image-button {
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+.title-buttons .title-image-button::before,
+.title-buttons .title-image-button::after {
+  content: none;
+}
+
+.title-buttons .title-image-button:hover {
+  transform: translateY(-3px);
+  box-shadow: none;
+  filter: drop-shadow(0 0.65rem 1.6rem rgba(0, 0, 0, 0.55));
+}
+
+.title-buttons .title-image-button:active {
+  transform: translateY(0);
+  filter: drop-shadow(0 0.4rem 1rem rgba(0, 0, 0, 0.5));
+}
+
+.title-buttons .title-button-image {
+  display: block;
+  width: clamp(9.5rem, 24vw, 14rem);
+  height: clamp(2.6rem, 6vw, 4rem);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.title-buttons .title-button-image--start {
+  background-image: url("tilesheet/Start.png");
+}
+
+.title-buttons .title-button-image--options {
+  background-image: url("tilesheet/Options.png");
 }
 
 .title-buttons button::before {

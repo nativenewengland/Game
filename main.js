@@ -436,7 +436,60 @@ const dwarfholdCuratedNames = [
   "Thulgar's Deep",
   'Brumkeldûm',
   'Dûrmar Hollow',
-  'the Great Halls of Thorbardin'
+  'the Great Halls of Thorbardin',
+  'Hammerguard',
+  'Gor Karakazol',
+  'Dur-Vazhatun',
+  'Throal',
+  'Dun-Ôrdstun',
+  'Dûrandur',
+  'Black Rock Hold',
+  'Barat Nûmenz',
+  'Dun Toruhm',
+  'Karad-Graef',
+  'Dûmthûr Mînrth',
+  "Y'olazad-az-Bôr",
+  'Gor Dûrgheld',
+  'Dwemerhelm',
+  'Tuwad-Dhumakon',
+  'Skomdihir',
+  'Hul-Jorkad',
+  'Hul-Az-Krakazol',
+  'Ovdal-az-An',
+  'Orocarni',
+  'Dun-Gardro',
+  'Azrak Ordrim',
+  'Dal Dulrah',
+  'Dungrum',
+  "Dun'ragram",
+  'Karak Isural',
+  'Sinterholm',
+  'Karak-Dûmankon',
+  'Grozumdihr',
+  'Gor Ozumbrog',
+  'Azad-Khas',
+  'Karag Burag',
+  'Hul-Kargdrum',
+  'Karak-Duraz',
+  'Tharn Khazrim',
+  'Karak Grumdril',
+  'Mirabar',
+  'Dun Ashborun',
+  'Avlar-Thrûn',
+  "Grom's Peak",
+  'Karak Gorûmzra',
+  'Ostapchuk',
+  'Dammerhall',
+  'Almharaz',
+  'Haraz Oldrum',
+  'Elaig Drum',
+  'Karak Ozambrald',
+  'Ironhold',
+  'Alvar-Baroag',
+  'Ondrehrdin',
+  'Azrak Zarak',
+  'Dun Ezmar',
+  'Azgark Metzger'
 ];
 
 const dwarfholdNamePrefixes = [
@@ -9657,7 +9710,6 @@ const baseDwarfClanOptions = [
   { value: 'sandbeards', label: 'Sandbeards' },
   { value: 'shattershield', label: 'Shattershield' },
   { value: 'stonebridge', label: 'Stonebridge' },
-  { value: 'stonehand', label: 'Stonehand' },
   { value: 'stoneshoulder', label: 'Stoneshoulder' },
   { value: 'stouthammer', label: 'Stouthammer' },
   { value: 'sunblight', label: 'Sunblight' },
@@ -9669,7 +9721,6 @@ const baseDwarfClanOptions = [
   { value: 'drummond', label: 'Drummond' },
   { value: 'tolorr', label: 'Tolorr' },
   { value: 'vanderholl', label: 'Vanderholl' },
-  { value: 'stonefist', label: 'Stonefist' },
   { value: 'aringeld', label: 'Aringeld' },
   { value: 'firecask', label: 'Firecask', description: 'Brewers and distillers.' },
   { value: 'gelderon', label: 'Gelderon' },
@@ -9680,7 +9731,6 @@ const baseDwarfClanOptions = [
   { value: 'shalefoot', label: 'Shalefoot' },
   { value: 'silverhair', label: 'Silverhair' },
   { value: 'copperlung_stonescar', label: 'Copperlung Stonescar' },
-  { value: 'stouthammer', label: 'Stouthammer' },
   { value: 'flintbristle', label: 'Flintbristle' },
   { value: 'spire_crag', label: 'Spire-Crag' },
   { value: 'stonehollow', label: 'Stonehollow' },
@@ -9688,8 +9738,7 @@ const baseDwarfClanOptions = [
   { value: 'ironheart', label: 'Ironheart' },
   { value: 'weoughld', label: 'Weoughld' },
   { value: 'llyrnillach', label: 'Llyrnillach' },
-  { value: 'highhelm', label: 'Highhelm' },
-  { value: 'tolorr', label: 'Tolorr' }
+  { value: 'highhelm', label: 'Highhelm' }
 ];
 
 const dwarfClanCategories = new Map([
@@ -30829,8 +30878,5 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
-
-
 
 
