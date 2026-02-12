@@ -5671,25 +5671,6 @@ function generatePoliticalLandscape({ width, height, tiles, waterMask, random, s
   return { factions };
 }
 
-function describeInfluenceStrength(value) {
-  const strength = clamp(Number(value) || 0, 0, 1);
-  if (strength >= 0.85) {
-    return 'Seat of Power';
-  }
-  if (strength >= 0.65) {
-    return 'Heartland';
-  }
-  if (strength >= 0.45) {
-    return 'Core Territory';
-  }
-  if (strength >= 0.25) {
-    return 'Border March';
-  }
-  if (strength >= 0.12) {
-    return 'Outer Reach';
-  }
-  return 'Faint Influence';
-}
 
 const defaultCultureColorByKey = {
   dwarves: '#f4c069',
@@ -14337,12 +14318,8 @@ function buildStructureTooltipContent(tile) {
     const sections = [`<div class="tooltip-title">${escapeHtml(ambientStructure.label)}</div>`];
     const entries = [];
     const cultureLabel = ambientStructure.cultureLabel || tile.culturalInfluence?.label || null;
-    const influenceDescription = tile.culturalInfluence
-      ? describeInfluenceStrength(tile.culturalInfluence.strength)
-      : null;
     if (cultureLabel) {
-      const value = influenceDescription ? `${cultureLabel} — ${influenceDescription}` : cultureLabel;
-      entries.push({ label: 'Cultural Tie', value });
+      entries.push({ label: 'Cultural Tie', value: cultureLabel });
     }
     const areaName = tile.areaName;
     if (areaName) {
@@ -14476,11 +14453,7 @@ function buildStructureTooltipContent(tile) {
 
     const dominantCulture = getDominantCulturalInfluence(tile);
     if (dominantCulture) {
-      const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
-      const value = influenceDescription
-        ? `${dominantCulture.label} — ${influenceDescription}`
-        : dominantCulture.label;
-      entries.push({ label: 'Cultural Influence', value });
+      entries.push({ label: 'Cultural Influence', value: dominantCulture.label });
     }
 
     if (details.classification) {
@@ -14596,11 +14569,7 @@ function buildStructureTooltipContent(tile) {
 
   const dominantCulture = getDominantCulturalInfluence(tile);
   if (dominantCulture) {
-    const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
-    const value = influenceDescription
-      ? `${dominantCulture.label} — ${influenceDescription}`
-      : dominantCulture.label;
-    entries.push({ label: 'Cultural Influence', value });
+    entries.push({ label: 'Cultural Influence', value: dominantCulture.label });
   }
 
   if (details) {
@@ -18050,11 +18019,7 @@ function buildStructureDetailsPanelContent(tile, context = {}) {
   }
   const dominantCulture = getDominantCulturalInfluence(tile);
   if (dominantCulture) {
-    const influenceDescription = describeInfluenceStrength(dominantCulture.strength);
-    const value = influenceDescription
-      ? `${dominantCulture.label} — ${influenceDescription}`
-      : dominantCulture.label;
-    addOverviewEntry('Cultural Influence', value);
+    addOverviewEntry('Cultural Influence', dominantCulture.label);
   }
 
   if (details.population !== null && details.population !== undefined) {
@@ -30878,5 +30843,4 @@ function startApplicationWhenReady() {
 }
 
 startApplicationWhenReady();
-
 
