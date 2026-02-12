@@ -11,5 +11,22 @@ Font size: 8x12
 Resizing grid to 150x66
 Resizing font to 8x12
 
-Saving bindings to prefs/interface.txt
+Resetting textures
+Resetting textures
+Resetting textures
+Resetting textures
+Resetting textures
+Resetting textures
+Resetting textures
+Resetting textures
+Resetting textures
+New window size: 1920x1009
+Font size: 8x12
+Resizing grid to 240x84
+Resizing font to 10x15
+
+New window size: 1200x800
+Font size: 8x12
+Resizing grid to 150x66
 Resizing font to 8x12
+
