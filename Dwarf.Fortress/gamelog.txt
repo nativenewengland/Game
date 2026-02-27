@@ -76,3 +76,10 @@ Generating world using parameter set LARGE ISLAND
  History Seed: Pfz6g3HOwjgp1L8eJFaK
  Name Seed: 9FHTtvIDbx6LrGwtqCHV
  Creature Seed: FjawpBmO3JxVfn25SE1h
+*** STARTING NEW GAME ***
+Generating world using parameter set CREATE WORLD NOW = 4333335
+ Seed: ughH5UR2ASg2O8Y913yW
+ History Seed: vi1Gz6BbSHHQvPmpJ07C
+ Name Seed: t8uXCjOcDCpalBT2TInd
+ Creature Seed: 9YT4K3QMRSQerFK9pea7
+** Starting New Outpost **

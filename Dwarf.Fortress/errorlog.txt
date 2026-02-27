@@ -24,3 +24,5 @@ steelhead trout: Null Pop Num
 perch: Null Pop Num
 salmon: Null Pop Num
 shads: Null Pop Num
+path fail: giant cave toad,15,78,131 -> 18,75,134: Id #9284:Path Goal Marauder Mill:Station None at 15,78,131
+path fail: crundle,44,1,117 -> 29,0,117: Id #9290:Path Goal Flee from Opponent:Station Owner at 44,1,117
