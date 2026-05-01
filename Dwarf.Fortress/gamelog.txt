@@ -83,3 +83,5 @@ Generating world using parameter set CREATE WORLD NOW = 4333335
  Name Seed: t8uXCjOcDCpalBT2TInd
  Creature Seed: 9YT4K3QMRSQerFK9pea7
 ** Starting New Outpost **
+*** STARTING NEW GAME ***
+** Loading Fortress **
