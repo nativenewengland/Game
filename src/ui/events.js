@@ -48,14 +48,6 @@ export function attachEvents(elements, deps) {
     updateWorldInfoSizeDisplay,
     updateWorldInfoGenerationTypeDisplay,
     setWorldGenerationType,
-    toggleMapEditor,
-    closeMapEditor,
-    setMapEditorTerrainKey,
-    setMapEditorStructureKey,
-    setMapEditorApplyTerrain,
-    setMapEditorApplyStructure,
-    setMapEditorBrushSize,
-    clearMapEditorStructure,
     runWithLoadingScreen,
     generateAndRender
   } = deps;
@@ -129,17 +121,19 @@ export function attachEvents(elements, deps) {
     closeStructureHighlightMenu({ returnFocus: true });
   };
 
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') {
+      hideStructureContextMenu();
+      closeStructureHighlightMenu();
+    }
+  };
+
   if (typeof document !== 'undefined') {
     document.addEventListener('pointerdown', dismissContextMenuOnPointerDown, true);
     document.addEventListener('pointerdown', handleStructureHighlightPointerDown, true);
     document.addEventListener('keydown', dismissContextMenuOnKeyDown, true);
     document.addEventListener('keydown', handleStructureHighlightKeyDown, true);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        hideStructureContextMenu();
-        closeStructureHighlightMenu();
-      }
-    });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
   }
 
   if (typeof window !== 'undefined') {
@@ -233,73 +227,6 @@ export function attachEvents(elements, deps) {
       if (state.currentWorld) {
         drawWorld(state.currentWorld, { preserveView: true });
       }
-    });
-  }
-
-  if (elements.mapEditorToggle) {
-    elements.mapEditorToggle.addEventListener('click', () => {
-      const enabled = toggleMapEditor();
-      if (enabled && elements.mapEditorTerrainInput && typeof elements.mapEditorTerrainInput.focus === 'function') {
-        elements.mapEditorTerrainInput.focus({ preventScroll: true });
-        elements.mapEditorTerrainInput.select?.();
-      }
-    });
-  }
-
-  if (elements.mapEditorClose) {
-    elements.mapEditorClose.addEventListener('click', () => {
-      closeMapEditor({ returnFocus: true });
-    });
-  }
-
-  const handleMapEditorTerrainChange = (event) => {
-    setMapEditorTerrainKey(event.target.value);
-  };
-
-  if (elements.mapEditorTerrainInput) {
-    elements.mapEditorTerrainInput.addEventListener('change', handleMapEditorTerrainChange);
-    elements.mapEditorTerrainInput.addEventListener('blur', handleMapEditorTerrainChange);
-    elements.mapEditorTerrainInput.addEventListener('input', () => {
-      setMapEditorTerrainKey(elements.mapEditorTerrainInput.value);
-    });
-  }
-
-  const handleMapEditorStructureChange = (event) => {
-    setMapEditorStructureKey(event.target.value);
-  };
-
-  if (elements.mapEditorStructureInput) {
-    elements.mapEditorStructureInput.addEventListener('change', handleMapEditorStructureChange);
-    elements.mapEditorStructureInput.addEventListener('blur', handleMapEditorStructureChange);
-    elements.mapEditorStructureInput.addEventListener('input', () => {
-      setMapEditorStructureKey(elements.mapEditorStructureInput.value);
-    });
-  }
-
-  if (elements.mapEditorApplyTerrain) {
-    elements.mapEditorApplyTerrain.addEventListener('change', (event) => {
-      setMapEditorApplyTerrain(event.target.checked);
-    });
-  }
-
-  if (elements.mapEditorApplyStructure) {
-    elements.mapEditorApplyStructure.addEventListener('change', (event) => {
-      setMapEditorApplyStructure(event.target.checked);
-    });
-  }
-
-  if (elements.mapEditorBrushSizeInput) {
-    elements.mapEditorBrushSizeInput.addEventListener('input', (event) => {
-      setMapEditorBrushSize(event.target.value);
-    });
-    elements.mapEditorBrushSizeInput.addEventListener('change', (event) => {
-      setMapEditorBrushSize(event.target.value);
-    });
-  }
-
-  if (elements.mapEditorClearStructure) {
-    elements.mapEditorClearStructure.addEventListener('click', () => {
-      clearMapEditorStructure();
     });
   }
 
@@ -991,7 +918,7 @@ export function attachEvents(elements, deps) {
   setupTraitSliderControl('hair', elements.dwarfHairSlider, elements.dwarfHairSliderValue);
   setupTraitSliderControl('beard', elements.dwarfBeardSlider, elements.dwarfBeardSliderValue);
 
-  document.addEventListener('keydown', (event) => {
+  const handleGlobalKeyDown = (event) => {
     const activeElement = document.activeElement;
     const isFormControl = activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
 
@@ -1029,7 +956,26 @@ export function attachEvents(elements, deps) {
         closeOptionsScreen();
       }
     }
-  });
+  };
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('keydown', handleGlobalKeyDown);
+  }
 
   refreshOverlayToggleButtons();
+
+  return () => {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('pointerdown', dismissContextMenuOnPointerDown, true);
+      document.removeEventListener('pointerdown', handleStructureHighlightPointerDown, true);
+      document.removeEventListener('keydown', dismissContextMenuOnKeyDown, true);
+      document.removeEventListener('keydown', handleStructureHighlightKeyDown, true);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('scroll', dismissContextMenuOnScroll, true);
+      window.removeEventListener('blur', dismissContextMenuOnScroll);
+    }
+  };
 }

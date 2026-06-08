@@ -52,6 +52,7 @@ import { getRandomWorldName } from './src/main/world-names.js';
 import { generateDwarfholdMap } from './src/local/dwarfhold-map.js';
 
 let cachedDwarfholdGeneratorPromise = null;
+let detachUiEvents = null;
 
 async function loadDwarfholdGenerator() {
   if (!cachedDwarfholdGeneratorPromise) {
@@ -18568,10 +18569,6 @@ function handleResize() {
 }
 
 function setupMapInteractions() {
-  if (!elements.canvasWrapper) {
-    return;
-  }
-
   let isPanning = false;
   let activePointerId = null;
   const lastPosition = { x: 0, y: 0 };
@@ -18579,6 +18576,44 @@ function setupMapInteractions() {
   let pointerMovedDuringPan = false;
   let activePaintPointerId = null;
   const paintedTileCoords = new Set();
+
+  const handleWheel = (event) => {
+    if (!elements.canvas) {
+      return;
+    }
+    const rectSource = elements.canvasWrapper || elements.canvas;
+    if (!rectSource || typeof rectSource.getBoundingClientRect !== 'function') {
+      return;
+    }
+    const rect = rectSource.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+    hideMapTooltip();
+    hideStructureContextMenu();
+    hideStructureDetails();
+    event.preventDefault();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    const zoomIntensity = 0.1;
+    const direction = event.deltaY > 0 ? -1 : 1;
+    const scaleFactor = 1 + zoomIntensity * direction;
+    const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
+    const originX = (pointerX - viewState.translateX) / viewState.scale;
+    const originY = (pointerY - viewState.translateY) / viewState.scale;
+    viewState.scale = targetScale;
+    viewState.translateX = pointerX - originX * viewState.scale;
+    viewState.translateY = pointerY - originY * viewState.scale;
+    viewState.hasInteracted = true;
+    applyViewTransform();
+  };
+
+  if (!elements.canvasWrapper) {
+    if (elements.canvas) {
+      elements.canvas.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    return;
+  }
 
   const shouldUseMapEditor = () => {
     const mapEditor = ensureMapEditorState();
@@ -18703,30 +18738,6 @@ function setupMapInteractions() {
       return;
     }
     showMapTooltip(tooltipContent, resolved.pointerX, resolved.pointerY, resolved.rect);
-  };
-
-  const handleWheel = (event) => {
-    if (!elements.canvas) {
-      return;
-    }
-    hideMapTooltip();
-    hideStructureContextMenu();
-    hideStructureDetails();
-    event.preventDefault();
-    const rect = elements.canvasWrapper.getBoundingClientRect();
-    const pointerX = event.clientX - rect.left;
-    const pointerY = event.clientY - rect.top;
-    const zoomIntensity = 0.1;
-    const direction = event.deltaY > 0 ? -1 : 1;
-    const scaleFactor = 1 + zoomIntensity * direction;
-    const targetScale = clamp(viewState.scale * scaleFactor, viewState.minScale, viewState.maxScale);
-    const originX = (pointerX - viewState.translateX) / viewState.scale;
-    const originY = (pointerY - viewState.translateY) / viewState.scale;
-    viewState.scale = targetScale;
-    viewState.translateX = pointerX - originX * viewState.scale;
-    viewState.translateY = pointerY - originY * viewState.scale;
-    viewState.hasInteracted = true;
-    applyViewTransform();
   };
 
   const isMacLikePlatform =
@@ -18900,6 +18911,9 @@ function setupMapInteractions() {
   };
 
   elements.canvasWrapper.addEventListener('wheel', handleWheel, { passive: false });
+  if (elements.canvas) {
+    elements.canvas.addEventListener('wheel', handleWheel, { passive: false });
+  }
   elements.canvasWrapper.addEventListener('pointerdown', handlePointerDown);
   elements.canvasWrapper.addEventListener('pointermove', handlePointerMove);
   elements.canvasWrapper.addEventListener('pointerup', handlePointerUp);
@@ -30783,7 +30797,12 @@ function bootApplication() {
   ensureClanSelectOptions();
   ensureProfessionSelectOptions();
 
-  attachEvents(elements, {
+  if (detachUiEvents) {
+    detachUiEvents();
+    detachUiEvents = null;
+  }
+
+  detachUiEvents = attachEvents(elements, {
     structureContextMenuState,
     hideStructureContextMenu,
     openOptionsScreen,
